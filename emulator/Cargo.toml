@@ -1,0 +1,17 @@
+[package]
+name = "pyrealium"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Pyrealium AC2 local emulator"
+repository = "https://github.com/Vanquish-6/Pyrealium"
+license = "MIT"
+
+[dependencies]
+
+[profile.release]
+overflow-checks = true
+lto = "thin"
+
+[lints.rust]
+unsafe_code = "forbid"
