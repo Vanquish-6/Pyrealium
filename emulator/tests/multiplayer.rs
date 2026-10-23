@@ -332,7 +332,9 @@ fn two_peers_see_movement_look_departure_and_saved_reentry() {
     // The cleanly disconnected character is immediately available to another
     // connection, without waiting for the server's idle expiry.
     a.enter(2);
-    assert_eq!(a.events(3)[0], world::create_player(2, 1));
+    let takeover = a.events(3);
+    assert_eq!(takeover[0], world::create_player(2, 1));
+    assert_eq!(&takeover[1][24..26], &2u16.to_le_bytes());
     std::fs::write(dir.join("stop.request"), b"stop").unwrap();
     worker.join().unwrap();
     {
@@ -341,6 +343,8 @@ fn two_peers_see_movement_look_departure_and_saved_reentry() {
         assert!(store.characters[&1].deleted);
         store.restore("local", 1).unwrap();
         assert!(!store.characters[&1].deleted);
+        assert_eq!(store.begin_instance("local", 1).unwrap(), 3);
+        assert_eq!(store.begin_instance("local", 2).unwrap(), 3);
     }
     for file in ["characters.journal", "positions.snapshot"] {
         std::fs::remove_file(dir.join(file)).unwrap();

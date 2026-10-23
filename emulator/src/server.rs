@@ -36,7 +36,6 @@ struct Peer {
     selection_pending: Option<Vec<u8>>,
     ordered_stamp: u16,
     motion: Option<Motion>,
-    instance: u16,
     target: Option<u64>,
     combat: bool,
     last_chat_ms: Option<u64>,
@@ -369,7 +368,6 @@ pub fn run(config: Config) -> io::Result<()> {
                                 selection_pending: None,
                                 ordered_stamp: 0,
                                 motion: None,
-                                instance: 0,
                                 target: None,
                                 combat: false,
                                 last_chat_ms: None,
@@ -776,6 +774,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                                 .get(&character_id)
                                                 .and_then(|c| c.creation.as_ref())
                                                 .filter(|r| profile.supports(r))
+                                                .cloned()
                                             {
                                                 let placement = store
                                                     .placement(character_id)
@@ -785,14 +784,14 @@ pub fn run(config: Config) -> io::Result<()> {
                                                         "saved placement references unavailable cell",
                                                     ));
                                                 }
-                                                let instance =
-                                                    peer.instance.checked_add(1).ok_or_else(
-                                                        || invalid("instance stamp exhausted"),
-                                                    )?;
+                                                let instance = store.begin_instance(
+                                                    &peer.session.account,
+                                                    character_id,
+                                                )?;
                                                 let events = profile
                                                     .events_at(
                                                         character_id,
-                                                        request,
+                                                        &request,
                                                         placement,
                                                         instance,
                                                     )
@@ -805,7 +804,6 @@ pub fn run(config: Config) -> io::Result<()> {
                                                     )
                                                     .map_err(other)?;
                                                 peer.ordered_stamp = 0;
-                                                peer.instance = instance;
                                                 peer.target = None;
                                                 peer.combat = false;
                                                 peer.motion =

@@ -550,3 +550,24 @@ benchmark on the integrated code measured median movement/look costs of 25/12 ns
 with one player, 466/451 ns with sixteen, and 1,373/1,278 ns with sixty-four.
 The samples are at `target/performance/scene-integrated.txt`; these remain isolated
 application costs, not native player latency measurements.
+
+## Durable avatar lifetimes (2026-10-23)
+
+Instance stamps now belong to the character rather than its UDP peer. The store
+flushes an `e1` journal event before world-entry packets can be published. A
+different connection, server restart, or deletion/restoration therefore cannot
+reset the character's next lifetime. Existing creation/lifecycle records start
+at stamp zero when no lifetime has yet been recorded. Older binaries that do not
+understand `e1` cannot read a journal after this upgrade writes such an event.
+
+This preserves the native 16-bit InstanceIDWithStamp wire layout. Refusing entry
+after exhausting the nonzero 16-bit range is an explicit local policy; wrapping
+and reusing an old lifetime is not silently assumed safe. Failed delivery may
+consume a lifetime, which is harmless: stamps must be unique, not gap-free on
+the wire. The journal itself requires exact increasing events and rejects
+unknown/deleted characters, duplicate/backward/skipped stamps and overflow.
+
+Store tests cover ownership, deletion/restoration, restart, checksum-valid invalid
+events and exhaustion without another write. The two-peer UDP flow now verifies
+that a character released by one connection receives stamp two when entered by
+the other, then verifies the next stamp after reopening the store.

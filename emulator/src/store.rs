@@ -20,6 +20,8 @@ pub struct Character {
     /// Exact ordered client appearance values; None for legacy CLI-created characters.
     pub creation: Option<CharacterCreationRequest>,
     pub deleted: bool,
+    /// Durable avatar lifetime; never reused by reconnecting transports.
+    pub instance: u16,
 }
 
 pub struct Store {
@@ -203,6 +205,7 @@ impl Store {
             name: name.into(),
             creation: creation.cloned(),
             deleted: false,
+            instance: 0,
         };
         let line = match creation {
             None => format!("v1\t{}\t{}\t{}", c.id, c.account, c.name),
@@ -250,6 +253,20 @@ impl Store {
         self.append_record(&format!("r1\t{id}"))?;
         self.characters.get_mut(&id).unwrap().deleted = false;
         Ok(())
+    }
+    pub fn begin_instance(&mut self, account: &str, id: u64) -> io::Result<u16> {
+        let c = self
+            .characters
+            .get(&id)
+            .filter(|c| c.account == account && !c.deleted)
+            .ok_or_else(|| invalid("active character not owned"))?;
+        let instance = c
+            .instance
+            .checked_add(1)
+            .ok_or_else(|| invalid("character instance stamp exhausted"))?;
+        self.append_record(&format!("e1\t{id}\t{instance}"))?;
+        self.characters.get_mut(&id).unwrap().instance = instance;
+        Ok(instance)
     }
     fn append_record(&mut self, line: &str) -> io::Result<()> {
         if self.poisoned {
@@ -337,6 +354,23 @@ pub fn decode_journal(bytes: &[u8]) -> io::Result<BTreeMap<u64, Character>> {
             return Err(invalid("character journal checksum mismatch"));
         }
         let fields: Vec<_> = data.split('\t').collect();
+        if fields.len() == 3 && fields[0] == "e1" {
+            let id = fields[1]
+                .parse::<u64>()
+                .map_err(|_| invalid("invalid instance character ID"))?;
+            let instance = fields[2]
+                .parse::<u16>()
+                .map_err(|_| invalid("invalid instance stamp"))?;
+            let c = records
+                .get_mut(&id)
+                .filter(|c| !c.deleted)
+                .ok_or_else(|| invalid("instance event references unavailable character"))?;
+            if c.instance.checked_add(1) != Some(instance) {
+                return Err(invalid("invalid instance stamp progression"));
+            }
+            c.instance = instance;
+            continue;
+        }
         if fields.len() == 2 && matches!(fields[0], "d1" | "r1") {
             let id = fields[1]
                 .parse::<u64>()
@@ -399,6 +433,7 @@ pub fn decode_journal(bytes: &[u8]) -> io::Result<BTreeMap<u64, Character>> {
                 name: fields[3].into(),
                 creation,
                 deleted: false,
+                instance: 0,
             },
         );
     }
@@ -576,6 +611,44 @@ mod tests {
     }
     fn record(data: &str) -> Vec<u8> {
         format!("{data}\t{:08x}\n", hash(data.as_bytes())).into_bytes()
+    }
+    #[test]
+    fn avatar_lifetimes_survive_restart_and_reject_invalid_journal_transitions() {
+        let dir = std::env::temp_dir().join(format!("ac2-instances-{}", std::process::id()));
+        {
+            let mut store = Store::open(&dir).unwrap();
+            store.create("local", "Hero").unwrap();
+            assert!(store.begin_instance("other", 1).is_err());
+            assert_eq!(store.begin_instance("local", 1).unwrap(), 1);
+            store.delete("local", 1).unwrap();
+            assert!(store.begin_instance("local", 1).is_err());
+            store.restore("local", 1).unwrap();
+        }
+        {
+            let mut store = Store::open(&dir).unwrap();
+            assert_eq!(store.begin_instance("local", 1).unwrap(), 2);
+            let length = store.file.metadata().unwrap().len();
+            store.characters.get_mut(&1).unwrap().instance = u16::MAX;
+            assert!(store.begin_instance("local", 1).is_err());
+            assert_eq!(store.file.metadata().unwrap().len(), length);
+        }
+        let prefix = record("v1\t1\tlocal\tHero");
+        for suffix in ["e1\t1\t0", "e1\t1\t2", "e1\t2\t1", "e1\t1\t65536"] {
+            let mut bytes = prefix.clone();
+            bytes.extend(record(suffix));
+            assert!(decode_journal(&bytes).is_err());
+        }
+        let mut bytes = prefix;
+        bytes.extend(record("e1\t1\t1"));
+        let valid = bytes.clone();
+        bytes.extend(record("e1\t1\t1"));
+        assert!(decode_journal(&bytes).is_err());
+        bytes = valid;
+        bytes.extend(record("d1\t1"));
+        bytes.extend(record("e1\t1\t2"));
+        assert!(decode_journal(&bytes).is_err());
+        fs::remove_file(dir.join("characters.journal")).unwrap();
+        fs::remove_dir(dir).unwrap();
     }
     #[test]
     fn mixed_versions_retain_exact_native_appearance_after_restart() {
