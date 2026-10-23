@@ -22,10 +22,15 @@ Pyrealium contains a Rust emulator and a Windows player launcher. The server use
 | Native character creation | Experimental human request handling; saving through the game's UI remains unverified |
 | World entry | **Verified with 7148 and converted test assets:** player and terrain render; client reports scene completion |
 | Player launcher | Windows forms for account, host, port, game folder and client executable |
-| Movement, vitals, combat, content | Unfinished. Grass is not an MMO, despite our marketing department's objections. |
+| Movement | Native client reports received in a live test, with malformed/stale report checks; authoritative physics remains unfinished |
+| Examination UI | Targeted asset compatibility repair included; world entry after repair verified, opening examination after repair still awaiting native verification |
+| Logout/re-entry | Session transition and message ordering fixed; repeated entry tested over UDP, native round trip still unverified |
+| Vitals, combat, content | Unfinished. Grass is not an MMO, despite our marketing department's objections. |
 | Multiplayer hosting | Not enabled; the server binds to IPv4 loopback only |
 
 This is an early emulator, **not a complete or production-ready AC2 server**. The ambition is enormous. The status table is under oath.
+
+Movement reports are currently telemetry: the server records the client's latest reported position after world entry, and logs a `movement_reports` count. These reports do not yet drive collision, saved positions, or other players. We can now hear the client claiming it went somewhere. Teaching the server to demand receipts comes next.
 
 ## What's in the box
 
@@ -63,6 +68,22 @@ Local authentication is an account-name allowlist, not proof of identity. An imp
 
 The verified setup uses the **recovered 7148 client** and a specific installed asset set associated with build 7230. Unconverted player settings in those assets crash 7148 during world loading. The supplied converter handles that specific layout; it is **not a universal client or DAT patcher**.
 
+**Examination compatibility repair:** the newer scripts call native function `0x009A0013`, which build 7148 does not implement. It sets an additional request field absent from the older client. The repair omits that setting at two hash-verified call sites, preserving legacy request behavior, script offsets and argument cleanup. World entry after repair is verified; opening examination after repair still needs native verification. The lawn passed inspection. The inspector is on probation.
+
+Check a local asset set without modifying it:
+
+```powershell
+python tools/check_7148_scripts.py 'C:\Games\AC2-test\portal.dat'
+```
+
+The check reports the known incompatible call sites and exits with code 2 when found. It checks this specific failure only; passing it does not certify the entire asset set. With the client closed, repair a previously prepared test directory using:
+
+```powershell
+python tools/repair_7148_examination.py 'C:\Games\AC2-test'
+```
+
+The repair requires the converter's manifest and a separate, non-hardlinked `portal.dat`. It backs up the original script record, verifies the write, and rejects unknown source data. It does not modify the executable or implement the newer examination options. The world-test script runs this repair automatically when the check finds the known calls.
+
 On Windows, with Rust, Python 3.10+ and your own game files available:
 
 ```powershell
@@ -74,7 +95,7 @@ cd emulator
 
 This builds the emulator, prepares `target/compat-7148`, creates the test human **Pyrealium** if the test store is new, starts a local server on **19270/19271**, and launches the client. The default test lasts 30 minutes; `-Seconds` and `-Port` override those values. Review any Windows Run prompt yourself.
 
-The converter copies `portal.dat` and modifies only two records whose source hashes match the supported layout. It verifies the output and leaves the source installation unchanged. Allow roughly **1.6 GB plus working space**. Other large DATs are hardlinked, so the client must use **`--rodat`**, as both supplied launch paths do. Never run an updater or a writable client against this test directory. An unknown source record or an existing conversion destination is rejected.
+The converter copies `portal.dat` and modifies two settings records whose source hashes match the supported layout. The examination repair then changes six bytes in one additional script record. Both verify their output and leave the source installation unchanged. Allow roughly **1.6 GB plus working space**. Other large DATs are hardlinked, so the client must use **`--rodat`**, as both supplied launch paths do. Never run an updater or a writable client against this test directory. An unknown source record or an existing conversion destination is rejected by the converter.
 
 Keep the recovered client alongside its supporting DLLs. Game files are not downloaded or supplied by this project. The installed 7230 executable has not been verified with the emulator.
 

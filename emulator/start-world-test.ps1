@@ -19,6 +19,13 @@ if (-not (Test-Path -LiteralPath $assets)) {
     if ($LASTEXITCODE -ne 0) { throw 'Compatibility asset preparation failed.' }
 }
 if (-not (Test-Path -LiteralPath (Join-Path $assets 'pyrealium-compatibility.json'))) { throw 'The compatibility directory is incomplete; inspect it before retrying.' }
+& python (Join-Path $PSScriptRoot 'tools\check_7148_scripts.py') (Join-Path $assets 'portal.dat')
+if ($LASTEXITCODE -eq 2) {
+    & python (Join-Path $PSScriptRoot 'tools\repair_7148_examination.py') $assets
+    if ($LASTEXITCODE -ne 0) { throw 'The pinned examination compatibility repair failed. Test launch canceled.' }
+} elseif ($LASTEXITCODE -ne 0) {
+    throw 'Script compatibility check failed to read the test assets.'
+}
 Push-Location $PSScriptRoot
 try {
     & cargo build --release --target-dir target/compat-build

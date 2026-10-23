@@ -18,6 +18,7 @@
 *.dat
 *.sdat
 *.dmp
+examination-wlib-before-repair.bin
 *.pcap
 *.pcapng
 *.zip

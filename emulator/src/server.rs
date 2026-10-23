@@ -41,6 +41,7 @@ struct Counters {
     logins: u64,
     connected: u64,
     events: u64,
+    movement_reports: u64,
 }
 
 fn invalid(msg: &str) -> io::Error {
@@ -74,7 +75,14 @@ impl Peer {
         self.transport.send(id, 1, bytes, now).map_err(other)
     }
     fn send_event(&mut self, bytes: &[u8], now: Instant) -> io::Result<Vec<Vec<u8>>> {
-        self.send_to_queue(1, bytes, now)
+        if matches!(
+            self.session.phase,
+            Phase::InWorld { .. } | Phase::Entering { .. }
+        ) {
+            self.send_world_event(bytes, true, now)
+        } else {
+            self.send_to_queue(1, bytes, now)
+        }
     }
     fn send_to_queue(
         &mut self,
@@ -385,6 +393,23 @@ pub fn run(config: Config) -> io::Result<()> {
                             }
                         };
                         let response = match event {
+                            world::ClientEvent::Position(position) => {
+                                peer.session.report_position(position).map_err(other)?;
+                                counters.movement_reports += 1;
+                                if counters.movement_reports == 1
+                                    || counters.movement_reports % 100 == 0
+                                {
+                                    let report =
+                                        peer.session.last_reported_position.as_ref().unwrap();
+                                    eprintln!(
+                                        "client movement telemetry: cell={:#010x} xyz={:?} reports={}",
+                                        report.cell,
+                                        report.offset_bits.map(f32::from_bits),
+                                        counters.movement_reports
+                                    );
+                                }
+                                continue;
+                            }
                             world::ClientEvent::CreateCharacter { account, request } => {
                                 if account != peer.session.account.as_bytes()
                                     || peer.session.phase != Phase::CharacterSelection
@@ -505,7 +530,14 @@ pub fn run(config: Config) -> io::Result<()> {
                                 };
                                 world::character_error(error)
                             }
-                            world::ClientEvent::LogOffCharacter { .. } => world::char_exit_game(),
+                            world::ClientEvent::LogOffCharacter { character_id } => {
+                                peer.session.can_leave(character_id).map_err(other)?;
+                                // Queue the exit before discarding the world ordering context.
+                                replies.extend(peer.send_event(&world::char_exit_game(), now)?);
+                                peer.session.leave_world(character_id).map_err(other)?;
+                                eprintln!("character {character_id} returned to selection");
+                                continue;
+                            }
                             world::ClientEvent::SceneRenderingComplete => {
                                 peer.session.scene_complete().map_err(other)?;
                                 eprintln!("native client reported SceneRenderingComplete");
@@ -554,13 +586,14 @@ pub fn run(config: Config) -> io::Result<()> {
         }
         if now_ms >= next_report {
             println!(
-                "sessions={} received={} rejected={} logins={} connected={} events={}",
+                "sessions={} received={} rejected={} logins={} connected={} events={} movement_reports={}",
                 peers.len(),
                 counters.received,
                 counters.rejected,
                 counters.logins,
                 counters.connected,
-                counters.events
+                counters.events,
+                counters.movement_reports
             );
             next_report = now_ms + 10_000;
         }

@@ -12,6 +12,22 @@ pub const CREATE_PLAYER: u32 = 0x10060;
 pub const PLAYER_DESC: u32 = 0x10068;
 pub const MIN_CHARACTER_SET: u32 = 0x100b8;
 pub const SCENE_RENDERING_COMPLETE: u32 = 0x100d1;
+pub const CLIENT_POSITION: u32 = 0x1008e;
+
+/// Native CPositionPack. Floats retain their wire bits; this is a client report,
+/// not an authoritative physics result.
+/// Build 7148: SendEvt_CPosition 00496a90, CPositionPack::StreamPack
+/// 0069c060 and PositionOffset::StreamPack 00625930.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ClientPosition {
+    pub time_bits: u64,
+    pub cell: u32,
+    pub offset_bits: [u32; 3],
+    pub motion_heading: u32,
+    pub flags: u32,
+    pub stamps: [u16; 4],
+    pub jump_velocity_bits: Option<[u32; 3]>,
+}
 pub const MAX_STRING_BYTES: usize = 4096;
 pub const MAX_CHARACTERS: usize = 64;
 
@@ -33,6 +49,7 @@ impl std::error::Error for WorldError {}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ClientEvent {
+    Position(ClientPosition),
     CreateCharacter {
         account: Vec<u8>,
         request: CharacterCreationRequest,
@@ -143,6 +160,42 @@ impl<'a> Reader<'a> {
 pub fn decode_client_event(bytes: &[u8]) -> Result<ClientEvent, WorldError> {
     let mut reader = Reader { bytes, pos: 0 };
     let event = match reader.u32()? {
+        CLIENT_POSITION => {
+            let time_bits = reader.u64()?;
+            let cell = reader.u32()?;
+            let offset_bits = [reader.u32()?, reader.u32()?, reader.u32()?];
+            let motion_heading = reader.u32()?;
+            let flags = reader.u32()?;
+            let mut stamps = [0; 4];
+            for stamp in &mut stamps {
+                *stamp = u16::from_le_bytes(reader.take(2)?.try_into().unwrap());
+            }
+            let jump_velocity_bits = if flags & 2 != 0 {
+                Some([reader.u32()?, reader.u32()?, reader.u32()?])
+            } else {
+                None
+            };
+            if !f64::from_bits(time_bits).is_finite()
+                || f64::from_bits(time_bits) < 0.0
+                || cell == 0
+                || flags & !6 != 0
+                || offset_bits
+                    .iter()
+                    .chain(jump_velocity_bits.iter().flatten())
+                    .any(|bits| !f32::from_bits(*bits).is_finite())
+            {
+                return Err(WorldError::InvalidValue);
+            }
+            ClientEvent::Position(ClientPosition {
+                time_bits,
+                cell,
+                offset_bits,
+                motion_heading,
+                flags,
+                stamps,
+                jump_velocity_bits,
+            })
+        }
         CREATE_CHARACTER => {
             let account = reader.string()?;
             let mut request = CharacterCreationRequest {

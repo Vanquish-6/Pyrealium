@@ -251,6 +251,58 @@ fn run_enter_rejection(game_data: Option<std::path::PathBuf>, expect_bootstrap: 
             &world::CREATE_OBJECT.to_le_bytes()
         );
         assert_eq!(&received_events[2][..4], &world::PLAYER_DESC.to_le_bytes());
+        // Complete entry, leave, then enter again over the same encrypted UDP
+        // session. The exit must use world stamp 2, not the global blob count.
+        for packet in peer
+            .send(
+                0x0300000000000002,
+                4,
+                &world::SCENE_RENDERING_COMPLETE.to_le_bytes(),
+                Instant::now(),
+            )
+            .unwrap()
+        {
+            socket.send_to(&packet, addr).unwrap();
+        }
+        let mut exit = world::CHAR_EXIT_GAME.to_le_bytes().to_vec();
+        exit.extend(1u64.to_le_bytes());
+        for packet in peer
+            .send(0x0300000000000003, 4, &exit, Instant::now())
+            .unwrap()
+        {
+            socket.send_to(&packet, addr).unwrap();
+        }
+        let mut found_exit = false;
+        for _ in 0..32 {
+            let (len, _) = socket.recv_from(&mut buf).unwrap();
+            let reply = peer.receive(&buf[..len], Instant::now()).unwrap();
+            for message in reply.messages {
+                if message.data == world::char_exit_game() {
+                    assert_eq!(message.blob_id >> 32, 0x01000002);
+                    found_exit = true;
+                }
+            }
+            if found_exit {
+                break;
+            }
+        }
+        assert!(found_exit, "server did not acknowledge leaving the world");
+        for packet in peer
+            .send(0x0300000000000004, 4, &event, Instant::now())
+            .unwrap()
+        {
+            socket.send_to(&packet, addr).unwrap();
+        }
+        let mut reentry = Vec::new();
+        for _ in 0..32 {
+            let (len, _) = socket.recv_from(&mut buf).unwrap();
+            let reply = peer.receive(&buf[..len], Instant::now()).unwrap();
+            reentry.extend(reply.messages.into_iter().map(|message| message.data));
+            if reentry.len() == 3 {
+                break;
+            }
+        }
+        assert_eq!(reentry, received_events);
     } else {
         assert_eq!(
             received_events,
