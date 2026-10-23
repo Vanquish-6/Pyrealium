@@ -1,5 +1,6 @@
 //! Append-only local character journal. A write is acknowledged only after fsync.
 //! Corruption/torn tails stop startup rather than silently discarding characters.
+use crate::movement::Placement;
 use crate::world::CharacterCreationRequest;
 use std::{
     collections::BTreeMap,
@@ -18,6 +19,7 @@ pub struct Character {
     pub name: String,
     /// Exact ordered client appearance values; None for legacy CLI-created characters.
     pub creation: Option<CharacterCreationRequest>,
+    pub deleted: bool,
 }
 
 pub struct Store {
@@ -25,6 +27,9 @@ pub struct Store {
     lock: PathBuf,
     pub characters: BTreeMap<u64, Character>,
     poisoned: bool,
+    positions_path: PathBuf,
+    positions: BTreeMap<u64, Placement>,
+    positions_dirty: bool,
 }
 
 fn invalid(msg: &str) -> io::Error {
@@ -62,11 +67,24 @@ impl Store {
             let mut bytes = Vec::new();
             file.read_to_end(&mut bytes)?;
             let characters = decode_journal(&bytes)?;
+            let positions_path = dir.join("positions.snapshot");
+            let positions = match File::open(&positions_path) {
+                Ok(file) => {
+                    let mut bytes = Vec::new();
+                    file.take(1024 * 1024 + 1).read_to_end(&mut bytes)?;
+                    decode_positions(&bytes, &characters)?
+                }
+                Err(e) if e.kind() == io::ErrorKind::NotFound => BTreeMap::new(),
+                Err(e) => return Err(e),
+            };
             Ok(Self {
                 file,
                 lock: lock.clone(),
                 characters,
                 poisoned: false,
+                positions_path,
+                positions,
+                positions_dirty: false,
             })
         })();
         if result.is_err() {
@@ -77,6 +95,59 @@ impl Store {
     }
     pub fn create(&mut self, account: &str, name: &str) -> io::Result<Character> {
         self.create_record(account, name, None)
+    }
+    pub fn placement(&self, id: u64) -> Option<Placement> {
+        self.positions.get(&id).copied()
+    }
+    pub fn set_placement(&mut self, id: u64, placement: Placement) -> io::Result<()> {
+        if self.characters.get(&id).is_none_or(|c| c.deleted) || !placement.valid() {
+            return Err(invalid("invalid character placement"));
+        }
+        if self.positions.get(&id) != Some(&placement) {
+            self.positions.insert(id, placement);
+            self.positions_dirty = true;
+        }
+        Ok(())
+    }
+    /// One bounded snapshot per checkpoint, not an fsync for every movement packet.
+    /// The old snapshot remains authoritative until the flushed new file is renamed.
+    pub fn flush_positions(&mut self) -> io::Result<()> {
+        if !self.positions_dirty {
+            return Ok(());
+        }
+        let size = 16usize
+            .checked_add(
+                self.positions
+                    .len()
+                    .checked_mul(25)
+                    .ok_or_else(|| invalid("too many placements"))?,
+            )
+            .filter(|size| *size <= 1024 * 1024)
+            .ok_or_else(|| invalid("placement snapshot limit"))?;
+        let mut bytes = Vec::with_capacity(size);
+        bytes.extend(b"AC2POS01");
+        bytes.extend((self.positions.len() as u32).to_le_bytes());
+        for (id, placement) in &self.positions {
+            bytes.extend(id.to_le_bytes());
+            bytes.extend(placement.cell.to_le_bytes());
+            for value in placement.coordinates {
+                bytes.extend(value.to_le_bytes());
+            }
+            bytes.push(placement.heading);
+        }
+        bytes.extend(hash(&bytes).to_le_bytes());
+        let temporary = self.positions_path.with_extension("snapshot.tmp");
+        let mut file = OpenOptions::new()
+            .create(true)
+            .truncate(true)
+            .write(true)
+            .open(&temporary)?;
+        file.write_all(&bytes)?;
+        file.sync_all()?;
+        drop(file);
+        fs::rename(temporary, &self.positions_path)?;
+        self.positions_dirty = false;
+        Ok(())
     }
     /// Persists structurally valid input. The caller must validate entity/world authority.
     pub fn create_native(
@@ -112,7 +183,7 @@ impl Store {
         if self
             .characters
             .values()
-            .filter(|c| c.account == account)
+            .filter(|c| c.account == account && !c.deleted)
             .count()
             >= 5
         {
@@ -131,6 +202,7 @@ impl Store {
             account: account.into(),
             name: name.into(),
             creation: creation.cloned(),
+            deleted: false,
         };
         let line = match creation {
             None => format!("v1\t{}\t{}\t{}", c.id, c.account, c.name),
@@ -142,6 +214,49 @@ impl Store {
                 encode_creation(request)?
             ),
         };
+        self.append_record(&line)?;
+        self.characters.insert(id, c.clone());
+        Ok(c)
+    }
+    pub fn delete(&mut self, account: &str, id: u64) -> io::Result<()> {
+        if !self
+            .characters
+            .get(&id)
+            .is_some_and(|c| c.account == account && !c.deleted)
+        {
+            return Err(invalid("character not owned or already deleted"));
+        }
+        self.append_record(&format!("d1\t{id}"))?;
+        self.characters.get_mut(&id).unwrap().deleted = true;
+        Ok(())
+    }
+    pub fn restore(&mut self, account: &str, id: u64) -> io::Result<()> {
+        if !self
+            .characters
+            .get(&id)
+            .is_some_and(|c| c.account == account && c.deleted)
+        {
+            return Err(invalid("deleted character not owned"));
+        }
+        if self
+            .characters
+            .values()
+            .filter(|c| c.account == account && !c.deleted)
+            .count()
+            >= 5
+        {
+            return Err(invalid("local character limit is five"));
+        }
+        self.append_record(&format!("r1\t{id}"))?;
+        self.characters.get_mut(&id).unwrap().deleted = false;
+        Ok(())
+    }
+    fn append_record(&mut self, line: &str) -> io::Result<()> {
+        if self.poisoned {
+            return Err(invalid(
+                "journal write failed previously; restart and inspect journal",
+            ));
+        }
         let record = format!("{line}\t{:08x}\n", hash(line.as_bytes()));
         if self
             .file
@@ -160,9 +275,43 @@ impl Store {
             self.poisoned = true;
             return Err(e);
         }
-        self.characters.insert(id, c.clone());
-        Ok(c)
+        Ok(())
     }
+}
+
+fn decode_positions(
+    bytes: &[u8],
+    characters: &BTreeMap<u64, Character>,
+) -> io::Result<BTreeMap<u64, Placement>> {
+    if bytes.len() < 16 || bytes.len() > 1024 * 1024 || &bytes[..8] != b"AC2POS01" {
+        return Err(invalid("invalid placement snapshot header/size"));
+    }
+    let count = u32::from_le_bytes(bytes[8..12].try_into().unwrap()) as usize;
+    if count.checked_mul(25).and_then(|n| n.checked_add(16)) != Some(bytes.len()) {
+        return Err(invalid("invalid placement snapshot length"));
+    }
+    let end = bytes.len() - 4;
+    if hash(&bytes[..end]) != u32::from_le_bytes(bytes[end..].try_into().unwrap()) {
+        return Err(invalid("placement snapshot checksum mismatch"));
+    }
+    let mut positions = BTreeMap::new();
+    for record in bytes[12..end].chunks_exact(25) {
+        let id = u64::from_le_bytes(record[..8].try_into().unwrap());
+        let placement = Placement {
+            cell: u32::from_le_bytes(record[8..12].try_into().unwrap()),
+            coordinates: std::array::from_fn(|i| {
+                f32::from_le_bytes(record[12 + i * 4..16 + i * 4].try_into().unwrap())
+            }),
+            heading: record[24],
+        };
+        if !characters.contains_key(&id)
+            || !placement.valid()
+            || positions.insert(id, placement).is_some()
+        {
+            return Err(invalid("unknown, duplicate or invalid saved placement"));
+        }
+    }
+    Ok(positions)
 }
 impl Drop for Store {
     fn drop(&mut self) {
@@ -179,7 +328,7 @@ pub fn decode_journal(bytes: &[u8]) -> io::Result<BTreeMap<u64, Character>> {
     }
     let text =
         std::str::from_utf8(bytes).map_err(|_| invalid("invalid character journal encoding"))?;
-    let mut records = BTreeMap::new();
+    let mut records: BTreeMap<u64, Character> = BTreeMap::new();
     for line in text.lines() {
         let (data, sum) = line
             .rsplit_once('\t')
@@ -188,6 +337,29 @@ pub fn decode_journal(bytes: &[u8]) -> io::Result<BTreeMap<u64, Character>> {
             return Err(invalid("character journal checksum mismatch"));
         }
         let fields: Vec<_> = data.split('\t').collect();
+        if fields.len() == 2 && matches!(fields[0], "d1" | "r1") {
+            let id = fields[1]
+                .parse::<u64>()
+                .map_err(|_| invalid("invalid character lifecycle ID"))?;
+            let c = records
+                .get(&id)
+                .ok_or_else(|| invalid("lifecycle event references unknown character"))?;
+            let deleting = fields[0] == "d1";
+            if c.deleted == deleting {
+                return Err(invalid("invalid character lifecycle transition"));
+            }
+            if !deleting
+                && records
+                    .values()
+                    .filter(|other| other.account == c.account && !other.deleted)
+                    .count()
+                    >= 5
+            {
+                return Err(invalid("restoration exceeds local character limit"));
+            }
+            records.get_mut(&id).unwrap().deleted = deleting;
+            continue;
+        }
         if !((fields.len() == 4 && fields[0] == "v1") || (fields.len() == 5 && fields[0] == "v2"))
             || !valid_name(fields[2])
             || !valid_name(fields[3])
@@ -206,7 +378,12 @@ pub fn decode_journal(bytes: &[u8]) -> io::Result<BTreeMap<u64, Character>> {
         {
             return Err(invalid("duplicate character name in journal"));
         }
-        if records.values().filter(|c| c.account == fields[2]).count() >= 5 {
+        if records
+            .values()
+            .filter(|c| c.account == fields[2] && !c.deleted)
+            .count()
+            >= 5
+        {
             return Err(invalid("account exceeds local character limit"));
         }
         let creation = if fields[0] == "v2" {
@@ -221,6 +398,7 @@ pub fn decode_journal(bytes: &[u8]) -> io::Result<BTreeMap<u64, Character>> {
                 account: fields[2].into(),
                 name: fields[3].into(),
                 creation,
+                deleted: false,
             },
         );
     }
@@ -306,6 +484,84 @@ fn decode_creation(name: &str, hex: &str) -> io::Result<CharacterCreationRequest
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn deletion_restoration_keeps_identity_appearance_and_saved_placement() {
+        let dir = std::env::temp_dir().join(format!("ac2-lifecycle-{}", std::process::id()));
+        {
+            let mut store = Store::open(&dir).unwrap();
+            for i in 1..=5 {
+                store
+                    .create_native("local", &request(&format!("Hero {i}")))
+                    .unwrap();
+            }
+            store.set_placement(5, Placement::HUMAN_START).unwrap();
+            store.flush_positions().unwrap();
+            assert!(store.delete("other", 5).is_err());
+            store.delete("local", 5).unwrap();
+            assert!(store.set_placement(5, Placement::HUMAN_START).is_err());
+            assert!(store.delete("local", 5).is_err());
+            assert_eq!(store.create("local", "Sixth Hero").unwrap().id, 6);
+            assert!(store.restore("local", 5).is_err());
+            store.delete("local", 6).unwrap();
+            store.restore("local", 5).unwrap();
+            assert!(store.restore("other", 6).is_err());
+            assert!(store.create("other", "Sixth Hero").is_err());
+        }
+        {
+            let store = Store::open(&dir).unwrap();
+            assert!(!store.characters[&5].deleted);
+            assert!(store.characters[&6].deleted);
+            assert_eq!(store.characters[&5].creation, Some(request("Hero 5")));
+            assert_eq!(store.placement(5), Some(Placement::HUMAN_START));
+        }
+        for line in ["d1\t1", "r1\t1"] {
+            assert!(decode_journal(&record(line)).is_err());
+        }
+        let mut bad = record("v1\t1\tlocal\tHero");
+        bad.extend(record("r1\t1"));
+        assert!(decode_journal(&bad).is_err());
+        for file in ["characters.journal", "positions.snapshot"] {
+            fs::remove_file(dir.join(file)).unwrap();
+        }
+        fs::remove_dir(dir).unwrap();
+    }
+    #[test]
+    fn placement_snapshots_replace_durably_and_reject_corruption() {
+        let dir = std::env::temp_dir().join(format!("ac2-positions-{}", std::process::id()));
+        let mut final_position = Placement::HUMAN_START;
+        {
+            let mut store = Store::open(&dir).unwrap();
+            store.create("local", "Explorer").unwrap();
+            assert!(store.set_placement(2, final_position).is_err());
+            store.set_placement(1, final_position).unwrap();
+            store.flush_positions().unwrap();
+            final_position.coordinates[0] += 4.0;
+            store.set_placement(1, final_position).unwrap();
+            store.flush_positions().unwrap();
+        }
+        {
+            let store = Store::open(&dir).unwrap();
+            assert_eq!(store.placement(1), Some(final_position));
+            let bytes = fs::read(dir.join("positions.snapshot")).unwrap();
+            for end in 0..bytes.len() {
+                assert!(decode_positions(&bytes[..end], &store.characters).is_err());
+            }
+            let mut corrupt = bytes;
+            corrupt[20] ^= 1;
+            assert!(decode_positions(&corrupt, &store.characters).is_err());
+            // A valid checksum is insufficient when a placement references no character.
+            assert!(
+                decode_positions(
+                    &fs::read(dir.join("positions.snapshot")).unwrap(),
+                    &BTreeMap::new()
+                )
+                .is_err()
+            );
+        }
+        fs::remove_file(dir.join("characters.journal")).unwrap();
+        fs::remove_file(dir.join("positions.snapshot")).unwrap();
+        fs::remove_dir(dir).unwrap();
+    }
     fn request(name: &str) -> CharacterCreationRequest {
         CharacterCreationRequest {
             name: name.into(),

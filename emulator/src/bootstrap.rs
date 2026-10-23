@@ -13,6 +13,7 @@ pub const REGION: u32 = 1;
 pub struct Bootstrap {
     qualities: Vec<u8>,
     client_version: &'static str,
+    cells: Dat,
 }
 // Content identity for the two narrowly supported experimental layouts. This
 // fingerprint is a compatibility check, not authentication of untrusted assets.
@@ -76,6 +77,7 @@ impl Bootstrap {
         Ok(Self {
             qualities,
             client_version,
+            cells,
         })
     }
     pub fn supports(&self, request: &CharacterCreationRequest) -> bool {
@@ -109,6 +111,18 @@ impl Bootstrap {
         id: u64,
         request: &CharacterCreationRequest,
     ) -> Result<[Vec<u8>; 3], world::WorldError> {
+        self.events_at(id, request, crate::movement::Placement::HUMAN_START, 1)
+    }
+    pub fn contains_cell(&mut self, cell: u32) -> bool {
+        cell != 0 && self.cells.read(cell).is_ok()
+    }
+    pub fn events_at(
+        &self,
+        id: u64,
+        request: &CharacterCreationRequest,
+        placement: crate::movement::Placement,
+        instance_stamp: u16,
+    ) -> Result<[Vec<u8>; 3], world::WorldError> {
         if !self.supports(request) {
             return Err(world::WorldError::InvalidValue);
         }
@@ -118,15 +132,10 @@ impl Bootstrap {
             character_id: id,
             parent_visual_did: selection.parent_visual_did,
             entity_did: PLAYER_ENTITY,
-            cell_id: 0x02990109,
-            position: [59.060577, 240.199, -44.606205],
-            orientation: [
-                std::f32::consts::FRAC_1_SQRT_2,
-                0.0,
-                0.0,
-                std::f32::consts::FRAC_1_SQRT_2,
-            ],
-            instance_stamp: 1,
+            cell_id: placement.cell,
+            position: placement.coordinates,
+            orientation: placement.orientation(),
+            instance_stamp,
             visual_ordering_stamp: 0,
             timestamps: [0; 4],
         })?;
@@ -136,7 +145,33 @@ impl Bootstrap {
         let mut player = world::PLAYER_DESC.to_le_bytes().to_vec();
         player.extend_from_slice(&self.qualities[..8]);
         player.extend(description);
-        player.extend_from_slice(&self.qualities[52..200]);
+        // CBaseQualities::UnPack 005192f0: int table follows the description.
+        // Preserve authored base entries, then initialize the local level-one
+        // test profile. Stat IDs are recovered gmintstats.emp (2300002D).
+        let mut ints = std::collections::BTreeMap::new();
+        for entry in self.qualities[56..96].chunks_exact(8) {
+            ints.insert(
+                u32::from_le_bytes(entry[..4].try_into().unwrap()),
+                u32::from_le_bytes(entry[4..].try_into().unwrap()),
+            );
+        }
+        for key in [0x100u32, 0x101, 0x102, 0x103, 0x107, 0x108] {
+            ints.insert(key, 100);
+        }
+        ints.insert(0x12e, 1); // Level. These are explicit local test defaults.
+        player.extend((ints.len() as u32).to_le_bytes());
+        // PHashTable::StreamPack 00517fd0 encodes the bucket-size index in
+        // the high byte (zero here => 11 buckets, client table 00a7b140).
+        // add_for_unpacking 004fc9f0 links only consecutive entries in a
+        // bucket; revisiting a bucket overwrites its head and corrupts the
+        // element count. Numeric key order is not a valid wire order.
+        let mut ints: Vec<_> = ints.into_iter().collect();
+        ints.sort_unstable_by_key(|(key, _)| (key % 11, *key));
+        for (key, value) in ints {
+            player.extend(key.to_le_bytes());
+            player.extend(value.to_le_bytes());
+        }
+        player.extend_from_slice(&self.qualities[96..200]);
         player.extend(
             (if request.sex == 0x2000 {
                 0x470000ceu32

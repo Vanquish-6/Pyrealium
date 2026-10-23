@@ -2,35 +2,18 @@
 //! See docs/world-evidence.md for recovered evidence and the world-entry boundary.
 
 pub const CHAR_EXIT_GAME: u32 = 0x10027;
+pub const CHARACTER_DELETION: u32 = 0x10029;
 pub const CREATE_CHARACTER: u32 = 0x1002a;
 pub const ENTER_WORLD: u32 = 0x1002b;
 pub const CHARACTER_SET: u32 = 0x10055;
 pub const CHARACTER_ERROR: u32 = 0x10056;
 pub const CHAR_GEN_VERIFICATION: u32 = 0x10057;
 pub const CREATE_OBJECT: u32 = 0x10058;
-pub const DESTROY_OBJECT: u32 = 0x100c2;
 pub const CREATE_PLAYER: u32 = 0x10060;
 pub const PLAYER_DESC: u32 = 0x10068;
 pub const MIN_CHARACTER_SET: u32 = 0x100b8;
 pub const SCENE_RENDERING_COMPLETE: u32 = 0x100d1;
-pub const CLIENT_POSITION: u32 = 0x1008e;
 pub const CLIENT_SCRIPT_EVENT: u32 = 0x10053;
-pub const MAX_SCRIPT_ARGUMENT_BYTES: usize = 64 * 1024;
-
-/// Native CPositionPack. Floats retain their wire bits; this is a client report,
-/// not an authoritative physics result.
-/// Build 7148: SendEvt_CPosition 00496a90, CPositionPack::StreamPack
-/// 0069c060 and PositionOffset::StreamPack 00625930.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ClientPosition {
-    pub time_bits: u64,
-    pub cell: u32,
-    pub offset_bits: [u32; 3],
-    pub motion_heading: u32,
-    pub flags: u32,
-    pub stamps: [u16; 4],
-    pub jump_velocity_bits: Option<[u32; 3]>,
-}
 pub const MAX_STRING_BYTES: usize = 4096;
 pub const MAX_CHARACTERS: usize = 64;
 
@@ -50,15 +33,21 @@ impl std::fmt::Display for WorldError {
 }
 impl std::error::Error for WorldError {}
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ClientEvent {
-    /// Framing only: argument tags and function semantics require a specific
-    /// handler. Receiving this envelope never authorizes executing a function.
     ScriptCall {
         function_id: u32,
         arguments: Vec<u8>,
     },
-    Position(ClientPosition),
+    DeleteCharacter {
+        account: Vec<u8>,
+        character_id: u64,
+    },
+    Position(crate::movement::ClientPosition),
+    Look {
+        yaw: f32,
+        pitch: f32,
+    },
     CreateCharacter {
         account: Vec<u8>,
         request: CharacterCreationRequest,
@@ -170,10 +159,9 @@ pub fn decode_client_event(bytes: &[u8]) -> Result<ClientEvent, WorldError> {
     let mut reader = Reader { bytes, pos: 0 };
     let event = match reader.u32()? {
         CLIENT_SCRIPT_EVENT => {
-            // ECM_Interp::SendEvt_InterpSEvent and PackBuffer::Pack (7148).
             let function_id = reader.u32()?;
             let length = reader.u32()? as usize;
-            if length > MAX_SCRIPT_ARGUMENT_BYTES {
+            if length > crate::script::MAX_ARGUMENT_BYTES {
                 return Err(WorldError::LimitExceeded);
             }
             ClientEvent::ScriptCall {
@@ -181,41 +169,21 @@ pub fn decode_client_event(bytes: &[u8]) -> Result<ClientEvent, WorldError> {
                 arguments: reader.take(length)?.to_vec(),
             }
         }
-        CLIENT_POSITION => {
-            let time_bits = reader.u64()?;
-            let cell = reader.u32()?;
-            let offset_bits = [reader.u32()?, reader.u32()?, reader.u32()?];
-            let motion_heading = reader.u32()?;
-            let flags = reader.u32()?;
-            let mut stamps = [0; 4];
-            for stamp in &mut stamps {
-                *stamp = u16::from_le_bytes(reader.take(2)?.try_into().unwrap());
-            }
-            let jump_velocity_bits = if flags & 2 != 0 {
-                Some([reader.u32()?, reader.u32()?, reader.u32()?])
-            } else {
-                None
-            };
-            if !f64::from_bits(time_bits).is_finite()
-                || f64::from_bits(time_bits) < 0.0
-                || cell == 0
-                || flags & !6 != 0
-                || offset_bits
-                    .iter()
-                    .chain(jump_velocity_bits.iter().flatten())
-                    .any(|bits| !f32::from_bits(*bits).is_finite())
-            {
+        CHARACTER_DELETION => ClientEvent::DeleteCharacter {
+            account: reader.string()?,
+            character_id: reader.u64()?,
+        },
+        crate::movement::CLIENT_POSITION => {
+            let update = crate::movement::ClientPosition::decode(reader.take(bytes.len() - 4)?)?;
+            ClientEvent::Position(update)
+        }
+        crate::movement::CLIENT_LOOK => {
+            let yaw = f32::from_bits(reader.u32()?);
+            let pitch = f32::from_bits(reader.u32()?);
+            if !yaw.is_finite() || !pitch.is_finite() {
                 return Err(WorldError::InvalidValue);
             }
-            ClientEvent::Position(ClientPosition {
-                time_bits,
-                cell,
-                offset_bits,
-                motion_heading,
-                flags,
-                stamps,
-                jump_velocity_bits,
-            })
+            ClientEvent::Look { yaw, pitch }
         }
         CREATE_CHARACTER => {
             let account = reader.string()?;
@@ -390,6 +358,17 @@ pub fn character_error(error: CharacterError) -> Vec<u8> {
 pub fn char_exit_game() -> Vec<u8> {
     CHAR_EXIT_GAME.to_le_bytes().to_vec()
 }
+pub fn encode_delete_character(character_id: u64, account: &[u8]) -> Result<Vec<u8>, WorldError> {
+    let mut bytes = CHARACTER_DELETION.to_le_bytes().to_vec();
+    pack_string(&mut bytes, account, account.len())?;
+    bytes.extend(character_id.to_le_bytes());
+    Ok(bytes)
+}
+pub fn character_deleted(character_id: u64) -> Vec<u8> {
+    let mut bytes = CHARACTER_DELETION.to_le_bytes().to_vec();
+    bytes.extend(character_id.to_le_bytes());
+    bytes
+}
 
 pub(crate) fn literal_name(name: &str) -> Result<Vec<u8>, WorldError> {
     if name.len() > MAX_STRING_BYTES {
@@ -401,6 +380,15 @@ pub(crate) fn literal_name(name: &str) -> Result<Vec<u8>, WorldError> {
     let utf16: Vec<_> = units.iter().flat_map(|v| v.to_le_bytes()).collect();
     pack_string(&mut bytes, &utf16, units.len())?;
     Ok(bytes)
+}
+
+pub(crate) fn read_literal_name(bytes: &[u8]) -> Result<(String, usize), WorldError> {
+    let mut reader = Reader { bytes, pos: 0 };
+    if reader.u32()? != 0 || reader.u32()? != 0 || reader.u32()? != 0x10000 {
+        return Err(WorldError::InvalidValue);
+    }
+    let text = reader.wide_string()?;
+    Ok((text, reader.pos))
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -456,16 +444,6 @@ pub struct StationaryObject {
     pub timestamps: [u16; 4],
 }
 
-/// ECM_Physics::RecvEvt_DestroyObject (004951f0), InstanceIDWithStamp
-/// (004946d0): IID, instance stamp, other stamp. No client assets included.
-pub fn destroy_object(id: u64, instance_stamp: u16) -> Vec<u8> {
-    let mut bytes = DESTROY_OBJECT.to_le_bytes().to_vec();
-    bytes.extend(id.to_le_bytes());
-    bytes.extend(instance_stamp.to_le_bytes());
-    bytes.extend(0u16.to_le_bytes());
-    bytes
-}
-
 /// Builds a syntactically recovered CreateObject subset; not a complete player bootstrap.
 pub fn create_stationary_object(object: &StationaryObject) -> Result<Vec<u8>, WorldError> {
     let norm: f32 = object.orientation.iter().map(|v| v * v).sum();
@@ -515,6 +493,28 @@ pub fn empty_player_description(qualities_did: u32) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn deletion_uses_account_then_identity_and_exact_lengths() {
+        let bytes = encode_delete_character(7, b"a").unwrap();
+        assert_eq!(
+            bytes,
+            [0x29, 0, 1, 0, 1, 0, 0x16, 0, 7, 0, 0, 0, 0, 0, 0, 0]
+        );
+        assert_eq!(
+            decode_client_event(&bytes),
+            Ok(ClientEvent::DeleteCharacter {
+                account: b"a".to_vec(),
+                character_id: 7
+            })
+        );
+        for end in 0..bytes.len() {
+            assert!(decode_client_event(&bytes[..end]).is_err());
+        }
+        assert_eq!(
+            character_deleted(7),
+            [0x29, 0, 1, 0, 7, 0, 0, 0, 0, 0, 0, 0]
+        );
+    }
     #[test]
     fn native_creation_request_and_all_truncations() {
         // account a, UTF16 name A, 6 scalar choices, one key/float appearance entry.

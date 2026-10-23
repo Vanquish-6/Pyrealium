@@ -3,11 +3,18 @@ name = "pyrealium"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
-description = "Pyrealium AC2 local emulator"
-repository = "https://github.com/Vanquish-6/Pyrealium"
+description = "Evidence-driven AC2 build 7148 local emulator"
 license = "MIT"
 
 [dependencies]
+
+[[bench]]
+name = "transport"
+harness = false
+
+[[bench]]
+name = "scene"
+harness = false
 
 [profile.release]
 overflow-checks = true

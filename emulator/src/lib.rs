@@ -3,6 +3,10 @@
 pub mod bootstrap;
 pub mod crypto;
 pub mod dat;
+pub mod legacy;
+pub mod movement;
+pub mod scene;
+pub mod script;
 pub mod server;
 pub mod state;
 pub mod store;

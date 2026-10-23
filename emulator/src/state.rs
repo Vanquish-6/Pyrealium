@@ -14,7 +14,6 @@ pub struct Session {
     pub phase: Phase,
     cookie: u64,
     deadline_ms: u64,
-    pub last_reported_position: Option<crate::world::ClientPosition>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -24,7 +23,6 @@ pub enum StateError {
     NotOwner,
     BootstrapUnavailable,
     Expired,
-    StalePosition,
 }
 
 impl Session {
@@ -34,7 +32,6 @@ impl Session {
             phase: Phase::Connecting,
             cookie,
             deadline_ms: now_ms.saturating_add(30_000),
-            last_reported_position: None,
         }
     }
     pub fn connect_ack(&mut self, cookie: u64, now_ms: u64) -> Result<(), StateError> {
@@ -70,26 +67,6 @@ impl Session {
             return Err(StateError::BootstrapUnavailable);
         }
         self.phase = Phase::Entering { character };
-        self.last_reported_position = None;
-        Ok(())
-    }
-    /// Retain telemetry only. Collision, speed validation and replication must
-    /// precede using client reports as authoritative world positions.
-    pub fn report_position(
-        &mut self,
-        position: crate::world::ClientPosition,
-    ) -> Result<(), StateError> {
-        if !matches!(self.phase, Phase::InWorld { .. }) {
-            return Err(StateError::InvalidTransition);
-        }
-        if position.stamps != [1, 0, 0, 0]
-            || self.last_reported_position.as_ref().is_some_and(|last| {
-                f64::from_bits(position.time_bits) <= f64::from_bits(last.time_bits)
-            })
-        {
-            return Err(StateError::StalePosition);
-        }
-        self.last_reported_position = Some(position);
         Ok(())
     }
     pub fn scene_complete(&mut self) -> Result<(), StateError> {
@@ -102,26 +79,19 @@ impl Session {
             _ => Err(StateError::InvalidTransition),
         }
     }
-    pub fn can_leave(&self, character: u64) -> Result<(), StateError> {
+    pub fn touch(&mut self, now_ms: u64) {
+        self.deadline_ms = now_ms.saturating_add(120_000);
+    }
+    pub fn leave_world(&mut self, character_id: u64) -> Result<(), StateError> {
         match self.phase {
-            Phase::Entering { character: active } | Phase::InWorld { character: active } => {
-                if active == character {
-                    Ok(())
-                } else {
-                    Err(StateError::NotOwner)
-                }
+            Phase::Entering { character } | Phase::InWorld { character }
+                if character == character_id =>
+            {
+                self.phase = Phase::CharacterSelection;
+                Ok(())
             }
             _ => Err(StateError::InvalidTransition),
         }
-    }
-    pub fn leave_world(&mut self, character: u64) -> Result<(), StateError> {
-        self.can_leave(character)?;
-        self.phase = Phase::CharacterSelection;
-        self.last_reported_position = None;
-        Ok(())
-    }
-    pub fn touch(&mut self, now_ms: u64) {
-        self.deadline_ms = now_ms.saturating_add(120_000);
     }
     pub fn expired(&self, now_ms: u64) -> bool {
         now_ms >= self.deadline_ms
@@ -153,5 +123,17 @@ mod tests {
     fn handshake_expires() {
         let mut s = Session::new("local".into(), 42, 0);
         assert_eq!(s.connect_ack(42, 30_000), Err(StateError::Expired));
+    }
+    #[test]
+    fn logout_requires_active_identity_and_allows_reentry() {
+        let mut s = Session::new("local".into(), 42, 0);
+        s.connect_ack(42, 1).unwrap();
+        assert!(s.leave_world(1).is_err());
+        s.request_enter(1, "local", true).unwrap();
+        assert!(s.leave_world(2).is_err());
+        s.scene_complete().unwrap();
+        s.leave_world(1).unwrap();
+        assert_eq!(s.phase, Phase::CharacterSelection);
+        s.request_enter(1, "local", true).unwrap();
     }
 }

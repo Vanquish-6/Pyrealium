@@ -22,18 +22,33 @@ Pyrealium contains a Rust emulator and a Windows player launcher. The server use
 | Native character creation | Experimental human request handling; saving through the game's UI remains unverified |
 | World entry | **Verified with 7148 and converted test assets:** player and terrain render; client reports scene completion |
 | Player launcher | Windows forms for account, host, port, game folder and client executable |
-| Movement | Native client reports received in a live test, with malformed/stale report checks; authoritative physics remains unfinished |
+| Movement | Validated native reports drive saved placement and observer replication; authoritative collision remains unfinished |
 | Examination UI | Targeted asset compatibility repair included; user reports the revised getter/setter repair cleared the tested crash; full examination data remains unfinished |
 | Logout/re-entry | Session transition and message ordering fixed; repeated entry tested over UDP, native round trip still unverified |
-| Other player objects | Initial create/remove delivery at the shared spawn, gated on scene completion; tested with synthetic UDP peers, native two-client display unverified |
-| Vitals, combat, content | Unfinished. Grass is not an MMO, despite our marketing department's objections. |
+| Other player objects | Scene-ready, cell-indexed spawn/move/look/remove replication; two-peer UDP tested, native two-client display unverified |
+| Character recovery | Flushed deletion tombstones, reserved identities and offline restoration |
+| Script actions | Native envelopes route local chat, tells, visible-target selection and combat-mode requests; native UI acceptance pending |
+| Vitals, combat, content | Local vital defaults exist; damage, skills, inventory and populated content remain unfinished. Grass is not an MMO. |
 | Multiplayer hosting | Not enabled; the server binds to IPv4 loopback only |
 
 This is an early emulator, **not a complete or production-ready AC2 server**. The ambition is enormous. The status table is under oath.
 
-Movement reports are currently telemetry: the server records the client's latest reported position after world entry, and logs a `movement_reports` count. These reports do not yet drive collision, saved positions, or other players. We can now hear the client claiming it went somewhere. Teaching the server to demand receipts comes next.
+Movement reports now update durable placement and replicate to ready observers in the same cell. Re-entry restores position and correct native heading. The server checks timestamps, instance stamps, finite coordinates and available cells; authoritative collision and speed enforcement remain unfinished. We have receipts for where the client said it went. Cross-examining gravity remains on the docket.
 
-The server now tracks which other active players each client has received, sends their default-body object when the scene is ready, and removes it when they leave or disconnect. One character cannot enter through two sessions at once. This is the initial shared-spawn object lifecycle; remote movement, equipment appearance, NPC populations and spatial visibility remain unfinished. The crowd has an attendance sheet. Choreography is pending.
+The server tracks player presence through a cell index and publishes avatars after scene completion. One character cannot enter through two sessions at once. Movement, head look, cell transitions, logout and validated connection logoff use that same presence state. Same-cell visibility is an initial development policy; equipment appearance, NPC populations and recovered distance/occlusion rules remain unfinished.
+
+## One runtime, fewer excuses
+
+The standalone emulator now includes the integrated movement, persistence, scene,
+terrain and native script-action systems, alongside the existing launcher and DAT
+compatibility tools. See the [runtime guide](emulator/README.md) for current
+commands, tests, recovery rules and measured performance.
+
+The latest native entry test found a PlayerDesc crash caused by numeric ordering
+of hash-table entries. The serializer now groups entries by the client's hash
+buckets. An original-x86 verification reproduces the bad layout's eight reachable
+entries and the corrected layout's twelve. The repaired release still needs fresh
+native acceptance; a passing packet test does not get to impersonate a player.
 
 ## What's in the box
 
@@ -141,6 +156,8 @@ Packet tests establish protocol behavior. The native client established world re
 
 ## The next boss fight
 
-Native character creation, appearance choices, movement, vitals, inventory, combat, multiplayer, and the remaining minor inconvenience of implementing an MMO.
+Fresh native world/HUD/walking acceptance, appearance choices, inventory, skills,
+combat damage, content and broader multiplayer visibility remain work. Combat-mode
+messages are integrated; this does not magically teach a sword arithmetic.
 
 **No nostalgia. Suspicious confidence. Somehow, already a world.**

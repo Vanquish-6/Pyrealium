@@ -251,58 +251,113 @@ fn run_enter_rejection(game_data: Option<std::path::PathBuf>, expect_bootstrap: 
             &world::CREATE_OBJECT.to_le_bytes()
         );
         assert_eq!(&received_events[2][..4], &world::PLAYER_DESC.to_le_bytes());
-        // Complete entry, leave, then enter again over the same encrypted UDP
-        // session. The exit must use world stamp 2, not the global blob count.
-        for packet in peer
-            .send(
+        // Independently walk the variable-length name and int table. Appending
+        // stats without adjusting the count would shift every later qualities
+        // table and can make the real client read invalid script data.
+        let player = &received_events[2];
+        let name_units = u16::from_le_bytes(player[36..38].try_into().unwrap()) as usize;
+        assert_eq!(name_units, 8);
+        let int_offset = 60 + (14 + name_units * 2).next_multiple_of(4);
+        let count =
+            u32::from_le_bytes(player[int_offset..int_offset + 4].try_into().unwrap()) as usize;
+        let end = int_offset + 4 + count * 8;
+        let buckets: Vec<_> = player[int_offset + 4..end]
+            .chunks_exact(8)
+            .map(|entry| u32::from_le_bytes(entry[..4].try_into().unwrap()) % 11)
+            .collect();
+        assert!(buckets.windows(2).all(|pair| pair[0] <= pair[1]));
+        let ints: std::collections::BTreeMap<_, _> = player[int_offset + 4..end]
+            .chunks_exact(8)
+            .map(|entry| {
+                (
+                    u32::from_le_bytes(entry[..4].try_into().unwrap()),
+                    u32::from_le_bytes(entry[4..].try_into().unwrap()),
+                )
+            })
+            .collect();
+        assert_eq!(count, 12);
+        assert_eq!(ints.len(), count);
+        for stat in [0x100, 0x101, 0x102, 0x103, 0x107, 0x108] {
+            assert_eq!(ints[&stat], 100);
+        }
+        assert_eq!(ints[&0x12e], 1);
+        assert_eq!(ints[&0x3b6], u32::MAX);
+        assert_eq!(ints[&0x118], 78);
+        assert_eq!(ints[&0x2d1], 4);
+        assert_eq!(ints[&0x14], 31);
+        assert_eq!(ints[&0xa], 1);
+        let mut portal = pyrealium::dat::Dat::open(
+            std::path::PathBuf::from(std::env::var_os("AC2_TEST_COMPAT_DATA").unwrap())
+                .join("portal.dat"),
+        )
+        .unwrap();
+        let authored = portal.read(0x8100110f).unwrap();
+        assert_eq!(&player[end..player.len() - 4], &authored[96..200]);
+        assert_eq!(&player[player.len() - 4..], &0x470000cdu32.to_le_bytes());
+        let initial_cell = u32::from_le_bytes(received_events[1][28..32].try_into().unwrap());
+        let mut position = pyrealium::movement::Placement::HUMAN_START;
+        assert_eq!(initial_cell, position.cell);
+        position.coordinates[0] += 3.0;
+        let update = pyrealium::movement::ClientPosition {
+            time: 10.0,
+            placement: position,
+            motion: 0xbf7f7f7f,
+            cancel_moveto: false,
+            stamps: [1, 0, 0, 0],
+            jump_velocity: None,
+        };
+        let mut events = vec![
+            (
                 0x0300000000000002,
                 4,
-                &world::SCENE_RENDERING_COMPLETE.to_le_bytes(),
+                world::SCENE_RENDERING_COMPLETE.to_le_bytes().to_vec(),
+            ),
+            (0x0100000100000003, 3, update.encode().unwrap()),
+        ];
+        // Replayed time and another instance must not overwrite accepted placement.
+        let invalid = pyrealium::movement::ClientPosition {
+            placement: pyrealium::movement::Placement {
+                coordinates: [9.0; 3],
+                ..position
+            },
+            ..update
+        };
+        events.push((0x0100000200000004, 3, invalid.encode().unwrap()));
+        let mut logout = world::CHAR_EXIT_GAME.to_le_bytes().to_vec();
+        logout.extend(1u64.to_le_bytes());
+        events.push((0x0300000000000005, 4, logout));
+        for (id, queue, event) in events {
+            for packet in peer.send(id, queue, &event, Instant::now()).unwrap() {
+                socket.send_to(&packet, addr).unwrap();
+            }
+        }
+        let mut exit_events = Vec::new();
+        while exit_events.len() < 2 {
+            let (len, _) = socket.recv_from(&mut buf).unwrap();
+            let reply = peer.receive(&buf[..len], Instant::now()).unwrap();
+            exit_events.extend(reply.messages.into_iter().map(|m| m.data));
+        }
+        assert_eq!(exit_events[0], world::char_exit_game());
+        assert_eq!(&exit_events[1][..4], &world::CHARACTER_SET.to_le_bytes());
+        for packet in peer
+            .send(
+                0x0300000000000006,
+                4,
+                &world::encode_enter_world(1, b"local").unwrap(),
                 Instant::now(),
             )
             .unwrap()
         {
             socket.send_to(&packet, addr).unwrap();
         }
-        let mut exit = world::CHAR_EXIT_GAME.to_le_bytes().to_vec();
-        exit.extend(1u64.to_le_bytes());
-        for packet in peer
-            .send(0x0300000000000003, 4, &exit, Instant::now())
-            .unwrap()
-        {
-            socket.send_to(&packet, addr).unwrap();
-        }
-        let mut found_exit = false;
-        for _ in 0..32 {
-            let (len, _) = socket.recv_from(&mut buf).unwrap();
-            let reply = peer.receive(&buf[..len], Instant::now()).unwrap();
-            for message in reply.messages {
-                if message.data == world::char_exit_game() {
-                    assert_eq!(message.blob_id >> 32, 0x01000002);
-                    found_exit = true;
-                }
-            }
-            if found_exit {
-                break;
-            }
-        }
-        assert!(found_exit, "server did not acknowledge leaving the world");
-        for packet in peer
-            .send(0x0300000000000004, 4, &event, Instant::now())
-            .unwrap()
-        {
-            socket.send_to(&packet, addr).unwrap();
-        }
         let mut reentry = Vec::new();
-        for _ in 0..32 {
+        while reentry.len() < 3 {
             let (len, _) = socket.recv_from(&mut buf).unwrap();
             let reply = peer.receive(&buf[..len], Instant::now()).unwrap();
-            reentry.extend(reply.messages.into_iter().map(|message| message.data));
-            if reentry.len() == 3 {
-                break;
-            }
+            reentry.extend(reply.messages.into_iter().map(|m| m.data));
         }
-        assert_eq!(reentry, received_events);
+        assert_eq!(&reentry[1][24..26], &2u16.to_le_bytes());
+        assert_eq!(&reentry[1][32..36], &position.coordinates[0].to_le_bytes());
     } else {
         assert_eq!(
             received_events,
@@ -316,7 +371,15 @@ fn run_enter_rejection(game_data: Option<std::path::PathBuf>, expect_bootstrap: 
     {
         let store = Store::open(&dir).unwrap();
         assert_eq!(store.characters[&1].name, "Explorer");
+        if expect_bootstrap {
+            let mut position = pyrealium::movement::Placement::HUMAN_START;
+            position.coordinates[0] += 3.0;
+            assert_eq!(store.placement(1), Some(position));
+        }
     }
     std::fs::remove_file(dir.join("characters.journal")).unwrap();
+    if expect_bootstrap {
+        std::fs::remove_file(dir.join("positions.snapshot")).unwrap();
+    }
     std::fs::remove_dir(dir).unwrap();
 }

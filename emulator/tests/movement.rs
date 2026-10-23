@@ -1,4 +1,5 @@
 use pyrealium::{
+    movement::{CLIENT_POSITION, Motion},
     state::{Phase, Session, StateError},
     world::{self, ClientEvent, WorldError},
 };
@@ -6,7 +7,7 @@ use pyrealium::{
 // CPositionPack: double time, PositionOffset, packed motion/heading,
 // flags, four ushort stamps, optional Vector. All fields end on 4-byte boundaries.
 fn packet(jump: bool) -> Vec<u8> {
-    let mut bytes = world::CLIENT_POSITION.to_le_bytes().to_vec();
+    let mut bytes = CLIENT_POSITION.to_le_bytes().to_vec();
     bytes.extend(10.0f64.to_le_bytes());
     bytes.extend(0x02990109u32.to_le_bytes());
     for value in [59.060577f32, 240.199, -44.606205] {
@@ -33,9 +34,9 @@ fn native_position_bounds_and_optional_jump() {
         let ClientEvent::Position(position) = world::decode_client_event(&bytes).unwrap() else {
             panic!()
         };
-        assert_eq!(position.cell, 0x02990109);
+        assert_eq!(position.placement.cell, 0x02990109);
         assert_eq!(position.stamps, [1, 0, 0, 0]);
-        assert_eq!(position.jump_velocity_bits.is_some(), jump);
+        assert_eq!(position.jump_velocity.is_some(), jump);
         for length in 0..bytes.len() {
             assert!(world::decode_client_event(&bytes[..length]).is_err());
         }
@@ -74,42 +75,31 @@ fn malformed_position_is_rejected() {
 }
 
 #[test]
-fn reports_require_world_entry_and_current_spawn() {
+fn placement_replay_spawn_and_session_transitions() {
     let ClientEvent::Position(position) = world::decode_client_event(&packet(false)).unwrap()
     else {
         panic!()
     };
     let mut session = Session::new("local".into(), 42, 0);
-    assert_eq!(
-        session.report_position(position.clone()),
-        Err(StateError::InvalidTransition)
-    );
+    assert_eq!(session.scene_complete(), Err(StateError::InvalidTransition));
     session.connect_ack(42, 1).unwrap();
     session.request_enter(1, "local", true).unwrap();
-    assert_eq!(
-        session.report_position(position.clone()),
-        Err(StateError::InvalidTransition)
-    );
+    // Loading reports may update hidden placement, while scene publication and
+    // gameplay remain gated separately by the session in the actual runtime.
+    let mut motion = Motion::new(position.placement, 1);
     session.scene_complete().unwrap();
-    session.report_position(position.clone()).unwrap();
-    assert_eq!(
-        session.report_position(position.clone()),
-        Err(StateError::StalePosition)
-    );
-    let mut stale_spawn = position.clone();
-    stale_spawn.time_bits = 11.0f64.to_bits();
+    motion.accept(position).unwrap();
+    assert_eq!(motion.accept(position), Err(WorldError::InvalidValue));
+    let mut stale_spawn = position;
+    stale_spawn.time = 11.0;
     stale_spawn.stamps[0] = 2;
-    assert_eq!(
-        session.report_position(stale_spawn),
-        Err(StateError::StalePosition)
-    );
-    assert_eq!(session.last_reported_position, Some(position));
+    assert_eq!(motion.accept(stale_spawn), Err(WorldError::InvalidValue));
+    assert_eq!(motion.last, Some(position));
     assert_eq!(session.phase, Phase::InWorld { character: 1 });
-    assert_eq!(session.leave_world(2), Err(StateError::NotOwner));
+    assert_eq!(session.leave_world(2), Err(StateError::InvalidTransition));
     assert_eq!(session.phase, Phase::InWorld { character: 1 });
     session.leave_world(1).unwrap();
     assert_eq!(session.phase, Phase::CharacterSelection);
-    assert_eq!(session.last_reported_position, None);
     assert_eq!(session.leave_world(1), Err(StateError::InvalidTransition));
     session.request_enter(1, "local", true).unwrap();
     session.scene_complete().unwrap();
@@ -117,5 +107,12 @@ fn reports_require_world_entry_and_current_spawn() {
     else {
         panic!()
     };
-    session.report_position(position).unwrap();
+    let mut motion = Motion::new(position.placement, 2);
+    assert!(motion.accept(position).is_err());
+    motion
+        .accept(pyrealium::movement::ClientPosition {
+            stamps: [2, 0, 0, 0],
+            ..position
+        })
+        .unwrap();
 }

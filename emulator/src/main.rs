@@ -6,7 +6,7 @@ use std::{env, net::SocketAddr, path::PathBuf, process::ExitCode};
 
 fn usage() {
     println!(
-        "Pyrealium - AC2 local emulator\n\n  pyrealium serve [--bind 127.0.0.1:9000] [--account local] [--data data] [--seconds N] [--visual-did HEX] [--game-data PATH]\n  pyrealium stop [--data data]\n  pyrealium character-create --account local --name Explorer [--data data]\n  pyrealium character-create-human --account local --name Explorer [--data data]\n\nLocal developer authentication only; not an Internet authentication service.\nExperimental world entry requires a supported client/data profile. Movement and gameplay remain unfinished."
+        "Pyrealium - AC2 build 7148 emulator\n\n  pyrealium serve [--bind 127.0.0.1:9000] [--account local] [--data data] [--seconds N] [--visual-did HEX] [--game-data PATH]\n  pyrealium stop [--data data]\n  pyrealium character-create --account local --name Explorer [--data data]\n  pyrealium character-create-human --account local --name Explorer [--data data]\n  pyrealium character-list --account local [--data data]\n  pyrealium character-restore --account local --character-id 1 [--data data]\n  pyrealium legacy-inspect --landblocks PATH --id 0299FFFF\n  pyrealium legacy-validate --landblocks PATH\n\nLocal developer authentication only (native auth type 1). Optional DAT world bootstrap is experimental. Character list/restore commands require the server to be stopped. Terrain commands inspect extracted data; they do not establish gameplay compatibility."
     );
 }
 
@@ -27,6 +27,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut visual = None;
     let mut name = None;
     let mut game_data = None;
+    let mut landblocks = None;
+    let mut record_id = None;
+    let mut character_id = None;
     while let Some(arg) = args.next() {
         let value = args
             .next()
@@ -41,10 +44,54 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             }
             "--name" => name = Some(value),
             "--game-data" => game_data = Some(PathBuf::from(value)),
+            "--landblocks" => landblocks = Some(PathBuf::from(value)),
+            "--id" => record_id = Some(u32::from_str_radix(value.trim_start_matches("0x"), 16)?),
+            "--character-id" => character_id = Some(value.parse::<u64>()?),
             _ => return Err(format!("unknown option {arg}").into()),
         }
     }
     match command.as_str() {
+        "character-restore" => {
+            let mut store = Store::open(&data)?;
+            let id = character_id.ok_or("--character-id is required")?;
+            store.restore(&account, id)?;
+            println!("Restored character {id} for {account}.");
+        }
+        "character-list" => {
+            let store = Store::open(&data)?;
+            for c in store.characters.values().filter(|c| c.account == account) {
+                println!(
+                    "{}\t{}\t{}",
+                    c.id,
+                    if c.deleted { "deleted" } else { "active" },
+                    c.name
+                );
+            }
+        }
+        "legacy-validate" => {
+            let root = landblocks.ok_or("--landblocks is required")?;
+            let result = pyrealium::legacy::validate_terrain(&root)?;
+            println!(
+                "Validated {} terrain records; {} missing/empty linked info records. Terrain format validation only; gameplay compatibility is unverified.",
+                result.terrain_records, result.missing_info_records
+            );
+            if result.missing_info_records > 0 {
+                return Err("legacy terrain has missing/empty linked info records".into());
+            }
+        }
+        "legacy-inspect" => {
+            let root = landblocks.ok_or("--landblocks is required")?;
+            let id = record_id.ok_or("--id is required")?;
+            let bytes = pyrealium::legacy::read_record(&root, id)?;
+            let terrain = pyrealium::legacy::Terrain::decode(&bytes, id)?;
+            println!(
+                "Terrain 0x{:08X}: 17 x 17 samples, info 0x{:08X}, raw height range {:?}, {} bytes. Raw heights require the separate height table for world-space elevation.",
+                terrain.id,
+                terrain.info_id,
+                terrain.height_range(),
+                bytes.len()
+            );
+        }
         "serve" => server::run(Config {
             bind,
             account,

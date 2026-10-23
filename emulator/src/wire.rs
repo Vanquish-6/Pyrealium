@@ -1,4 +1,4 @@
-//! Bounded AC2 7148 wire primitives.
+//! Bounded AC2 7148 wire primitives. Evidence: recovery/exports/ac2client.exe/functions.
 //! Established-session ISAAC checksum masking is deliberately not implemented here.
 use std::fmt;
 
@@ -9,6 +9,7 @@ pub const CONNECT_ACK: u32 = 0x80000;
 pub const MAX_DATAGRAM: usize = 65507;
 pub const ENCRYPTED_CHECKSUM: u32 = 2;
 pub const ACK: u32 = 0x4000;
+pub const LOGOFF: u32 = 0x8000;
 pub const TIME_SYNC: u32 = 0x1000000;
 pub const ECHO_REQUEST: u32 = 0x2000000;
 pub const ECHO_RESPONSE: u32 = 0x4000000;
@@ -33,11 +34,19 @@ pub fn decode_session_packet(
     key: Option<u32>,
 ) -> Result<SessionPacket<'_>, WireError> {
     let h = Header::decode(bytes)?;
+    // ClientNet::LogOffServer 004c7590 sends CEmptyHeader<32768,3>.
+    // SharedNet::SendOptionalHeader 004c66e0 uses sequence zero, with the
+    // current recipient/iteration and no ISAAC masking. Only that form is
+    // supported; a combined logoff/application packet must not publish data.
+    if h.flags & LOGOFF != 0 && (h.flags != LOGOFF || h.sequence != 0) {
+        return Err(WireError::UnsupportedFlags);
+    }
     let allowed = ENCRYPTED_CHECKSUM
         | BLOB_FRAGMENTS
         | 0x1000
         | 0x2000
         | ACK
+        | LOGOFF
         | TIME_SYNC
         | ECHO_REQUEST
         | ECHO_RESPONSE
@@ -140,6 +149,7 @@ pub fn encode_control_packet(
 ) -> Result<Vec<u8>, WireError> {
     let flag = h.flags & !ENCRYPTED_CHECKSUM;
     let size = match flag {
+        LOGOFF if h.flags == LOGOFF && h.sequence == 0 => 0,
         ACK | ECHO_REQUEST => 4,
         TIME_SYNC | ECHO_RESPONSE => 8,
         FLOW => 6,
