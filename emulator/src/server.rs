@@ -64,21 +64,27 @@ impl Peer {
         ordered: bool,
         now: Instant,
     ) -> io::Result<Vec<Vec<u8>>> {
-        self.blob = self
+        let blob = self
             .blob
             .checked_add(1)
             .ok_or_else(|| invalid("blob sequence exhausted"))?;
-        let (namespace, stamp) = if ordered {
-            self.ordered_stamp = self
-                .ordered_stamp
+        let ordered_stamp = if ordered {
+            self.ordered_stamp
                 .checked_add(1)
-                .ok_or_else(|| invalid("world ordering stamp exhausted"))?;
-            (0x0100_0000u32, u32::from(self.ordered_stamp))
+                .ok_or_else(|| invalid("world ordering stamp exhausted"))?
         } else {
-            (0x0300_0000u32, self.blob & 0xffff)
+            self.ordered_stamp
         };
-        let id = (u64::from(namespace | stamp) << 32) | u64::from(self.blob);
-        self.transport.send(id, 1, bytes, now).map_err(other)
+        let (namespace, stamp) = if ordered {
+            (0x0100_0000u32, u32::from(ordered_stamp))
+        } else {
+            (0x0300_0000u32, blob & 0xffff)
+        };
+        let id = (u64::from(namespace | stamp) << 32) | u64::from(blob);
+        let packets = self.transport.send(id, 1, bytes, now).map_err(other)?;
+        self.blob = blob;
+        self.ordered_stamp = ordered_stamp;
+        Ok(packets)
     }
     fn send_event(&mut self, bytes: &[u8], now: Instant) -> io::Result<Vec<Vec<u8>>> {
         if matches!(
@@ -96,7 +102,7 @@ impl Peer {
         bytes: &[u8],
         now: Instant,
     ) -> io::Result<Vec<Vec<u8>>> {
-        self.blob = self
+        let blob = self
             .blob
             .checked_add(1)
             .filter(|v| *v <= 0xffff)
@@ -110,8 +116,10 @@ impl Peer {
         let namespace = if preworld { 0x2300_0000 } else { 0x0100_0000 };
         // Native client's CEventQueue is receive queue1; queue4 is its logon
         // chat queue and discards CharacterSet (0071fb10).
-        let id = (u64::from(namespace | self.blob) << 32) | u64::from(self.blob);
-        self.transport.send(id, queue, bytes, now).map_err(other)
+        let id = (u64::from(namespace | blob) << 32) | u64::from(blob);
+        let packets = self.transport.send(id, queue, bytes, now).map_err(other)?;
+        self.blob = blob;
+        Ok(packets)
     }
     fn control(&self, flag: u32, body: &[u8]) -> io::Result<Vec<u8>> {
         wire::encode_control_packet(
@@ -973,4 +981,61 @@ pub fn run(config: Config) -> io::Result<()> {
         counters.received, counters.rejected, counters.logins, counters.connected, counters.events
     );
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn peer() -> Peer {
+        Peer {
+            client_version: "7148".into(),
+            session: Session::new("local".into(), 1, 0),
+            transport: Transport::new(1, 2, 1, 1),
+            connect_packet: Vec::new(),
+            id: 1,
+            iteration: 1,
+            blob: 0,
+            selection_pending: None,
+            ordered_stamp: 0,
+            motion: None,
+            target: None,
+            combat: false,
+            last_chat_ms: None,
+            unhandled_scripts: BTreeSet::new(),
+        }
+    }
+
+    #[test]
+    fn rejected_sends_do_not_consume_blob_or_world_order_stamps() {
+        let now = Instant::now();
+        let mut peer = peer();
+        for _ in 0..256 {
+            peer.send_world_event(b"fill", false, now).unwrap();
+        }
+        assert_eq!((peer.blob, peer.ordered_stamp), (256, 0));
+        assert!(peer.send_world_event(b"ordered", true, now).is_err());
+        assert!(peer.send_to_queue(1, b"selection", now).is_err());
+        assert_eq!((peer.blob, peer.ordered_stamp), (256, 0));
+        peer.transport.acknowledge(257).unwrap();
+        let packets = peer.send_world_event(b"ordered", true, now).unwrap();
+        let fragment = wire::Fragment::decode(&packets[0][wire::HEADER_LEN..]).unwrap();
+        assert_eq!(fragment.blob_id, (0x0100_0001u64 << 32) | 257);
+        assert_eq!(fragment.data, b"ordered");
+        assert_eq!((peer.blob, peer.ordered_stamp), (257, 1));
+        peer.send_to_queue(1, b"selection", now).unwrap();
+        assert_eq!((peer.blob, peer.ordered_stamp), (258, 1));
+
+        // Invalid payloads and local stamp exhaustion must also leave both
+        // counters intact, including after a successful application reply.
+        assert!(peer.send_world_event(b"", true, now).is_err());
+        assert!(peer.send_to_queue(1, b"", now).is_err());
+        assert_eq!((peer.blob, peer.ordered_stamp), (258, 1));
+        peer.ordered_stamp = u16::MAX;
+        assert!(peer.send_world_event(b"exhausted", true, now).is_err());
+        assert_eq!((peer.blob, peer.ordered_stamp), (258, u16::MAX));
+        peer.blob = u16::MAX.into();
+        assert!(peer.send_to_queue(1, b"exhausted", now).is_err());
+        assert_eq!(peer.blob, u32::from(u16::MAX));
+    }
 }

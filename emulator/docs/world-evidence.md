@@ -604,3 +604,15 @@ Parser tests cover absolute/virtual dispatch, missing implementations, every
 truncation of the resolver tables, invalid offsets and overflowing instruction
 tables. The supplied archive was also resolved directly; native UI acceptance
 remains a separate check.
+
+## Reply counters under backpressure (2026-10-23)
+
+Per-peer blob IDs and ordered world stamps now commit after the transport accepts
+the complete message. Previously a rejected send (for example a full reliable
+queue) consumed an ordered stamp even though no packet carried it, leaving later
+ordered messages behind an impossible gap. Pre-world sends also preserve their
+counter on rejection. A saturation test fills all 256 pending packet slots,
+rejects both send paths, acknowledges the queue, and checks the next serialized
+fragment uses world stamp one. Empty payload rejection and stamp exhaustion
+also leave the counters unchanged. This does not implement application retries
+or a complete gameplay transaction system.
