@@ -23,7 +23,7 @@ Pyrealium contains a Rust emulator and a Windows player launcher. The server use
 | World entry | **Verified with 7148 and converted test assets:** player and terrain render; client reports scene completion |
 | Player launcher | Windows forms for account, host, port, game folder and client executable |
 | Movement | Native client reports received in a live test, with malformed/stale report checks; authoritative physics remains unfinished |
-| Examination UI | Targeted asset compatibility repair included; world entry after repair verified, opening examination after repair still awaiting native verification |
+| Examination UI | Targeted asset compatibility repair included; user reports the revised getter/setter repair cleared the tested crash; full examination data remains unfinished |
 | Logout/re-entry | Session transition and message ordering fixed; repeated entry tested over UDP, native round trip still unverified |
 | Vitals, combat, content | Unfinished. Grass is not an MMO, despite our marketing department's objections. |
 | Multiplayer hosting | Not enabled; the server binds to IPv4 loopback only |
@@ -68,7 +68,7 @@ Local authentication is an account-name allowlist, not proof of identity. An imp
 
 The verified setup uses the **recovered 7148 client** and a specific installed asset set associated with build 7230. Unconverted player settings in those assets crash 7148 during world loading. The supplied converter handles that specific layout; it is **not a universal client or DAT patcher**.
 
-**Examination compatibility repair:** the newer scripts call native function `0x009A0013`, which build 7148 does not implement. It sets an additional request field absent from the older client. The repair omits that setting at two hash-verified call sites, preserving legacy request behavior, script offsets and argument cleanup. World entry after repair is verified; opening examination after repair still needs native verification. The lawn passed inspection. The inspector is on probation.
+**Examination compatibility repair:** the newer scripts call native setter `0x009A0013` and getter `0x009A0014`, which build 7148 does not implement. They access an additional request field absent from the older client. The repair omits two setters and replaces one getter with its verified typed default (`0x203`), preserving script offsets and stack balance. The first setter-only repair was incomplete and still crashed on the getter; this revision upgrades that repair. The replacement instructions have been checked against the native 7148 interpreter handlers, and the user reports the revised repair cleared the tested crash. Full examination behavior and server-provided data remain unfinished. The lawn passed inspection. The inspector is on probation.
 
 Check a local asset set without modifying it:
 
@@ -95,7 +95,7 @@ cd emulator
 
 This builds the emulator, prepares `target/compat-7148`, creates the test human **Pyrealium** if the test store is new, starts a local server on **19270/19271**, and launches the client. The default test lasts 30 minutes; `-Seconds` and `-Port` override those values. Review any Windows Run prompt yourself.
 
-The converter copies `portal.dat` and modifies two settings records whose source hashes match the supported layout. The examination repair then changes six bytes in one additional script record. Both verify their output and leave the source installation unchanged. Allow roughly **1.6 GB plus working space**. Other large DATs are hardlinked, so the client must use **`--rodat`**, as both supplied launch paths do. Never run an updater or a writable client against this test directory. An unknown source record or an existing conversion destination is rejected by the converter.
+The converter copies `portal.dat` and modifies two settings records whose source hashes match the supported layout. The examination repair then changes three call sites in one additional script record. Both verify their output and leave the source installation unchanged. Allow roughly **1.6 GB plus working space**. Other large DATs are hardlinked, so the client must use **`--rodat`**, as both supplied launch paths do. Never run an updater or a writable client against this test directory. An unknown source record or an existing conversion destination is rejected by the converter.
 
 Keep the recovered client alongside its supporting DLLs. Game files are not downloaded or supplied by this project. The installed 7230 executable has not been verified with the emulator.
 

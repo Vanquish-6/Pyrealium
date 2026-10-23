@@ -7,7 +7,7 @@ use crate::{
     world,
 };
 use std::{
-    collections::{BTreeMap, hash_map::RandomState},
+    collections::{BTreeMap, BTreeSet, hash_map::RandomState},
     hash::BuildHasher,
     io,
     net::{SocketAddr, UdpSocket},
@@ -33,6 +33,7 @@ struct Peer {
     blob: u32,
     selection_pending: Option<Vec<u8>>,
     ordered_stamp: u16,
+    unhandled_scripts: BTreeSet<u32>,
 }
 #[derive(Default)]
 struct Counters {
@@ -288,6 +289,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                 blob: 0,
                                 selection_pending: None,
                                 ordered_stamp: 0,
+                                unhandled_scripts: BTreeSet::new(),
                             },
                         );
                         counters.logins += 1;
@@ -393,6 +395,24 @@ pub fn run(config: Config) -> io::Result<()> {
                             }
                         };
                         let response = match event {
+                            world::ClientEvent::ScriptCall {
+                                function_id,
+                                arguments,
+                            } => {
+                                counters.rejected += 1;
+                                // Explicitly unimplemented. Limit diagnostics per connection
+                                // and avoid logging arbitrary argument data from the client.
+                                if peer.unhandled_scripts.len() < 16
+                                    && peer.unhandled_scripts.insert(function_id)
+                                {
+                                    eprintln!(
+                                        "unimplemented client script function={function_id:#010x} argument_bytes={} phase={:?}",
+                                        arguments.len(),
+                                        peer.session.phase
+                                    );
+                                }
+                                continue;
+                            }
                             world::ClientEvent::Position(position) => {
                                 peer.session.report_position(position).map_err(other)?;
                                 counters.movement_reports += 1;

@@ -11,10 +11,11 @@ from pathlib import Path
 from ac2_dat import Dat, wlib_sections
 
 EXAMINATION_CALL = 0x009A0013
+EXAMINATION_GETTER = 0x009A0014
 EXTENDED = {2, 6, 7, 8, 0xB, 0xC, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x54, 0x56}
 
 
-def examination_calls(section):
+def examination_calls(section, function_ids=(EXAMINATION_CALL, EXAMINATION_GETTER)):
     """Walk serialized OpcodeStream instruction boundaries, not byte matches.
 
     Build 7148 OpcodeStream::WalkStream uses fixed-width words except its
@@ -38,7 +39,7 @@ def examination_calls(section):
             length = 12 + 8 * struct.unpack_from('<I', code, position + 8)[0]
         if position + length > size:
             raise ValueError('Truncated instruction')
-        if opcode == 0xC and struct.unpack_from('<I', code, position + 4)[0] == EXAMINATION_CALL:
+        if opcode == 0xC and struct.unpack_from('<I', code, position + 4)[0] in function_ids:
             found.append(position)
         position += length
     return found
@@ -51,10 +52,10 @@ def check(path):
     return {
         'check': '7148 examination native call',
         'record': '0x56000005',
-        'function': f'0x{EXAMINATION_CALL:08x}',
+        'functions': [f'0x{value:08x}' for value in (EXAMINATION_CALL, EXAMINATION_GETTER)],
         'incompatible': bool(offsets),
         'call_offsets': [f'0x{offset:x}' for offset in offsets],
-        'limitation': 'Checks one known missing native function only; a clean result does not certify compatibility.',
+        'limitation': 'Checks the known missing examination getter/setter only; a clean result does not certify compatibility.',
     }
 
 

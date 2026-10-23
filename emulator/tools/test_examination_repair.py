@@ -12,6 +12,7 @@ def fixture():
     code = bytearray(struct.pack('<I', 5) * ((repair.SITES[-1] + 16) // 4))
     for site in repair.SITES:
         code[site:site + 12] = repair.OLD
+    code[repair.GETTER_SITE:repair.GETTER_SITE + 12] = repair.GETTER_OLD
     section = struct.pack('<I', len(code)) + code
     return struct.pack('<I', repair.RECORD) + b'BS\x01\x1a' + struct.pack('<III', 15, 1, len(section)) + section
 
@@ -26,6 +27,7 @@ class ExaminationRepairTests(unittest.TestCase):
             expected = bytearray(data)
             for site in repair.SITES:
                 expected[24 + site:24 + site + 12] = repair.NEW
+            expected[24 + repair.GETTER_SITE:24 + repair.GETTER_SITE + 12] = repair.GETTER_NEW
             self.assertEqual(result, expected)
             # The replacement's zero-count pops leave the original two-argument
             # cleanup intact, with no return value expected from the setter.
@@ -33,9 +35,31 @@ class ExaminationRepairTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 repair.convert(result)
 
+    def test_getter_replacement_preserves_stack_and_enum_tag(self):
+        stack = [(123, 1), (0, 2), (99, 1)]
+        for word in struct.unpack('<III', repair.GETTER_NEW):
+            opcode = word & 255
+            if opcode == 5:
+                count = word >> 16
+                if count:
+                    del stack[-count:]
+            elif opcode == 3:
+                stack.append((word >> 16, (word >> 8) & 255))
+            else:
+                self.fail('Unexpected replacement instruction')
+        self.assertEqual(stack, [(123, 1), (0x203, 4)])
+
     def test_rejects_unrecognized_data(self):
         with self.assertRaises(ValueError):
             repair.convert(fixture())
+
+    def test_upgrade_from_first_repair(self):
+        original = fixture()
+        first = bytearray(original)
+        for site in repair.SITES:
+            first[24 + site:24 + site + 12] = repair.NEW
+        with patch.object(repair, 'SOURCE_HASH', hashlib.sha256(original).hexdigest()), patch.object(repair, 'FIRST_REPAIR_HASH', hashlib.sha256(first).hexdigest()):
+            self.assertEqual(repair.convert(first), repair.convert(original))
 
     def test_rejects_changed_argument_cleanup_even_with_matching_identity(self):
         data = bytearray(fixture())

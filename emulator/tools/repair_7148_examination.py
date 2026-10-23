@@ -1,4 +1,4 @@
-"""Downgrade two unsupported examination setters in an isolated 7148 test DAT.
+"""Downgrade unsupported examination accessors in an isolated 7148 test DAT.
 
 7148 has no corresponding request field. Preserve its legacy request behavior,
 stack cleanup and bytecode addresses. This does not implement newer examination
@@ -17,7 +17,14 @@ from make_7148_test_assets import write_chain
 
 RECORD = 0x56000005
 SOURCE_HASH = 'a9a4012c80d51d68d0beaefb8bd49e87ada9a8332efa4c62d5a82e0f28e5d3b3'
+FIRST_REPAIR_HASH = '53086c9c69abe6cfa1319589b65f3f93fffecb5afb79a0dffbc17ef913e6bdc1'
 SITES = (0x2FE78, 0x2FEE8)
+GETTER_SITE = 0x2FE58
+GETTER_OLD = struct.pack('<III', 0xC, 0x9A0014, 0x10005)
+# 7230 constructor 005cad30 initializes the added field to 0x203; getter
+# 004754d0 returns it with tag 4. Pop the reserved return slot and receiver,
+# push that typed default, then PopN(0). This includes the caller's cleanup.
+GETTER_NEW = struct.pack('<III', 0x20005, 0x02030403, 5)
 OLD = struct.pack('<III', 0xC, 0x9A0013, 0x20005)
 # PopN(0), PopN(0), original PopN(2): a void setter consumes no arguments
 # itself; the caller's existing PopN(2) performs cleanup. No offsets change.
@@ -25,10 +32,12 @@ NEW = struct.pack('<III', 5, 5, 0x20005)
 
 
 def convert(data):
-    if hashlib.sha256(data).hexdigest() != SOURCE_HASH:
+    digest = hashlib.sha256(data).hexdigest()
+    if digest not in (SOURCE_HASH, FIRST_REPAIR_HASH):
         raise ValueError('Unrecognized WLib; refusing an offset-based repair')
     sections = wlib_sections(data)
-    if examination_calls(sections[1]) != list(SITES):
+    expected_sites = sorted((*SITES, GETTER_SITE)) if digest == SOURCE_HASH else [GETTER_SITE]
+    if examination_calls(sections[1]) != expected_sites:
         raise ValueError('Unexpected examination call sites')
     position = 12
     while position < len(data):
@@ -42,9 +51,14 @@ def convert(data):
     result = bytearray(data)
     for offset in SITES:
         start = code_start + offset
-        if result[start:start + len(OLD)] != OLD:
+        expected = OLD if digest == SOURCE_HASH else NEW
+        if result[start:start + len(OLD)] != expected:
             raise ValueError('Unexpected call or argument cleanup')
         result[start:start + len(NEW)] = NEW
+    start = code_start + GETTER_SITE
+    if result[start:start + 12] != GETTER_OLD:
+        raise ValueError('Unexpected getter or argument cleanup')
+    result[start:start + 12] = GETTER_NEW
     if examination_calls(wlib_sections(result)[1]):
         raise ValueError('Repair retained an unsupported setter')
     return bytes(result)
@@ -62,7 +76,7 @@ def repair(directory):
         original = archive.read(RECORD)
         converted = convert(original)
         start, length, _ = archive.entries[RECORD]
-        backup = directory / 'examination-wlib-before-repair.bin'
+        backup = directory / 'examination-wlib-before-repair-v2.bin'
         if backup.exists():
             if backup.read_bytes() != original:
                 raise ValueError('Existing backup does not match')
@@ -85,10 +99,10 @@ def repair(directory):
                 os.fsync(output.fileno())
                 raise
     manifest['examination_repair'] = {
-        'source_sha256': SOURCE_HASH,
+        'source_sha256': hashlib.sha256(original).hexdigest(),
         'output_sha256': hashlib.sha256(converted).hexdigest(),
         'bytes': length,
-        'scope': 'Omit two newer request-field setters; retain 7148 legacy examination semantics',
+        'scope': 'Omit two newer setters and return typed default 0x203 from their getter; legacy request semantics only',
     }
     temporary = manifest_path.with_suffix('.json.tmp')
     temporary.write_text(json.dumps(manifest, indent=2))

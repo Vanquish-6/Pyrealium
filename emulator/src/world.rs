@@ -13,6 +13,8 @@ pub const PLAYER_DESC: u32 = 0x10068;
 pub const MIN_CHARACTER_SET: u32 = 0x100b8;
 pub const SCENE_RENDERING_COMPLETE: u32 = 0x100d1;
 pub const CLIENT_POSITION: u32 = 0x1008e;
+pub const CLIENT_SCRIPT_EVENT: u32 = 0x10053;
+pub const MAX_SCRIPT_ARGUMENT_BYTES: usize = 64 * 1024;
 
 /// Native CPositionPack. Floats retain their wire bits; this is a client report,
 /// not an authoritative physics result.
@@ -49,6 +51,12 @@ impl std::error::Error for WorldError {}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ClientEvent {
+    /// Framing only: argument tags and function semantics require a specific
+    /// handler. Receiving this envelope never authorizes executing a function.
+    ScriptCall {
+        function_id: u32,
+        arguments: Vec<u8>,
+    },
     Position(ClientPosition),
     CreateCharacter {
         account: Vec<u8>,
@@ -160,6 +168,18 @@ impl<'a> Reader<'a> {
 pub fn decode_client_event(bytes: &[u8]) -> Result<ClientEvent, WorldError> {
     let mut reader = Reader { bytes, pos: 0 };
     let event = match reader.u32()? {
+        CLIENT_SCRIPT_EVENT => {
+            // ECM_Interp::SendEvt_InterpSEvent and PackBuffer::Pack (7148).
+            let function_id = reader.u32()?;
+            let length = reader.u32()? as usize;
+            if length > MAX_SCRIPT_ARGUMENT_BYTES {
+                return Err(WorldError::LimitExceeded);
+            }
+            ClientEvent::ScriptCall {
+                function_id,
+                arguments: reader.take(length)?.to_vec(),
+            }
+        }
         CLIENT_POSITION => {
             let time_bits = reader.u64()?;
             let cell = reader.u32()?;
