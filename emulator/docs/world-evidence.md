@@ -571,3 +571,36 @@ Store tests cover ownership, deletion/restoration, restart, checksum-valid inval
 events and exhaustion without another write. The two-peer UDP flow now verifies
 that a character released by one connection receives stamp two when entered by
 the other, then verifies the next stamp after reopening the store.
+
+## Reproducible UI initializer resolution (2026-10-23)
+
+`tools/wsl_function.py` reads WLib record `0x56000005` from the supplied portal
+archive and resolves numeric functions using `VTableSection::StreamPack`
+(`006e89d0`) and `Resolver::GetFunctionOffset` (`00455460`). It honors absolute
+function IDs and concrete object-package mappings for virtual calls. Optional
+linear instruction boundaries follow `OpcodeStream::WalkStream` (`006ec490`),
+including switch tables; immediate words are not mistaken for instructions.
+All reads and counts are checked against section bounds. No archive is changed
+and no script is executed.
+
+On the current converted/repaired native-test archive, record SHA-256
+`b402b04a6ef587e83145524ad8612c66e6a16d3a710fc7addeb78e8df22ba21d`,
+UI_Load `0x82120027` resolves to opcode offset `0x101654`. Its forwarding stub
+loads fourteen argument slots followed by the receiver, calls `0x1aa40065`, and
+cleans fifteen stack slots. Resolving that method for object package `0x1aa4`
+produces offset `0x363ac`. These are static identities and stack observations;
+they do not establish the fourteen argument schemas or their safe defaults.
+The runtime does not yet send UI_Load. A bounded linear window is not a complete
+function extent or a control-flow graph.
+
+Example (supply the actual archive path):
+
+```text
+python tools/wsl_function.py --portal PATH/portal.dat --function 0x82120027 --instructions 30
+python tools/wsl_function.py --portal PATH/portal.dat --function 0x1aa40065 --object-package 0x1aa4
+```
+
+Parser tests cover absolute/virtual dispatch, missing implementations, every
+truncation of the resolver tables, invalid offsets and overflowing instruction
+tables. The supplied archive was also resolved directly; native UI acceptance
+remains a separate check.
