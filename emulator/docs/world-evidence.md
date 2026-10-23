@@ -540,3 +540,13 @@ The real-UDP two-player test now crosses script and movement queues, rejects
 gameplay during scene loading, rejects an invisible target and malformed combat
 arguments, delivers mode replies, broadcasts chat and routes a private reply,
 then continues the existing movement/logout/deletion/logoff flow.
+
+The integrated scene stores loading bodies outside the ready-cell index. This
+keeps the readiness gate without adding per-observer body lookups to movement,
+look or chat iteration. Tests move a hidden body between cells and enter a ready
+observer in its temporary cell, verifying no premature create; later activation
+publishes its latest placement in the correct cell. A repeat of the scene
+benchmark on the integrated code measured median movement/look costs of 25/12 ns
+with one player, 466/451 ns with sixteen, and 1,373/1,278 ns with sixty-four.
+The samples are at `target/performance/scene-integrated.txt`; these remain isolated
+application costs, not native player latency measurements.

@@ -93,7 +93,6 @@ impl Scene {
         let data: Arc<[u8]> = bytes.into();
         Ok(self.cells[&body.placement.cell]
             .iter()
-            .filter(|id| self.bodies[id].ready)
             .map(|&recipient| Delivery {
                 recipient,
                 data: data.clone(),
@@ -107,7 +106,6 @@ impl Scene {
             .flatten()
             .copied()
             .filter(move |id| *id != except)
-            .filter(|id| self.bodies[id].ready)
     }
     fn neighbors(&self, cell: u32, except: u64) -> BTreeSet<u64> {
         self.neighbor_ids(cell, except).collect()
@@ -121,10 +119,6 @@ impl Scene {
         if self.bodies.len() >= 64 || self.bodies.contains_key(&body.id) {
             return Err(WorldError::LimitExceeded);
         }
-        self.cells
-            .entry(body.placement.cell)
-            .or_default()
-            .insert(body.id);
         self.bodies.insert(body.id, body);
         Ok(())
     }
@@ -134,6 +128,10 @@ impl Scene {
             return Ok(Vec::new());
         }
         body.ready = true;
+        self.cells
+            .entry(body.placement.cell)
+            .or_default()
+            .insert(id);
         let body = &self.bodies[&id];
         let mut deliveries = Vec::new();
         let spawn: Arc<[u8]> = body.spawn.clone().into();
@@ -161,10 +159,10 @@ impl Scene {
         let Some(body) = self.bodies.remove(&id) else {
             return Vec::new();
         };
-        self.unindex(body.placement.cell, id);
         if !body.ready {
             return Vec::new();
         }
+        self.unindex(body.placement.cell, id);
         let event = body.destroy();
         self.neighbors(body.placement.cell, id)
             .into_iter()
@@ -188,13 +186,6 @@ impl Scene {
         let old_cell = body.placement.cell;
         if !body.ready {
             self.bodies.get_mut(&id).unwrap().relocate(update.placement);
-            if old_cell != update.placement.cell {
-                self.unindex(old_cell, id);
-                self.cells
-                    .entry(update.placement.cell)
-                    .or_default()
-                    .insert(id);
-            }
             return Ok(Vec::new());
         }
         if old_cell == update.placement.cell {
@@ -378,15 +369,33 @@ mod tests {
             stamps: [1, 0, 0, 0],
             jump_velocity: None,
         };
+        assert!(
+            scene
+                .update(
+                    2,
+                    1,
+                    &ClientPosition {
+                        placement: Placement {
+                            cell: 2,
+                            ..update.placement
+                        },
+                        ..update
+                    }
+                )
+                .unwrap()
+                .is_empty()
+        );
+        assert!(scene.enter(body(3, 2)).unwrap().is_empty());
+        assert!(!scene.can_observe(3, 2));
         assert!(scene.update(2, 1, &update).unwrap().is_empty());
         let visible = scene.activate(2).unwrap();
         assert_eq!(visible.len(), 2);
         assert_eq!(&visible[0].data[32..36], &1f32.to_le_bytes());
         assert!(scene.can_observe(1, 2));
         assert!(scene.activate(2).unwrap().is_empty());
-        scene.enter_hidden(body(3, 1)).unwrap();
+        scene.enter_hidden(body(4, 1)).unwrap();
         assert_eq!(scene.broadcast(1, vec![1]).unwrap().len(), 2);
-        assert!(scene.remove(3).is_empty());
+        assert!(scene.remove(4).is_empty());
         assert!(scene.activate(99).is_err());
     }
     #[test]
