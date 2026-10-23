@@ -34,6 +34,8 @@ struct Peer {
     selection_pending: Option<Vec<u8>>,
     ordered_stamp: u16,
     unhandled_scripts: BTreeSet<u32>,
+    world_object: Option<Vec<u8>>,
+    visible_objects: BTreeSet<u64>,
 }
 #[derive(Default)]
 struct Counters {
@@ -121,6 +123,81 @@ impl Peer {
         )
         .map_err(other)
     }
+}
+
+/// All currently supported characters share one fixed bootstrap spawn. Keep
+/// this deliberately scoped to that scene until authoritative positions and
+/// spatial interest exist. Client movement telemetry is not spawn authority.
+fn synchronize_world_objects(
+    peers: &mut BTreeMap<SocketAddr, Peer>,
+    socket: &UdpSocket,
+    now: Instant,
+) -> io::Result<()> {
+    let objects: BTreeMap<u64, Vec<u8>> = peers
+        .values()
+        .filter_map(|peer| {
+            if let Phase::InWorld { character } = peer.session.phase {
+                peer.world_object
+                    .as_ref()
+                    .map(|bytes| (character, bytes.clone()))
+            } else {
+                None
+            }
+        })
+        .collect();
+    let mut failed = Vec::new();
+    for (address, peer) in peers.iter_mut() {
+        let Phase::InWorld { character } = peer.session.phase else {
+            continue;
+        };
+        let result = (|| -> io::Result<()> {
+            let (removed, added) = visibility_changes(character, &peer.visible_objects, &objects);
+            for id in removed {
+                // The current bootstrap uses instance 1. Destroy before any future
+                // re-create, in this recipient's ordered world stream.
+                for packet in peer.send_world_event(&world::destroy_object(id, 1), true, now)? {
+                    socket.send_to(&packet, *address)?;
+                }
+                peer.visible_objects.remove(&id);
+            }
+            for id in added {
+                // Unlike the local player's initial creation, these are sent only
+                // after SceneRenderingComplete established the recipient's bookkeeper.
+                for packet in peer.send_world_event(&objects[&id], true, now)? {
+                    socket.send_to(&packet, *address)?;
+                }
+                peer.visible_objects.insert(id);
+            }
+            Ok(())
+        })();
+        if let Err(error) = result {
+            // A stalled recipient must not stop every other player's server.
+            eprintln!("closing session after object delivery failure: {error}");
+            failed.push(*address);
+        }
+    }
+    for address in failed {
+        peers.remove(&address);
+    }
+    Ok(())
+}
+
+fn visibility_changes(
+    own_id: u64,
+    known: &BTreeSet<u64>,
+    objects: &BTreeMap<u64, Vec<u8>>,
+) -> (Vec<u64>, Vec<u64>) {
+    let removed = known
+        .iter()
+        .filter(|id| !objects.contains_key(id))
+        .copied()
+        .collect();
+    let added = objects
+        .keys()
+        .filter(|id| **id != own_id && !known.contains(id))
+        .copied()
+        .collect();
+    (removed, added)
 }
 
 pub fn run(config: Config) -> io::Result<()> {
@@ -290,11 +367,29 @@ pub fn run(config: Config) -> io::Result<()> {
                                 selection_pending: None,
                                 ordered_stamp: 0,
                                 unhandled_scripts: BTreeSet::new(),
+                                world_object: None,
+                                visible_objects: BTreeSet::new(),
                             },
                         );
                         counters.logins += 1;
                         return Ok(vec![packet]);
                     }
+                    // Reserve a character through both entry and active play. Two
+                    // sessions must never publish the same runtime object ID.
+                    let occupied: BTreeSet<u64> = peers
+                        .iter()
+                        .filter_map(|(other_addr, p)| {
+                            if *other_addr == addr || p.session.expired(now_ms) {
+                                return None;
+                            }
+                            match p.session.phase {
+                                Phase::Entering { character } | Phase::InWorld { character } => {
+                                    Some(character)
+                                }
+                                _ => None,
+                            }
+                        })
+                        .collect();
                     let peer = peers
                         .get_mut(&addr)
                         .ok_or_else(|| invalid("unknown peer"))?;
@@ -498,6 +593,15 @@ pub fn run(config: Config) -> io::Result<()> {
                                 character_id,
                                 account,
                             } => {
+                                if occupied.contains(&character_id) {
+                                    replies.extend(peer.send_event(
+                                        &world::character_error(
+                                            world::CharacterError::CouldNotPlaceCharacter,
+                                        ),
+                                        now,
+                                    )?);
+                                    continue;
+                                }
                                 let owned = account == peer.session.account.as_bytes()
                                     && store
                                         .characters
@@ -531,6 +635,8 @@ pub fn run(config: Config) -> io::Result<()> {
                                                 .request_enter(character_id, &config.account, true)
                                                 .map_err(other)?;
                                             peer.ordered_stamp = 0;
+                                            peer.world_object = Some(events[1].clone());
+                                            peer.visible_objects.clear();
                                             for (index, event) in events.iter().enumerate() {
                                                 replies.extend(peer.send_world_event(
                                                     event,
@@ -555,6 +661,8 @@ pub fn run(config: Config) -> io::Result<()> {
                                 // Queue the exit before discarding the world ordering context.
                                 replies.extend(peer.send_event(&world::char_exit_game(), now)?);
                                 peer.session.leave_world(character_id).map_err(other)?;
+                                peer.world_object = None;
+                                peer.visible_objects.clear();
                                 eprintln!("character {character_id} returned to selection");
                                 continue;
                             }
@@ -604,6 +712,7 @@ pub fn run(config: Config) -> io::Result<()> {
         for addr in remove {
             peers.remove(&addr);
         }
+        synchronize_world_objects(&mut peers, &primary, now)?;
         if now_ms >= next_report {
             println!(
                 "sessions={} received={} rejected={} logins={} connected={} events={} movement_reports={}",
@@ -624,4 +733,128 @@ pub fn run(config: Config) -> io::Result<()> {
         counters.received, counters.rejected, counters.logins, counters.connected, counters.events
     );
     Ok(())
+}
+
+#[cfg(test)]
+mod object_tests {
+    use super::*;
+
+    fn peer(character: u64, active: bool) -> Peer {
+        let mut session = Session::new("local".into(), 1, 0);
+        session.connect_ack(1, 0).unwrap();
+        session.request_enter(character, "local", true).unwrap();
+        if active {
+            session.scene_complete().unwrap();
+        }
+        let object = world::create_stationary_object(&world::StationaryObject {
+            character_id: character,
+            parent_visual_did: 0x1f000023,
+            entity_did: 0x4700110f,
+            cell_id: 0x02990109,
+            position: [1.0, 2.0, 3.0],
+            orientation: [1.0, 0.0, 0.0, 0.0],
+            instance_stamp: 1,
+            visual_ordering_stamp: 0,
+            timestamps: [0; 4],
+        })
+        .unwrap();
+        Peer {
+            client_version: "7148".into(),
+            session,
+            transport: Transport::new(10, 20, 1, 1),
+            connect_packet: Vec::new(),
+            id: 1,
+            iteration: 1,
+            blob: 0,
+            selection_pending: None,
+            ordered_stamp: 0,
+            unhandled_scripts: BTreeSet::new(),
+            world_object: Some(object),
+            visible_objects: BTreeSet::new(),
+        }
+    }
+
+    #[test]
+    fn object_delivery_failure_retires_only_the_failed_session() {
+        let server = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let a = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let b = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let aa = a.local_addr().unwrap();
+        let ba = b.local_addr().unwrap();
+        let mut broken = peer(1, true);
+        broken.ordered_stamp = u16::MAX;
+        let mut peers = BTreeMap::from([(aa, broken), (ba, peer(2, true))]);
+        synchronize_world_objects(&mut peers, &server, Instant::now()).unwrap();
+        assert!(!peers.contains_key(&aa));
+        assert!(peers.contains_key(&ba));
+        synchronize_world_objects(&mut peers, &server, Instant::now()).unwrap();
+        assert!(peers[&ba].visible_objects.is_empty());
+    }
+
+    #[test]
+    fn udp_object_lifecycle_waits_for_scene_and_removes_disconnected_objects() {
+        let server = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let a = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let b = UdpSocket::bind("127.0.0.1:0").unwrap();
+        a.set_read_timeout(Some(Duration::from_secs(1))).unwrap();
+        b.set_read_timeout(Some(Duration::from_secs(1))).unwrap();
+        let aa = a.local_addr().unwrap();
+        let ba = b.local_addr().unwrap();
+        let mut peers = BTreeMap::from([(aa, peer(1, true)), (ba, peer(2, false))]);
+        let now = Instant::now();
+        synchronize_world_objects(&mut peers, &server, now).unwrap();
+        assert!(peers.values().all(|p| p.visible_objects.is_empty()));
+        peers
+            .get_mut(&ba)
+            .unwrap()
+            .session
+            .scene_complete()
+            .unwrap();
+        synchronize_world_objects(&mut peers, &server, now).unwrap();
+        let mut receiver = Transport::new(20, 10, 1, 1);
+        let mut bytes = [0; 4096];
+        let size = a.recv(&mut bytes).unwrap();
+        let first = receiver.receive(&bytes[..size], now).unwrap();
+        assert_eq!(first.messages.len(), 1);
+        assert_eq!(
+            first.messages[0].data,
+            *peers[&ba].world_object.as_ref().unwrap()
+        );
+        assert_eq!(first.messages[0].blob_id >> 32, 0x01000001);
+        let size = b.recv(&mut bytes).unwrap();
+        let other = Transport::new(20, 10, 1, 1)
+            .receive(&bytes[..size], now)
+            .unwrap();
+        assert_eq!(
+            other.messages[0].data,
+            *peers[&aa].world_object.as_ref().unwrap()
+        );
+        // Repeated ticks must not enqueue another create.
+        synchronize_world_objects(&mut peers, &server, now).unwrap();
+        assert_eq!(peers[&aa].ordered_stamp, 1);
+        assert_eq!(peers[&ba].ordered_stamp, 1);
+        peers.remove(&ba); // same reconciliation path as timeout/retry exhaustion
+        synchronize_world_objects(&mut peers, &server, now).unwrap();
+        let size = a.recv(&mut bytes).unwrap();
+        let removed = receiver.receive(&bytes[..size], now).unwrap();
+        assert_eq!(removed.messages[0].blob_id >> 32, 0x01000002);
+        assert_eq!(
+            removed.messages[0].data,
+            [0xc2, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]
+        );
+        assert!(peers[&aa].visible_objects.is_empty());
+        // Reappearing gets a new ordered create, rather than a stale cached view.
+        peers.insert(ba, peer(2, true));
+        synchronize_world_objects(&mut peers, &server, now).unwrap();
+        let size = a.recv(&mut bytes).unwrap();
+        let recreated = receiver.receive(&bytes[..size], now).unwrap();
+        assert_eq!(recreated.messages[0].blob_id >> 32, 0x01000003);
+        assert_eq!(recreated.messages[0].data, first.messages[0].data);
+        peers.get_mut(&ba).unwrap().session.leave_world(2).unwrap();
+        synchronize_world_objects(&mut peers, &server, now).unwrap();
+        let size = a.recv(&mut bytes).unwrap();
+        let logout = receiver.receive(&bytes[..size], now).unwrap();
+        assert_eq!(logout.messages[0].data, removed.messages[0].data);
+        assert!(peers[&aa].visible_objects.is_empty());
+    }
 }

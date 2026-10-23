@@ -8,6 +8,7 @@ pub const CHARACTER_SET: u32 = 0x10055;
 pub const CHARACTER_ERROR: u32 = 0x10056;
 pub const CHAR_GEN_VERIFICATION: u32 = 0x10057;
 pub const CREATE_OBJECT: u32 = 0x10058;
+pub const DESTROY_OBJECT: u32 = 0x100c2;
 pub const CREATE_PLAYER: u32 = 0x10060;
 pub const PLAYER_DESC: u32 = 0x10068;
 pub const MIN_CHARACTER_SET: u32 = 0x100b8;
@@ -453,6 +454,16 @@ pub struct StationaryObject {
     pub instance_stamp: u16,
     pub visual_ordering_stamp: u16,
     pub timestamps: [u16; 4],
+}
+
+/// ECM_Physics::RecvEvt_DestroyObject (004951f0), InstanceIDWithStamp
+/// (004946d0): IID, instance stamp, other stamp. No client assets included.
+pub fn destroy_object(id: u64, instance_stamp: u16) -> Vec<u8> {
+    let mut bytes = DESTROY_OBJECT.to_le_bytes().to_vec();
+    bytes.extend(id.to_le_bytes());
+    bytes.extend(instance_stamp.to_le_bytes());
+    bytes.extend(0u16.to_le_bytes());
+    bytes
 }
 
 /// Builds a syntactically recovered CreateObject subset; not a complete player bootstrap.

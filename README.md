@@ -25,12 +25,15 @@ Pyrealium contains a Rust emulator and a Windows player launcher. The server use
 | Movement | Native client reports received in a live test, with malformed/stale report checks; authoritative physics remains unfinished |
 | Examination UI | Targeted asset compatibility repair included; user reports the revised getter/setter repair cleared the tested crash; full examination data remains unfinished |
 | Logout/re-entry | Session transition and message ordering fixed; repeated entry tested over UDP, native round trip still unverified |
+| Other player objects | Initial create/remove delivery at the shared spawn, gated on scene completion; tested with synthetic UDP peers, native two-client display unverified |
 | Vitals, combat, content | Unfinished. Grass is not an MMO, despite our marketing department's objections. |
 | Multiplayer hosting | Not enabled; the server binds to IPv4 loopback only |
 
 This is an early emulator, **not a complete or production-ready AC2 server**. The ambition is enormous. The status table is under oath.
 
 Movement reports are currently telemetry: the server records the client's latest reported position after world entry, and logs a `movement_reports` count. These reports do not yet drive collision, saved positions, or other players. We can now hear the client claiming it went somewhere. Teaching the server to demand receipts comes next.
+
+The server now tracks which other active players each client has received, sends their default-body object when the scene is ready, and removes it when they leave or disconnect. One character cannot enter through two sessions at once. This is the initial shared-spawn object lifecycle; remote movement, equipment appearance, NPC populations and spatial visibility remain unfinished. The crowd has an attendance sheet. Choreography is pending.
 
 ## What's in the box
 
