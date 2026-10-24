@@ -429,6 +429,44 @@ impl Store {
         self.characters.get_mut(&id).unwrap().progression = next;
         Ok(())
     }
+    /// Items and payment/rewards become visible only after one durable record.
+    pub fn player_transaction(
+        &mut self,
+        account: &str,
+        id: u64,
+        items: &[crate::inventory::Command],
+        changes: &[crate::progression::Command],
+    ) -> io::Result<()> {
+        let character = self
+            .characters
+            .get(&id)
+            .filter(|c| c.account == account && !c.deleted)
+            .ok_or_else(|| invalid("transaction character not owned"))?;
+        let first = if items.iter().any(|command| command.allocated_id().is_some()) {
+            Some(self.next_item_id()?)
+        } else {
+            None
+        };
+        let (inventory, progression) = crate::player_transaction::candidate(
+            &character.inventory,
+            &character.progression,
+            items,
+            changes,
+            first,
+        )?;
+        if inventory == character.inventory && progression == character.progression {
+            return Ok(());
+        }
+        self.append_record(&format!(
+            "a1\t{id}\t{}\t{}",
+            crate::player_transaction::encode_items(items),
+            crate::player_transaction::encode_changes(changes)
+        ))?;
+        let character = self.characters.get_mut(&id).unwrap();
+        character.inventory = inventory;
+        character.progression = progression;
+        Ok(())
+    }
     pub fn inventory_command(
         &mut self,
         account: &str,
@@ -1231,6 +1269,40 @@ fn decode_journal_collect(
             if compacted.is_some() {
                 run.record(id, &character.progression, line);
             }
+            continue;
+        }
+        if fields.len() == 4 && fields[0] == "a1" {
+            let id = fields[1]
+                .parse::<u64>()
+                .map_err(|_| invalid("invalid transaction owner"))?;
+            let items = crate::player_transaction::decode_items(fields[2])?;
+            let changes = crate::player_transaction::decode_changes(fields[3])?;
+            let first = if items.iter().any(|command| command.allocated_id().is_some()) {
+                Some(
+                    records
+                        .values()
+                        .map(|c| c.inventory.high_water())
+                        .max()
+                        .unwrap_or(crate::inventory::ITEM_NAMESPACE)
+                        .checked_add(1)
+                        .ok_or_else(|| invalid("transaction item identity exhausted"))?,
+                )
+            } else {
+                None
+            };
+            let character = records
+                .get_mut(&id)
+                .filter(|c| !c.deleted)
+                .ok_or_else(|| invalid("unavailable transaction owner"))?;
+            let (inventory, progression) = crate::player_transaction::candidate(
+                &character.inventory,
+                &character.progression,
+                &items,
+                &changes,
+                first,
+            )?;
+            character.inventory = inventory;
+            character.progression = progression;
             continue;
         }
         if fields.len() == 3 && fields[0] == "i1" {

@@ -1,5 +1,18 @@
 # Build 7148 character and world event evidence
 
+## Atomic player inventory/progression transactions (2026-10-24)
+
+`Store::player_transaction` validates up to eight inventory and eight progression
+commands as one candidate and fsyncs one `a1` record before publishing either
+state. Global sequential item identities are enforced across the complete
+batch, including when other characters already own higher IDs. Replay uses the
+same candidate validator. Transaction records remain compaction barriers, so
+item grants/consumption and their payments or vital changes cannot be separated
+by progression checkpoint coalescing. Existing `i1`/`g1`/`g2` meanings are intact.
+This is the storage foundation for server-authorized rewards and item services;
+it does not grant client packets authority to mint items or choose prices.
+Formatted and compile checked; no tests or native client were run.
+
 ## Editor load crash: native paint callback re-entry (2026-10-24)
 
 Windows recorded two `pythonw.exe` crashes (`0xc0000409`, fatal-app-exit code 7).
