@@ -149,6 +149,8 @@ class Assets:
                 mesh["material_images"][group["material"]] = image
             if info.get("image_error"):
                 self.material_warnings.add(f"Material {material:08x}: {info['image_error']}")
+            if info.get("render_state_error"):
+                self.material_warnings.add(f"Material state {material:08x}: {info['render_state_error']}")
             for offset in range(group["start"], group["start"] + group["count"], 3):
                 color = info.get("average", [130, 145, 155])
                 if image and mesh["uvs"]:

@@ -180,6 +180,11 @@ the position aid falls back to sampled triangle colors and reports the reason
 in **Details**. Full native shader passes, translucency blending, collision and
 native BSP visibility remain unfinished. Some attached visual groups and nearby props remain
 unsupported; **Details** lists omissions instead of substituting made-up models.
+Where a supported first material layer is decoded, alpha testing, its constant
+reference, blend factors and texture-alpha use follow that layer. Zero-filled
+skin vertex-color fields are not used as tint, and texture alpha is not treated
+as transparency when the material ignores it. Full conditional/multi-pass shader
+selection remains outside the preview renderer.
 Loading is bounded to 32 cells and 50,000 scene triangles; the viewport draws up
 to 30,000, prioritizing the selected creature and reporting truncation. DAT work
 runs on one background worker so the editor remains responsive. Native in-game

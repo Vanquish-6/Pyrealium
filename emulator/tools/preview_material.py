@@ -103,6 +103,52 @@ def base_stage_texture(data, did):
     return texture if texture >> 24 == 0x40 else None
 
 
+def first_layer_state(data, did):
+    """Known fixed-stage alpha/depth state; complete shader tails stay opaque."""
+    reader = Reader(data)
+    if reader.u32() != did or reader.u32() != 0:
+        raise MaterialFormatError("unsupported base material prefix")
+    _properties(reader)
+    layers = reader.u32()
+    if not 1 <= layers <= 64:
+        raise MaterialFormatError("no supported base material layer")
+    flags = (reader.u32(), reader.u32())
+    count = reader.u32()
+    if count > 4:
+        raise MaterialFormatError("native stage capacity")
+    stages = [struct.unpack("<14I",reader.take(56)) for unused in range(count)]
+    if reader.u32() != 0:
+        raise MaterialFormatError("animated UV modifiers need separate layer-state evaluation")
+    source,destination,depth,write,cull,alpha_test = (reader.u32() for unused in range(6))
+    if source not in range(1,12) or destination not in range(1,12) or depth not in range(1,9) or write not in (0,1) or alpha_test not in (0,1):
+        raise MaterialFormatError("unsupported native layer render state")
+    reference = None
+    if alpha_test:
+        # Waveform NONE is the constant first value (recovered WaveformType).
+        if reader.u32() != 1:
+            raise MaterialFormatError("animated alpha-test reference is unsupported")
+        reference = struct.unpack("<f",reader.take(4))[0]
+        if not 0 <= reference <= 1:
+            raise MaterialFormatError("invalid alpha-test reference")
+    uses_texture = False
+    for stage in stages:
+        operation,first,second = stage[4:7]
+        def depends(argument):
+            kind = argument & 15
+            return kind == 2 or kind == 1 and uses_texture
+        if operation == 1:
+            break
+        if operation == 2:
+            uses_texture = depends(first)
+        elif operation == 3:
+            uses_texture = depends(second)
+        else:
+            uses_texture = depends(first) or depends(second)
+    return dict(source_blend=source,destination_blend=destination,depth_test=depth,
+                depth_write=bool(write),alpha_test=bool(alpha_test),alpha_reference=reference,
+                texture_alpha=uses_texture,layer_flags=flags,layers=layers)
+
+
 def texture_levels(data):
     reader = Reader(data)
     did, source_type, count = reader.u32(), reader.u32(), reader.u32()
@@ -266,6 +312,10 @@ def material_info(portal, did, surfaces=None, max_size=256, include_image=True):
     result = dict(did=did, base=base, material_type=material_type,
                   modifiers=modifiers, textures=textures,
                   scope="Actual base properties plus ordered instance overrides; complete shader evaluation is not implemented")
+    try:
+        result["render_state"] = first_layer_state(base_data,base)
+    except MaterialFormatError as error:
+        result["render_state_error"] = str(error)
     result["color_properties"] = {
         prop["name"]: list(struct.unpack("<4f", prop["value"]))
         for prop in properties if prop["kind"] == 2000 and len(prop["value"]) == 16
@@ -281,6 +331,7 @@ def material_info(portal, did, surfaces=None, max_size=256, include_image=True):
     elif include_image:
         try:
             image = texture_image(portal, base_texture, surfaces, max_size)
+            image["render_state"] = result.get("render_state", {})
             result["average"] = image["average"]
             result["image"] = image
         except (KeyError, MaterialFormatError) as error:

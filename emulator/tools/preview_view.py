@@ -160,7 +160,9 @@ class Preview3D(ttk.Frame):
                 "uvs": mesh.get("uvs", ()),
                 "groups": mesh.get("groups", ()),
                 "material_images": mesh.get("material_images", {}),
-                "colors": mesh.get("colors", ()),
+                # Skin/room formats may contain zero-filled color fields that
+                # their shaders ignore. Terrain near colors are explicitly used.
+                "colors": mesh.get("colors", ()) if source.get("terrain") else (),
                 "cell": source.get("cell"),
                 "mesh_source": mesh,
                 "animation_set": source.get("animation_set"),

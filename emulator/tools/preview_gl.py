@@ -127,6 +127,7 @@ class GLRenderer:
             "glTexImage2D": (None, [uint, sint, sint, sint, sint, sint, uint, uint, ptr]),
             "glTexEnvi": (None, [uint, uint, sint]),
             "glAlphaFunc": (None, [uint, C.c_float]),
+            "glBlendFunc": (None, [uint, uint]),
             "glHint": (None, [uint, uint]),
         }
         for name, (result, arguments) in specs.items():
@@ -258,7 +259,8 @@ class GLRenderer:
         pixels = width * height
         if pixels > 4_194_304 or len(rgb) != pixels * 3:
             raise ValueError("Texture dimensions or RGB payload exceed preview bounds")
-        alpha = image.get("alpha", b"\xff" * pixels)
+        state = image.get("render_state", {})
+        alpha = image.get("alpha", b"\xff" * pixels) if state.get("texture_alpha",False) else b"\xff" * pixels
         if len(alpha) != pixels:
             raise ValueError("Texture alpha payload does not match its dimensions")
         rgba = bytearray(pixels * 4)
@@ -372,10 +374,27 @@ class GLRenderer:
                     gl.glDisable(0x0de1)
                     color = item.get("material_colors", {}).get(group["material"], (150, 164, 174))
                     gl.glColor4f(*(float(channel)/255 for channel in color[:3]), 1)
+                state = image.get("render_state",{}) if image is not None else {}
+                if state.get("alpha_test"):
+                    gl.glEnable(0x0bc0)
+                    gl.glAlphaFunc(0x0204,state["alpha_reference"])
+                else:
+                    gl.glDisable(0x0bc0)
+                blends = {1:0,2:1,3:0x0300,4:0x0301,5:0x0302,6:0x0303,
+                          7:0x0304,8:0x0305,9:0x0306,10:0x0307,11:0x0308}
+                source,destination = state.get("source_blend",2),state.get("destination_blend",1)
+                if (source,destination) != (2,1):
+                    gl.glEnable(0x0be2)
+                    gl.glBlendFunc(blends[source],blends[destination])
+                else:
+                    gl.glDisable(0x0be2)
+                gl.glDepthMask(bool(state.get("depth_write",True)))
                 pointer = C.cast(C.byref(buffers["indices"], start * C.sizeof(C.c_uint32)), C.c_void_p)
                 gl.glDrawElements(0x0004, amount, 0x1405, pointer)  # TRIANGLES, UNSIGNED_INT
                 count += amount // 3
         gl.glDisable(0x3000)
+        gl.glDepthMask(True)
+        gl.glDisable(0x0be2)
         gl.glDisableClientState(0x8074)
         gl.glDisableClientState(0x8075)
         gl.glDisableClientState(0x8076)

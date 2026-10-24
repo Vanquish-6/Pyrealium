@@ -1,5 +1,25 @@
 # Build 7148 character and world event evidence
 
+## Material alpha and unused skin color fields (2026-10-24)
+
+Read-only extraction showed all 5,185 Gurog vertex colors are zero, while the
+body diffuse texture's alpha is mostly zero. Those fields do not imply an
+invisible creature. The first native material layer (`005cc0b0`) and its stage
+operations (`005be300`, `005c4f20`, recovered TextureOp/BlendMode enums) show
+that material `31000407` -> `2b000081` ignores texture alpha and disables
+alpha testing. Applying a universal texture-alpha cutoff or vertex-color tint
+would therefore erase valid geometry.
+
+The preview now uses explicit terrain near colors and leaves skin/room color
+fields unused until their shader use is established. The bounded first-layer
+reader retains blend factors, depth-write policy, alpha-test mode and constant
+Waveform NONE references. Stage SELECTARG/MODULATE dependencies determine
+whether texture alpha participates; ignored alpha is uploaded opaque. Supported
+per-material alpha/depth/blend state replaces the universal cutoff. Conditional
+shader selection, later passes and animated UV/alpha modifiers remain incomplete
+and are reported rather than guessed. Syntax and read-only DAT extraction only;
+no GUI, test suite or native client was launched.
+
 ## Native outdoor height blocks and terrain materials (2026-10-24)
 
 `preview_terrain.py` reads region, landscape, terrain and surface descriptors,
