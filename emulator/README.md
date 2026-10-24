@@ -52,6 +52,12 @@ implementation or acceptance. A MusicLoader error can require Continue.
   equipment and active same-cell content. Names use supported DAT localization
   references; live health and the owner's private progression come from server
   state. Full original item descriptions and native acceptance remain open.
+- The explicit training profile supports learned human Ease Suffering (`55`)
+  through native skill use: 30 health for 10 vigor, with an 8-second cooldown.
+  The catalog's level/training requirements remain enforced. Healing and vigor
+  spending commit together; cooldowns remain active across reconnects during
+  the same server run. This is authored development balance, without native
+  cast animation/cooldown-bar acceptance or original effect formulas.
 - Checked journal compaction coalesces repeated combat/regeneration state while
   retaining transaction barriers, verifying replay and keeping a previous-journal
   backup. `compact-data --data PATH` provides offline maintenance under the store lock.

@@ -1,5 +1,25 @@
 # Build 7148 character and world event evidence
 
+## Learned active healing with durable payment (2026-10-24)
+
+The explicit initialized training profile routes native UseSkill `8204000b`
+for skill `55` to a prepared self-heal. The pinned catalog entry is human,
+minimum level 3, one credit, cap 50, prerequisite `59:0`; the character must
+already have learned it. The heal amount 30, vigor cost 10, skill cooldown
+8 seconds and ability cooldown 1 second are authored development policy.
+Other targets, dead/full-health players, insufficient vigor and exhausted
+service capacity are rejected without cost. Native no-target sentinels are
+accepted as self selection.
+
+The runtime borrows its bounded cooldown state while a cast is prepared. The
+server constructs/admit-checks skill and vital updates, persists SpendVigor and
+Heal in one progression batch, then commits cooldown state and queues updates.
+Failed preparation/admission/persistence does not spend a cooldown. Unexpired
+cooldowns survive logout/relogin within the same server lifetime. Original
+cast timing, animation, effects, ally healing, native cooldown UI timers and
+restart-persistent cooldowns remain incomplete. Formatted and compile checked;
+no tests or native client were run.
+
 ## Atomic player inventory/progression transactions (2026-10-24)
 
 `Store::player_transaction` validates up to eight inventory and eight progression

@@ -1,5 +1,6 @@
 //! Build 7148 protocol laboratory and local emulator.
 //! Native compatibility is established per codec, not inferred from simulated tests.
+pub mod abilities;
 pub mod bootstrap;
 pub mod content;
 pub mod crypto;

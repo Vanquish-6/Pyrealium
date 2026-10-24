@@ -808,6 +808,11 @@ pub fn run(config: Config) -> io::Result<()> {
             "Development encounters enabled with explicit authored rules; original combat parity is unfinished."
         );
     }
+    let mut abilities = if config.initialize_ui && config.training_kit {
+        Some(crate::abilities::Runtime::development().map_err(other)?)
+    } else {
+        None
+    };
     let mut failed_peers = BTreeSet::new();
     let random = RandomState::new();
     let mut generation = 0u64;
@@ -1106,6 +1111,73 @@ pub fn run(config: Config) -> io::Result<()> {
                                     };
                                     match request {
                                         script::Request::UseSkill { skill, target } => {
+                                            if abilities
+                                                .as_ref()
+                                                .is_some_and(|runtime| runtime.supports(skill))
+                                            {
+                                                let result = (|| -> io::Result<()> {
+                                                    let saved = &store.characters[&character];
+                                                    let cast = abilities
+                                                        .as_mut()
+                                                        .unwrap()
+                                                        .prepare(
+                                                            character,
+                                                            skill,
+                                                            target,
+                                                            saved
+                                                                .creation
+                                                                .as_ref()
+                                                                .map_or(1, |request| request.race),
+                                                            &saved.skills,
+                                                            &saved.progression,
+                                                            now_ms,
+                                                        )
+                                                        .map_err(other)?;
+                                                    let next = cast.next().clone();
+                                                    let mut events =
+                                                        next.private_changes(cast.previous());
+                                                    events.push(
+                                                        crate::ui::skill_update(
+                                                            skill,
+                                                            saved.skills.get(skill).unwrap(),
+                                                        )
+                                                        .map_err(other)?,
+                                                    );
+                                                    events.push(
+                                                        script::chat(
+                                                            &format!(
+                                                                "You recover {} health.",
+                                                                cast.healed()
+                                                            ),
+                                                            1,
+                                                        )
+                                                        .map_err(other)?,
+                                                    );
+                                                    peer.validate_scene_batch(&events)?;
+                                                    store.progression_batch(
+                                                        &peer.session.account,
+                                                        character,
+                                                        cast.commands(),
+                                                    )?;
+                                                    cast.commit();
+                                                    deliveries.extend(
+                                                        scene.player_stats(character, &next),
+                                                    );
+                                                    peer.queue_ordered_batch(events)?;
+                                                    Ok(())
+                                                })(
+                                                );
+                                                if let Err(error) = result {
+                                                    replies.extend(
+                                                        peer.send_event(
+                                                            &script::chat(&error.to_string(), 1)
+                                                                .map_err(other)?,
+                                                            now,
+                                                        )?,
+                                                    );
+                                                }
+                                                return Ok(replies);
+                                            }
                                             if config.initialize_ui
                                                 && config.training_kit
                                                 && skill == crate::skills::TRAINING_ATTACK
