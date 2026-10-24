@@ -20,7 +20,7 @@ pub fn validate_wlib(bytes: &[u8]) -> Result<(), WorldError> {
     validate_layouts(bytes, &[(0x1a4, 2), (0x233, 8), (0x14f, 14), (0x24a7, 2)])
 }
 pub fn validate_inventory_wlib(bytes: &[u8]) -> Result<(), WorldError> {
-    validate_layouts(bytes, &[(0x1a2, 3), (0x1f9, 6)])
+    validate_layouts(bytes, &[(0x1a2, 3), (0x1f9, 6), (0x1f8, 51)])
 }
 pub fn validate_skills_wlib(bytes: &[u8]) -> Result<(), WorldError> {
     validate_layouts(bytes, &[(0x231, 15)])

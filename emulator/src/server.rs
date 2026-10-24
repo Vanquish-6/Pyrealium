@@ -345,6 +345,7 @@ pub fn run(config: Config) -> io::Result<()> {
             "experimental UI initialization requires converted build-7148 game data",
         ));
     }
+    let mut inventory_metadata = BTreeMap::new();
     let initial_ui = if config.initialize_ui {
         let directory = config.game_data.as_ref().unwrap();
         let mut portal = crate::dat::Dat::open(directory.join("portal.dat"))?;
@@ -362,6 +363,20 @@ pub fn run(config: Config) -> io::Result<()> {
                 for item in character.inventory.items() {
                     portal.read(item.definition)?;
                     portal.read(item.visual)?;
+                    if !inventory_metadata.contains_key(&item.definition) {
+                        if inventory_metadata.len() >= 4096 {
+                            return Err(invalid("inventory metadata capacity exceeded"));
+                        }
+                        let metadata =
+                            crate::inventory_request::Metadata::load(&mut portal, item.definition);
+                        if let Err(error) = &metadata {
+                            eprintln!(
+                                "Bag sorting unavailable for definition {:#010x}: {error}",
+                                item.definition
+                            );
+                        }
+                        inventory_metadata.insert(item.definition, metadata.ok());
+                    }
                 }
             }
         }
@@ -748,6 +763,42 @@ pub fn run(config: Config) -> io::Result<()> {
                                         }
                                     };
                                     match request {
+                                        script::Request::InventoryMove(request) => {
+                                            let result = (|| -> io::Result<(crate::inventory::Command, Vec<u8>)> {
+                                                if !config.initialize_ui { return Err(invalid("Inventory is not initialized.")); }
+                                                let saved = &store.characters[&character];
+                                                if !saved.progression.alive() { return Err(invalid("You cannot move items while dead.")); }
+                                                let command = request.command(character).map_err(other)?;
+                                                let candidate = saved.inventory.apply(&command).map_err(other)?;
+                                                let item = candidate.items().find(|item| item.id == request.item).ok_or_else(||invalid("Item is not owned."))?;
+                                                let metadata = inventory_metadata.get(&item.definition).and_then(|entry| *entry).ok_or_else(||invalid("Bag sorting is unavailable for this item definition."))?;
+                                                let acknowledgment = request.acknowledgment(item, metadata).map_err(other)?;
+                                                Ok((command, acknowledgment))
+                                            })();
+                                            match result {
+                                                Ok((command, acknowledgment)) => {
+                                                    store.inventory_command(
+                                                        &peer.session.account,
+                                                        character,
+                                                        command,
+                                                    )?;
+                                                    deliveries.push(crate::scene::Delivery {
+                                                        recipient: character,
+                                                        data: acknowledgment.into(),
+                                                    });
+                                                }
+                                                Err(error) => replies.extend(
+                                                    peer.send_event(
+                                                        &script::chat(
+                                                            &format!("Item move rejected: {error}"),
+                                                            1,
+                                                        )
+                                                        .map_err(other)?,
+                                                        now,
+                                                    )?,
+                                                ),
+                                            }
+                                        }
                                         script::Request::Resurrect => {
                                             match resurrect_character(
                                                 peer,

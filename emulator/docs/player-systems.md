@@ -158,3 +158,34 @@ expected by the older reference reader; using its assumptions would debit the
 wrong amounts. Active ability use, costs/cooldowns/effects, timed original
 untraining, hero/crafting/faction systems and full original training eligibility
 remain separate work. No automated tests or native client checks were run.
+
+## Live bag sorting
+
+The initialized HUD now accepts the bounded `820e0049` sorting request profile
+and emits `820e0055` acknowledgments after flushing the existing `i1` inventory
+journal record. The request must identify the active owner and an item at its
+saved source position; dead characters cannot move items. Candidate validation
+and reply construction complete before persistence. Invalid requests cannot
+grant an item or change its definition, quantity, icon or appearance.
+
+The supported operation is insertion in a dense bag list for quantity-one items.
+The reply preserves the requested insertion boundary and reports the resulting
+post-removal slot. Forward and backward moves use the observed integer tags.
+Stacks, sparse lists, equipment and optional per-item property graphs require
+separate profiles. The existing 78-slot local capacity policy still applies.
+
+Icons come from DID quality `103` and physical definitions from DID quality `1`
+in each item's DAT qualities record. The bounded prefix reader follows recovered
+`gmWeenieDesc::StreamPack` (`006037c0`) and `CBaseQualities::UnPack` (`005192f0`),
+rejects unsupported description/name layouts, bounds quality tables and rejects
+duplicate DID keys. It does not treat the description icon selector as a texture
+DID. Startup caches metadata for saved inventory definitions (maximum 4,096),
+validates backing assets and checks package `1f8` has 51 interpreted fields.
+Unsupported metadata disables sorting for that definition with a readable error.
+
+The retained `sorting.items.elog` contains 17 single-object move replies and
+seven replies with additional property graphs. Its SHA256 is
+`17f1593014477b0ea08347d1c4cbe1decc2905f59df464d7ba99dfbdd9166173`.
+Only the single-object, single-item profile is generated here. Capture build
+identity and native UI acceptance remain unverified. This change was compiled;
+no tests, native client launch, deployment or server restart were performed.

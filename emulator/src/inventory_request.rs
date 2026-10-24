@@ -21,6 +21,17 @@ pub struct MoveRequest {
     pub destination: u16,
 }
 impl MoveRequest {
+    pub fn arguments(bytes: &[u8]) -> Result<Self, WorldError> {
+        if bytes.len() != MESSAGE_BYTES - 12 {
+            return Err(WorldError::InvalidValue);
+        }
+        let mut message = Vec::with_capacity(MESSAGE_BYTES);
+        for word in [0x10053u32, MOVE, bytes.len() as u32] {
+            message.extend(word.to_le_bytes());
+        }
+        message.extend(bytes);
+        Self::decode(&message)
+    }
     /// Input is one reassembled application message, without transport headers.
     pub fn decode(message: &[u8]) -> Result<Self, WorldError> {
         if message.len() != MESSAGE_BYTES {
@@ -93,5 +104,210 @@ impl MoveRequest {
             source: self.source,
             destination: self.destination,
         })
+    }
+
+    /// Captured single-object move acknowledgment. Optional per-item property
+    /// graphs and stacked items need separate profiles; no client metadata is echoed.
+    pub fn acknowledgment(
+        &self,
+        item: &crate::inventory::Item,
+        metadata: Metadata,
+    ) -> Result<Vec<u8>, WorldError> {
+        if item.id != self.item || item.quantity != 1 {
+            return Err(WorldError::InvalidValue);
+        }
+        let crate::inventory::Location::Bag(final_slot) = item.location else {
+            return Err(WorldError::InvalidValue);
+        };
+        let mut fields = [0u32; 51];
+        for index in [7, 10, 13, 23, 26, 35, 47] {
+            fields[index] = 1;
+        }
+        for index in [2, 8, 16, 32, 36] {
+            fields[index] = self.owner as u32;
+            fields[index + 1] = (self.owner >> 32) as u32;
+        }
+        for index in [28, 44] {
+            fields[index] = item.id as u32;
+            fields[index + 1] = (item.id >> 32) as u32;
+        }
+        fields[1] = u32::from(self.source);
+        fields[39] = u32::from(self.source);
+        fields[11] = u32::from(self.destination);
+        fields[24] = u32::from(self.destination);
+        fields[50] = u32::from(final_slot);
+        fields[6] = metadata.icon;
+        fields[22] = item.definition;
+        fields[30] = u32::MAX;
+        fields[38] = metadata.physical;
+        let mut arguments = Vec::with_capacity(MESSAGE_BYTES - 12);
+        for word in [5, 1, 1, 0x44000100, 0, 0x01f80000, 51] {
+            arguments.extend(u32::to_le_bytes(word));
+        }
+        for word in fields {
+            arguments.extend(word.to_le_bytes());
+        }
+        let mut tags = TAGS;
+        tags[50] = if self.source < self.destination { 2 } else { 4 };
+        arguments.extend(tags);
+        arguments.push(0);
+        crate::script::private_call(0x820e0055, &arguments)
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Metadata {
+    pub icon: u32,
+    pub physical: u32,
+}
+impl Metadata {
+    /// Read only the authoritative qualities prefix needed by bag acknowledgments.
+    /// gmWeenieDesc::StreamPack 006037c0, CBaseQualities::UnPack 005192f0.
+    /// Localized names with substitutions and string quality tables are unsupported.
+    pub fn load(portal: &mut crate::dat::Dat, definition: u32) -> std::io::Result<Self> {
+        let invalid = || {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "unsupported item metadata layout",
+            )
+        };
+        if definition >> 24 != 0x47 {
+            return Err(invalid());
+        }
+        let did = 0x81000000 | (definition & 0xffffff);
+        let bytes = portal.read(did)?;
+        if bytes.len() > 65536 {
+            return Err(invalid());
+        }
+        let mut pos = 0usize;
+        let mut word = || -> std::io::Result<u32> {
+            let value = bytes.get(pos..pos + 4).ok_or_else(invalid)?;
+            pos += 4;
+            Ok(u32::from_le_bytes(value.try_into().unwrap()))
+        };
+        let mask = word()?;
+        if mask & 0x21 != 0x21 || mask & !0xfff != 0 || mask & 0x80 != 0 || word()? != did {
+            return Err(invalid());
+        }
+        let desc = word()?;
+        if desc & !0x7fffffff != 0 || desc & 0x10 == 0 {
+            return Err(invalid());
+        }
+        for bit in [1, 0x2000000, 2] {
+            if desc & bit != 0 {
+                word()?;
+            }
+        }
+        for bit in [4, 8] {
+            if desc & bit != 0 {
+                let table = word()?;
+                word()?;
+                if table == 0 || word()? != 0 {
+                    return Err(invalid());
+                }
+            }
+        }
+        word()?; // Description icon selector; the move reply uses DID quality 103.
+        for (bit, words) in [
+            (0x20, 2),
+            (0x40, 2),
+            (0x100, 2),
+            (0x200, 2),
+            (0x20000000, 2),
+            (0x40000000, 2),
+            (0x4000000, 2),
+            (0x80, 1),
+            (0x800, 1),
+            (0x1000, 1),
+            (0x2000, 1),
+            (0x200000, 1),
+            (0x400000, 1),
+            (0x8000, 1),
+            (0x10000, 1),
+            (0x20000, 1),
+            (0x40000, 1),
+            (0x80000, 1),
+            (0x100000, 1),
+            (0x8000000, 1),
+            (0x10000000, 1),
+        ] {
+            if desc & bit != 0 {
+                for _ in 0..words {
+                    word()?;
+                }
+            }
+        }
+        // Reject currently unassigned description bits rather than offset guessing.
+        const DESC_BITS: u32 = 1
+            | 0x2000000
+            | 2
+            | 4
+            | 8
+            | 0x10
+            | 0x20
+            | 0x40
+            | 0x100
+            | 0x200
+            | 0x20000000
+            | 0x40000000
+            | 0x4000000
+            | 0x80
+            | 0x800
+            | 0x1000
+            | 0x2000
+            | 0x200000
+            | 0x400000
+            | 0x8000
+            | 0x10000
+            | 0x20000
+            | 0x40000
+            | 0x80000
+            | 0x100000
+            | 0x8000000
+            | 0x10000000;
+        if desc & !DESC_BITS != 0 {
+            return Err(invalid());
+        }
+        for (bit, width) in [(2, 2), (4, 2), (8, 2), (0x10, 3)] {
+            if mask & bit != 0 {
+                let header = word()?;
+                let count = header & 0xffffff;
+                if header >> 24 > 22 || count > 512 {
+                    return Err(invalid());
+                }
+                for _ in 0..count * width {
+                    word()?;
+                }
+            }
+        }
+        let header = word()?;
+        let count = header & 0xffffff;
+        if header >> 24 > 22 || count > 512 {
+            return Err(invalid());
+        }
+        let mut physical = None;
+        let mut icon = None;
+        let mut keys = std::collections::BTreeSet::new();
+        for _ in 0..count {
+            let key = word()?;
+            let value = word()?;
+            if !keys.insert(key) {
+                return Err(invalid());
+            }
+            if key == 1 {
+                physical = Some(value);
+            }
+            if key == 0x103 {
+                icon = Some(value);
+            }
+        }
+        let physical = physical.ok_or_else(invalid)?;
+        let icon = icon.ok_or_else(invalid)?;
+        if icon >> 24 != 0x20 || physical >> 24 != 0x47 {
+            return Err(invalid());
+        }
+        portal.read(icon)?;
+        portal.read(physical)?;
+        Ok(Self { icon, physical })
     }
 }
