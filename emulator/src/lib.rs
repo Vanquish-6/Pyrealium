@@ -17,6 +17,7 @@ pub mod player_transaction;
 pub mod portals;
 pub mod preferences;
 pub mod progression;
+pub mod quests;
 pub mod scene;
 pub mod script;
 pub mod server;

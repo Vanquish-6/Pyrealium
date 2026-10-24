@@ -27,6 +27,7 @@ struct Rule {
     gold: u32,
 }
 struct Actor {
+    entity: u32,
     rule: Rule,
     health: u32,
     target: Option<u64>,
@@ -40,6 +41,10 @@ struct Attack {
     repeat: bool,
 }
 pub enum Event {
+    Quest {
+        player: u64,
+        book: crate::quests::Book,
+    },
     Health {
         actor: u64,
         health: u32,
@@ -195,6 +200,7 @@ impl Encounters {
                     (
                         object.id,
                         Actor {
+                            entity: object.entity,
                             rule,
                             health: rule.health,
                             target: None,
@@ -230,6 +236,9 @@ impl Encounters {
     }
     pub fn stop(&mut self, player: u64) {
         self.attacks.remove(&player);
+    }
+    pub fn includes_entity(&self, entity: u32) -> bool {
+        self.actors.values().any(|actor| actor.entity == entity)
     }
     pub fn start(
         &mut self,
@@ -364,7 +373,18 @@ impl Encounters {
             }
             let account = character.account.clone();
             let previous = character.progression.clone();
-            store.progression_batch(&account, player, &commands)?;
+            let previous_quests = character.quests.clone();
+            if killed {
+                store.encounter_reward(&account, player, actor.entity, &commands)?;
+            } else {
+                store.progression_batch(&account, player, &commands)?;
+            }
+            if store.characters[&player].quests != previous_quests {
+                events.push(Event::Quest {
+                    player,
+                    book: store.characters[&player].quests.clone(),
+                });
+            }
             let until = now.saturating_add(self.interval);
             self.cooldowns.insert(player, until);
             self.attacks.get_mut(&player).unwrap().next = until;

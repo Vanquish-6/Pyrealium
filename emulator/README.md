@@ -62,6 +62,12 @@ implementation or acceptance. A MusicLoader error can require Continue.
   four dances and the AFK gesture. Behavior messages use current avatar lifetime
   stamps and are delivered to same-cell players. Dead/in-combat use and request
   flooding are rejected. Broader social/away-state semantics remain unfinished.
+- A persistent Training Grounds quest appears in the native journal when the
+  training profile includes its target creatures. Three qualifying kills unlock
+  a once-only 120 XP / 10 gold reward. Use `@quest` for status and `@quest claim`
+  out of combat to claim it. Objective progress commits with combat payouts;
+  claiming commits rewards with completion. Original quest content, NPC dialogue,
+  branching, abandonment and repeat rules remain unfinished.
 - Checked journal compaction coalesces repeated combat/regeneration state while
   retaining transaction barriers, verifying replay and keeping a previous-journal
   backup. `compact-data --data PATH` provides offline maintenance under the store lock.

@@ -1,5 +1,33 @@
 # Build 7148 character and world event evidence
 
+## Durable native training quest and journal restoration (2026-10-24)
+
+The authored Training Grounds quest `4000ff01` counts three authoritative kills
+of entity `470007d1`. The active training profile must contain encounters for
+that entity before new characters are automatically offered the quest. Living
+players can use `@quest`, `@quest start` and `@quest claim`; acceptance/claiming
+requires being out of combat. Existing saved quests remain queryable/claimable
+when the training profile is later disabled. This is explicit development
+content, not an imported original quest or recovered grant rule.
+
+`q1` stores acceptance or claiming; the fixed 120 XP and 10 gold payout is
+validated and fsynced with the claimed flag. Repeated claims fail before payout.
+`q2` stores qualifying objective progress with the normal encounter cost/payout,
+before creature death is published. Both records remain compaction barriers and
+replay validates the same transitions. Earlier journals initialize an empty book.
+
+Native `gmQuestInfo` (`ffff00a0`) follows build-7148 `0060af00`; list packing
+(`ffff00a1`) follows `0060b500`. Status meanings follow `0060aca0`: underway
+`10000000`, completed `30000000`, failed `20000000`. Update `82130024` uses
+the capture-established argument order and matching WLib function at `1022f8`.
+The later capture's extra maxed-out word is absent in 7148 and is not emitted.
+Quest entries restore through UI_Load and update on qualifying kills/claiming.
+Icon `4100034b` is checked against the supplied DAT.
+
+Broader quest definitions, NPC conversations, branching/abandon/repeat rules and
+fresh matching-client journal acceptance remain incomplete. Formatted and
+compile checked only; no tests or native client were run.
+
 ## Native player emote routing (2026-10-24)
 
 Strict `8205000b` decoding accepts a tagged token from an eight-emote allowlist.

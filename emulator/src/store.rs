@@ -29,6 +29,7 @@ pub struct Character {
     pub inventory: crate::inventory::Inventory,
     pub progression: crate::progression::Progression,
     pub skills: crate::skills::Book,
+    pub quests: crate::quests::Book,
     pub training_kit: bool,
     pub binding: Option<Placement>,
 }
@@ -429,6 +430,69 @@ impl Store {
         self.characters.get_mut(&id).unwrap().progression = next;
         Ok(())
     }
+    pub fn quest_command(
+        &mut self,
+        account: &str,
+        id: u64,
+        command: crate::quests::Command,
+    ) -> io::Result<bool> {
+        if matches!(command, crate::quests::Command::Kill(_)) {
+            return Err(invalid(
+                "quest kills require an encounter reward transaction",
+            ));
+        }
+        let character = self
+            .characters
+            .get(&id)
+            .filter(|c| c.account == account && !c.deleted && c.progression.alive())
+            .ok_or_else(|| invalid("quest requires an owned living character"))?;
+        let quests = character.quests.apply(&command).map_err(io::Error::other)?;
+        if quests == character.quests {
+            return Ok(false);
+        }
+        let mut progression = character.progression.clone();
+        for reward in crate::quests::rewards(&command) {
+            progression = progression.apply(&reward).map_err(io::Error::other)?;
+        }
+        self.append_record(&format!("q1\t{id}\t{}", command.encode()))?;
+        let character = self.characters.get_mut(&id).unwrap();
+        character.quests = quests;
+        character.progression = progression;
+        Ok(true)
+    }
+    /// Persist the objective with the normal payout before publishing death.
+    pub fn encounter_reward(
+        &mut self,
+        account: &str,
+        id: u64,
+        entity: u32,
+        commands: &[crate::progression::Command],
+    ) -> io::Result<()> {
+        if commands.is_empty() || commands.len() > 8 {
+            return Err(invalid("encounter reward batch size"));
+        }
+        let character = self
+            .characters
+            .get(&id)
+            .filter(|c| c.account == account && !c.deleted && c.progression.alive())
+            .ok_or_else(|| invalid("encounter reward character unavailable"))?;
+        let quests = character.quests.record_kill(entity);
+        if quests == character.quests {
+            return self.progression_batch(account, id, commands);
+        }
+        let mut progression = character.progression.clone();
+        for command in commands {
+            progression = progression.apply(command).map_err(io::Error::other)?;
+        }
+        self.append_record(&format!(
+            "q2\t{id}\t{entity:08x}\t{}",
+            crate::player_transaction::encode_changes(commands)
+        ))?;
+        let character = self.characters.get_mut(&id).unwrap();
+        character.quests = quests;
+        character.progression = progression;
+        Ok(())
+    }
     /// Items and payment/rewards become visible only after one durable record.
     pub fn player_transaction(
         &mut self,
@@ -668,6 +732,7 @@ impl Store {
             inventory: crate::inventory::Inventory::default(),
             progression: crate::progression::Progression::default(),
             skills: crate::skills::Book::default(),
+            quests: crate::quests::Book::default(),
             training_kit: false,
             binding: None,
         };
@@ -1015,6 +1080,54 @@ fn decode_journal_collect(
                 run.flush(output);
                 output.push(line.to_owned());
             }
+        }
+        if fields.len() == 3 && fields[0] == "q1" {
+            let id = fields[1]
+                .parse::<u64>()
+                .map_err(|_| invalid("invalid quest owner"))?;
+            let command = crate::quests::Command::decode(fields[2]).map_err(io::Error::other)?;
+            if matches!(command, crate::quests::Command::Kill(_)) {
+                return Err(invalid("quest kill requires payout record"));
+            }
+            let character = records
+                .get_mut(&id)
+                .filter(|c| !c.deleted && c.progression.alive())
+                .ok_or_else(|| invalid("unavailable quest owner"))?;
+            character.quests = character.quests.apply(&command).map_err(io::Error::other)?;
+            for reward in crate::quests::rewards(&command) {
+                character.progression = character
+                    .progression
+                    .apply(&reward)
+                    .map_err(io::Error::other)?;
+            }
+            continue;
+        }
+        if fields.len() == 4 && fields[0] == "q2" {
+            let id = fields[1]
+                .parse::<u64>()
+                .map_err(|_| invalid("invalid quest reward owner"))?;
+            let command = crate::quests::Command::decode(&format!("k,{}", fields[2]))
+                .map_err(io::Error::other)?;
+            let changes = crate::player_transaction::decode_changes(fields[3])?;
+            if changes.is_empty() {
+                return Err(invalid("quest kill payout is empty"));
+            }
+            let character = records
+                .get_mut(&id)
+                .filter(|c| !c.deleted && c.progression.alive())
+                .ok_or_else(|| invalid("unavailable quest kill owner"))?;
+            let quests = character.quests.apply(&command).map_err(io::Error::other)?;
+            if quests == character.quests {
+                return Err(invalid("quest kill did not advance an objective"));
+            }
+            for change in changes {
+                character.progression = character
+                    .progression
+                    .apply(&change)
+                    .map_err(io::Error::other)?;
+            }
+            character.quests = quests;
+            continue;
         }
         if fields.len() == 3 && fields[0] == "g3" {
             let id = fields[1]
@@ -1453,6 +1566,7 @@ fn decode_journal_collect(
                 inventory: crate::inventory::Inventory::default(),
                 progression: crate::progression::Progression::default(),
                 skills: crate::skills::Book::default(),
+                quests: crate::quests::Book::default(),
                 training_kit: false,
                 binding: None,
             },

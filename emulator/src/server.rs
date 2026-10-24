@@ -607,6 +607,72 @@ fn deliver_scene(
     Ok(())
 }
 
+fn quest_action(
+    peer: &mut Peer,
+    character: u64,
+    action: &str,
+    store: &mut Store,
+    scene: &mut crate::scene::Scene,
+) -> io::Result<Vec<crate::scene::Delivery>> {
+    if !scene.can_observe(character, character) {
+        return Err(invalid("Player is not ready."));
+    }
+    let saved = &store.characters[&character];
+    let command = match action.trim().to_ascii_lowercase().as_str() {
+        "" | "status" => None,
+        "start" => Some(crate::quests::Command::Accept),
+        "claim" => Some(crate::quests::Command::Claim),
+        _ => return Err(invalid("Use @quest, @quest start, or @quest claim.")),
+    };
+    if command.is_some() && (!saved.progression.alive() || peer.combat) {
+        return Err(invalid(
+            "Quest acceptance and rewards require a living player out of combat.",
+        ));
+    }
+    let quests = match command.as_ref() {
+        Some(command) => saved.quests.apply(command).map_err(io::Error::other)?,
+        None => saved.quests.clone(),
+    };
+    let mut state = saved.progression.clone();
+    if let Some(command) = &command {
+        for reward in crate::quests::rewards(command) {
+            state = state.apply(&reward).map_err(io::Error::other)?;
+        }
+    }
+    let text = match quests.get() {
+        None => "Type @quest start to accept the training quest.".into(),
+        Some(progress) if progress.claimed => {
+            "Training complete. The 120 XP and 10 gold reward has been claimed.".into()
+        }
+        Some(progress) if progress.killed == crate::quests::GOAL => {
+            "Training objective complete. Leave combat and type @quest claim for your reward."
+                .into()
+        }
+        Some(progress) => format!(
+            "Training creatures defeated: {}/{}. Progress is shown in your quest journal.",
+            progress.killed,
+            crate::quests::GOAL
+        ),
+    };
+    let mut events = vec![script::chat(&text, 1).map_err(other)?];
+    if quests.get().is_some() {
+        events.push(quests.update().map_err(other)?);
+    }
+    events.extend(state.private_changes(&saved.progression));
+    if saved.skills.available_credits(&state) != saved.skills.available_credits(&saved.progression)
+    {
+        events
+            .push(crate::ui::skill_credits(saved.skills.available_credits(&state)).map_err(other)?);
+    }
+    peer.validate_scene_batch(&events)?;
+    if let Some(command) = command {
+        store.quest_command(&peer.session.account, character, command)?;
+    }
+    let updates = scene.player_stats(character, &state);
+    peer.queue_ordered_batch(events)?;
+    Ok(updates)
+}
+
 pub fn run(config: Config) -> io::Result<()> {
     if !config.bind.ip().is_loopback() || !config.bind.is_ipv4() {
         return Err(invalid(
@@ -656,6 +722,7 @@ pub fn run(config: Config) -> io::Result<()> {
         crate::ui::validate_skills_wlib(&wlib).map_err(other)?;
         crate::skills::validate_assets(&mut portal)?;
         crate::emotes::validate_assets(&mut portal)?;
+        crate::quests::validate_assets(&mut portal)?;
         if config.training_kit
             || config.lifestones
             || config.portals
@@ -811,6 +878,10 @@ pub fn run(config: Config) -> io::Result<()> {
             "Development encounters enabled with explicit authored rules; original combat parity is unfinished."
         );
     }
+    let training_quest_enabled = config.training_kit
+        && encounters
+            .as_ref()
+            .is_some_and(|runtime| runtime.includes_entity(crate::quests::TARGET_ENTITY));
     let mut abilities = if config.initialize_ui && config.training_kit {
         Some(crate::abilities::Runtime::development().map_err(other)?)
     } else {
@@ -1842,6 +1913,43 @@ pub fn run(config: Config) -> io::Result<()> {
                                             let name = &store.characters[&character].name;
                                             match request {
                                                 script::Request::Say(text) => {
+                                                    let words =
+                                                        text.split_whitespace().collect::<Vec<_>>();
+                                                    if words.first().is_some_and(|word| {
+                                                        word.eq_ignore_ascii_case("@quest")
+                                                    }) && config.initialize_ui
+                                                    {
+                                                        peer.last_chat_ms = Some(now_ms);
+                                                        if !training_quest_enabled
+                                                            && store.characters[&character]
+                                                                .quests
+                                                                .get()
+                                                                .is_none()
+                                                        {
+                                                            replies.extend(peer.send_event(&script::chat("The training quest is not enabled on this server.",1).map_err(other)?,now)?);
+                                                            return Ok(replies);
+                                                        }
+                                                        let action = words[1..].join(" ");
+                                                        match quest_action(
+                                                            peer, character, &action, &mut store,
+                                                            &mut scene,
+                                                        ) {
+                                                            Ok(updates) => {
+                                                                deliveries.extend(updates)
+                                                            }
+                                                            Err(error) => replies.extend(
+                                                                peer.send_event(
+                                                                    &script::chat(
+                                                                        &error.to_string(),
+                                                                        1,
+                                                                    )
+                                                                    .map_err(other)?,
+                                                                    now,
+                                                                )?,
+                                                            ),
+                                                        }
+                                                        return Ok(replies);
+                                                    }
                                                     if text.trim().eq_ignore_ascii_case("@recall")
                                                         && config.lifestones
                                                     {
@@ -2197,6 +2305,21 @@ pub fn run(config: Config) -> io::Result<()> {
                                                         )?;
                                                     }
                                                 }
+                                                if training_quest_enabled
+                                                    && store.characters[&character_id]
+                                                        .quests
+                                                        .get()
+                                                        .is_none()
+                                                    && store.characters[&character_id]
+                                                        .progression
+                                                        .alive()
+                                                {
+                                                    store.quest_command(
+                                                        &peer.session.account,
+                                                        character_id,
+                                                        crate::quests::Command::Accept,
+                                                    )?;
+                                                }
                                                 let instance = store.begin_instance(
                                                     &peer.session.account,
                                                     character_id,
@@ -2302,17 +2425,19 @@ pub fn run(config: Config) -> io::Result<()> {
                                                             || c.inventory.items().next().is_some()
                                                             || c.progression != crate::progression::Progression::default()
                                                             || !c.skills.is_empty()
+                                                            || c.quests.get().is_some()
                                                     })
                                                 }
                                                 _ => None,
                                             };
                                             if let Some(saved) = saved {
-                                                let restored = crate::ui::player_all(
+                                                let restored = crate::ui::player_all_quests(
                                                     saved.ui.as_ref(),
                                                     Some(&saved.hotbar),
                                                     Some(&saved.inventory),
                                                     Some(&saved.progression),
                                                     Some(&saved.skills),
+                                                    Some(&saved.quests),
                                                 )
                                                 .map_err(other)?;
                                                 let instance=peer.motion.as_ref().ok_or_else(||invalid("inventory bootstrap without avatar lifetime"))?.instance;
@@ -2410,6 +2535,15 @@ pub fn run(config: Config) -> io::Result<()> {
             let mut updates = Vec::new();
             for event in events {
                 match event {
+                    crate::encounters::Event::Quest { player, book } => {
+                        updates.push(crate::scene::Delivery {
+                            recipient: player,
+                            data: book.update().map_err(other)?.into(),
+                        });
+                        if book.ready() {
+                            updates.push(crate::scene::Delivery {recipient:player,data:script::chat("Training objective complete. Leave combat and type @quest claim for your reward.",1).map_err(other)?.into()});
+                        }
+                    }
                     crate::encounters::Event::Health { actor, health } => {
                         updates.extend(scene.content_stat(actor, 0x102, health)?)
                     }
