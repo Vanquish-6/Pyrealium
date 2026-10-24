@@ -20,6 +20,7 @@ fn invalid(text: &str) -> io::Error {
 struct Rule {
     health: u32,
     damage: u32,
+    armor: u32,
     interval: u64,
     range: f32,
     respawn: u64,
@@ -170,6 +171,7 @@ impl Encounters {
                     let rule = Rule {
                         health: small(2)?,
                         damage: small(3)?,
+                        armor: 0,
                         interval: number(4)?,
                         range: range(5)?,
                         respawn: number(6)?,
@@ -208,11 +210,68 @@ impl Encounters {
         {
             return Err(invalid("player or regeneration profile bounds"));
         }
-        // Placed creatures from the catalog and captures use the starter fight
-        // profile unless the encounter file already gave that entity its own row.
+        // portal.dat combat fields override an authored row for that entity.
+        // Interval 0 means the record had no natural weapon time. Creatures
+        // with no combat record keep the starter profile.
+        for line in include_str!("../content/creature-combat.tsv").lines() {
+            if line.is_empty() || line.starts_with('#') || line.starts_with("pyrealium-") {
+                continue;
+            }
+            let f: Vec<_> = line.split('\t').collect();
+            if f.len() != 7 {
+                return Err(invalid("creature combat field count"));
+            }
+            let entity = u32::from_str_radix(f[0], 16).map_err(|_| invalid("creature combat entity"))?;
+            let number = |i: usize| {
+                f[i].parse::<u64>()
+                    .map_err(|_| invalid("creature combat integer"))
+            };
+            let small = |i: usize| {
+                u32::try_from(number(i)?).map_err(|_| invalid("creature combat overflow"))
+            };
+            let health = small(1)?;
+            let damage = small(2)?;
+            let mut interval = number(3)?;
+            if interval == 0 {
+                interval = 1500;
+            }
+            let armor = small(4)?;
+            let xp = number(5)?;
+            if entity >> 24 != 0x47
+                || health == 0
+                || health > 5_000_000
+                || damage == 0
+                || damage > 5_000_000
+                || armor > 1_000_000
+                || !(250..=60000).contains(&interval)
+                || xp > i64::MAX as u64
+            {
+                return Err(invalid("creature combat bounds"));
+            }
+            let rule = Rule {
+                health,
+                damage,
+                armor,
+                interval,
+                range: 3.0,
+                respawn: 30_000,
+                xp,
+                gold: 2,
+            };
+            if let Some(existing) = rules.get_mut(&entity) {
+                existing.health = rule.health;
+                existing.damage = rule.damage;
+                existing.armor = rule.armor;
+                existing.interval = rule.interval;
+                existing.xp = rule.xp;
+            } else if rules.len() >= 4096 || rules.insert(entity, rule).is_some() {
+                return Err(invalid("creature combat rule limit"));
+            }
+        }
         let starter = Rule {
             health: 60,
             damage: 6,
+            armor: 0,
             interval: 1500,
             range: 3.0,
             respawn: 30_000,
@@ -393,7 +452,11 @@ impl Encounters {
                 continue;
             }
             let actor = &self.actors[&attack.target];
-            let dealt = self.damage.min(actor.health);
+            let dealt = self
+                .damage
+                .saturating_sub(actor.rule.armor)
+                .max(1)
+                .min(actor.health);
             let killed = dealt == actor.health;
             let mut commands = vec![Command::SpendVigor(self.cost)];
             if killed && actor.rule.xp > 0 {
