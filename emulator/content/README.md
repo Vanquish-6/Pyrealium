@@ -138,11 +138,29 @@ python tools/content_editor.py --game-data PATH
 It requires Python with Tk support and uses no third-party GUI packages. Search
 the catalog by label, entity or visual identifier; select an entry; choose the
 game-data folder and content file; then enter a cell, X/Y/Z, heading and optional
-scale. The preview shows positions within the selected cell. Clicking it sets
-X/Y while retaining Z. Existing placements can supply a position and entity for
-a new addition; their identities are retained. This is a top-down authoring aid,
-without terrain, asset rendering or collision checks. Native appearance remains
-unverified. The GUI was syntax checked only and has not been interactively run.
+scale. The **3D world** tab reads actual DAT creature meshes, the selected
+interior room and linked nearby rooms. Drag to orbit, right-drag to pan, and use
+the wheel to zoom. **F** or **Focus creature** returns to the selected placement.
+Shift-click a world surface to set X/Y/Z through a ray intersection with its
+actual triangles. **Cut away ceiling** helps inspect an interior from above.
+The camera stays fixed while coordinates, heading or scale change.
+
+The **Position map** tab remains available, with a stable view, coordinate grid,
+pan, zoom and **Fit cell**. Clicking it sets X/Y while retaining Z. Existing
+placements can supply a position and entity for a new addition; their identities
+are retained. Neither preview changes existing objects.
+
+The 3D view uses authored bind-pose geometry with colors sampled from supported
+native material textures. DXT1/3/5 mips are decoded read-only from `portal.dat`
+and optional `highres.dat`. It does not implement animation, per-pixel textured
+rendering, complete shader/material inheritance, collision, native BSP visibility
+or outdoor terrain. Some attached visual groups and nearby props remain
+unsupported; **Details** lists omissions instead of substituting made-up models.
+Loading is bounded to 32 cells and 50,000 scene triangles; the viewport draws up
+to 30,000, prioritizing the selected creature and reporting truncation. DAT work
+runs on one background worker so the editor remains responsive. Native in-game
+appearance remains unverified. Python syntax and read-only DAT extraction were
+checked; no GUI or game was launched by the agent.
 
 The default output is `content/local-world.tsv`, a new standalone pack of your
 additions. To include base placements, choose a separate copy of `world.tsv` as

@@ -1,5 +1,6 @@
 """Offline graphical content placement. Saves through place_content's DAT checks."""
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import math
 from pathlib import Path
 from types import SimpleNamespace
@@ -7,6 +8,8 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from place_content import bounded_text, place
+from preview_assets import Assets
+from preview_view import Preview3D
 
 
 class Editor:
@@ -16,6 +19,15 @@ class Editor:
         self.catalog = []
         self.placements = []
         self.transform = None
+        self.map_view = None
+        self.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="content-dat")
+        self.assets = None
+        self.future = None
+        self.wanted = None
+        self.scene_ready = None
+        self.content_revision = 0
+        self.closing = False
+        root.protocol("WM_DELETE_WINDOW", self.close)
         root.title("World Content Placement")
         root.geometry("1180x790")
         root.minsize(920, 650)
@@ -59,13 +71,25 @@ class Editor:
         form.columnconfigure(1, weight=1)
         form.columnconfigure(3, weight=1)
         ttk.Label(right, text="Heading: 0–255. Blank scale inherits the asset size.").pack(anchor="w", pady=4)
-        ttk.Label(right, text="Top-down cell preview · click to set X/Y · Z stays unchanged").pack(anchor="w", pady=(12, 4))
-        self.canvas = tk.Canvas(right, background="#182330", highlightthickness=0, height=300)
+        notebook = ttk.Notebook(right)
+        notebook.pack(fill="both", expand=True, pady=(8, 0))
+        self.view3d = Preview3D(notebook, on_pick=self.pick_3d)
+        map_frame = ttk.Frame(notebook)
+        notebook.add(self.view3d, text="3D world")
+        notebook.add(map_frame, text="Position map")
+        bar = ttk.Frame(map_frame)
+        bar.pack(fill="x")
+        ttk.Label(bar, text="Click: place · right-drag: pan · wheel: zoom").pack(side="left")
+        ttk.Button(bar, text="Fit cell", command=self.fit_map).pack(side="right")
+        self.canvas = tk.Canvas(map_frame, background="#182330", highlightthickness=0, height=300)
         self.canvas.pack(fill="both", expand=True)
         self.canvas.bind("<Configure>", lambda event: self.preview())
         self.canvas.bind("<Button-1>", self.pick_position)
-        ttk.Label(right, text="Dots show positions only; terrain, elevation and collision are not rendered.",
-                  wraplength=530).pack(anchor="w", pady=6)
+        self.canvas.bind("<MouseWheel>", self.zoom_map)
+        self.canvas.bind("<ButtonPress-3>", self.begin_pan)
+        self.canvas.bind("<B3-Motion>", self.pan_map)
+        self.render_status = tk.StringVar(value="Choose game data and an entity to load native geometry.")
+        ttk.Label(right, textvariable=self.render_status, wraplength=610).pack(anchor="w", pady=6)
         self.save_button = ttk.Button(right, text="Validate DAT records and add placement", command=self.save)
         self.save_button.pack(anchor="e", pady=8)
         ttk.Label(shell, textvariable=self.status, wraplength=1100).grid(
@@ -75,6 +99,7 @@ class Editor:
         self.search.trace_add("write", lambda *unused: self.filter_catalog())
         for variable in self.fields.values():
             variable.trace_add("write", lambda *unused: self.preview())
+        self.game.trace_add("write", lambda *unused: self.preview())
         self.load_catalog()
         self.reload()
 
@@ -160,6 +185,7 @@ class Editor:
                 if any(not math.isfinite(float(value)) or abs(float(value)) >= 1_000_000 for value in row[4:7]):
                     raise ValueError("Invalid position")
             self.placements = rows
+            self.content_revision += 1
             self.objects.delete(*self.objects.get_children())
             for row in rows:
                 self.objects.insert("", "end", iid=row[0], values=(row[0], row[1], row[3]))
@@ -182,6 +208,7 @@ class Editor:
         self.fields["Scale"].set(row[11] if len(row) == 12 and row[11] != "-" else "")
 
     def preview(self):
+        self.refresh_scene()
         self.canvas.delete("all")
         self.transform = None
         try:
@@ -194,12 +221,31 @@ class Editor:
             if width < 80 or height < 80:
                 return
             xs, ys = [x] + [p[0] for p in points], [y] + [p[1] for p in points]
-            middle_x, middle_y = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
-            scale = min((width - 70) / max(20, max(xs) - min(xs)), (height - 70) / max(20, max(ys) - min(ys)))
+            if self.map_view is None or self.map_view[0] != cell:
+                self.map_view = (cell, (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2,
+                                 max(20, max(xs)-min(xs), max(ys)-min(ys)) * 1.15)
+            _, middle_x, middle_y, span = self.map_view
+            scale = min(width-70, height-70) / span
             self.transform = middle_x, middle_y, scale, width, height
             def project(px, py):
                 return width / 2 + (px - middle_x) * scale, height / 2 - (py - middle_y) * scale
             self.canvas.create_text(12, 12, anchor="nw", fill="#b9cad9", text=f"Cell {cell:08x} · +Y ↑ · +X →")
+            spacing = 10 ** math.floor(math.log10(span / 4))
+            if span / spacing > 12:
+                spacing *= 5
+            for axis in range(2):
+                center = middle_x if axis == 0 else middle_y
+                first = math.floor((center-span)/spacing)
+                last = math.ceil((center+span)/spacing)
+                for index in range(first, last+1):
+                    value = index * spacing
+                    sx, sy = project(value if axis == 0 else middle_x, value if axis == 1 else middle_y)
+                    if axis == 0:
+                        self.canvas.create_line(sx, 28, sx, height, fill="#263746")
+                        self.canvas.create_text(sx+3, height-12, text=f"{value:g}", fill="#708a9d", anchor="w")
+                    else:
+                        self.canvas.create_line(0, sy, width, sy, fill="#263746")
+                        self.canvas.create_text(4, sy-7, text=f"{value:g}", fill="#708a9d", anchor="w")
             for px, py, entity in points:
                 sx, sy = project(px, py)
                 self.canvas.create_oval(sx-4, sy-4, sx+4, sy+4, fill="#72b9e5", outline="")
@@ -209,6 +255,112 @@ class Editor:
             self.canvas.create_text(sx, sy+17, text="New placement", fill="#efb65e")
         except (ValueError, OverflowError):
             pass
+
+    def fit_map(self):
+        self.map_view = None
+        self.preview()
+
+    def zoom_map(self, event):
+        if self.map_view:
+            cell, x, y, span = self.map_view
+            self.map_view = cell, x, y, max(0.1, min(100000, span * (0.8 if event.delta > 0 else 1.25)))
+            self.preview()
+
+    def begin_pan(self, event):
+        self.pan_origin = (event.x, event.y, self.map_view)
+
+    def pan_map(self, event):
+        if self.transform and getattr(self, "pan_origin", None) and self.pan_origin[2]:
+            sx, sy, view = self.pan_origin
+            cell, x, y, span = view
+            scale = self.transform[2]
+            self.map_view = cell, x - (event.x-sx)/scale, y + (event.y-sy)/scale, span
+            self.preview()
+
+    def pick_3d(self, point):
+        for name, value in zip(("X", "Y", "Z"), point):
+            self.fields[name].set(format(value, ".9g"))
+
+    def refresh_scene(self):
+        if self.closing:
+            return
+        try:
+            folder = self.game.get().strip()
+            entity = int(self.fields["Entity"].get(), 16)
+            visual = {int(row[1], 16) for row in self.catalog if int(row[0], 16) == entity}
+            if len(visual) != 1 or not folder:
+                return
+            cell = int(self.fields["Cell"].get(), 16)
+            position = [float(self.fields[name].get()) for name in ("X", "Y", "Z")]
+            heading = int(self.fields["Heading"].get())
+            scale_text = self.fields["Scale"].get().strip()
+            scale = float(scale_text) if scale_text else None
+            if not all(math.isfinite(v) and abs(v) < 1_000_000 for v in position) or not 0 <= heading <= 255:
+                return
+            if scale is not None and (not math.isfinite(scale) or not 0 < scale <= 100):
+                return
+            self.view3d.update_placement(position, heading, scale)
+            key = (folder, cell, next(iter(visual)), self.content_revision)
+            self.wanted = (key, position, heading, scale, list(self.placements))
+            if self.future is None and key != self.scene_ready:
+                self.start_load()
+        except (ValueError, OverflowError):
+            pass
+
+    def start_load(self):
+        request = self.wanted
+        self.render_status.set("Reading native room and creature geometry from DAT files…")
+        self.future = self.executor.submit(self.load_scene, request)
+        self.loading = request
+        self.root.after(60, self.finish_load)
+
+    def load_scene(self, request):
+        key, position, heading, scale, placements = request
+        folder, cell, visual, revision = key
+        if self.assets is None or self.assets.folder != Path(folder):
+            if self.assets:
+                self.assets.close()
+                self.assets = None
+            self.assets = Assets(Path(folder))
+        candidates = {}
+        for entity, target, label in self.catalog:
+            candidates.setdefault(int(entity, 16), set()).add(int(target, 16))
+        catalog = {entity: next(iter(targets)) for entity, targets in candidates.items() if len(targets) == 1}
+        return self.assets.scene(cell, visual, position, heading, scale, placements, catalog)
+
+    def finish_load(self):
+        if self.closing:
+            return
+        if not self.future.done():
+            self.root.after(60, self.finish_load)
+            return
+        request = self.loading
+        future, self.future = self.future, None
+        key, position, heading, scale, placements = request
+        if self.wanted[0] != key:
+            # Discard stale loads; at most one bounded DAT job is queued.
+            self.start_load()
+            return
+        self.scene_ready = key
+        try:
+            instances, warnings = future.result()
+            self.view3d.set_scene(instances, position, warnings, heading=heading)
+            self.view3d.update_placement(self.wanted[1], self.wanted[2], self.wanted[3])
+            count = sum(len(row["mesh"]["indices"]) // 3 for row in instances)
+            self.render_status.set(f"Loaded {len(instances)} native meshes · {count:,} triangles. "
+                                   + (warnings[0] if warnings else "Actual DAT geometry; default pose."))
+        except (OSError, ValueError, KeyError) as error:
+            self.render_status.set(f"3D preview unavailable: {error}")
+
+    def close(self):
+        self.closing = True
+        self.view3d.close()
+        def release():
+            if self.assets:
+                self.assets.close()
+        self.executor.submit(release)
+        self.executor.shutdown(wait=False)
+        self.root.destroy()
 
     def pick_position(self, event):
         if self.transform:

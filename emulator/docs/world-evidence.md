@@ -1,5 +1,35 @@
 # Build 7148 character and world event evidence
 
+## Native geometry for the content editor (2026-10-24)
+
+The former position-dot canvas is supplemented with an actual DAT geometry
+viewport. Visual description and part-group traversal follow `0063d7f0` and
+`006443c0`; setup mesh arrays follow `006105a0`. Render-mesh prefixes follow
+`004d2ab0`, `004d3bf0`, `004cf3a0`, `00730160`, `0062b380`, `0052c260`, and
+`005bdea0`. Vertex positions, skin weights, normals, UVs and real triangle
+indices are bounded; physics/BSP tails remain opaque. The renderer displays
+stored bind-pose positions rather than evaluating animation deformation.
+
+Interior cells follow `00482da0`, `006200b0`, `0049c980`, `00617370` and
+`006161b0`. Room meshes receive the cell frame transform; static entity positions
+are already in block space. Connected/visible cell references supply nearby
+room geometry under explicit bounds. Static prop visuals require supported
+catalog mappings and part-group graphs; unsupported data is reported.
+
+Material reads follow `005badf0`, `005b91b0`, `005daf10`, `005bd850`,
+`005b1c40` and `006d7830`: material instance `31` to modifier `30`, texture
+slot `3000` to texture `40`, then surface `41` mips in portal/highres archives.
+The stdlib decoder supports DXT1/3/5. UV-centroid samples color triangles; this
+does not constitute per-pixel textured rendering or complete native shaders.
+
+Read-only extraction at cell `02990109`, visual `1f0002f7` recovered the room
+mesh `01000084` (814 triangles) and Gurog meshes `06000563`/`06000564`
+(278/2,328 triangles). Combined supported surrounding geometry produced 17 mesh
+instances and 20,502 triangles at the user's placement; unsupported room meshes,
+props and one material inheritance case were reported rather than fabricated.
+Python syntax and DAT extraction were checked only. No test suites, GUI or
+native client were launched; no running server was replaced.
+
 ## Combat update traffic and regeneration work (2026-10-24)
 
 Encounter owner events now retain their preceding committed progression state.
