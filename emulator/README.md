@@ -35,6 +35,10 @@ implementation or acceptance. A MusicLoader error can require Continue.
 - Durable per-character window placement, opacity and hotbar bindings, restored
   by the opt-in HUD initializer. These changes are compile checked only; native
   acceptance remains pending. Bindings do not grant skills or items.
+- Transactional inventory storage with bag moves/swaps, stack merge/split,
+  equipment swaps, unequip and consumption, plus offline management commands.
+  This is stored gameplay state; native item creation/display and inventory
+  request/reply integration remain unfinished. No automatic starter grants.
 - Bounded read-only DAT and extracted terrain readers. The supplied corpus of
   **65,025 terrain records** passed full validation with no missing/empty linked
   info records. Terrain decoding is not yet server physics.
@@ -121,6 +125,7 @@ deletion and connection-logoff behavior. They passed on the supplied assets.
 These peers are synthetic; they do not establish native gameplay acceptance.
 The subsequent window-preference and hotbar persistence changes were compile checked only;
 automated tests were skipped at the user's request.
+The later inventory-state implementation is also compile checked only.
 
 ```powershell
 $env:AC2_TEST_COMPAT_DATA = 'C:\path\to\emulator\target\compat-7148'
@@ -164,6 +169,13 @@ Exact addresses, identities, policies, test boundaries and open work:
 - [World entry, movement, persistence and native observations](docs/world-evidence.md)
 
 ## Remaining gameplay work
+
+Offline inventory management is available through the `inventory-*` commands in
+`--help`; use the normal `--account`, `--character-id` and `--data` arguments.
+The server must be stopped. Development grants require existing definition and
+visual records in `--game-data`, with operator-supplied stack/equipment rules.
+Existence of a DAT definition does not establish starter entitlement or balance.
+See [inventory storage boundaries](docs/world-evidence.md#transactional-inventory-storage-2026-10-24).
 
 An opt-in empty-player HUD experiment is available with
 `serve --initialize-ui true --game-data PATH` alongside the normal bind/account/data

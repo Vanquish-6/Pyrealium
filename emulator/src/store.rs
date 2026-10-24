@@ -24,6 +24,7 @@ pub struct Character {
     pub instance: u16,
     pub ui: Option<crate::preferences::UiSettings>,
     pub hotbar: crate::preferences::Hotbar,
+    pub inventory: crate::inventory::Inventory,
 }
 
 pub struct Store {
@@ -102,6 +103,44 @@ impl Store {
     }
     pub fn placement(&self, id: u64) -> Option<Placement> {
         self.positions.get(&id).copied()
+    }
+    pub fn next_item_id(&self) -> io::Result<u64> {
+        self.characters
+            .values()
+            .map(|c| c.inventory.high_water())
+            .max()
+            .unwrap_or(crate::inventory::ITEM_NAMESPACE)
+            .checked_add(1)
+            .filter(|id| id >> 48 == crate::inventory::ITEM_NAMESPACE >> 48)
+            .ok_or_else(|| invalid("item identity exhausted"))
+    }
+    pub fn inventory_command(
+        &mut self,
+        account: &str,
+        id: u64,
+        command: crate::inventory::Command,
+    ) -> io::Result<()> {
+        if command
+            .allocated_id()
+            .is_some_and(|allocated| self.next_item_id().ok() != Some(allocated))
+        {
+            return Err(invalid("nonsequential item identity"));
+        }
+        let character = self
+            .characters
+            .get(&id)
+            .filter(|c| c.account == account && !c.deleted)
+            .ok_or_else(|| invalid("inventory character not owned"))?;
+        let next = character
+            .inventory
+            .apply(&command)
+            .map_err(|error| invalid(&error.to_string()))?;
+        if next == character.inventory {
+            return Ok(());
+        }
+        self.append_record(&format!("i1\t{id}\t{}", command.encode()))?;
+        self.characters.get_mut(&id).unwrap().inventory = next;
+        Ok(())
     }
     pub fn update_ui(
         &mut self,
@@ -272,6 +311,7 @@ impl Store {
             instance: 0,
             ui: None,
             hotbar: crate::preferences::Hotbar::default(),
+            inventory: crate::inventory::Inventory::default(),
         };
         let line = match creation {
             None => format!("v1\t{}\t{}\t{}", c.id, c.account, c.name),
@@ -420,6 +460,32 @@ pub fn decode_journal(bytes: &[u8]) -> io::Result<BTreeMap<u64, Character>> {
             return Err(invalid("character journal checksum mismatch"));
         }
         let fields: Vec<_> = data.split('\t').collect();
+        if fields.len() == 3 && fields[0] == "i1" {
+            let id = fields[1]
+                .parse::<u64>()
+                .map_err(|_| invalid("invalid inventory character"))?;
+            let command = crate::inventory::Command::decode(fields[2])
+                .map_err(|_| invalid("invalid inventory event"))?;
+            if let Some(allocated) = command.allocated_id() {
+                let high = records
+                    .values()
+                    .map(|c| c.inventory.high_water())
+                    .max()
+                    .unwrap_or(crate::inventory::ITEM_NAMESPACE);
+                if high.checked_add(1) != Some(allocated) {
+                    return Err(invalid("invalid global item identity progression"));
+                }
+            }
+            let character = records
+                .get_mut(&id)
+                .filter(|c| !c.deleted)
+                .ok_or_else(|| invalid("inventory event references unavailable character"))?;
+            character.inventory = character
+                .inventory
+                .apply(&command)
+                .map_err(|_| invalid("invalid inventory transition"))?;
+            continue;
+        }
         if fields.len() == 3 && matches!(fields[0], "u1" | "h1") {
             let id = fields[1]
                 .parse::<u64>()
@@ -539,6 +605,7 @@ pub fn decode_journal(bytes: &[u8]) -> io::Result<BTreeMap<u64, Character>> {
                 instance: 0,
                 ui: None,
                 hotbar: crate::preferences::Hotbar::default(),
+                inventory: crate::inventory::Inventory::default(),
             },
         );
     }

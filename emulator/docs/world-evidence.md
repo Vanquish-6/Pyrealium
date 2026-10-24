@@ -762,3 +762,41 @@ Bindings are UI preferences: referencing a skill/item does not train, grant,
 equip or authorize its use. Those gameplay handlers are separate unfinished
 work. No automated tests were added or run, per the user's request. Compilation
 succeeded; native hotbar editing and restoration have not been verified.
+
+## Transactional inventory storage (2026-10-24)
+
+The Rust inventory now owns item identity, definition/visual IDs, count, stack
+limit, permitted equipment slots and exactly one location per item. Local bag
+capacity remains 78 (42/12/12/12). Equipment uses the eleven single-bit slot
+values documented by the supplied implementation against DAT table `0x23000074`.
+Stack and equipment eligibility are trusted operator inputs for now, not values
+accepted from native clients or recovered balance rules.
+
+Moves require the expected source slot. Occupied destinations swap items or
+merge compatible stacks only when the entire count fits. Splits require a fresh
+global identity, a nonempty proper subset of the source and a free bag slot.
+Equipping requires one item, a permitted single equipment slot and a bag source;
+replaced equipment goes into that vacated bag slot atomically. Unequipping
+requires free bag space. Consumption cannot silently remove equipped objects.
+Candidate transitions are validated before the journal is changed.
+
+Store checks active ownership and allocates monotonically increasing IDs in the
+`0x8130` namespace across every character, including deleted characters. Each
+inventory remembers its highest-ever allocated identity even after stacks merge
+or items are consumed. Checksummed `i1` events are flushed before state changes
+are published. Replay applies the same transition rules and enforces global
+identity progression, rejecting unknown/deleted owners and invalid operations.
+The parser bounds each local inventory event to 256 bytes. Journals containing
+`i1` require the newer reader.
+
+Offline CLI commands expose list, development grant, move, equip, unequip, split
+and consume. The normal exclusive store lock requires the runtime to be stopped.
+Grant checks that definition and visual records exist in the supplied portal
+archive; it does not infer an original starter grant, stack rule or equipment
+rule from existence alone. No items were granted to the native test character.
+
+Native inventory request/reply graphs, contained item CreateObject descriptions,
+HUD item maps and appearance replication are not connected to this stored state
+yet. Two-handed occupancy, cross-character trade, loot and economy rules also
+remain separate work. No automated tests were added or run at the user's request;
+the code was formatted and compiled only.
