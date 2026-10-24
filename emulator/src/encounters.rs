@@ -248,6 +248,9 @@ impl Encounters {
     pub fn stop(&mut self, player: u64) {
         self.attacks.remove(&player);
     }
+    pub fn attacking_target(&self, player: u64) -> Option<u64> {
+        self.attacks.get(&player).map(|attack| attack.target)
+    }
     pub fn includes_entity(&self, entity: u32) -> bool {
         self.actors.values().any(|actor| actor.entity == entity)
     }

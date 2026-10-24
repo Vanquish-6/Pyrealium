@@ -801,6 +801,8 @@ No success result is fabricated for an unsupported effect.
 Target-specific StopAttacking 82040025 (native 00463580 through b40104/9aac0013)
 accepts its exact tagged-IID argument and stops only the matching current target.
 A delayed stop for a different target does not cancel the current attack.
+The match uses the encounter's queued target before falling back to selection,
+so selecting a different object does not prevent cancelling the old attack.
 
 ### Native training NPC use, speech and store closure
 

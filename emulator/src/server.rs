@@ -1430,7 +1430,7 @@ pub fn run(config: Config) -> io::Result<()> {
                 .any(|c| !c.deleted && c.inventory.items().next().is_some())
         {
             crate::ui::validate_inventory_wlib(&wlib).map_err(other)?;
-            if config.lifestones || config.portals {
+            if config.training_kit || config.lifestones || config.portals {
                 // String tables live in the locale archive, not portal.dat.
                 let mut locale = crate::dat::Dat::open(directory.join("local_English.dat"))?;
                 locale.read(0x25000014)?;
@@ -2940,7 +2940,13 @@ pub fn run(config: Config) -> io::Result<()> {
                                             // A delayed stop for an old target must not
                                             // cancel a newly selected/current attack.
                                             if let script::Request::StopAttack(target) = &request {
-                                                if peer.target != Some(*target) {
+                                                let current = encounters
+                                                    .as_ref()
+                                                    .and_then(|runtime| {
+                                                        runtime.attacking_target(character)
+                                                    })
+                                                    .or(peer.target);
+                                                if current != Some(*target) {
                                                     return Ok(replies);
                                                 }
                                             }
