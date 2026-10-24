@@ -13,6 +13,54 @@ does not load placements. The compiled bundle changes when the server is rebuilt
 operator edits to an external manifest require the explicit file option and a
 server restart. There is no hot reload.
 
+`--content observed` selects the separately bundled 277-object observation pack:
+the 247 table-derived placements plus 30 actors recovered from three supplied
+packet captures. Six capture inputs were examined; the other three supplied no
+additional supported placed actors. It includes Banderling Ravers/Thrashers, Idol/Surrogate Spawns,
+Furs Turfna, eggs, chests and other world objects at their captured positions.
+It does not populate the human starter dungeon or supply AI, trading, damage,
+loot, quest interactions, death or respawn behavior. The regular default pack
+continues to use only the table-derived placements.
+
+## Capture-observed actors
+
+`observed-world.tsv` contains the observation pack; `observed-actors.json`
+records each source capture SHA256, original IID, entity/visual, position,
+quaternion, scale, native masks, message SHA256 and aggregate rejection reasons.
+Original capture build identity and checksums have not been verified. Positions
+are first materialization observations, not proven spawn origins or schedules.
+These records remain distinct from table-derived and operator-authored content.
+
+The offline importer `tools/import_observed_population.py` accepts repeated
+`--capture` arguments plus `--base`, `--game-data`, `--output` and `--report`.
+It reads bounded classic little-endian Ethernet/IPv4/UDP PCAPs, checks framing,
+and reassembles blobs by directed endpoints, recipient, iteration, blob ID,
+queue and fragment count. Conflicting duplicates and oversized tables/messages
+stop conversion. IP fragments and unsupported transport packets are not used.
+Reassembly is not authenticated and does not establish complete capture coverage.
+
+The object decoder is grounded in VisualDesc `0063d7f0`, PhysicsDesc `00641530`,
+SliderData `0067cfb0` and map packing `00640f40`, FXScalarAndTarget `004d5720`
+and map packing `006410e0`, and gmWeenieDesc `006037c0`. It accepts the narrow
+parent-visual-only profile and supported placed physics fields. It excludes
+player namespaces, contained/equipped objects, missile/behavior-list profiles,
+custom names and unknown description fields. It checks all remaining lengths,
+finite transforms, quaternion norm and backing DAT records before placement.
+
+Native packets are not replayed into the server or client. Runtime creates fresh
+minimal stationary descriptions with local identities/stamps, observed entity,
+visual, transform and optional gmWeenieDesc scale. Captured modes, effects,
+sliders, velocity, look/target state and other description overrides are omitted.
+This preserves a placement snapshot, not exact live behavior or full appearance.
+Two-decimal position keys prevent duplicate placements; source IID repetition
+is retained only at the first supported observation in each capture.
+For overlapping inputs, the first accepted capture owns a cell; later captures
+do not add actors to that cell. This avoids stacking snapshots from different
+times. Input order and all exclusions are recorded in the report. It does not
+establish a complete or simultaneous population across different cells.
+New IIDs derive from capture hash and original IID in the reserved local
+`81408...` range, with collisions rejected. Global and per-cell limits remain.
+
 `lifestones.tsv` contains 89 placements imported from the supplied lifestone
 database table snapshot dated 2012-08-11. Its source SHA256 is retained in the
 file. These are imported placements, not positions recovered from the client
@@ -102,6 +150,10 @@ decimal and heading is a decimal byte (0..255). Object IDs use the local
 `pyrealium-world-v2` instead has eleven fields, replacing heading with quaternion
 W, X, Y, Z. All quaternion components must be finite with norm within 0.01 of 1.
 The combined pack and authoring tool use v2; existing v1 files remain supported.
+`pyrealium-world-v3` adds a twelfth field: a positive scale up to 100, or `-` to
+leave scale inherited. This is local content policy. The observation pack uses
+v3 and writes the scale as native gmWeenieDesc bit `0x80`; v1/v2 encodings are
+unchanged. The current operator authoring tool edits v2 manifests only.
 
 The runtime rejects files larger than 4 MiB, placement lines over 512 bytes,
 more than 16,384 objects or more than 64 objects in one cell. Positions must be

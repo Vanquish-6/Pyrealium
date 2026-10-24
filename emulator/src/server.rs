@@ -280,6 +280,18 @@ pub fn run(config: Config) -> io::Result<()> {
     };
     let content = match config.content.as_deref() {
         Some(path) if path == std::path::Path::new("none") => crate::content::Content::default(),
+        Some(path) if path == std::path::Path::new("observed") => {
+            let directory = config
+                .game_data
+                .as_deref()
+                .ok_or_else(|| invalid("--content observed requires --game-data"))?;
+            let content = crate::content::Content::observed(directory)?;
+            println!(
+                "Loaded {} objects from the observed actor snapshot; stationary presentation only.",
+                content.len()
+            );
+            content
+        }
         Some(path) => {
             let directory = config
                 .game_data

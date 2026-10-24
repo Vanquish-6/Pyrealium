@@ -1,0 +1,761 @@
+{
+  "capture_build_verified": false,
+  "checksums_verified": false,
+  "stationary_only": true,
+  "overlap_policy": "first accepted capture per cell, in command-line input order",
+  "omitted_state": [
+    "mode",
+    "sliders",
+    "effects",
+    "velocity",
+    "look/targets",
+    "description overrides except scale",
+    "native lifetime stamps"
+  ],
+  "base_sha256": "66db4c5879eb395f124b7c60c6181ea695cd62642ceb5cdd547409dda6d74dd6",
+  "placed_actors": 30,
+  "sources": [
+    {
+      "file": "mob.spawn.elog",
+      "sha256": "2f9efecdd3e3897fc05c260af9731e3fb28d9cfa934a524fac731069b9fb0c34",
+      "accepted": 3,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_mobspawn_player_figth_und_move.elog",
+      "sha256": "6431a55321ac65a012839b1c5264f4a2b34433ab17b1b738f41f4d18fea74cd1",
+      "accepted": 4,
+      "rejected": {
+        "unsupported-or-contained-description": 3,
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "objects.players.npcs.come.in.range.elog",
+      "sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110",
+      "accepted": 23,
+      "rejected": {
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 3,
+        "unsupported-or-unplaced-physics": 1,
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "ac2_login_from_charoverview.elog",
+      "sha256": "61c7aae4fb651263a00606b8e01ddb6675d1ef70264d2b6f3034093813f0e9a6",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 4,
+        "unsupported-or-unplaced-physics": 47,
+        "unsupported-visual-description": 16
+      }
+    },
+    {
+      "file": "login.at.night.rain.elog",
+      "sha256": "e6e2bc2124902a58622f2509b1e4d74eff862233886ff1fc01b4c30559d91278",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "transition.inside.outside.compass.elog",
+      "sha256": "258696ee57a4e3dacf6c8526c69a5a6d1b921c974d7a37337ba03168904b853c",
+      "accepted": 0,
+      "rejected": {}
+    }
+  ],
+  "actors": [
+    {
+      "source_iid": "8120000051c351ca",
+      "entity": "47000fc4",
+      "visual": "1f000075",
+      "scale": 0.8999999761581421,
+      "cell": "7d6d0013",
+      "position": [
+        54.0,
+        54.0,
+        186.95257568359375
+      ],
+      "orientation": [
+        0.5000000596046448,
+        0.0,
+        0.0,
+        0.8660253882408142
+      ],
+      "physics_mask": "00008282",
+      "description_mask": "021f8081",
+      "message_sha256": "9c15d270524d3325bd40829ffe765bfe0048e91c77fab04200eb2ded00cc7c38",
+      "id": "8140cff4b59b569b",
+      "source_sha256": "2f9efecdd3e3897fc05c260af9731e3fb28d9cfa934a524fac731069b9fb0c34"
+    },
+    {
+      "source_iid": "8120000051c351cc",
+      "entity": "470007a4",
+      "visual": "1f000075",
+      "scale": 0.949999988079071,
+      "cell": "7d6d0024",
+      "position": [
+        95.15248107910156,
+        70.87059020996094,
+        180.55548095703125
+      ],
+      "orientation": [
+        0.3826834261417389,
+        0.0,
+        0.0,
+        0.9238795638084412
+      ],
+      "physics_mask": "00008282",
+      "description_mask": "021f8081",
+      "message_sha256": "55fe20b58f0a5069ee2e6c56447d182f6a57ada6b85e60eaea1df709d625b5e2",
+      "id": "8140a905ee47a198",
+      "source_sha256": "2f9efecdd3e3897fc05c260af9731e3fb28d9cfa934a524fac731069b9fb0c34"
+    },
+    {
+      "source_iid": "8120000051c351cd",
+      "entity": "47000fc4",
+      "visual": "1f000075",
+      "scale": 0.8999999761581421,
+      "cell": "7d6d0023",
+      "position": [
+        87.0,
+        57.0,
+        183.0525665283203
+      ],
+      "orientation": [
+        -0.13052622973918915,
+        0.0,
+        0.0,
+        0.9914448857307434
+      ],
+      "physics_mask": "00008282",
+      "description_mask": "021f8081",
+      "message_sha256": "e3cb0742138caaac6f026542f2daaf867e8637ce2a36c9ae12fce9515c16198e",
+      "id": "8140943d9bd7abff",
+      "source_sha256": "2f9efecdd3e3897fc05c260af9731e3fb28d9cfa934a524fac731069b9fb0c34"
+    },
+    {
+      "source_iid": "8120000051c05533",
+      "entity": "470007d1",
+      "visual": "1f0003d1",
+      "scale": 0.75,
+      "cell": "01ee015d",
+      "position": [
+        -21.650100708007812,
+        0.3825809955596924,
+        105.71791076660156
+      ],
+      "orientation": [
+        -0.25881895422935486,
+        0.0,
+        0.0,
+        0.9659258127212524
+      ],
+      "physics_mask": "00008282",
+      "description_mask": "021f8081",
+      "message_sha256": "e8231ddb8ffe8b48bd08684957c0a402d6fb24aa87912acb6bc3c429905f7988",
+      "id": "81409df1b1f6aaaa",
+      "source_sha256": "6431a55321ac65a012839b1c5264f4a2b34433ab17b1b738f41f4d18fea74cd1"
+    },
+    {
+      "source_iid": "8120000051c05536",
+      "entity": "470007d1",
+      "visual": "1f0003d1",
+      "scale": 0.75,
+      "cell": "01ee0160",
+      "position": [
+        5.403429985046387,
+        15.257399559020996,
+        105.71791076660156
+      ],
+      "orientation": [
+        4.3711398944878965e-08,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "physics_mask": "00008282",
+      "description_mask": "021f8081",
+      "message_sha256": "5d37049aecf6699f91dc13d24595addd6af6f02d18d229f6f32c7f2d238e83c8",
+      "id": "8140ed162e2f5558",
+      "source_sha256": "6431a55321ac65a012839b1c5264f4a2b34433ab17b1b738f41f4d18fea74cd1"
+    },
+    {
+      "source_iid": "8120000051c05537",
+      "entity": "470007d1",
+      "visual": "1f0003d1",
+      "scale": 0.75,
+      "cell": "01ee0159",
+      "position": [
+        22.304800033569336,
+        9.32865047454834,
+        105.71791076660156
+      ],
+      "orientation": [
+        0.9659258127212524,
+        0.0,
+        0.0,
+        0.25881895422935486
+      ],
+      "physics_mask": "00008282",
+      "description_mask": "021f8081",
+      "message_sha256": "adb925184202f2d6dee9e4a051e14daca266ac20456e4e983301abe950acc3b8",
+      "id": "8140c056641c8200",
+      "source_sha256": "6431a55321ac65a012839b1c5264f4a2b34433ab17b1b738f41f4d18fea74cd1"
+    },
+    {
+      "source_iid": "8120000051c0553a",
+      "entity": "470012c0",
+      "visual": "1f0003d1",
+      "scale": 0.699999988079071,
+      "cell": "01ee0117",
+      "position": [
+        19.401195526123047,
+        30.03211212158203,
+        102.73825073242188
+      ],
+      "orientation": [
+        0.7933533191680908,
+        0.0,
+        0.0,
+        -0.6087613701820374
+      ],
+      "physics_mask": "00008282",
+      "description_mask": "021f8081",
+      "message_sha256": "8a8827f74dc39cca3fe006075eefef9d115c696ce38266c8737a6c0ddbe84374",
+      "id": "8140f609a867506f",
+      "source_sha256": "6431a55321ac65a012839b1c5264f4a2b34433ab17b1b738f41f4d18fea74cd1"
+    },
+    {
+      "source_iid": "8120000051b47a8e",
+      "entity": "4700117b",
+      "visual": "1f0001cf",
+      "scale": 0.6000000238418579,
+      "cell": "6fa7003b",
+      "position": [
+        153.96762084960938,
+        56.94830322265625,
+        78.55999755859375
+      ],
+      "orientation": [
+        -0.10452833771705627,
+        0.0,
+        0.0,
+        0.9945219159126282
+      ],
+      "physics_mask": "00008082",
+      "description_mask": "021f8081",
+      "message_sha256": "862e98c71c1f6a7175d013d6a47c4c1ea062c6b767c728ffac46205883f1a61c",
+      "id": "8140cc3243eb9e90",
+      "source_sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110"
+    },
+    {
+      "source_iid": "8120000051b47a8b",
+      "entity": "470020d6",
+      "visual": "1f0011cc",
+      "scale": 0.6000000238418579,
+      "cell": "6fa7003b",
+      "position": [
+        153.96762084960938,
+        56.94830322265625,
+        78.51106262207031
+      ],
+      "orientation": [
+        -0.10452833771705627,
+        0.0,
+        0.0,
+        0.9945219159126282
+      ],
+      "physics_mask": "00008082",
+      "description_mask": "021f8081",
+      "message_sha256": "7f680b0958b2d77edac28c6e9383a14c7dceba6dab799ab9421d6c826f8fbe2c",
+      "id": "8140a97b19692ea9",
+      "source_sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110"
+    },
+    {
+      "source_iid": "8120000051b47a08",
+      "entity": "4700117b",
+      "visual": "1f0001cf",
+      "scale": 0.6000000238418579,
+      "cell": "6fa7003b",
+      "position": [
+        156.1461639404297,
+        50.791412353515625,
+        78.55999755859375
+      ],
+      "orientation": [
+        0.9279510974884033,
+        0.0,
+        0.0,
+        -0.372702032327652
+      ],
+      "physics_mask": "00008082",
+      "description_mask": "021f8081",
+      "message_sha256": "f5f4d53f198c384921c4f198f36792b032d5a6da6c02ef9b3efcc2a9aadb5db3",
+      "id": "8140de1741486072",
+      "source_sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110"
+    },
+    {
+      "source_iid": "8120000051b47a06",
+      "entity": "470020d7",
+      "visual": "1f0011cc",
+      "scale": 0.6000000238418579,
+      "cell": "6fa7003b",
+      "position": [
+        156.1461639404297,
+        50.791412353515625,
+        78.51106262207031
+      ],
+      "orientation": [
+        0.9279510974884033,
+        0.0,
+        0.0,
+        -0.372702032327652
+      ],
+      "physics_mask": "00008082",
+      "description_mask": "021f8081",
+      "message_sha256": "24132080515ca3134314a295e268ef852a898642bc146f8a61485e48fdfbbe66",
+      "id": "8140f9e60f909166",
+      "source_sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110"
+    },
+    {
+      "source_iid": "8120000051b479f4",
+      "entity": "470020d6",
+      "visual": "1f0011cc",
+      "scale": 0.6000000238418579,
+      "cell": "6fa7003b",
+      "position": [
+        150.9243927001953,
+        58.09987258911133,
+        78.51106262207031
+      ],
+      "orientation": [
+        0.030795108526945114,
+        0.0,
+        0.0,
+        0.9995257258415222
+      ],
+      "physics_mask": "00008082",
+      "description_mask": "021f8081",
+      "message_sha256": "19b982895ae1079cab4fe1d396e6c99aeee9233a489dd6dfdbdf859dfb66b6d5",
+      "id": "8140e28c3eac292c",
+      "source_sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110"
+    },
+    {
+      "source_iid": "8120000051b479f5",
+      "entity": "470020d7",
+      "visual": "1f0011cc",
+      "scale": 0.6000000238418579,
+      "cell": "6fa7003b",
+      "position": [
+        150.9243927001953,
+        58.09987258911133,
+        78.51106262207031
+      ],
+      "orientation": [
+        0.030795108526945114,
+        0.0,
+        0.0,
+        0.9995257258415222
+      ],
+      "physics_mask": "00008082",
+      "description_mask": "021f8081",
+      "message_sha256": "cb5029b4335d2c7d8602ba25213a6093ecd349c4ec6b8bc811afb1e40a95472e",
+      "id": "8140c635f8edbd10",
+      "source_sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110"
+    },
+    {
+      "source_iid": "8120000051b479f7",
+      "entity": "4700117b",
+      "visual": "1f0001cf",
+      "scale": 0.6000000238418579,
+      "cell": "6fa7003b",
+      "position": [
+        150.9243927001953,
+        58.09987258911133,
+        78.55999755859375
+      ],
+      "orientation": [
+        0.030795108526945114,
+        0.0,
+        0.0,
+        0.9995257258415222
+      ],
+      "physics_mask": "00008082",
+      "description_mask": "021f8081",
+      "message_sha256": "a7e5804e60772a720c3a35d78f7a9f79f4181cecceb7ce705fe38b3104366bea",
+      "id": "8140d694b4f0a929",
+      "source_sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110"
+    },
+    {
+      "source_iid": "8120000051b47a02",
+      "entity": "470020d7",
+      "visual": "1f0011cc",
+      "scale": 0.6000000238418579,
+      "cell": "6fa7003b",
+      "position": [
+        150.01629638671875,
+        52.998409271240234,
+        78.51106262207031
+      ],
+      "orientation": [
+        0.06770801544189453,
+        0.0,
+        0.0,
+        0.9977051615715027
+      ],
+      "physics_mask": "00008082",
+      "description_mask": "021f8081",
+      "message_sha256": "aa7153afb80c856e0937028efa3c337c31c7276c46fb00ef42d4e444ba65f6b7",
+      "id": "814086b4543dfe6d",
+      "source_sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110"
+    },
+    {
+      "source_iid": "8120000051b47a05",
+      "entity": "470020d6",
+      "visual": "1f0011cc",
+      "scale": 0.6000000238418579,
+      "cell": "6fa7003b",
+      "position": [
+        156.1461639404297,
+        50.791412353515625,
+        78.51106262207031
+      ],
+      "orientation": [
+        0.9279510974884033,
+        0.0,
+        0.0,
+        -0.372702032327652
+      ],
+      "physics_mask": "00008082",
+      "description_mask": "021f8081",
+      "message_sha256": "9cbc6a0a6c382bb56f758237a9d3faeed9060737e34df511ee5ed4e048666e9e",
+      "id": "8140c617f2aa394a",
+      "source_sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110"
+    },
+    {
+      "source_iid": "8120000051b5006e",
+      "entity": "47003323",
+      "visual": "1f001848",
+      "scale": null,
+      "cell": "6fa7003b",
+      "position": [
+        155.4334259033203,
+        54.1868896484375,
+        78.50499725341797
+      ],
+      "orientation": [
+        0.704925537109375,
+        0.0,
+        0.0,
+        0.7092812657356262
+      ],
+      "physics_mask": "00008082",
+      "description_mask": "021f8001",
+      "message_sha256": "fa233b3dcbe4aeb322fd753224d4f189ff15518b26eec44c5e0d9ace31a04a14",
+      "id": "814092a088ee59c0",
+      "source_sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110"
+    },
+    {
+      "source_iid": "8120000051b47aa3",
+      "entity": "4700117b",
+      "visual": "1f0001cf",
+      "scale": 0.6000000238418579,
+      "cell": "6fa7003c",
+      "position": [
+        144.83370971679688,
+        71.50867462158203,
+        78.55999755859375
+      ],
+      "orientation": [
+        0.7221865653991699,
+        0.0,
+        0.0,
+        0.6916983127593994
+      ],
+      "physics_mask": "00008082",
+      "description_mask": "021f8081",
+      "message_sha256": "5ed19b51e94326b3f9fdc3186b5d2c94c6b66e32179269a743a3716c9261baca",
+      "id": "8140aab2255f016c",
+      "source_sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110"
+    },
+    {
+      "source_iid": "8120000051b47aa1",
+      "entity": "4700117b",
+      "visual": "1f0001cf",
+      "scale": 0.6000000238418579,
+      "cell": "6fa7003c",
+      "position": [
+        146.3138427734375,
+        69.94412994384766,
+        78.55999755859375
+      ],
+      "orientation": [
+        -0.006159864831715822,
+        0.0,
+        0.0,
+        0.9999810457229614
+      ],
+      "physics_mask": "00008082",
+      "description_mask": "021f8081",
+      "message_sha256": "a2fdd406222e047e66706bb6a84a6f452bedbe893ef55c4ca3ec27a3a9f5e596",
+      "id": "8140d01a90bbf248",
+      "source_sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110"
+    },
+    {
+      "source_iid": "8120000051b47aa0",
+      "entity": "4700117b",
+      "visual": "1f0001cf",
+      "scale": 0.6000000238418579,
+      "cell": "6fa7003c",
+      "position": [
+        147.272705078125,
+        70.27539825439453,
+        78.55999755859375
+      ],
+      "orientation": [
+        -0.33235469460487366,
+        0.0,
+        0.0,
+        0.9431544542312622
+      ],
+      "physics_mask": "00008082",
+      "description_mask": "021f8081",
+      "message_sha256": "f878b1211f5d0b64d37363fc4410adceb0e758bce96929f93d04ef5566859b4f",
+      "id": "814097ae14e6d65c",
+      "source_sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110"
+    },
+    {
+      "source_iid": "8120000051b47a88",
+      "entity": "470020d7",
+      "visual": "1f0011cc",
+      "scale": 0.6000000238418579,
+      "cell": "6fa7003c",
+      "position": [
+        151.28314208984375,
+        60.870662689208984,
+        78.51106262207031
+      ],
+      "orientation": [
+        0.32071030139923096,
+        0.0,
+        0.0,
+        0.9471773505210876
+      ],
+      "physics_mask": "00008082",
+      "description_mask": "021f8081",
+      "message_sha256": "0e577d77595455c3cef786d709d684d0f336d2a31cafe571bffdcb0b1fd22b32",
+      "id": "8140d027a5a963d2",
+      "source_sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110"
+    },
+    {
+      "source_iid": "8120000051b47a98",
+      "entity": "470020d6",
+      "visual": "1f0011cc",
+      "scale": 0.6000000238418579,
+      "cell": "6fa7003c",
+      "position": [
+        153.0876922607422,
+        71.75044250488281,
+        78.14820098876953
+      ],
+      "orientation": [
+        -0.06770791113376617,
+        0.0,
+        0.0,
+        0.9977051615715027
+      ],
+      "physics_mask": "00008082",
+      "description_mask": "021f8081",
+      "message_sha256": "19fa7910b4baff53e9672bdcef5f0cad873951e5a1fa92123ee32f8a11b5b794",
+      "id": "8140b5dc253bac46",
+      "source_sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110"
+    },
+    {
+      "source_iid": "8120000051b47a9e",
+      "entity": "4700117b",
+      "visual": "1f0001cf",
+      "scale": 0.6000000238418579,
+      "cell": "6fa7003c",
+      "position": [
+        147.471435546875,
+        72.4199447631836,
+        78.55999755859375
+      ],
+      "orientation": [
+        0.9084652662277222,
+        0.0,
+        0.0,
+        -0.41796034574508667
+      ],
+      "physics_mask": "00008082",
+      "description_mask": "021f8081",
+      "message_sha256": "9a74e3d1d20f1295ff9c9e90a9a7eacf5886376801d73ffd7b7a59c89da3bb5f",
+      "id": "8140cd7767e2f841",
+      "source_sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110"
+    },
+    {
+      "source_iid": "8120000051b47a9f",
+      "entity": "4700117b",
+      "visual": "1f0001cf",
+      "scale": 0.6000000238418579,
+      "cell": "6fa7003c",
+      "position": [
+        147.80845642089844,
+        71.17748260498047,
+        78.55999755859375
+      ],
+      "orientation": [
+        0.6412132978439331,
+        0.0,
+        0.0,
+        -0.7673627138137817
+      ],
+      "physics_mask": "00008082",
+      "description_mask": "021f8081",
+      "message_sha256": "059f1ccbe3ae2871fce836ffd3d63b83a1bc5667bd4a6e06e9145cf888b1b746",
+      "id": "814084b18d6c1ea1",
+      "source_sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110"
+    },
+    {
+      "source_iid": "8120000051b47a9c",
+      "entity": "4700117b",
+      "visual": "1f0001cf",
+      "scale": 0.6000000238418579,
+      "cell": "6fa7003c",
+      "position": [
+        145.19320678710938,
+        72.4199447631836,
+        78.55999755859375
+      ],
+      "orientation": [
+        0.9084653258323669,
+        0.0,
+        0.0,
+        0.41796019673347473
+      ],
+      "physics_mask": "00008082",
+      "description_mask": "021f8081",
+      "message_sha256": "9b7cc372599821b07741e25af2be168485c29078a911492b03ffa4793591c8e6",
+      "id": "8140d6ddd15d2569",
+      "source_sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110"
+    },
+    {
+      "source_iid": "8120000051b47a9d",
+      "entity": "4700117b",
+      "visual": "1f0001cf",
+      "scale": 0.6000000238418579,
+      "cell": "6fa7003c",
+      "position": [
+        146.58975219726562,
+        72.92176055908203,
+        78.55999755859375
+      ],
+      "orientation": [
+        0.9962836503982544,
+        0.0,
+        0.0,
+        -0.0861329436302185
+      ],
+      "physics_mask": "00008082",
+      "description_mask": "021f8081",
+      "message_sha256": "2abc10496c6d3cdb3ac62be782571b6140160d2845f2bd8d953d60f8dc39f226",
+      "id": "814095b409e196c6",
+      "source_sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110"
+    },
+    {
+      "source_iid": "8120000051b47aa2",
+      "entity": "4700117b",
+      "visual": "1f0001cf",
+      "scale": 0.6000000238418579,
+      "cell": "6fa7003c",
+      "position": [
+        145.36343383789062,
+        70.29891967773438,
+        78.55999755859375
+      ],
+      "orientation": [
+        0.34394899010658264,
+        0.0,
+        0.0,
+        0.9389883279800415
+      ],
+      "physics_mask": "00008082",
+      "description_mask": "021f8081",
+      "message_sha256": "865b67b2bbc0347bca292705da8eca404652227f2e36d17b918c265c5f55f87c",
+      "id": "8140ffa3693ec4dd",
+      "source_sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110"
+    },
+    {
+      "source_iid": "8120000051b12cd2",
+      "entity": "47001f47",
+      "visual": "1f000096",
+      "scale": null,
+      "cell": "6fa7003d",
+      "position": [
+        140.64254760742188,
+        96.61840057373047,
+        79.00599670410156
+      ],
+      "orientation": [
+        0.9566044807434082,
+        0.0,
+        0.0,
+        0.291389524936676
+      ],
+      "physics_mask": "00008082",
+      "description_mask": "021f8003",
+      "message_sha256": "3457800969ad36671bc2f383b52a82349a2b1db4fc4afd3cfddbb361bed5eb22",
+      "id": "8140afe98134f949",
+      "source_sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110"
+    },
+    {
+      "source_iid": "8120000051b47a92",
+      "entity": "4700117b",
+      "visual": "1f0001cf",
+      "scale": 0.6000000238418579,
+      "cell": "6fa70034",
+      "position": [
+        138.2178192138672,
+        62.515830993652344,
+        78.55999755859375
+      ],
+      "orientation": [
+        -0.33235469460487366,
+        0.0,
+        0.0,
+        0.9431544542312622
+      ],
+      "physics_mask": "00008082",
+      "description_mask": "021f8081",
+      "message_sha256": "1d78b8c8bd4431047a5dd4f9423d6cff5cf5e3f62fd4b5d6a9913865ba317529",
+      "id": "8140d64548038022",
+      "source_sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110"
+    },
+    {
+      "source_iid": "8120000051b12cd1",
+      "entity": "47001f47",
+      "visual": "1f000096",
+      "scale": null,
+      "cell": "6fa70035",
+      "position": [
+        133.75540161132812,
+        90.29454803466797,
+        79.00599670410156
+      ],
+      "orientation": [
+        0.8810122013092041,
+        0.0,
+        0.0,
+        -0.47309359908103943
+      ],
+      "physics_mask": "00008082",
+      "description_mask": "021f8003",
+      "message_sha256": "5721610d8fe0297bf65557373ac4f3c9bb9993c0160e1a059b62975a77210d11",
+      "id": "8140b1976cbde1ad",
+      "source_sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110"
+    }
+  ]
+}

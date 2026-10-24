@@ -35,6 +35,9 @@ impl Content {
     pub fn bundled(game_data: &Path) -> io::Result<Self> {
         Self::parse(include_str!("../content/world.tsv"), game_data)
     }
+    pub fn observed(game_data: &Path) -> io::Result<Self> {
+        Self::parse(include_str!("../content/observed-world.tsv"), game_data)
+    }
     pub fn len(&self) -> usize {
         self.objects.len()
     }
@@ -70,9 +73,10 @@ impl Content {
             return Err(invalid("world content exceeds 4 MiB"));
         }
         let mut lines = text.lines();
-        let quaternion = match lines.next() {
-            Some("pyrealium-world-v1") => false,
-            Some("pyrealium-world-v2") => true,
+        let version = match lines.next() {
+            Some("pyrealium-world-v1") => 1,
+            Some("pyrealium-world-v2") => 2,
+            Some("pyrealium-world-v3") => 3,
             _ => return Err(invalid("unsupported world content header")),
         };
         let mut content = Self::default();
@@ -84,12 +88,18 @@ impl Content {
             if text.is_empty() || text.starts_with('#') {
                 continue;
             }
-            let parse = || -> io::Result<(u64, u32, u32, Placement, [f32; 4])> {
+            let parse = || -> io::Result<(u64, u32, u32, Placement, [f32; 4], Option<f32>)> {
                 if text.len() > 512 {
                     return Err(invalid("placement exceeds 512 bytes"));
                 }
                 let fields: Vec<_> = text.split('\t').collect();
-                if fields.len() != if quaternion { 11 } else { 8 } {
+                if fields.len()
+                    != match version {
+                        1 => 8,
+                        2 => 11,
+                        _ => 12,
+                    }
+                {
                     return Err(invalid(
                         "placement field count does not match manifest version",
                     ));
@@ -112,13 +122,13 @@ impl Content {
                         fields[5].parse().map_err(|_| invalid("invalid Y"))?,
                         fields[6].parse().map_err(|_| invalid("invalid Z"))?,
                     ],
-                    heading: if quaternion {
+                    heading: if version >= 2 {
                         0
                     } else {
                         fields[7].parse().map_err(|_| invalid("invalid heading"))?
                     },
                 };
-                let orientation = if quaternion {
+                let orientation = if version >= 2 {
                     let mut rotation = [0.0f32; 4];
                     for (value, text) in rotation.iter_mut().zip(&fields[7..11]) {
                         *value = text.parse().map_err(|_| invalid("invalid quaternion"))?;
@@ -144,9 +154,20 @@ impl Content {
                         "invalid placement identity, asset type or position",
                     ));
                 }
-                Ok((id, entity, visual, placement, orientation))
+                let scale = if version == 3 && fields[11] != "-" {
+                    let scale: f32 = fields[11]
+                        .parse()
+                        .map_err(|_| invalid("invalid content scale"))?;
+                    if !scale.is_finite() || scale <= 0.0 || scale > 100.0 {
+                        return Err(invalid("content scale outside local bounds"));
+                    }
+                    Some(scale)
+                } else {
+                    None
+                };
+                Ok((id, entity, visual, placement, orientation, scale))
             };
-            let (id, entity, visual, placement, orientation) = parse()
+            let (id, entity, visual, placement, orientation, scale) = parse()
                 .map_err(|error| invalid(format!("world content line {}: {error}", line + 2)))?;
             if content.objects.len() >= MAX_OBJECTS || content.objects.contains_key(&id) {
                 return Err(invalid("world content object limit or duplicate IID"));
@@ -168,17 +189,20 @@ impl Content {
                     invalid(format!("content cell {:#010x}: {error}", placement.cell))
                 })?;
             }
-            let spawn = world::create_stationary_object(&StationaryObject {
-                character_id: id,
-                parent_visual_did: visual,
-                entity_did: entity,
-                cell_id: placement.cell,
-                position: placement.coordinates,
-                orientation,
-                instance_stamp: 1,
-                visual_ordering_stamp: 0,
-                timestamps: [0; 4],
-            })
+            let spawn = world::create_stationary_object_with_scale(
+                &StationaryObject {
+                    character_id: id,
+                    parent_visual_did: visual,
+                    entity_did: entity,
+                    cell_id: placement.cell,
+                    position: placement.coordinates,
+                    orientation,
+                    instance_stamp: 1,
+                    visual_ordering_stamp: 0,
+                    timestamps: [0; 4],
+                },
+                scale,
+            )
             .map_err(|error| invalid(format!("content object: {error}")))?;
             let mut destroy = 0x100c2u32.to_le_bytes().to_vec();
             destroy.extend(id.to_le_bytes());

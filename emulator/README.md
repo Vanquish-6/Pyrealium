@@ -182,6 +182,13 @@ NPC/object authoring. Binding, portal travel, NPC behavior and other interaction
 remain unfinished, and native appearance has not been checked.
 See [content format and provenance](content/README.md).
 
+An additional snapshot is available with `--content observed`: it adds 30
+capture-observed stationary actors to the 247-object pack, including Banderlings,
+Idol/Surrogate Spawns, a named NPC, eggs and chests. It retains observed positions,
+rotations and scale overrides. This snapshot does not implement AI, merchants,
+combat, loot, quest interactions or respawn schedules; original capture build
+identity and native appearance remain unverified.
+
 Offline inventory management is available through the `inventory-*` commands in
 `--help`; use the normal `--account`, `--character-id` and `--data` arguments.
 The server must be stopped. Development grants require existing definition and

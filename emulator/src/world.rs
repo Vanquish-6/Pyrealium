@@ -465,6 +465,18 @@ pub struct StationaryObject {
 
 /// Builds a syntactically recovered CreateObject subset; not a complete player bootstrap.
 pub fn create_stationary_object(object: &StationaryObject) -> Result<Vec<u8>, WorldError> {
+    create_stationary_object_with_scale(object, None)
+}
+
+/// Optional native gmWeenieDesc scale (bit 0x80, StreamPack 006037c0).
+/// The positive scale bound is local content policy, not a recovered game limit.
+pub fn create_stationary_object_with_scale(
+    object: &StationaryObject,
+    scale: Option<f32>,
+) -> Result<Vec<u8>, WorldError> {
+    if scale.is_some_and(|scale| !scale.is_finite() || scale <= 0.0 || scale > 100.0) {
+        return Err(WorldError::InvalidValue);
+    }
     let norm: f32 = object.orientation.iter().map(|v| v * v).sum();
     if object.character_id == 0
         || object.parent_visual_did == 0
@@ -494,8 +506,11 @@ pub fn create_stationary_object(object: &StationaryObject) -> Result<Vec<u8>, Wo
     for stamp in object.timestamps {
         bytes.extend(stamp.to_le_bytes());
     }
-    bytes.extend(0x02000000_u32.to_le_bytes()); // gmWeenieDesc entity DID present
+    bytes.extend((0x02000000_u32 | if scale.is_some() { 0x80 } else { 0 }).to_le_bytes());
     bytes.extend(object.entity_did.to_le_bytes());
+    if let Some(scale) = scale {
+        bytes.extend(scale.to_le_bytes());
+    }
     Ok(bytes)
 }
 

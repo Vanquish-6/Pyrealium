@@ -6,7 +6,7 @@ use std::{env, net::SocketAddr, path::PathBuf, process::ExitCode};
 
 fn usage() {
     println!(
-        "  serve --game-data PATH [--content PATH|none]\n    Game-data mode loads the bundled world pack. Override it with a placement file or disable it with none."
+        "  serve --game-data PATH [--content PATH|observed|none]\n    Game-data mode loads the bundled world pack. observed adds captured stationary actors. Use a file for external content or none to disable it."
     );
     println!(
         "  inventory-reorder --character-id N --request PATH\n    Offline import of one reassembled native inventory sorting message (296 bytes)."
