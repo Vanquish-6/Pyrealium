@@ -43,6 +43,20 @@ Distributors and modified-server operators must make sure their offer
 points to the complete source for their actual version. A link to an unchanged
 upstream repository is not sufficient for private modifications.
 
+## Earlier project-owned code
+
+The copyright holder also offers all earlier original project code and
+documentation they own under AGPL-3.0-only, including their contributions in
+commits and releases predating this license change. This grant applies to that
+owned material whether used on its own or carried forward into the current tree.
+The complete terms are in LICENSE; this statement does not rewrite historical
+commits or withdraw permissions already granted under another license.
+
+This grant covers only rights held by the project's copyright holder. It does
+not relicense independently owned contributions, dependencies, game assets,
+reference implementations or other third-party material. Preserve their notices
+and comply with their applicable licenses.
+
 ## Third-party material and prior releases
 
 This project does not grant rights to the proprietary game client or game assets,
