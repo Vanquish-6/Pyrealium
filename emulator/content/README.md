@@ -135,6 +135,12 @@ The graphical tool is `tools/content_editor.py`. On Windows, double-click
 python tools/content_editor.py --game-data PATH
 ```
 
+Each launch writes a diagnostic log under
+`%LOCALAPPDATA%\Pyrealium\content-editor\logs`, including Python callback
+exceptions and native fatal tracebacks where Python can capture them. This
+keeps errors available when the `pythonw` launcher has no console. Closing the
+editor waits for its current DAT read to drain before destroying Tk resources.
+
 It requires Python with Tk support and uses no third-party GUI packages. Search
 the catalog by label, entity or visual identifier; select an entry; choose the
 game-data folder and content file; then enter a cell, X/Y/Z, heading and optional

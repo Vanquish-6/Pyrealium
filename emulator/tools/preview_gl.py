@@ -28,10 +28,10 @@ class GLRenderer:
     MAX_ARRAY_INDICES = 3_000_000
     TEXTURE_BUDGET = 64 * 1024 * 1024
 
-    def __init__(self, canvas, schedule_redraw):
+    def __init__(self, canvas):
         if os.name != "nt":
             raise GLUnavailable("The embedded OpenGL viewport requires Windows")
-        self.canvas, self.schedule_redraw = canvas, schedule_redraw
+        self.canvas = canvas
         self.hwnd = self.dc = self.context = None
         self.closed = False
         self.size = None
@@ -39,6 +39,7 @@ class GLRenderer:
         self.textures = OrderedDict()
         self.texture_bytes = 0
         self.warnings = []
+        self.repaint_requested = False
         self.u = C.WinDLL("user32", use_last_error=True)
         self.gdi = C.WinDLL("gdi32", use_last_error=True)
         self.gl = C.WinDLL("opengl32", use_last_error=True)
@@ -144,10 +145,11 @@ class GLRenderer:
             if message == 0x0f:  # WM_PAINT
                 self.u.ValidateRect(hwnd, None)
                 if not self.closed:
-                    try:
-                        self.schedule_redraw()
-                    except Exception:
-                        pass  # Destruction can race a queued native paint message.
+                    # Never enter Tk from a ctypes/native window callback.
+                    # Nested Tk calls overwrite _tkinter's saved Tcl thread
+                    # state and can fatally abort Python on the next idle event.
+                    # The owning Tk event loop consumes this flag instead.
+                    self.repaint_requested = True
                 return 0
             return self.u.DefWindowProcW(hwnd, message, wparam, lparam)
         self.procedure = self.WNDPROC(procedure)
@@ -202,6 +204,11 @@ class GLRenderer:
     def _current(self):
         if not self.context or not self.gl.wglMakeCurrent(self.dc, self.context):
             raise GLUnavailable(f"Could not activate the OpenGL context: {C.get_last_error()}")
+
+    def consume_repaint(self):
+        pending = self.repaint_requested
+        self.repaint_requested = False
+        return pending
 
     def _string(self, token):
         value = self.gl.glGetString(token)

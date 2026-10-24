@@ -4,6 +4,7 @@ Windows OpenGL renders actual texture pixels; a painter fallback remains for
 unavailable contexts. Native clip skinning is separate from game behavior logic.
 """
 import math
+import logging
 import time
 import tkinter as tk
 from tkinter import ttk
@@ -71,6 +72,7 @@ class Preview3D(ttk.Frame):
         self.gpu = None
         self.gpu_error = None
         self.animation_pending = None
+        self.paint_poll_pending = None
         self.animation_time = 0.0
         self.animation_last = time.perf_counter()
         self.clip_ids = {}
@@ -118,6 +120,16 @@ class Preview3D(ttk.Frame):
         self.canvas.bind("<KeyPress-F>", lambda event: self.focus_placement())
         self.canvas.bind("<Enter>", lambda event: self.canvas.focus_set())
         self.canvas.bind("<Destroy>", lambda event: self.close())
+        self.paint_poll_pending = self.after(33, self.poll_native_paint)
+
+    def poll_native_paint(self):
+        """Bridge native paint requests only from a normal Tk callback."""
+        self.paint_poll_pending = None
+        if self.closed:
+            return
+        if self.gpu and self.gpu.consume_repaint():
+            self.redraw()
+        self.paint_poll_pending = self.after(33, self.poll_native_paint)
 
     def set_scene(self, instances, center, warnings=(), heading=0):
         """Replace the scene. center is the initial selected placement anchor."""
@@ -402,13 +414,16 @@ class Preview3D(ttk.Frame):
                 from preview_gl import GLRenderer
                 if self.gpu is None:
                     self.canvas.delete("all")
-                    self.gpu = GLRenderer(self.canvas, self.redraw)
+                    logging.info("Creating native OpenGL viewport")
+                    self.gpu = GLRenderer(self.canvas)
+                    logging.info("Native OpenGL viewport ready: %s",self.gpu.info)
                 count = self.gpu.render(list(self.visible_instances()), eye, forward, right, up,
                                         width, height, self.placement[2]+3.5 if self.cutaway.get() else None)
                 self.status.set(f"Textured 3D view · {count:,} triangles"
                                 + (f" · {len(self.scene_warnings)} loading notes in Details" if self.scene_warnings else ""))
                 return
             except (RuntimeError, OSError, ValueError, ImportError) as error:
+                logging.exception("Native OpenGL unavailable; using software renderer")
                 if self.gpu:
                     self.gpu.close()
                     self.gpu = None
@@ -520,6 +535,12 @@ class Preview3D(ttk.Frame):
 
     def close(self):
         self.closed = True
+        if self.paint_poll_pending is not None:
+            try:
+                self.after_cancel(self.paint_poll_pending)
+            except tk.TclError:
+                pass
+            self.paint_poll_pending = None
         if self.animation_pending is not None:
             try:
                 self.after_cancel(self.animation_pending)

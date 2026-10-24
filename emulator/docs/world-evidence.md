@@ -1,5 +1,33 @@
 # Build 7148 character and world event evidence
 
+## Editor load crash: native paint callback re-entry (2026-10-24)
+
+Windows recorded two `pythonw.exe` crashes (`0xc0000409`, fatal-app-exit code 7).
+Retained local dumps `pythonw.exe.2424.dmp` and `pythonw.exe.31316.dmp` match the
+installed Python 3.14 DLL and `_tkinter.pyd` module timestamps. The first dump's
+stack contains `_tkinter.pyd+30f9`, returning from its imported
+`PyEval_RestoreThread`, and the Python fatal path at `python314.dll+2063f7`.
+The matching Python image identifies the fatal function as
+`PyEval_RestoreThread`; the surrounding Tcl stack is servicing an idle callback.
+
+The OpenGL Win32 window procedure previously invoked `Preview3D.redraw`, which
+calls Tk `after_idle`, directly from a ctypes native callback. That re-entry can
+overwrite `_tkinter`'s saved Tcl/Python thread state before the outer idle
+callback restores it. The window procedure now only validates paint and sets a
+Python boolean. A regular Tk-owned timer consumes that flag and schedules
+redraw. The native renderer no longer accepts or retains a Tk scheduling
+callback, keeping this boundary explicit.
+
+Shutdown also keeps the Tk owner alive until the serialized DAT worker has
+finished and released its bound methods; only then is the worker joined and
+the window destroyed. Otherwise Tk variable finalization could occur on a worker.
+The console-free entry point now retains stdout/stderr, callback exception logs,
+and Python fatal tracebacks in the user's local application-data log directory.
+
+Syntax and scoped whitespace checks completed; existing dumps were inspected
+read-only. No test suite, GUI or game was launched after this patch, so a fresh
+user load is still required to establish crash resolution.
+
 ## Material alpha and unused skin color fields (2026-10-24)
 
 Read-only extraction showed all 5,185 Gurog vertex colors are zero, while the

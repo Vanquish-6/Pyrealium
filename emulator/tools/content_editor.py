@@ -1,8 +1,15 @@
 """Offline graphical content placement. Saves through place_content's DAT checks."""
 import argparse
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
+import faulthandler
+import logging
 import math
+import os
 from pathlib import Path
+import sys
+import tempfile
+import traceback
 from types import SimpleNamespace
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
@@ -333,6 +340,7 @@ class Editor:
 
     def start_load(self):
         request = self.wanted
+        logging.info("Loading DAT scene: folder=%s cell=%08x visual=%08x", *request[0][:3])
         self.render_status.set("Reading native room and creature geometry from DAT files…")
         self.future = self.executor.submit(self.load_scene, request)
         self.loading = request
@@ -373,19 +381,38 @@ class Editor:
             self.view3d.set_scene(instances, position, warnings, heading=heading)
             self.view3d.update_placement(self.wanted[1], self.wanted[2], self.wanted[3])
             count = sum(len(row["mesh"]["indices"]) // 3 for row in instances)
+            logging.info("Scene loaded: meshes=%d triangles=%d notes=%d", len(instances),count,len(warnings))
             self.render_status.set(f"Loaded {len(instances)} native meshes · {count:,} triangles. "
                                    + (f"{len(warnings)} loading notes in Details." if warnings else "Native assets loaded."))
         except (OSError, ValueError, KeyError) as error:
+            logging.exception("Scene load failed")
             self.render_status.set(f"3D preview unavailable: {error}")
 
     def close(self):
+        if self.closing:
+            return
         self.closing = True
         self.view3d.close()
+        self.status.set("Closing after the current DAT read finishes…")
         def release():
             if self.assets:
                 self.assets.close()
-        self.executor.submit(release)
-        self.executor.shutdown(wait=False)
+                self.assets = None
+        self.release_future = self.executor.submit(release)
+        self.root.after(40,self.finish_close)
+
+    def finish_close(self):
+        # Keep Tk's owner alive until worker-held bound methods are released.
+        # Destroying immediately can finalize Tk variables on the DAT thread.
+        if not self.release_future.done():
+            self.root.after(40,self.finish_close)
+            return
+        try:
+            self.release_future.result()
+        except Exception:
+            logging.exception("DAT cleanup failed during editor shutdown")
+        # Cleanup is already complete; joining now does not wait for file I/O.
+        self.executor.shutdown(wait=True)
         self.root.destroy()
 
     def pick_position(self, event):
@@ -395,6 +422,8 @@ class Editor:
             self.fields["Y"].set(format(y - (event.y-height/2)/scale, ".9g"))
 
     def save(self):
+        if self.closing:
+            return
         self.save_button.configure(state="disabled")
         try:
             if not self.game.get().strip() or not self.output.get().strip():
@@ -419,6 +448,16 @@ class Editor:
 
 
 def main():
+    log_folder = Path(os.environ.get("LOCALAPPDATA",tempfile.gettempdir())) / "Pyrealium" / "content-editor" / "logs"
+    log_folder.mkdir(parents=True,exist_ok=True)
+    log_path = log_folder / (datetime.now(timezone.utc).strftime("editor-%Y%m%d-%H%M%S-") + str(os.getpid()) + ".log")
+    # pythonw has no console streams. Keep the log open until all owned worker
+    # threads finish, including during interpreter shutdown or a native abort.
+    log = log_path.open("a",encoding="utf-8",buffering=1,errors="backslashreplace")
+    sys.stdout = sys.stderr = log
+    logging.basicConfig(stream=log,level=logging.INFO,format="%(asctime)s %(levelname)s %(message)s")
+    faulthandler.enable(file=log,all_threads=True)
+    logging.info("Content editor starting: Python %s",sys.version)
     base = Path(__file__).resolve().parent.parent
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--game-data", type=Path)
@@ -426,8 +465,15 @@ def main():
     parser.add_argument("--output", type=Path, default=base / "content" / "local-world.tsv")
     args = parser.parse_args()
     root = tk.Tk()
-    Editor(root, args)
+    editor = Editor(root, args)
+    def callback_error(kind, value, trace):
+        traceback.print_exception(kind,value,trace,file=log)
+        log.flush()
+        editor.status.set(f"An editor error was recorded in {log_path}")
+    root.report_callback_exception = callback_error
+    root._content_editor_log = log
     root.mainloop()
+    logging.info("Content editor window closed")
 
 
 if __name__ == "__main__":
