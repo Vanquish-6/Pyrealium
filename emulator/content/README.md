@@ -145,6 +145,16 @@ Shift-click a world surface to set X/Y/Z through a ray intersection with its
 actual triangles. **Cut away ceiling** helps inspect an interior from above.
 The camera stays fixed while coordinates, heading or scale change.
 
+**Play animation** loops a real native clip for the selected supported creature.
+The clip list shows recovered asset IDs and periods; the mapped idle clip is
+selected first where available. Pause or choose another clip, and change
+**Speed** from 0.1 to 3.0. Playback evaluates native bone keys, quaternion
+interpolation, hierarchy, inverse bind matrices and skin weights. Time advances
+without accumulating catch-up frames. Only the selected preview is animated;
+this does not run AI or gameplay state. Unsupported graph branches are listed
+in Details. Root-motion application, graph blending, event hooks and attachment
+animation remain unfinished.
+
 The **Position map** tab remains available, with a stable view, coordinate grid,
 pan, zoom and **Fit cell**. Clicking it sets X/Y while retaining Z. Existing
 placements can supply a position and entity for a new addition; their identities

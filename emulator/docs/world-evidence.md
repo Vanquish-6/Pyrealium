@@ -1,5 +1,28 @@
 # Build 7148 character and world event evidence
 
+## Native clip playback and bind-correct skinning (2026-10-24)
+
+`preview_animation.py` follows AnimMap `006796f0`, DBAnimator `0067a5f0`,
+AnimAsset `0069ab70`/`00699400`, key records `007366b0`/`007366f0`/`006e5e80`,
+setup `006105a0`, inverse bind `006124f0`, and deformation `004ee0c0`.
+The Gurog profile resolves 37 bones, 22 stored clips and 15,573 key records.
+Idle token `80000001` maps to clip `050007d3`. Read-only extraction sampled
+both native meshes at 0.25 s, producing 441 and 4,744 finite animated positions
+and matching normals. This is asset evaluation, not matching-client acceptance.
+
+The editor provides native clip selection, play/pause and bounded speed control.
+Hierarchy transforms, key interpolation, quaternion slerp and inverse-bind
+weighted deformation use the actual stored data. Prepared nonzero influences
+and per-time bone matrices are cached; instance transforms are evaluated once
+per matrix instead of composing quaternion helper allocations for every vertex.
+Wall-clock playback skips overdue frames instead of building a Tk work backlog.
+
+AMHuman, AnimCube and AMSwitchME graphs supply actual leaf clips. AMLook is
+reported unsupported. Original behavior-state selection, graph blending, root
+motion, event hooks and attachments are not executed. No procedural substitute
+motion is generated. Syntax and read-only asset extraction completed; no test
+suite, GUI or game was launched.
+
 ## Per-pixel texture viewport (2026-10-24)
 
 `preview_gl.py` provides an embedded Win32 child window with its own device

@@ -102,6 +102,7 @@ class Assets:
             raise
         self.cache = OrderedDict()
         self.materials = OrderedDict()
+        self.animations = OrderedDict()
         self.material_warnings = set()
         try:
             self.surfaces = Dat(self.folder / "highres.dat") if (self.folder / "highres.dat").exists() else None
@@ -182,6 +183,21 @@ class Assets:
         return [(self.mesh(did), description.get("scale", (1, 1, 1)))
                 for did in setup_meshes(self.portal.read(setup), setup)]
 
+    def animation(self, visual):
+        from preview_animation import load_animation_set
+        if visual in self.animations:
+            self.animations.move_to_end(visual)
+            return self.animations[visual]
+        description = self.visual(visual)
+        groups = list(description["groups"].values())
+        if len(groups) != 1 or groups[0].get("animation", 0) >> 24 != 3:
+            raise ValueError("Visual has no supported single-group animation map")
+        animation = load_animation_set(self.portal, groups[0]["setup"], groups[0]["animation"])
+        self.animations[visual] = animation
+        if len(self.animations) > 4:
+            self.animations.popitem(last=False)
+        return animation
+
     def scene(self, cell, visual, position, heading, scale, placements, catalog):
         from preview_cell import decode_cell
         warnings, instances = [], []
@@ -203,6 +219,18 @@ class Assets:
                 add(mesh, position, rotation, [v * (scale or 1) for v in native_scale], "preview")
         except (OSError, ValueError, KeyError) as error:
             warnings.append(f"Selected visual {visual:08x}: {error}")
+        try:
+            animation = self.animation(visual)
+            for instance in instances:
+                if instance["role"] == "preview":
+                    try:
+                        animation.prepare_mesh(instance["mesh"])
+                        instance["animation_set"] = animation
+                    except ValueError as error:
+                        warnings.append(f"Animation mesh {instance['mesh']['did']:08x}: {error}")
+            warnings.extend(animation.warnings)
+        except (OSError, ValueError, KeyError) as error:
+            warnings.append(f"Animation: {error}")
         if not 0x100 <= (cell & 65535) <= 0xfffb:
             warnings.append("Outdoor terrain geometry is not supported by this preview yet")
             return instances, warnings

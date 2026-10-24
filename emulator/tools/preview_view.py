@@ -1,10 +1,10 @@
-"""Dependency-free interactive viewport for decoded native DAT triangles.
+"""Native DAT geometry, UV textures and animation playback in a Tk viewport.
 
-This draws supplied geometry, without synthesizing creatures or room surfaces.
-The painter renderer uses flat lighting and optional texture-sampled triangle
-colors. It is a placement aid, not the native client's animated renderer.
+Windows OpenGL renders actual texture pixels; a painter fallback remains for
+unavailable contexts. Native clip skinning is separate from game behavior logic.
 """
 import math
+import time
 import tkinter as tk
 from tkinter import ttk
 
@@ -70,6 +70,10 @@ class Preview3D(ttk.Frame):
         self.closed = False
         self.gpu = None
         self.gpu_error = None
+        self.animation_pending = None
+        self.animation_time = 0.0
+        self.animation_last = time.perf_counter()
+        self.clip_ids = {}
         controls = ttk.Frame(self)
         controls.pack(fill="x", pady=(0, 4))
         ttk.Button(controls, text="Focus creature (F)", command=self.focus_placement).pack(side="left")
@@ -79,6 +83,20 @@ class Preview3D(ttk.Frame):
         self.cutaway = tk.BooleanVar(value=True)
         ttk.Checkbutton(controls, text="Cut away ceiling", variable=self.cutaway,
                         command=self.redraw).pack(side="right")
+        animation_bar = ttk.Frame(self)
+        animation_bar.pack(fill="x", pady=(0, 4))
+        self.playing = tk.BooleanVar(value=True)
+        self.play_button = ttk.Checkbutton(animation_bar, text="Play animation", variable=self.playing,
+                                          command=self.animation_changed)
+        self.play_button.pack(side="left")
+        self.clip_name = tk.StringVar()
+        self.clip_selector = ttk.Combobox(animation_bar, textvariable=self.clip_name, width=28, state="disabled")
+        self.clip_selector.pack(side="left", padx=6, fill="x", expand=True)
+        self.clip_selector.bind("<<ComboboxSelected>>", self.animation_changed)
+        ttk.Label(animation_bar, text="Speed").pack(side="left")
+        self.animation_speed = tk.StringVar(value="1.0")
+        ttk.Spinbox(animation_bar, from_=0.1, to=3, increment=0.1, width=4,
+                    textvariable=self.animation_speed).pack(side="left", padx=4)
         self.canvas = tk.Canvas(self, background="#17212c", highlightthickness=0, height=330)
         self.canvas.pack(fill="both", expand=True)
         self.status = tk.StringVar(value="Choose a game data folder and load the native geometry.")
@@ -140,6 +158,9 @@ class Preview3D(ttk.Frame):
                 "uvs": mesh.get("uvs", ()),
                 "groups": mesh.get("groups", ()),
                 "material_images": mesh.get("material_images", {}),
+                "colors": mesh.get("colors", ()),
+                "mesh_source": mesh,
+                "animation_set": source.get("animation_set"),
             }
             item["base_position"] = item["position"]
             item["base_quaternion"] = item["quaternion"]
@@ -150,15 +171,86 @@ class Preview3D(ttk.Frame):
         if total_triangles > self.TRIANGLE_LIMIT:
             self.geometry_warnings.append(
                 f"Geometry limit: showing at most {self.TRIANGLE_LIMIT:,} of {total_triangles:,} triangles")
+        self.configure_animation()
         self.focus_placement()
 
     @staticmethod
     def transform(item):
         scale, quaternion, position = item["scale"], item["quaternion"], item["position"]
-        item["vertices"] = [add(rotate(tuple(value * factor for value, factor in zip(vertex, scale)), quaternion), position)
-                            for vertex in item["local"]]
-        item["normals"] = [unit(rotate(tuple(value/factor for value,factor in zip(normal,scale)),quaternion))
-                           for normal in item["local_normals"]]
+        w,x,y,z = quaternion
+        a,b,c = 1-2*(y*y+z*z), 2*(x*y-w*z), 2*(x*z+w*y)
+        d,e,f = 2*(x*y+w*z), 1-2*(x*x+z*z), 2*(y*z-w*x)
+        g,h,i = 2*(x*z-w*y), 2*(y*z+w*x), 1-2*(x*x+y*y)
+        sx,sy,sz = scale
+        px,py,pz = position
+        ax,by,cz,dx,ey,fz,gx,hy,iz = a*sx,b*sy,c*sz,d*sx,e*sy,f*sz,g*sx,h*sy,i*sz
+        item["vertices"] = [[ax*x+by*y+cz*z+px, dx*x+ey*y+fz*z+py, gx*x+hy*y+iz*z+pz]
+                            for x,y,z in item["local"]]
+        normals = []
+        for nx,ny,nz in item["local_normals"]:
+            x,y,z = nx/sx,ny/sy,nz/sz
+            rx,ry,rz = a*x+b*y+c*z,d*x+e*y+f*z,g*x+h*y+i*z
+            length = math.sqrt(rx*rx+ry*ry+rz*rz)
+            normals.append([rx/length,ry/length,rz/length] if length > 1e-12 else [0,0,1])
+        item["normals"] = normals
+
+    def configure_animation(self):
+        clips = next((item["animation_set"].clips for item in self.instances if item["animation_set"]), [])
+        self.clip_ids = {clip["label"]: clip["id"] for clip in clips}
+        self.clip_selector.configure(values=list(self.clip_ids), state="readonly" if clips else "disabled")
+        self.play_button.configure(state="normal" if clips else "disabled")
+        default = next((clip for clip in clips if 0x80000001 in clip.get("tokens", [])), clips[0] if clips else None)
+        self.clip_name.set(default["label"] if default else "No supported native animation")
+        self.animation_time = 0.0
+        self.animation_last = time.perf_counter()
+        if self.animation_pending is not None:
+            self.after_cancel(self.animation_pending)
+            self.animation_pending = None
+        if clips:
+            self.animation_pending = self.after(1, self.animate)
+
+    def animation_changed(self, event=None):
+        if event is not None:
+            self.animation_time = 0.0
+        self.animation_last = time.perf_counter()
+        self.apply_animation()
+
+    def apply_animation(self):
+        clip = self.clip_ids.get(self.clip_name.get())
+        if clip is None:
+            return
+        try:
+            for item in self.instances:
+                animation = item["animation_set"]
+                if animation is None or item["role"] != "preview":
+                    continue
+                item["local"], item["local_normals"] = animation.sample(clip, self.animation_time, item["mesh_source"])
+                self.transform(item)
+            self.redraw()
+        except (ValueError, KeyError) as error:
+            note = f"Animation stopped: {error}"
+            if note not in self.scene_warnings:
+                self.scene_warnings.append(note)
+            self.playing.set(False)
+
+    def animate(self):
+        self.animation_pending = None
+        if self.closed or not self.clip_ids:
+            return
+        now = time.perf_counter()
+        elapsed = now - self.animation_last
+        self.animation_last = now
+        if self.playing.get() and self.winfo_ismapped():
+            try:
+                speed = float(self.animation_speed.get())
+                if not math.isfinite(speed) or not 0.1 <= speed <= 3:
+                    speed = 1.0
+            except ValueError:
+                speed = 1.0
+            self.animation_time += elapsed * speed
+            self.apply_animation()
+        # Skip elapsed frames under load; do not queue catch-up work on Tk.
+        self.animation_pending = self.after(max(10, 50-int((time.perf_counter()-now)*1000)), self.animate)
 
     def update_placement(self, position, heading, scale=None):
         """Move the preview without changing the camera or any world instance."""
@@ -421,6 +513,12 @@ class Preview3D(ttk.Frame):
 
     def close(self):
         self.closed = True
+        if self.animation_pending is not None:
+            try:
+                self.after_cancel(self.animation_pending)
+            except tk.TclError:
+                pass
+            self.animation_pending = None
         if self.gpu:
             self.gpu.close()
             self.gpu = None
