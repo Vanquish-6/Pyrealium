@@ -27,6 +27,7 @@ pub struct Config {
     pub game_data: Option<PathBuf>,
     pub initialize_ui: bool,
     pub content: Option<PathBuf>,
+    pub encounters: Option<PathBuf>,
 }
 struct Peer {
     client_version: String,
@@ -100,7 +101,10 @@ impl Peer {
                 break;
             }
             let opcode = u32::from_le_bytes(data[..4].try_into().unwrap());
-            let ordered = matches!(opcode, 0x10058 | 0x100c2 | 0x1006a | 0x1006c | 0x100d5);
+            let ordered = matches!(
+                opcode,
+                0x10058 | 0x100c2 | 0x10069 | 0x1006a | 0x1006c | 0x100d4 | 0x100d5 | 0x10066
+            );
             let packets = self.send_world_event(&data, ordered, now)?;
             self.scene_outbox.pop_front();
             self.scene_bytes -= data.len();
@@ -323,6 +327,13 @@ pub fn run(config: Config) -> io::Result<()> {
     };
     let content = match config.content.as_deref() {
         Some(path) if path == std::path::Path::new("none") => crate::content::Content::default(),
+        Some(path) if path == std::path::Path::new("training") => {
+            let directory = config
+                .game_data
+                .as_deref()
+                .ok_or_else(|| invalid("--content training requires --game-data"))?;
+            crate::content::Content::training(directory)?
+        }
         Some(path) if path == std::path::Path::new("observed") => {
             let directory = config
                 .game_data
@@ -359,6 +370,11 @@ pub fn run(config: Config) -> io::Result<()> {
             None => crate::content::Content::default(),
         },
     };
+    let mut encounters = config
+        .encounters
+        .as_deref()
+        .map(|path| crate::encounters::Encounters::load(path, &content))
+        .transpose()?;
     let primary = UdpSocket::bind(config.bind)?;
     let mut secondary_addr = config.bind;
     secondary_addr.set_port(config.bind.port() + 1);
@@ -382,6 +398,15 @@ pub fn run(config: Config) -> io::Result<()> {
     let mut peers: BTreeMap<SocketAddr, Peer> = BTreeMap::new();
     let mut active_characters = BTreeMap::new();
     let mut scene = crate::scene::Scene::with_content(content);
+    if let Some(runtime) = &encounters {
+        for (id, health) in runtime.initial_health() {
+            scene.content_stat(id, 0x107, health)?;
+            scene.content_stat(id, 0x102, health)?;
+        }
+        println!(
+            "Development encounters enabled with explicit authored rules; original combat parity is unfinished."
+        );
+    }
     let mut failed_peers = BTreeSet::new();
     let random = RandomState::new();
     let mut generation = 0u64;
@@ -701,7 +726,31 @@ pub fn run(config: Config) -> io::Result<()> {
                                         request @ (script::Request::Combat(_)
                                         | script::Request::Attack(_)) => {
                                             let enabled = match request {
-                                                script::Request::Combat(enabled) => enabled,
+                                                script::Request::Combat(enabled) => {
+                                                    if enabled
+                                                        && !store.characters[&character]
+                                                            .progression
+                                                            .alive()
+                                                    {
+                                                        replies.extend(
+                                                            peer.send_event(
+                                                                &script::chat(
+                                                                    "You cannot fight while dead.",
+                                                                    1,
+                                                                )
+                                                                .map_err(other)?,
+                                                                now,
+                                                            )?,
+                                                        );
+                                                        return Ok(replies);
+                                                    }
+                                                    if !enabled {
+                                                        if let Some(runtime) = &mut encounters {
+                                                            runtime.stop(character);
+                                                        }
+                                                    }
+                                                    enabled
+                                                }
                                                 script::Request::Attack(target) => {
                                                     if target.is_some_and(|target| {
                                                         target == character
@@ -710,6 +759,42 @@ pub fn run(config: Config) -> io::Result<()> {
                                                         return Err(invalid(
                                                             "attack target is not a visible other object",
                                                         ));
+                                                    }
+                                                    if let Some(target) = target {
+                                                        let started=encounters.as_mut().ok_or_else(||invalid("Combat rules are not enabled on this server."))
+                                                            .and_then(|runtime|runtime.start(character,target,now_ms,&scene,&store));
+                                                        if let Err(error) = started {
+                                                            if let Some(runtime) = &mut encounters {
+                                                                runtime.stop(character);
+                                                            }
+                                                            peer.combat = false;
+                                                            peer.target = None;
+                                                            replies.extend(
+                                                                peer.send_event(
+                                                                    &script::chat(
+                                                                        &error.to_string(),
+                                                                        1,
+                                                                    )
+                                                                    .map_err(other)?,
+                                                                    now,
+                                                                )?,
+                                                            );
+                                                            replies.extend(
+                                                                peer.send_event(
+                                                                    &script::private_call(
+                                                                        script::COMBAT_STATE,
+                                                                        &script::integer(
+                                                                            u32::from(peer.combat),
+                                                                        ),
+                                                                    )
+                                                                    .map_err(other)?,
+                                                                    now,
+                                                                )?,
+                                                            );
+                                                            return Ok(replies);
+                                                        }
+                                                    } else if let Some(runtime) = &mut encounters {
+                                                        runtime.stop(character);
                                                     }
                                                     peer.target = target;
                                                     true
@@ -734,6 +819,69 @@ pub fn run(config: Config) -> io::Result<()> {
                                             let name = &store.characters[&character].name;
                                             match request {
                                                 script::Request::Say(text) => {
+                                                    if text
+                                                        .trim()
+                                                        .eq_ignore_ascii_case("@resurrect")
+                                                        && encounters.is_some()
+                                                    {
+                                                        peer.last_chat_ms = Some(now_ms);
+                                                        if store.characters[&character]
+                                                            .progression
+                                                            .alive()
+                                                        {
+                                                            replies.extend(
+                                                                peer.send_event(
+                                                                    &script::chat(
+                                                                        "You are already alive.",
+                                                                        1,
+                                                                    )
+                                                                    .map_err(other)?,
+                                                                    now,
+                                                                )?,
+                                                            );
+                                                            return Ok(replies);
+                                                        }
+                                                        store.progression_command(
+                                                            &peer.session.account,
+                                                            character,
+                                                            crate::progression::Command::Resurrect,
+                                                        )?;
+                                                        encounters
+                                                            .as_mut()
+                                                            .unwrap()
+                                                            .stop(character);
+                                                        peer.combat = false;
+                                                        peer.target = None;
+                                                        deliveries.extend(
+                                                            scene.player_stats(
+                                                                character,
+                                                                &store.characters[&character]
+                                                                    .progression,
+                                                            ),
+                                                        );
+                                                        for event in store.characters[&character]
+                                                            .progression
+                                                            .private_updates()
+                                                        {
+                                                            deliveries.push(
+                                                                crate::scene::Delivery {
+                                                                    recipient: character,
+                                                                    data: event.into(),
+                                                                },
+                                                            );
+                                                        }
+                                                        deliveries.push(crate::scene::Delivery {
+                                                            recipient: character,
+                                                            data: script::private_call(
+                                                                script::COMBAT_STATE,
+                                                                &script::integer(0),
+                                                            )
+                                                            .map_err(other)?
+                                                            .into(),
+                                                        });
+                                                        replies.extend(peer.send_event(&script::chat("Development resurrection restored your vitals at this location.",1).map_err(other)?,now)?);
+                                                        return Ok(replies);
+                                                    }
                                                     let packet = script::chat(
                                                         &format!("{name}: {text}"),
                                                         0x10,
@@ -806,6 +954,15 @@ pub fn run(config: Config) -> io::Result<()> {
                                     world::character_deleted(character_id)
                                 }
                                 world::ClientEvent::Position(update) => {
+                                    if let Phase::InWorld { character }
+                                    | Phase::Entering { character } = peer.session.phase
+                                    {
+                                        if !store.characters[&character].progression.alive() {
+                                            return Err(invalid(
+                                                "dead character movement rejected",
+                                            ));
+                                        }
+                                    }
                                     let character = match peer.session.phase {
                                         Phase::Entering { character }
                                         | Phase::InWorld { character } => character,
@@ -1006,7 +1163,11 @@ pub fn run(config: Config) -> io::Result<()> {
                                                             placement,
                                                             events[1].clone(),
                                                         )
-                                                        .map_err(other)?,
+                                                        .map_err(other)?
+                                                        .with_progression(
+                                                            &store.characters[&character_id]
+                                                                .progression,
+                                                        ),
                                                     )
                                                     .map_err(other)?;
                                                 for (index, event) in events.iter().enumerate() {
@@ -1145,6 +1306,75 @@ pub fn run(config: Config) -> io::Result<()> {
                     &mut failed_peers,
                 )?;
             }
+        }
+        if let Some(runtime) = &mut encounters {
+            let events = runtime.tick(
+                now_ms,
+                &scene,
+                &mut store,
+                active_characters.keys().copied(),
+            )?;
+            let mut updates = Vec::new();
+            for event in events {
+                match event {
+                    crate::encounters::Event::Health { actor, health } => {
+                        updates.extend(scene.content_stat(actor, 0x102, health)?)
+                    }
+                    crate::encounters::Event::Despawn(actor) => {
+                        updates.extend(scene.despawn_content(actor)?)
+                    }
+                    crate::encounters::Event::Respawn { actor, health } => {
+                        scene.content_stat(actor, 0x102, health)?;
+                        updates.extend(scene.respawn_content(actor)?);
+                    }
+                    crate::encounters::Event::Owner { player, state } => {
+                        updates.extend(scene.player_stats(player, &state));
+                        if config.initialize_ui {
+                            updates.push(crate::scene::Delivery {
+                                recipient: player,
+                                data: crate::ui::skill_credits(state.level().credits)
+                                    .map_err(other)?
+                                    .into(),
+                            });
+                        }
+                        for wire in state.private_updates() {
+                            updates.push(crate::scene::Delivery {
+                                recipient: player,
+                                data: wire.into(),
+                            });
+                        }
+                    }
+                    crate::encounters::Event::Note { player, text } => {
+                        updates.push(crate::scene::Delivery {
+                            recipient: player,
+                            data: script::chat(&text, 1).map_err(other)?.into(),
+                        })
+                    }
+                    crate::encounters::Event::Stop(player) => {
+                        if let Some(peer) = active_characters
+                            .get(&player)
+                            .and_then(|addr| peers.get_mut(addr))
+                        {
+                            peer.combat = false;
+                            peer.target = None;
+                        }
+                        updates.push(crate::scene::Delivery {
+                            recipient: player,
+                            data: script::private_call(script::COMBAT_STATE, &script::integer(0))
+                                .map_err(other)?
+                                .into(),
+                        });
+                    }
+                }
+            }
+            deliver_scene(
+                updates,
+                &active_characters,
+                &mut peers,
+                &primary,
+                now,
+                &mut failed_peers,
+            )?;
         }
         let mut remove = std::mem::take(&mut failed_peers);
         for (addr, peer) in &mut peers {

@@ -1,0 +1,11 @@
+pyrealium-encounters-v1
+# Explicit local development balance. Not original creature statistics or loot.
+# player: damage, vigor cost, interval milliseconds, range
+player	20	2	1000	3
+# regen: health, vigor, interval milliseconds (out of combat only)
+regen	2	4	1000
+# npc: entity, health, damage, attack ms, range, respawn ms, XP, gold
+npc	470007d1	60	6	1500	3	30000	40	2
+npc	470012c0	80	8	1500	3	30000	60	3
+npc	47000fc4	100	10	1500	3	30000	80	4
+npc	470007a4	120	12	1500	3	30000	100	5

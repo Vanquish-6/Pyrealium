@@ -145,6 +145,30 @@ fn graph(bytes: &mut Vec<u8>, objects: &[Object]) {
 pub fn empty_player() -> Result<Vec<u8>, WorldError> {
     player(None, None)
 }
+pub fn skill_credits(credits: u16) -> Result<Vec<u8>, WorldError> {
+    let mut args = Vec::new();
+    graph(
+        &mut args,
+        &[
+            Object::interpreted(
+                0x233,
+                &[
+                    (u32::from(credits), INT),
+                    (0, 0x82),
+                    (0, 0xcd),
+                    (0, INT),
+                    (2, REF),
+                    (0, INT),
+                    (3, REF),
+                    (NULL, REF),
+                ],
+            ),
+            Object::native(1, &[0]),
+            Object::native(1, &[0]),
+        ],
+    );
+    script::private_call(0x82140011, &args)
+}
 pub fn player(
     settings: Option<&crate::preferences::UiSettings>,
     hotbar: Option<&crate::preferences::Hotbar>,

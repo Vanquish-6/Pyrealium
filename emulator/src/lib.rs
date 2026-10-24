@@ -4,6 +4,7 @@ pub mod bootstrap;
 pub mod content;
 pub mod crypto;
 pub mod dat;
+pub mod encounters;
 pub mod inventory;
 pub mod inventory_request;
 pub mod legacy;

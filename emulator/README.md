@@ -171,6 +171,15 @@ Exact addresses, identities, policies, test boundaries and open work:
 
 ## Remaining gameplay work
 
+An explicit development encounter loop is available with `--content training
+--initialize-ui true --encounters content/development-encounters.tsv` alongside
+the normal game-data/account/bind/data options. It connects native attack targets
+to server health/vigor changes, stationary retaliation, XP/gold rewards, levels,
+regeneration and timed creature respawn. Saved player state is restored on entry.
+The rules and starter placement are development content; original combat formulas,
+skills, animations, collision, item looting and native acceptance are unfinished.
+See [player systems integration](docs/player-systems.md).
+
 Game-data mode (`serve --game-data PATH`) now loads the bundled stationary world
 pack automatically. Use `--content content/world.tsv` for an editable external
 pack, or `--content none` to disable content, alongside normal bind/account/data options.

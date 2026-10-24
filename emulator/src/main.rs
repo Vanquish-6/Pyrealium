@@ -9,7 +9,7 @@ fn usage() {
         "  player-state --character-id N [--event COMMAND] --data PATH\n    Offline progression inspection/edit: x,XP g,GOLD s,GOLD d,DAMAGE h,HEAL v,COST r,RECOVERY z(resurrect)."
     );
     println!(
-        "  serve --game-data PATH [--content PATH|observed|none]\n    Game-data mode loads the bundled world pack. observed adds captured stationary actors. Use a file for external content or none to disable it."
+        "  serve --game-data PATH [--content PATH|observed|training|none] [--encounters PATH]\n    Encounters use explicit development rules. training selects the authored starter encounter."
     );
     println!(
         "  inventory-reorder --character-id N --request PATH\n    Offline import of one reassembled native inventory sorting message (296 bytes)."
@@ -40,6 +40,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut name = None;
     let mut game_data = None;
     let mut content = None;
+    let mut encounters = None;
     let mut landblocks = None;
     let mut record_id = None;
     let mut character_id = None;
@@ -67,6 +68,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             "--name" => name = Some(value),
             "--game-data" => game_data = Some(PathBuf::from(value)),
             "--content" => content = Some(PathBuf::from(value)),
+            "--encounters" => encounters = Some(PathBuf::from(value)),
             "--landblocks" => landblocks = Some(PathBuf::from(value)),
             "--id" => record_id = Some(u32::from_str_radix(value.trim_start_matches("0x"), 16)?),
             "--character-id" => character_id = Some(value.parse::<u64>()?),
@@ -250,6 +252,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             game_data,
             initialize_ui,
             content,
+            encounters,
         })?,
         "stop" => {
             if !data.join("server.lock").is_file() {

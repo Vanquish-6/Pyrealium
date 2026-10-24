@@ -16,6 +16,7 @@ pub struct Body {
     instance: u16,
     spawn: Vec<u8>,
     ready: bool,
+    public_stats: BTreeMap<u32, (u32, Arc<[u8]>)>,
 }
 impl Body {
     pub fn new(id: u64, placement: Placement, spawn: Vec<u8>) -> Result<Self, WorldError> {
@@ -38,7 +39,32 @@ impl Body {
             instance,
             spawn,
             ready: false,
+            public_stats: BTreeMap::new(),
         })
+    }
+    pub fn with_progression(mut self, state: &crate::progression::Progression) -> Self {
+        self.save_public_stats(state);
+        self
+    }
+    fn save_public_stats(&mut self, state: &crate::progression::Progression) -> Vec<Arc<[u8]>> {
+        let mut updates = Vec::new();
+        for (key, value) in [
+            (0x107, state.level().health),
+            (0x102, state.health),
+            (0x12e, u32::from(state.level().number)),
+        ] {
+            if self
+                .public_stats
+                .get(&key)
+                .is_some_and(|(old, _)| *old == value)
+            {
+                continue;
+            }
+            let wire: Arc<[u8]> = world::visual_int(self.id, self.instance, key, value).into();
+            self.public_stats.insert(key, (value, wire.clone()));
+            updates.push(wire);
+        }
+        updates
     }
     fn relocate(&mut self, placement: Placement) {
         self.placement = placement;
@@ -77,6 +103,92 @@ pub struct Scene {
     content: crate::content::Content,
 }
 impl Scene {
+    pub fn player_stats(
+        &mut self,
+        id: u64,
+        state: &crate::progression::Progression,
+    ) -> Vec<Delivery> {
+        let Some(body) = self.bodies.get_mut(&id) else {
+            return Vec::new();
+        };
+        let updates = body.save_public_stats(state);
+        let cell = body.placement.cell;
+        if !body.ready {
+            return Vec::new();
+        }
+        let mut deliveries = Vec::new();
+        for recipient in self.neighbor_ids(cell, id) {
+            for data in &updates {
+                deliveries.push(Delivery {
+                    recipient,
+                    data: data.clone(),
+                });
+            }
+        }
+        deliveries
+    }
+    pub fn player_placement(&self, id: u64) -> Option<Placement> {
+        self.bodies
+            .get(&id)
+            .filter(|body| body.ready)
+            .map(|body| body.placement)
+    }
+    pub fn content_placement(&self, id: u64) -> Option<Placement> {
+        self.content
+            .object(id)
+            .filter(|_| self.content.cell(id).is_some())
+            .map(|object| object.placement)
+    }
+    pub fn content_stat(
+        &mut self,
+        id: u64,
+        key: u32,
+        value: u32,
+    ) -> std::io::Result<Vec<Delivery>> {
+        let Some(data) = self.content.set_stat(id, key, value)? else {
+            return Ok(Vec::new());
+        };
+        let cell = self.content.cell(id).unwrap();
+        Ok(self
+            .neighbor_ids(cell, 0)
+            .map(|recipient| Delivery {
+                recipient,
+                data: data.clone(),
+            })
+            .collect())
+    }
+    pub fn despawn_content(&mut self, id: u64) -> std::io::Result<Vec<Delivery>> {
+        let cell = self
+            .content
+            .cell(id)
+            .ok_or_else(|| std::io::Error::other("content object inactive"))?;
+        let data = self.content.despawn(id)?;
+        Ok(self
+            .neighbor_ids(cell, 0)
+            .map(|recipient| Delivery {
+                recipient,
+                data: data.clone(),
+            })
+            .collect())
+    }
+    pub fn respawn_content(&mut self, id: u64) -> std::io::Result<Vec<Delivery>> {
+        self.content.respawn(id)?;
+        let object = self.content.object(id).unwrap();
+        let mut events = Vec::new();
+        for recipient in self.neighbor_ids(object.placement.cell, 0) {
+            events.push(Delivery {
+                recipient,
+                data: object.spawn.clone(),
+            });
+            for data in object.updates() {
+                events.push(Delivery {
+                    recipient,
+                    data: data.clone(),
+                });
+            }
+        }
+        Ok(events)
+    }
     pub fn with_content(content: crate::content::Content) -> Self {
         Self {
             content,
@@ -131,7 +243,7 @@ impl Scene {
     pub fn enter_hidden(&mut self, body: Body) -> Result<(), WorldError> {
         if self.bodies.len() >= 64
             || self.bodies.contains_key(&body.id)
-            || self.content.cell(body.id).is_some()
+            || self.content.object(body.id).is_some()
         {
             return Err(WorldError::LimitExceeded);
         }
@@ -155,6 +267,12 @@ impl Scene {
                 recipient: body.id,
                 data: object.spawn.clone(),
             });
+            for data in object.updates() {
+                deliveries.push(Delivery {
+                    recipient: body.id,
+                    data: data.clone(),
+                });
+            }
         }
         let spawn: Arc<[u8]> = body.spawn.clone().into();
         for id in self.neighbors(body.placement.cell, body.id) {
@@ -162,10 +280,22 @@ impl Scene {
                 recipient: id,
                 data: spawn.clone(),
             });
+            for (_, data) in body.public_stats.values() {
+                deliveries.push(Delivery {
+                    recipient: id,
+                    data: data.clone(),
+                });
+            }
             deliveries.push(Delivery {
                 recipient: body.id,
                 data: self.bodies[&id].spawn.clone().into(),
             });
+            for (_, data) in self.bodies[&id].public_stats.values() {
+                deliveries.push(Delivery {
+                    recipient: body.id,
+                    data: data.clone(),
+                });
+            }
         }
         Ok(deliveries)
     }
@@ -242,6 +372,12 @@ impl Scene {
                 recipient: id,
                 data: object.spawn.clone(),
             });
+            for data in object.updates() {
+                deliveries.push(Delivery {
+                    recipient: id,
+                    data: data.clone(),
+                });
+            }
         }
         for other in previous.difference(&current) {
             deliveries.push(Delivery {
@@ -267,10 +403,22 @@ impl Scene {
                 recipient: *other,
                 data: spawn.clone(),
             });
+            for (_, data) in self.bodies[&id].public_stats.values() {
+                deliveries.push(Delivery {
+                    recipient: *other,
+                    data: data.clone(),
+                });
+            }
             deliveries.push(Delivery {
                 recipient: id,
                 data: self.bodies[other].spawn.clone().into(),
             });
+            for (_, data) in self.bodies[other].public_stats.values() {
+                deliveries.push(Delivery {
+                    recipient: id,
+                    data: data.clone(),
+                });
+            }
         }
         for recipient in current.intersection(&previous) {
             deliveries.push(Delivery {

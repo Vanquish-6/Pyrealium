@@ -463,6 +463,16 @@ pub struct StationaryObject {
     pub timestamps: [u16; 4],
 }
 
+pub fn visual_int(id: u64, instance: u16, key: u32, value: u32) -> Vec<u8> {
+    let mut wire = 0x1006au32.to_le_bytes().to_vec();
+    wire.extend(id.to_le_bytes());
+    wire.extend(instance.to_le_bytes());
+    wire.extend(0u16.to_le_bytes());
+    wire.extend(key.to_le_bytes());
+    wire.extend(value.to_le_bytes());
+    wire
+}
+
 /// Builds a syntactically recovered CreateObject subset; not a complete player bootstrap.
 pub fn create_stationary_object(object: &StationaryObject) -> Result<Vec<u8>, WorldError> {
     create_stationary_object_with_scale(object, None)

@@ -137,6 +137,38 @@ impl Store {
         self.characters.get_mut(&id).unwrap().progression = next;
         Ok(())
     }
+    pub fn progression_batch(
+        &mut self,
+        account: &str,
+        id: u64,
+        commands: &[crate::progression::Command],
+    ) -> io::Result<()> {
+        if commands.is_empty() || commands.len() > 8 {
+            return Err(invalid("progression batch size"));
+        }
+        let character = self
+            .characters
+            .get(&id)
+            .filter(|c| c.account == account && !c.deleted)
+            .ok_or_else(|| invalid("progression character not owned"))?;
+        let mut next = character.progression.clone();
+        for command in commands {
+            next = next
+                .apply(command)
+                .map_err(|error| invalid(&error.to_string()))?;
+        }
+        if next == character.progression {
+            return Ok(());
+        }
+        let encoded = commands
+            .iter()
+            .map(crate::progression::Command::encode)
+            .collect::<Vec<_>>()
+            .join(";");
+        self.append_record(&format!("g2\t{id}\t{encoded}"))?;
+        self.characters.get_mut(&id).unwrap().progression = next;
+        Ok(())
+    }
     pub fn inventory_command(
         &mut self,
         account: &str,
@@ -484,6 +516,32 @@ pub fn decode_journal(bytes: &[u8]) -> io::Result<BTreeMap<u64, Character>> {
             return Err(invalid("character journal checksum mismatch"));
         }
         let fields: Vec<_> = data.split('\t').collect();
+        if fields.len() == 3 && fields[0] == "g2" {
+            let id = fields[1]
+                .parse::<u64>()
+                .map_err(|_| invalid("invalid progression batch owner"))?;
+            if fields[2].len() > 256 {
+                return Err(invalid("progression batch limit"));
+            }
+            let commands = fields[2].split(';').collect::<Vec<_>>();
+            if commands.is_empty() || commands.len() > 8 {
+                return Err(invalid("progression batch size"));
+            }
+            let character = records
+                .get_mut(&id)
+                .filter(|c| !c.deleted)
+                .ok_or_else(|| invalid("progression batch owner unavailable"))?;
+            let mut next = character.progression.clone();
+            for text in commands {
+                let command = crate::progression::Command::decode(text)
+                    .map_err(|_| invalid("invalid progression batch event"))?;
+                next = next
+                    .apply(&command)
+                    .map_err(|_| invalid("invalid progression batch transition"))?;
+            }
+            character.progression = next;
+            continue;
+        }
         if fields.len() == 3 && fields[0] == "g1" {
             let id = fields[1]
                 .parse::<u64>()

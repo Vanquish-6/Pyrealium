@@ -101,6 +101,7 @@ fn run_enter_rejection(game_data: Option<std::path::PathBuf>, expect_bootstrap: 
     let worker = std::thread::spawn(move || {
         server::run(Config {
             content: None,
+            encounters: None,
             initialize_ui: expect_bootstrap,
             bind: addr,
             account: "local".into(),

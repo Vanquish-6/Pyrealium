@@ -21,9 +21,30 @@ fn invalid(message: impl Into<String>) -> io::Error {
 }
 pub struct Object {
     pub id: u64,
+    pub entity: u32,
     pub placement: Placement,
     pub spawn: Arc<[u8]>,
     pub destroy: Arc<[u8]>,
+    active: bool,
+    instance: u16,
+    stats: BTreeMap<u32, (u32, Arc<[u8]>)>,
+}
+impl Object {
+    pub fn updates(&self) -> impl Iterator<Item = &Arc<[u8]>> {
+        self.stats
+            .get(&0x107)
+            .map(|(_, wire)| wire)
+            .into_iter()
+            .chain(
+                self.stats
+                    .iter()
+                    .filter(|(key, _)| **key != 0x107)
+                    .map(|(_, (_, wire))| wire),
+            )
+    }
+    fn stat_wire(&self, key: u32, value: u32) -> Arc<[u8]> {
+        world::visual_int(self.id, self.instance, key, value).into()
+    }
 }
 #[derive(Default)]
 pub struct Content {
@@ -38,6 +59,9 @@ impl Content {
     pub fn observed(game_data: &Path) -> io::Result<Self> {
         Self::parse(include_str!("../content/observed-world.tsv"), game_data)
     }
+    pub fn training(game_data: &Path) -> io::Result<Self> {
+        Self::parse(include_str!("../content/training-world.tsv"), game_data)
+    }
     pub fn len(&self) -> usize {
         self.objects.len()
     }
@@ -45,7 +69,64 @@ impl Content {
         self.objects.is_empty()
     }
     pub fn cell(&self, id: u64) -> Option<u32> {
-        self.objects.get(&id).map(|object| object.placement.cell)
+        self.objects
+            .get(&id)
+            .filter(|object| object.active)
+            .map(|object| object.placement.cell)
+    }
+    pub fn objects(&self) -> impl Iterator<Item = &Object> {
+        self.objects.values()
+    }
+    pub fn object(&self, id: u64) -> Option<&Object> {
+        self.objects.get(&id)
+    }
+    pub fn set_stat(&mut self, id: u64, key: u32, value: u32) -> io::Result<Option<Arc<[u8]>>> {
+        let object = self
+            .objects
+            .get_mut(&id)
+            .ok_or_else(|| invalid("unknown content object"))?;
+        if object.stats.get(&key).is_some_and(|(old, _)| *old == value) {
+            return Ok(None);
+        }
+        if object.stats.len() >= 16 && !object.stats.contains_key(&key) {
+            return Err(invalid("content stat limit"));
+        }
+        let wire = object.stat_wire(key, value);
+        object.stats.insert(key, (value, wire.clone()));
+        Ok(object.active.then_some(wire))
+    }
+    pub fn despawn(&mut self, id: u64) -> io::Result<Arc<[u8]>> {
+        let object = self
+            .objects
+            .get_mut(&id)
+            .filter(|object| object.active)
+            .ok_or_else(|| invalid("content object not active"))?;
+        object.active = false;
+        Ok(object.destroy.clone())
+    }
+    pub fn respawn(&mut self, id: u64) -> io::Result<()> {
+        let object = self
+            .objects
+            .get_mut(&id)
+            .filter(|object| !object.active)
+            .ok_or_else(|| invalid("content object already active"))?;
+        object.instance = object
+            .instance
+            .checked_add(1)
+            .ok_or_else(|| invalid("content lifetime exhausted"))?;
+        Arc::make_mut(&mut object.spawn)[24..26].copy_from_slice(&object.instance.to_le_bytes());
+        Arc::make_mut(&mut object.destroy)[12..14].copy_from_slice(&object.instance.to_le_bytes());
+        let keys = object
+            .stats
+            .iter()
+            .map(|(&key, (value, _))| (key, *value))
+            .collect::<Vec<_>>();
+        for (key, value) in keys {
+            let wire = object.stat_wire(key, value);
+            object.stats.insert(key, (value, wire));
+        }
+        object.active = true;
+        Ok(())
     }
     pub fn at(&self, cell: u32) -> impl Iterator<Item = &Object> {
         self.cells
@@ -53,6 +134,7 @@ impl Content {
             .into_iter()
             .flatten()
             .map(|id| &self.objects[id])
+            .filter(|object| object.active)
     }
     /// V1 uses IID/entity/visual/cell/X/Y/Z/heading; v2 replaces heading with
     /// quaternion W/X/Y/Z. Numeric identifiers are hex; positions are decimal.
@@ -212,9 +294,13 @@ impl Content {
                 id,
                 Object {
                     id,
+                    entity,
                     placement,
                     spawn: spawn.into(),
                     destroy: destroy.into(),
+                    active: true,
+                    instance: 1,
+                    stats: BTreeMap::new(),
                 },
             );
             cell_ids.push(id);
