@@ -37,3 +37,16 @@ No network request is permitted to award XP or currency directly. This operator
 tool is not an implemented quest, combat or resurrection interaction.
 
 Compiled only. No automated tests or native game checks were run, as requested.
+
+## Populated-scene backpressure
+
+Scene deliveries now enter bounded per-session outgoing queues instead of
+disconnecting a peer solely because its reliable-send window is temporarily
+full. Queues share immutable payloads, admit at most 1,024 events / 1 MiB per
+peer, and flush at most 32 events per event-loop pass when complete-message
+fragment capacity is available. Limits, sequence exhaustion and send failures
+still retire the affected peer. Transport retry/ISAAC state is not advanced while
+waiting for capacity. Create/destroy and visual quality updates use ordered
+delivery; ordinary movement retains its existing delivery policy. Queued scene
+state is cleared on avatar exit and before another avatar lifetime starts.
+This is compiled only; populated native multiplayer acceptance remains open.

@@ -299,6 +299,16 @@ impl Transport {
             data,
         }))
     }
+    pub fn send_available(&self, bytes: usize) -> Result<bool, TransportError> {
+        if bytes == 0 || bytes > MAX_MESSAGE {
+            return Err(TransportError::Capacity);
+        }
+        let count = bytes.div_ceil(FRAGMENT_DATA);
+        if self.next_outgoing.checked_add(count as u32).is_none() {
+            return Err(TransportError::Sequence);
+        }
+        Ok(self.pending.len() + count <= MAX_PENDING)
+    }
     pub fn send(
         &mut self,
         blob_id: u64,

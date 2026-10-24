@@ -9,11 +9,12 @@ use crate::{
     world,
 };
 use std::{
-    collections::{BTreeMap, BTreeSet, hash_map::RandomState},
+    collections::{BTreeMap, BTreeSet, VecDeque, hash_map::RandomState},
     hash::BuildHasher,
     io,
     net::{SocketAddr, UdpSocket},
     path::PathBuf,
+    sync::Arc,
     time::{Duration, Instant},
 };
 
@@ -42,6 +43,8 @@ struct Peer {
     combat: bool,
     last_chat_ms: Option<u64>,
     unhandled_scripts: BTreeSet<u32>,
+    scene_outbox: VecDeque<Arc<[u8]>>,
+    scene_bytes: usize,
 }
 #[derive(Default)]
 struct Counters {
@@ -60,6 +63,53 @@ fn other(e: impl std::fmt::Debug) -> io::Error {
 }
 
 impl Peer {
+    fn clear_scene_outbox(&mut self) {
+        self.scene_outbox.clear();
+        self.scene_bytes = 0;
+    }
+    fn queue_scene(&mut self, data: Arc<[u8]>) -> io::Result<()> {
+        if data.len() < 4
+            || data.len() > 65536
+            || self.scene_outbox.len() >= 1024
+            || self.scene_bytes.saturating_add(data.len()) > 1024 * 1024
+        {
+            return Err(invalid("scene outbox limit"));
+        }
+        self.scene_bytes += data.len();
+        self.scene_outbox.push_back(data);
+        Ok(())
+    }
+    fn flush_scene(
+        &mut self,
+        socket: &UdpSocket,
+        addr: &SocketAddr,
+        now: Instant,
+    ) -> io::Result<()> {
+        if !matches!(
+            self.session.phase,
+            Phase::Entering { .. } | Phase::InWorld { .. }
+        ) {
+            self.clear_scene_outbox();
+            return Ok(());
+        }
+        for _ in 0..32 {
+            let Some(data) = self.scene_outbox.front().cloned() else {
+                break;
+            };
+            if !self.transport.send_available(data.len()).map_err(other)? {
+                break;
+            }
+            let opcode = u32::from_le_bytes(data[..4].try_into().unwrap());
+            let ordered = matches!(opcode, 0x10058 | 0x100c2 | 0x1006a | 0x1006c | 0x100d5);
+            let packets = self.send_world_event(&data, ordered, now)?;
+            self.scene_outbox.pop_front();
+            self.scene_bytes -= data.len();
+            for packet in packets {
+                socket.send_to(&packet, addr)?;
+            }
+        }
+        Ok(())
+    }
     /// Queue a dependent reply group completely or preserve the prior transport.
     /// Nothing has reached the socket while these packets are being assembled.
     fn send_event_batch(&mut self, events: &[Vec<u8>], now: Instant) -> io::Result<Vec<Vec<u8>>> {
@@ -190,8 +240,8 @@ fn deliver_scene(
     deliveries: Vec<crate::scene::Delivery>,
     active: &BTreeMap<u64, SocketAddr>,
     peers: &mut BTreeMap<SocketAddr, Peer>,
-    socket: &UdpSocket,
-    now: Instant,
+    _socket: &UdpSocket,
+    _now: Instant,
     failed: &mut BTreeSet<SocketAddr>,
 ) -> io::Result<()> {
     for delivery in deliveries {
@@ -204,15 +254,8 @@ fn deliver_scene(
         if failed.contains(addr) {
             continue;
         }
-        match peer.send_world_event(&delivery.data, false, now) {
-            Ok(packets) => {
-                for packet in packets {
-                    socket.send_to(&packet, addr)?;
-                }
-            }
-            Err(_) => {
-                failed.insert(*addr);
-            }
+        if peer.queue_scene(delivery.data).is_err() {
+            failed.insert(*addr);
         }
     }
     Ok(())
@@ -470,6 +513,8 @@ pub fn run(config: Config) -> io::Result<()> {
                                 combat: false,
                                 last_chat_ms: None,
                                 unhandled_scripts: BTreeSet::new(),
+                                scene_outbox: VecDeque::new(),
+                                scene_bytes: 0,
                             },
                         );
                         if let Some(previous) = previous {
@@ -948,6 +993,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                                     )
                                                     .map_err(other)?;
                                                 peer.ordered_stamp = 0;
+                                                peer.clear_scene_outbox();
                                                 peer.target = None;
                                                 peer.combat = false;
                                                 peer.motion =
@@ -992,6 +1038,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                     store.flush_positions()?;
                                     replies.extend(peer.send_event(&world::char_exit_game(), now)?);
                                     peer.session.leave_world(character_id).map_err(other)?;
+                                    peer.clear_scene_outbox();
                                     peer.motion = None;
                                     peer.target = None;
                                     peer.combat = false;
@@ -1115,6 +1162,9 @@ pub fn run(config: Config) -> io::Result<()> {
                     remove.insert(*addr);
                 }
             }
+            if !remove.contains(addr) && peer.flush_scene(&primary, addr, now).is_err() {
+                remove.insert(*addr);
+            }
         }
         let mut departures = Vec::new();
         for addr in remove {
@@ -1181,6 +1231,8 @@ mod tests {
             combat: false,
             last_chat_ms: None,
             unhandled_scripts: BTreeSet::new(),
+            scene_outbox: VecDeque::new(),
+            scene_bytes: 0,
         }
     }
 
