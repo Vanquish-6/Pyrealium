@@ -57,3 +57,11 @@ The build script runs validation automatically. A standalone check is available:
 ```
 
 A zero exit code means input/argument checks passed; it does not launch the game.
+
+## License
+
+The original launcher code is **AGPL-3.0-only**, copyright (C) 2026 Vanquish.
+See [LICENSE](../LICENSE) and [licensing requirements](../LICENSING.md).
+The license does not relicense independently owned game artwork or client assets.
+Launcher packages include the license and notices; distributors must also provide
+Corresponding Source through an AGPL-permitted method.

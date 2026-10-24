@@ -1,0 +1,16 @@
+Pyrealium
+Copyright (C) 2026 Vanquish
+
+Original project code is licensed under the GNU Affero General Public License,
+version 3 only (SPDX: AGPL-3.0-only). See LICENSE and LICENSING.md.
+
+This program is distributed without any warranty, including the implied
+warranties of merchantability or fitness for a particular purpose.
+
+Third-party components retain their own copyright and license notices.
+The game client, game assets, DAT archives, packet captures and independently
+owned reference materials are not relicensed by this notice. Their respective
+owners retain their rights.
+
+LICENSES/MIT-legacy.txt records the project's previous MIT license for historical
+versions. Its presence does not offer the current project under a second license.

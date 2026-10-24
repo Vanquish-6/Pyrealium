@@ -1146,6 +1146,7 @@ fn craft_item(
 }
 
 pub fn run(config: Config) -> io::Result<()> {
+    println!("{}", crate::licensing::notice());
     if !config.bind.ip().is_loopback() || !config.bind.is_ipv4() {
         return Err(invalid(
             "developer authentication requires an IPv4 loopback bind",
@@ -2733,6 +2734,10 @@ pub fn run(config: Config) -> io::Result<()> {
                                             let name = &store.characters[&character].name;
                                             match request {
                                                 script::Request::Say(text) => {
+                                                    if matches!(text.trim().to_ascii_lowercase().as_str(), "@source" | "@license") {
+                                                        peer.queue_ordered_batch(vec![script::chat(&crate::licensing::notice(), 1).map_err(other)?])?;
+                                                        return Ok(replies);
+                                                    }
                                                     if let Some(action) =
                                                         crate::merchants::parse_command(&text)
                                                     {
@@ -3440,6 +3445,9 @@ pub fn run(config: Config) -> io::Result<()> {
                                     if let Phase::InWorld { character } = peer.session.phase {
                                         deliveries
                                             .extend(scene.activate(character).map_err(other)?);
+                                        if first {
+                                            deliveries.push(crate::scene::Delivery { recipient: character, data: script::chat(&crate::licensing::notice(), 1).map_err(other)?.into() });
+                                        }
                                         if first && config.initialize_ui {
                                             for packet in
                                                 crate::crafting::initialization(config.training_kit)

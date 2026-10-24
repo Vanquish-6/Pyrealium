@@ -375,3 +375,12 @@ The content editor's 3D rendering is a separate authoring feature. Its latest
 paint-callback crash repair still needs a fresh GUI load; renderer progress does
 not establish completion of any missing gameplay system. Each native milestone
 needs fresh client evidence; compilation or packet checks alone do not close it.
+
+## License and source offer
+
+Original server code is **AGPL-3.0-only**. See the repository [LICENSE](../LICENSE)
+and [licensing requirements](../LICENSING.md). Startup and in-game chat identify
+the source; `@source` / `@license` repeat the offer, and `license` / `--license`
+print the full license. Git builds link to their commit. Modified distributors
+and operators must publish their complete corresponding version and can set
+`PYREALIUM_SOURCE_URL` at build time to its public HTTP(S) location.

@@ -6,6 +6,10 @@ use std::{env, net::SocketAddr, path::PathBuf, process::ExitCode};
 
 fn usage() {
     println!(
+        "{}\n  license / --license: display the complete AGPL-3.0 license.\n",
+        pyrealium::licensing::notice()
+    );
+    println!(
         "  serve --initialize-ui true --portals true --game-data PATH\n    Explicit development instant portal routes; enabled by serve-training."
     );
     println!(
@@ -46,6 +50,14 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         usage();
         return Ok(());
     };
+    if command == "license" || command == "--license" {
+        println!(
+            "{}\n\n{}",
+            pyrealium::licensing::notice(),
+            pyrealium::licensing::LICENSE_TEXT
+        );
+        return Ok(());
+    }
     if command == "--help" || command == "help" {
         usage();
         return Ok(());

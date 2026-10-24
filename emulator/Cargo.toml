@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
 description = "Evidence-driven AC2 build 7148 local emulator"
-license = "MIT"
+license = "AGPL-3.0-only"
+repository = "https://github.com/Vanquish-6/Pyrealium"
 
 [dependencies]
 

@@ -191,3 +191,12 @@ pathfinding and public account/hosting support. The current authored training sl
 is useful development progress, not a finished AC2 game.
 
 **No nostalgia. Suspicious confidence. Somehow, already a world.**
+
+## License
+
+Original project code is **AGPL-3.0-only**, copyright (C) 2026 Vanquish. Covered
+modified distributions must provide Corresponding Source, and modified network
+versions must offer that source to their users as required by the AGPL. See
+[LICENSE](LICENSE), [NOTICE](NOTICE), and [licensing requirements](LICENSING.md).
+Third-party game/client assets retain their own rights. Previous MIT releases
+retain their existing grants.

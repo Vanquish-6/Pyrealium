@@ -12,5 +12,17 @@ $process = Start-Process -FilePath $executable -ArgumentList @('--self-test', ('
 if ($process.ExitCode -ne 0) { throw "Launcher validation failed. See $report" }
 Get-Content -LiteralPath $report
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'README.md') -Destination (Join-Path $output 'README.md') -Force
-Compress-Archive -LiteralPath $executable, (Join-Path $output 'README.md') -DestinationPath (Join-Path $PSScriptRoot 'PyrealiumLauncher-windows.zip') -Force
+# Include the current license and all project notices with binary packages.
+$projectRoot = Split-Path -Parent $PSScriptRoot
+$archiveFiles = @($executable, (Join-Path $output 'README.md'))
+foreach ($legalName in @('LICENSE', 'NOTICE', 'LICENSING.md')) {
+    $legalDestination = Join-Path $output $legalName
+    Copy-Item -LiteralPath (Join-Path $projectRoot $legalName) -Destination $legalDestination -Force
+    $archiveFiles += $legalDestination
+}
+$historicalLicenses = Join-Path $output 'LICENSES'
+New-Item -ItemType Directory -Path $historicalLicenses -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $projectRoot 'LICENSES/MIT-legacy.txt') -Destination (Join-Path $historicalLicenses 'MIT-legacy.txt') -Force
+$archiveFiles += $historicalLicenses
+Compress-Archive -LiteralPath $archiveFiles -DestinationPath (Join-Path $PSScriptRoot 'PyrealiumLauncher-windows.zip') -Force
 Write-Host "Built $executable and PyrealiumLauncher-windows.zip"

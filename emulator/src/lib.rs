@@ -15,6 +15,7 @@ pub mod inventory;
 pub mod inventory_request;
 pub mod item_services;
 pub mod legacy;
+pub mod licensing;
 pub mod merchants;
 pub mod movement;
 pub mod player_transaction;
