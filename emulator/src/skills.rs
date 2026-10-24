@@ -6,6 +6,8 @@ mod advancement;
 pub const TRAIN: u32 = 0x82140002;
 pub const UNTRAIN: u32 = 0x82140007;
 pub const RAISE: u32 = 0x8214000c;
+pub const USE: u32 = 0x8204000b;
+pub const LIFESTONE_RECALL: u32 = 0x343;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Action {
     Train,
@@ -199,6 +201,51 @@ pub fn validate_assets(portal: &mut Dat) -> std::io::Result<()> {
     Ok(())
 }
 impl Book {
+    /// Explicit development binding grant, separate from original entitlement.
+    pub fn with_lifestone_recall(
+        &self,
+        state: &Progression,
+        race: u32,
+    ) -> Result<Self, SkillError> {
+        if !state.alive() {
+            return Err(SkillError::Dead);
+        }
+        let definition = catalog()?
+            .definitions
+            .get(&LIFESTONE_RECALL)
+            .ok_or(SkillError::Unknown)?;
+        if race != 1
+            || definition.race != 0
+            || definition.level != 1
+            || definition.cap != 1
+            || definition.credits != 0
+            || definition.kind != 0x44
+            || !definition.required.is_empty()
+            || !definition.forbidden.is_empty()
+        {
+            return Err(SkillError::UnsupportedProfile);
+        }
+        if let Some(entry) = self.entries.get(&LIFESTONE_RECALL) {
+            if !entry.locked || entry.credits != 0 || entry.xp != 0 || entry.rank != 1 {
+                return Err(SkillError::Catalog);
+            }
+            return Ok(self.clone());
+        }
+        if self.entries.len() >= 128 {
+            return Err(SkillError::Capacity);
+        }
+        let mut next = self.clone();
+        next.entries.insert(
+            LIFESTONE_RECALL,
+            Trained {
+                rank: 1,
+                credits: 0,
+                locked: true,
+                xp: 0,
+            },
+        );
+        Ok(next)
+    }
     pub fn advance(
         &self,
         id: u32,

@@ -328,8 +328,9 @@ a five-second cooldown. The native Resurrect button restores vitals and returns
 to a saved binding when this mode is enabled. Unbound characters retain in-place
 recovery. Destination cells must exist in the configured world. World/cell checks,
 outgoing queue admission and native position encoding complete before persistence.
-Native recall skill casts, portal-space presentation, animations and original
-death penalties are not implemented by this command.
+The native Recall request now uses the same instant development path, as
+described below. Portal-space presentation, animations, original cast timing
+and death penalties are not implemented by this command.
 
 Forced movement increments a checked native force-position stamp, preserves the
 avatar lifetime, and uses the neutral `7f7f7f` motion vector. Old-stamp movement is
@@ -339,7 +340,7 @@ delivery policy. Scene relocation updates nearby player/hand-object lifecycles
 and old/new cell content. Resurrected vitals/Dead state precede the correction and
 UI unlock in the owner's ordered queue.
 
-Binding uses journal event `l1`; live recall uses `p1`; bound resurrection uses a
+Legacy binding uses journal event `l1`; live recall uses `p1`; bound resurrection uses a
 single `r2` event for restored vitals and destination. Replay validates ownership,
 life state and the saved bind point. New position snapshots use `AC2POS02`, with
 the character-journal revision included in their checksum. Startup reads both
@@ -394,3 +395,32 @@ The retained skilling capture's cumulative values `8,19,35,57,89` match the
 referenced `6f001ef5` table prefix. That is static format/data evidence; native
 advancement UI and full original semantics remain unverified. No tests or native
 client checks were run, and no existing character XP was changed.
+
+## Native development Recall skill
+
+The captured `8204000b` skill-use profile consists of tagged use flags `8`, a
+skill ID and a target IID (28 argument bytes, no trailing data). The dispatcher
+now routes Recall `343` to the bound-return service when development lifestones
+are enabled and the caster owns that skill. The selected target is ignored for
+this self-only service. Unsupported active skills return an unavailable message
+without spending XP or vigor or scheduling an effect.
+
+Development binding grants Recall as a locked, zero-credit level-one skill after
+checking its imported species/common-kind/cap/eligibility shape. A single `l2`
+event commits the binding and grant together. `l1` retains its prior replay
+semantics; a living previously-bound character receives the missing grant on
+entry through `k3`, provided its skill book has capacity. New binding requires
+space in the bounded skill book. Native training and generic operator grants
+cannot bypass the separate Recall grant path.
+
+The binder receives a native skill update before the use-success reply. UI_Load
+restores the grant with the skill hash; the existing hotbar accepts a skill
+shortcut. Successful native Recall and `@recall` share the persisted destination,
+life/combat/cooldown checks, forced-position correction and skill/combat UI reset.
+The server cooldown remains five seconds; original cast/cooldown presentation,
+portal-space transitions and animation are not reproduced. The original starter
+grant rules are not inferred from this explicit development policy.
+
+`recalling.to.lifestone.elog` contains the tagged Recall request and native skill
+update. This integration is compile checked only, with no automated tests, native
+client checks or changes to existing player data.

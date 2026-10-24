@@ -182,7 +182,9 @@ Exact addresses, identities, policies, test boundaries and open work:
 
 `serve-training --game-data PATH` selects the bundled starter encounter, initialized
 HUD, once-per-character development hand item and an authored nearby lifestone.
-The preset enables development binding, `@recall` and bound resurrection. Add the normal account, bind
+The preset enables development binding, native Recall skill use, `@recall` and
+bound resurrection. Binding grants the locked development Recall skill for use
+from the skill list or hotbar. Add the normal account, bind
 and data options as needed. The rules and placement are embedded, so this preset
 does not depend on launching from the emulator directory. It is an authored
 development slice; full original progression and native acceptance remain open.

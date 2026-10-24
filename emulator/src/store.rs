@@ -179,12 +179,58 @@ impl Store {
         if !placement.valid() {
             return Err(invalid("invalid lifestone bind point"));
         }
-        if character.binding == Some(placement) {
+        let skills = character
+            .skills
+            .with_lifestone_recall(
+                &character.progression,
+                character
+                    .creation
+                    .as_ref()
+                    .map_or(1, |request| request.race),
+            )
+            .map_err(io::Error::other)?;
+        if character.binding == Some(placement)
+            && character
+                .skills
+                .get(crate::skills::LIFESTONE_RECALL)
+                .is_some()
+        {
             return Ok(());
         }
-        self.append_record(&format!("l1\t{id}\t{}", encode_placement(placement)))?;
-        self.characters.get_mut(&id).unwrap().binding = Some(placement);
+        self.append_record(&format!("l2\t{id}\t{}", encode_placement(placement)))?;
+        let character = self.characters.get_mut(&id).unwrap();
+        character.binding = Some(placement);
+        character.skills = skills;
         Ok(())
+    }
+    pub fn ensure_lifestone_recall(&mut self, account: &str, id: u64) -> io::Result<bool> {
+        let character = self
+            .characters
+            .get(&id)
+            .filter(|character| {
+                character.account == account && !character.deleted && character.binding.is_some()
+            })
+            .ok_or_else(|| invalid("recall grant requires an owned bound character"))?;
+        if character
+            .skills
+            .get(crate::skills::LIFESTONE_RECALL)
+            .is_some()
+        {
+            return Ok(false);
+        }
+        let skills = character
+            .skills
+            .with_lifestone_recall(
+                &character.progression,
+                character
+                    .creation
+                    .as_ref()
+                    .map_or(1, |request| request.race),
+            )
+            .map_err(io::Error::other)?;
+        self.append_record(&format!("k3\t{id}"))?;
+        self.characters.get_mut(&id).unwrap().skills = skills;
+        Ok(true)
     }
     /// Binding must have passed world/cell validation before this transaction.
     pub fn return_to_binding(
@@ -745,6 +791,33 @@ fn decode_journal_state(bytes: &[u8]) -> io::Result<JournalState> {
             return Err(invalid("character journal checksum mismatch"));
         }
         let fields: Vec<_> = data.split('\t').collect();
+        if fields.len() == 2 && fields[0] == "k3" {
+            let id = fields[1]
+                .parse::<u64>()
+                .map_err(|_| invalid("invalid recall grant character"))?;
+            let character = records
+                .get_mut(&id)
+                .filter(|character| {
+                    !character.deleted
+                        && character.binding.is_some()
+                        && character
+                            .skills
+                            .get(crate::skills::LIFESTONE_RECALL)
+                            .is_none()
+                })
+                .ok_or_else(|| invalid("unavailable recall grant character"))?;
+            character.skills = character
+                .skills
+                .with_lifestone_recall(
+                    &character.progression,
+                    character
+                        .creation
+                        .as_ref()
+                        .map_or(1, |request| request.race),
+                )
+                .map_err(|_| invalid("invalid recall grant"))?;
+            continue;
+        }
         if fields.len() == 4 && fields[0] == "k2" {
             let id = fields[1]
                 .parse::<u64>()
@@ -779,7 +852,7 @@ fn decode_journal_state(bytes: &[u8]) -> io::Result<JournalState> {
             character.progression = progression;
             continue;
         }
-        if fields.len() == 3 && matches!(fields[0], "l1" | "p1" | "r2") {
+        if fields.len() == 3 && matches!(fields[0], "l1" | "l2" | "p1" | "r2") {
             let id = fields[1]
                 .parse::<u64>()
                 .map_err(|_| invalid("invalid lifestone character"))?;
@@ -788,11 +861,23 @@ fn decode_journal_state(bytes: &[u8]) -> io::Result<JournalState> {
                 .get_mut(&id)
                 .filter(|character| !character.deleted)
                 .ok_or_else(|| invalid("unavailable lifestone character"))?;
-            if fields[0] == "l1" {
+            if matches!(fields[0], "l1" | "l2") {
                 if !character.progression.alive() {
                     return Err(invalid("dead character binding"));
                 }
                 character.binding = Some(placement);
+                if fields[0] == "l2" {
+                    character.skills = character
+                        .skills
+                        .with_lifestone_recall(
+                            &character.progression,
+                            character
+                                .creation
+                                .as_ref()
+                                .map_or(1, |request| request.race),
+                        )
+                        .map_err(|_| invalid("invalid bound recall skill"))?;
+                }
             } else {
                 if character.binding != Some(placement) {
                     return Err(invalid("relocation differs from saved binding"));

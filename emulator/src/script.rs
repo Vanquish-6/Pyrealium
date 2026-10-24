@@ -16,8 +16,12 @@ pub const RESURRECT: u32 = 0x8207000e;
 pub enum Request {
     Resurrect,
     InventoryMove(crate::inventory_request::MoveRequest),
-    UseItem(crate::equipment::UseRequest),
+    UseObject(crate::equipment::UseRequest),
     Examine(u64),
+    UseSkill {
+        skill: u32,
+        target: u64,
+    },
     Combat(bool),
     Attack(Option<u64>),
     UiSettings(crate::preferences::UiSettings),
@@ -89,6 +93,17 @@ pub fn decode(function: u32, bytes: &[u8]) -> Result<Request, WorldError> {
     let mut r = Reader { bytes, pos: 0 };
     let request = match function {
         RESURRECT => Request::Resurrect,
+        crate::skills::USE => {
+            if r.int()? != 8 {
+                return Err(WorldError::InvalidValue);
+            }
+            let skill = r.int()?;
+            if skill == 0 || skill > 65535 {
+                return Err(WorldError::InvalidValue);
+            }
+            let target = r.iid()?;
+            Request::UseSkill { skill, target }
+        }
         crate::examination::REQUEST => {
             let target = crate::examination::decode(bytes)?;
             r.pos = bytes.len();
@@ -97,7 +112,7 @@ pub fn decode(function: u32, bytes: &[u8]) -> Result<Request, WorldError> {
         crate::equipment::USE => {
             let request = crate::equipment::UseRequest::decode(bytes)?;
             r.pos = bytes.len();
-            Request::UseItem(request)
+            Request::UseObject(request)
         }
         crate::inventory_request::MOVE => {
             let request = crate::inventory_request::MoveRequest::arguments(bytes)?;

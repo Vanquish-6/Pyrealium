@@ -301,7 +301,12 @@ fn recall_character(
         .binding
         .ok_or_else(|| invalid("Bind to a lifestone before recalling."))?;
     let prepared = prepare_forced_move(peer, character, destination, scene, bootstrap)?;
-    let events = vec![prepared.wire];
+    let mut events = vec![prepared.wire];
+    if let Some(entry) = saved.skills.get(crate::skills::LIFESTONE_RECALL) {
+        events
+            .push(crate::ui::skill_update(crate::skills::LIFESTONE_RECALL, entry).map_err(other)?);
+    }
+    events.push(script::private_call(script::COMBAT_STATE, &script::integer(0)).map_err(other)?);
     peer.validate_scene_batch(&events)?;
     store.return_to_binding(&peer.session.account, character, false)?;
     if let Some(runtime) = encounters {
@@ -1024,6 +1029,41 @@ pub fn run(config: Config) -> io::Result<()> {
                                         }
                                     };
                                     match request {
+                                        script::Request::UseSkill { skill, target: _ } => {
+                                            if !config.initialize_ui
+                                                || !config.lifestones
+                                                || skill != crate::skills::LIFESTONE_RECALL
+                                            {
+                                                replies.extend(peer.send_event(&script::chat("This active skill is not available in the current server profile.",1).map_err(other)?,now)?);
+                                                return Ok(replies);
+                                            }
+                                            if store.characters[&character]
+                                                .skills
+                                                .get(skill)
+                                                .is_none()
+                                            {
+                                                replies.extend(peer.send_event(&script::chat("Bind to a lifestone to unlock development Recall.",1).map_err(other)?,now)?);
+                                                return Ok(replies);
+                                            }
+                                            match recall_character(
+                                                peer,
+                                                character,
+                                                &mut store,
+                                                &mut scene,
+                                                &mut encounters,
+                                                &mut bootstrap,
+                                                now_ms,
+                                            ) {
+                                                Ok(updates) => deliveries.extend(updates),
+                                                Err(error) => replies.extend(
+                                                    peer.send_event(
+                                                        &script::chat(&error.to_string(), 1)
+                                                            .map_err(other)?,
+                                                        now,
+                                                    )?,
+                                                ),
+                                            }
+                                        }
                                         script::Request::Examine(target) => {
                                             if !config.initialize_ui {
                                                 return Err(invalid(
@@ -1060,7 +1100,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                                 ),
                                             }
                                         }
-                                        script::Request::UseItem(request) => {
+                                        script::Request::UseObject(request) => {
                                             if config.lifestones
                                                 && scene
                                                     .examination_content(character, request.item)
@@ -1110,7 +1150,18 @@ pub fn run(config: Config) -> io::Result<()> {
                                                             "Move within four meters of the lifestone.",
                                                         ));
                                                     }
-                                                    let events = vec![crate::ui::lifestone_bound(character,request.item,player).map_err(other)?,script::chat("You are bound to this lifestone. Use @recall to return under development travel rules.",1).map_err(other)?];
+                                                    let saved = &store.characters[&character];
+                                                    let skills = saved
+                                                        .skills
+                                                        .with_lifestone_recall(
+                                                            &saved.progression,
+                                                            saved
+                                                                .creation
+                                                                .as_ref()
+                                                                .map_or(1, |request| request.race),
+                                                        )
+                                                        .map_err(other)?;
+                                                    let events = vec![crate::ui::skill_update(crate::skills::LIFESTONE_RECALL,skills.get(crate::skills::LIFESTONE_RECALL).unwrap()).map_err(other)?,crate::ui::lifestone_bound(character,request.item,player).map_err(other)?,script::chat("You are bound to this lifestone. Recall is available in your skill list; @recall also returns under development travel rules.",1).map_err(other)?];
                                                     peer.validate_scene_batch(&events)?;
                                                     store.bind_lifestone(
                                                         &peer.session.account,
@@ -1821,6 +1872,22 @@ pub fn run(config: Config) -> io::Result<()> {
                                                         eprintln!(
                                                             "Development training kit deferred for character {character_id}: bag full"
                                                         );
+                                                    }
+                                                }
+                                                if config.lifestones {
+                                                    let saved = &store.characters[&character_id];
+                                                    if saved.binding.is_some()
+                                                        && saved.progression.alive()
+                                                        && saved
+                                                            .skills
+                                                            .get(crate::skills::LIFESTONE_RECALL)
+                                                            .is_none()
+                                                        && saved.skills.entries().count() < 128
+                                                    {
+                                                        store.ensure_lifestone_recall(
+                                                            &peer.session.account,
+                                                            character_id,
+                                                        )?;
                                                     }
                                                 }
                                                 let instance = store.begin_instance(
