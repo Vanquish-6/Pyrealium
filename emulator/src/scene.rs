@@ -159,6 +159,61 @@ pub struct Scene {
     content: crate::content::Content,
 }
 impl Scene {
+    pub fn inventory_instance(&self, owner: u64, item: u64) -> Result<u16, WorldError> {
+        let body = self
+            .bodies
+            .get(&owner)
+            .filter(|body| body.ready)
+            .ok_or(WorldError::InvalidValue)?;
+        Ok(body
+            .item_instances
+            .get(&item)
+            .copied()
+            .unwrap_or(body.instance))
+    }
+    pub fn admit_inventory_grant(&self, owner: u64, item: u64) -> Result<u16, WorldError> {
+        let body = self
+            .bodies
+            .get(&owner)
+            .filter(|body| body.ready)
+            .ok_or(WorldError::InvalidValue)?;
+        if item == 0
+            || item == owner
+            || body.item_instances.contains_key(&item)
+            || body.item_instances.len() >= 89
+        {
+            return Err(WorldError::LimitExceeded);
+        }
+        Ok(body.instance)
+    }
+    pub fn inventory_granted(
+        &mut self,
+        owner: u64,
+        item: u64,
+        instance: u16,
+    ) -> Result<(), WorldError> {
+        if self.admit_inventory_grant(owner, item)? != instance {
+            return Err(WorldError::InvalidValue);
+        }
+        self.bodies
+            .get_mut(&owner)
+            .unwrap()
+            .item_instances
+            .insert(item, instance);
+        Ok(())
+    }
+    pub fn inventory_removed(&mut self, owner: u64, item: u64) -> Result<(), WorldError> {
+        let body = self
+            .bodies
+            .get_mut(&owner)
+            .filter(|body| body.ready)
+            .ok_or(WorldError::InvalidValue)?;
+        if body.hands.contains_key(&item) {
+            return Err(WorldError::InvalidValue);
+        }
+        body.item_instances.remove(&item);
+        Ok(())
+    }
     pub fn next_item_instance(&self, owner: u64, item: u64) -> Result<u16, WorldError> {
         let body = self
             .bodies

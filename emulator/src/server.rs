@@ -607,6 +607,78 @@ fn deliver_scene(
     Ok(())
 }
 
+fn use_training_potion(
+    peer: &mut Peer,
+    character: u64,
+    item: u64,
+    store: &mut Store,
+    scene: &mut crate::scene::Scene,
+    now: u64,
+) -> io::Result<Vec<crate::scene::Delivery>> {
+    let saved = &store.characters[&character];
+    if !scene.can_observe(character, character) || !saved.progression.alive() {
+        return Err(invalid("Potion use requires a ready living character."));
+    }
+    if peer
+        .last_world_use_ms
+        .is_some_and(|last| now.saturating_sub(last) < crate::item_services::POTION_COOLDOWN_MS)
+    {
+        return Err(invalid("Wait five seconds before using another potion."));
+    }
+    let owned = saved
+        .inventory
+        .items()
+        .find(|owned| owned.id == item)
+        .filter(|owned| {
+            owned.definition == crate::item_services::POTION_DEFINITION
+                && owned.visual == crate::item_services::POTION_VISUAL
+                && owned.quantity == 1
+                && owned.stack_limit == 1
+                && owned.equipment_mask == 0
+        })
+        .ok_or_else(|| {
+            invalid("This training potion is not owned or has unsupported properties.")
+        })?;
+    if !matches!(owned.location, crate::inventory::Location::Bag(_))
+        || saved.progression.health == saved.progression.level().health
+    {
+        return Err(invalid(
+            "The potion must be in your bag and your health must be below its maximum.",
+        ));
+    }
+    let instance = scene.inventory_instance(character, item).map_err(other)?;
+    let command = crate::inventory::Command::ConsumeDense { item };
+    let changes = [crate::progression::Command::Heal(
+        crate::item_services::POTION_HEALTH,
+    )];
+    let next = saved
+        .progression
+        .apply(&changes[0])
+        .map_err(io::Error::other)?;
+    let mut events = vec![
+        crate::item_services::removed(item).map_err(other)?,
+        world::destroy_inventory_item(item, instance),
+    ];
+    events.extend(next.private_changes(&saved.progression));
+    events.push(
+        script::chat(
+            &format!(
+                "You recover {} health.",
+                next.health - saved.progression.health
+            ),
+            1,
+        )
+        .map_err(other)?,
+    );
+    peer.validate_scene_batch(&events)?;
+    store.player_transaction(&peer.session.account, character, &[command], &changes)?;
+    scene.inventory_removed(character, item).map_err(other)?;
+    peer.last_world_use_ms = Some(now);
+    let updates = scene.player_stats(character, &next);
+    peer.queue_ordered_batch(events)?;
+    Ok(updates)
+}
+
 fn quest_action(
     peer: &mut Peer,
     character: u64,
@@ -738,6 +810,8 @@ pub fn run(config: Config) -> io::Result<()> {
             if config.training_kit {
                 let metadata = crate::training_kit::validate(&mut portal)?;
                 inventory_metadata.insert(crate::training_kit::DEFINITION, Some(metadata));
+                let potion = crate::item_services::validate_potion(&mut portal)?;
+                inventory_metadata.insert(crate::item_services::POTION_DEFINITION, Some(potion));
             }
             for character in store.characters.values().filter(|c| !c.deleted) {
                 for item in character.inventory.items() {
@@ -817,6 +891,11 @@ pub fn run(config: Config) -> io::Result<()> {
         .as_deref()
         .map(|path| crate::encounters::Encounters::load(path, &content))
         .transpose()?;
+    if config.training_kit {
+        if let Some(runtime) = &mut encounters {
+            runtime.enable_training_loot();
+        }
+    }
     let portal_routes = if config.portals {
         let routes =
             crate::portals::Routes::bundled(&content, config.game_data.as_deref().unwrap())?;
@@ -839,6 +918,7 @@ pub fn run(config: Config) -> io::Result<()> {
                     .flat_map(|character| character.inventory.items().map(|item| item.definition))
                     .chain(
                         std::iter::once(crate::training_kit::DEFINITION)
+                            .chain(std::iter::once(crate::item_services::POTION_DEFINITION))
                             .filter(|_| config.training_kit),
                     ),
             ),
@@ -1421,6 +1501,16 @@ pub fn run(config: Config) -> io::Result<()> {
                                             }
                                         }
                                         script::Request::UseObject(request) => {
+                                            if store.characters[&character].inventory.items().any(|item|item.id==request.item && item.definition==crate::item_services::POTION_DEFINITION) {
+                                                if !config.initialize_ui || !config.training_kit || request.owner!=character {
+                                                    return Err(invalid("Training potion use is not enabled or not owned by this character."));
+                                                }
+                                                match use_training_potion(peer,character,request.item,&mut store,&mut scene,now_ms) {
+                                                    Ok(updates)=>deliveries.extend(updates),
+                                                    Err(error)=>replies.extend(peer.send_event(&script::chat(&error.to_string(),1).map_err(other)?,now)?),
+                                                }
+                                                return Ok(replies);
+                                            }
                                             if let Some(route) = portal_routes.get(request.item) {
                                                 if request.owner != character {
                                                     return Err(invalid(
@@ -2535,6 +2625,42 @@ pub fn run(config: Config) -> io::Result<()> {
             let mut updates = Vec::new();
             for event in events {
                 match event {
+                    crate::encounters::Event::Item {
+                        player,
+                        item,
+                        instance,
+                    } => {
+                        let metadata = inventory_metadata
+                            .get(&item.definition)
+                            .and_then(|entry| *entry)
+                            .ok_or_else(|| {
+                                invalid("Encounter item metadata was not initialized")
+                            })?;
+                        let spawn =
+                            world::create_inventory_item(&item, player, instance).map_err(other)?;
+                        let acquired = crate::item_services::acquired(player, &item, metadata)
+                            .map_err(other)?;
+                        scene
+                            .inventory_granted(player, item.id, instance)
+                            .map_err(other)?;
+                        updates.push(crate::scene::Delivery {
+                            recipient: player,
+                            data: spawn.into(),
+                        });
+                        updates.push(crate::scene::Delivery {
+                            recipient: player,
+                            data: acquired.into(),
+                        });
+                        updates.push(crate::scene::Delivery {
+                            recipient: player,
+                            data: script::chat(
+                                "Training reward: a health potion was placed in your bag.",
+                                1,
+                            )
+                            .map_err(other)?
+                            .into(),
+                        });
+                    }
                     crate::encounters::Event::Quest { player, book } => {
                         updates.push(crate::scene::Delivery {
                             recipient: player,

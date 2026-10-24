@@ -493,6 +493,46 @@ impl Store {
         character.progression = progression;
         Ok(())
     }
+    pub fn encounter_transaction(
+        &mut self,
+        account: &str,
+        id: u64,
+        entity: u32,
+        items: &[crate::inventory::Command],
+        changes: &[crate::progression::Command],
+    ) -> io::Result<()> {
+        if entity >> 24 != 0x47 || items.is_empty() || changes.is_empty() {
+            return Err(invalid("invalid item encounter reward"));
+        }
+        let character = self
+            .characters
+            .get(&id)
+            .filter(|c| c.account == account && !c.deleted && c.progression.alive())
+            .ok_or_else(|| invalid("encounter transaction owner unavailable"))?;
+        let first = if items.iter().any(|command| command.allocated_id().is_some()) {
+            Some(self.next_item_id()?)
+        } else {
+            None
+        };
+        let (inventory, progression) = crate::player_transaction::candidate(
+            &character.inventory,
+            &character.progression,
+            items,
+            changes,
+            first,
+        )?;
+        let quests = character.quests.record_kill(entity);
+        self.append_record(&format!(
+            "a2\t{id}\t{entity:08x}\t{}\t{}",
+            crate::player_transaction::encode_items(items),
+            crate::player_transaction::encode_changes(changes)
+        ))?;
+        let character = self.characters.get_mut(&id).unwrap();
+        character.inventory = inventory;
+        character.progression = progression;
+        character.quests = quests;
+        Ok(())
+    }
     /// Items and payment/rewards become visible only after one durable record.
     pub fn player_transaction(
         &mut self,
@@ -1382,6 +1422,52 @@ fn decode_journal_collect(
             if compacted.is_some() {
                 run.record(id, &character.progression, line);
             }
+            continue;
+        }
+        if fields.len() == 5 && fields[0] == "a2" {
+            let id = fields[1]
+                .parse::<u64>()
+                .map_err(|_| invalid("invalid encounter transaction owner"))?;
+            if fields[2].len() != 8 {
+                return Err(invalid("invalid encounter entity encoding"));
+            }
+            let entity = u32::from_str_radix(fields[2], 16)
+                .map_err(|_| invalid("invalid encounter entity"))?;
+            if entity >> 24 != 0x47 {
+                return Err(invalid("invalid encounter entity type"));
+            }
+            let items = crate::player_transaction::decode_items(fields[3])?;
+            let changes = crate::player_transaction::decode_changes(fields[4])?;
+            if items.is_empty() || changes.is_empty() {
+                return Err(invalid("empty encounter item payout"));
+            }
+            let first = if items.iter().any(|command| command.allocated_id().is_some()) {
+                Some(
+                    records
+                        .values()
+                        .map(|c| c.inventory.high_water())
+                        .max()
+                        .unwrap_or(crate::inventory::ITEM_NAMESPACE)
+                        .checked_add(1)
+                        .ok_or_else(|| invalid("encounter item identity exhausted"))?,
+                )
+            } else {
+                None
+            };
+            let character = records
+                .get_mut(&id)
+                .filter(|c| !c.deleted && c.progression.alive())
+                .ok_or_else(|| invalid("unavailable encounter payout owner"))?;
+            let (inventory, progression) = crate::player_transaction::candidate(
+                &character.inventory,
+                &character.progression,
+                &items,
+                &changes,
+                first,
+            )?;
+            character.quests = character.quests.record_kill(entity);
+            character.inventory = inventory;
+            character.progression = progression;
             continue;
         }
         if fields.len() == 4 && fields[0] == "a1" {

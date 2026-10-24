@@ -68,6 +68,13 @@ implementation or acceptance. A MusicLoader error can require Continue.
   out of combat to claim it. Objective progress commits with combat payouts;
   claiming commits rewards with completion. Original quest content, NPC dialogue,
   branching, abandonment and repeat rules remain unfinished.
+- Training encounters can grant one unstacked health potion directly into a
+  supported bag. Native acquisition/removal messages update inventory; using
+  the potion consumes it and restores up to 25 health in one durable transaction,
+  with a five-second world-use cooldown. A full/unsupported bag skips the item
+  with a message while preserving XP, gold and quest credit. This is authored
+  development loot; corpse containers, general loot tables and native acceptance
+  remain unfinished.
 - Checked journal compaction coalesces repeated combat/regeneration state while
   retaining transaction barriers, verifying replay and keeping a previous-journal
   backup. `compact-data --data PATH` provides offline maintenance under the store lock.

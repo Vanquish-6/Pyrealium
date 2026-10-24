@@ -1,5 +1,37 @@
 # Build 7148 character and world event evidence
 
+## Durable development item rewards and consumable healing (2026-10-24)
+
+The initialized training profile validates potion definition `47001745`, visual
+`1f000e3f`, physical `47001773` and icon `20000268` against the DAT. Its physical
+record is exactly `[0b,47001773,40000001,1f000e3f]`. Grant quantity/stack limit 1,
+zero equipment mask, 25 health restoration and five-second world-use cooldown
+are authored development policy, not inferred original loot or balance.
+
+Qualifying development encounters grant directly into a free supported bag.
+`a2` records the new globally sequential item, normal combat cost/XP/gold and
+quest objective progress together before creature death is published. Missing
+bag capacity skips the item with a readable message; it does not block the
+normal payout. Native contained-object creation precedes acquisition `820e005e`
+(package `1f8`, 51 fields, 296 bytes). Retained pickup captures cover slot zero;
+nonzero slot encoding follows the same package's unsigned index convention,
+but fresh matching-client acquisition acceptance remains open.
+
+Owned potion use prepares native removal `820e0058` before DestroyObject, then
+vital changes. Sales/crafting captures establish the tagged-IID removal argument;
+matching 7148 WLib resolves the removal handler to `1aa60002`. The `a1` player
+transaction commits consumption and healing together after outgoing batch
+admission. New inventory command `d` removes one unstacked item and closes its
+bag-list gap; old `c` consumption keeps its historical semantics. Current item
+lifetimes are tracked and removed without leaving stale equipped-child state.
+Full-health/dead/unsupported items and cooldown failures consume nothing.
+
+This is a direct-grant training slice, not corpse ownership, ground pickup,
+original loot tables, stacking, merchants or crafting. Object-use request shape,
+nonzero-slot acquisition and resulting native inventory presentation still need
+matching-client acceptance. Formatted, library/server compile checked and an
+optimized executable built; no tests or native client were run.
+
 ## Durable native training quest and journal restoration (2026-10-24)
 
 The authored Training Grounds quest `4000ff01` counts three authoritative kills

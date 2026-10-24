@@ -74,6 +74,11 @@ pub enum Command {
         item: u64,
         quantity: u16,
     },
+    /// Remove one unstacked bag item and close its native list gap. Historical
+    /// Consume remains unchanged for old journals and operator slot semantics.
+    ConsumeDense {
+        item: u64,
+    },
 }
 #[derive(Debug)]
 pub enum InventoryError {
@@ -298,6 +303,23 @@ impl Inventory {
                 next.items.insert(*new_id, split);
                 next.high_water = *new_id;
             }
+            Command::ConsumeDense { item } => {
+                let original = self.owned(*item)?;
+                let Location::Bag(source) = original.location else {
+                    return Err(InventoryError::InvalidItem);
+                };
+                if !self.dense_bags() || original.quantity != 1 {
+                    return Err(InventoryError::InvalidStack);
+                }
+                next.items.remove(item);
+                for entry in next.items.values_mut() {
+                    if let Location::Bag(slot) = &mut entry.location {
+                        if *slot > source {
+                            *slot -= 1;
+                        }
+                    }
+                }
+            }
             Command::Consume { item, quantity } => {
                 let original = self.owned(*item)?;
                 if *quantity == 0
@@ -356,6 +378,7 @@ impl Command {
                 destination,
             } => format!("s,{item},{new_id},{quantity},{destination}"),
             Self::Consume { item, quantity } => format!("c,{item},{quantity}"),
+            Self::ConsumeDense { item } => format!("d,{item}"),
         }
     }
     pub fn decode(text: &str) -> Result<Self, InventoryError> {
@@ -408,6 +431,7 @@ impl Command {
                 item: *item,
                 quantity: small(*quantity)?,
             },
+            ("d", [item]) => Self::ConsumeDense { item: *item },
             _ => return Err(InventoryError::InvalidItem),
         })
     }

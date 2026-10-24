@@ -11,6 +11,7 @@ pub mod equipment;
 pub mod examination;
 pub mod inventory;
 pub mod inventory_request;
+pub mod item_services;
 pub mod legacy;
 pub mod movement;
 pub mod player_transaction;

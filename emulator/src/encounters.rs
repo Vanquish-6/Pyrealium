@@ -41,6 +41,11 @@ struct Attack {
     repeat: bool,
 }
 pub enum Event {
+    Item {
+        player: u64,
+        item: crate::inventory::Item,
+        instance: u16,
+    },
     Quest {
         player: u64,
         book: crate::quests::Book,
@@ -78,6 +83,7 @@ pub struct Encounters {
     regen_vigor: u32,
     regen_interval: u64,
     next_regen: u64,
+    training_loot: bool,
 }
 fn in_range(a: Option<Placement>, b: Option<Placement>, range: f32) -> bool {
     a.zip(b).is_some_and(|(a, b)| {
@@ -227,6 +233,7 @@ impl Encounters {
             regen_vigor,
             regen_interval,
             next_regen: 0,
+            training_loot: false,
         })
     }
     pub fn initial_health(&self) -> impl Iterator<Item = (u64, u32)> + '_ {
@@ -239,6 +246,10 @@ impl Encounters {
     }
     pub fn includes_entity(&self, entity: u32) -> bool {
         self.actors.values().any(|actor| actor.entity == entity)
+    }
+    /// Call only after the server validates the authored potion's DAT profile.
+    pub fn enable_training_loot(&mut self) {
+        self.training_loot = true;
     }
     pub fn start(
         &mut self,
@@ -374,10 +385,46 @@ impl Encounters {
             let account = character.account.clone();
             let previous = character.progression.clone();
             let previous_quests = character.quests.clone();
-            if killed {
+            let loot = if killed && self.training_loot {
+                character
+                    .inventory
+                    .free_slot()
+                    .filter(|_| character.inventory.dense_bags())
+                    .and_then(|slot| {
+                        store
+                            .next_item_id()
+                            .ok()
+                            .map(|id| crate::item_services::potion(id, slot))
+                    })
+                    .and_then(|item| {
+                        scene
+                            .admit_inventory_grant(player, item.id)
+                            .ok()
+                            .map(|instance| (item, instance))
+                    })
+            } else {
+                None
+            };
+            if let Some((item, instance)) = &loot {
+                store.encounter_transaction(
+                    &account,
+                    player,
+                    actor.entity,
+                    &[crate::inventory::Command::Grant(item.clone())],
+                    &commands,
+                )?;
+                events.push(Event::Item {
+                    player,
+                    item: item.clone(),
+                    instance: *instance,
+                });
+            } else if killed {
                 store.encounter_reward(&account, player, actor.entity, &commands)?;
             } else {
                 store.progression_batch(&account, player, &commands)?;
+            }
+            if killed && self.training_loot && loot.is_none() {
+                events.push(Event::Note {player,text:"No training potion was granted: make room in your bag. XP, gold and quest credit are saved.".into()});
             }
             if store.characters[&player].quests != previous_quests {
                 events.push(Event::Quest {
