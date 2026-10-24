@@ -690,3 +690,28 @@ policy, not a claim about the original server's retention policy.
 
 This closes a source-visible recovery gap; there has not yet been a new native
 client session establishing whether it explains the player's interaction report.
+
+### Player-action ordering stall (2026-10-24)
+
+The subsequent native session did reproduce a broad interaction failure:
+600 received packets, 510 rejected, and 20 dispatched events. The first logged
+failure was Capacity at packet 30, with 16 buffered ordered messages and expected
+application stamp 19. Later state reached stamp 20 but remained full. Item use,
+NPC use and combat all pass through this ordered path.
+
+Packet completion now handles ordered messages by stamp before admitting future
+messages. Otherwise a future completion appearing first in a datagram could
+reject the same datagram's later gap-closing completion. Buffered duplicates are
+checked before capacity. Retained native captures establish unsorted completion
+order, including login packets with stamps [11,7,6] and [10,4]. Native stamp
+extraction and the shared queue-3/7 counter are unchanged. The count bound now
+matches the existing 512-stamp window, retaining the 256 KiB buffered-byte bound.
+
+Incomplete fragments no longer expire silently at 30 seconds: their packet
+receipts were already acknowledged, so deleting them could permanently lose an
+ordered message. They remain bounded by 16 assemblies, 256 fragments per blob
+and 64 KiB per blob, and are discarded when the session is removed. Capacity
+errors now identify the expected/received application stamp and buffer use.
+This repairs confirmed source-level failure paths; fresh player acceptance of
+the reported interaction failure remains pending. No test or client runs were
+performed by the agent.

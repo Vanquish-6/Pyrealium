@@ -20,6 +20,12 @@ pub enum TransportError {
     Wire(WireError),
     Sequence,
     Capacity,
+    OrderedCapacity {
+        expected: u32,
+        received: u16,
+        buffered: usize,
+        bytes: usize,
+    },
     Fragment,
     RetryLimit,
 }
@@ -57,7 +63,6 @@ struct Assembly {
     queue: u16,
     pieces: Vec<Option<Vec<u8>>>,
     bytes: usize,
-    started: Instant,
 }
 #[derive(Clone)]
 struct Pending {
@@ -189,13 +194,28 @@ impl Transport {
         let duplicate = encrypted && (seq <= self.contiguous || self.seen.contains(&seq));
         let retransmissions = self.receive_ack_naks(packet.ack, &packet.naks, now)?;
         let mut messages = Vec::new();
-        self.assemblies
-            .retain(|_, a| now.saturating_duration_since(a.started) < Duration::from_secs(30));
+        // Received fragment packets are acknowledged independently of blob
+        // completion. Silently expiring their pieces would lose acknowledged
+        // data and permanently block a later ordered application stamp.
+        // Incomplete blobs remain bounded by count/bytes until session removal.
         if !duplicate {
+            let mut ordered = Vec::new();
             for fragment in packet.fragments {
-                if let Some(message) = self.add_fragment(fragment, now)? {
-                    self.deliver(message, &mut messages)?;
+                if let Some(message) = self.add_fragment(fragment)? {
+                    if matches!(message.queue, 3 | 7) {
+                        ordered.push(message);
+                    } else {
+                        self.deliver(message, &mut messages)?;
+                    }
                 }
+            }
+            // A datagram can finish the missing ordered blob after another
+            // future blob. Admit the gap-closing completion first so a full
+            // reorder buffer cannot reject the very packet that drains it.
+            // Unordered completions retain their original relative order.
+            ordered.sort_by_key(|message| ((message.blob_id >> 32) & 0xffff) as u16);
+            for message in ordered {
+                self.deliver(message, &mut messages)?;
             }
             if encrypted {
                 self.seen.insert(seq);
@@ -247,9 +267,6 @@ impl Transport {
             }
             return Ok(());
         }
-        if stamp as u32 >= self.next_ordered + WINDOW || self.ordered.len() >= 16 {
-            return Err(TransportError::Capacity);
-        }
         if let Some(old) = self.ordered.get(&stamp) {
             if old.blob_id != message.blob_id
                 || old.queue != message.queue
@@ -259,18 +276,22 @@ impl Transport {
             }
             return Ok(());
         }
-        if self.ordered_bytes + message.data.len() > MAX_MESSAGE * 4 {
-            return Err(TransportError::Capacity);
+        if stamp as u32 >= self.next_ordered + WINDOW
+            || self.ordered.len() >= WINDOW as usize
+            || self.ordered_bytes + message.data.len() > MAX_MESSAGE * 4
+        {
+            return Err(TransportError::OrderedCapacity {
+                expected: self.next_ordered,
+                received: stamp,
+                buffered: self.ordered.len(),
+                bytes: self.ordered_bytes,
+            });
         }
         self.ordered_bytes += message.data.len();
         self.ordered.insert(stamp, message);
         Ok(())
     }
-    fn add_fragment(
-        &mut self,
-        f: Fragment<'_>,
-        now: Instant,
-    ) -> Result<Option<Message>, TransportError> {
+    fn add_fragment(&mut self, f: Fragment<'_>) -> Result<Option<Message>, TransportError> {
         if self.completed.contains(&f.blob_id) {
             return Ok(None);
         }
@@ -287,7 +308,6 @@ impl Transport {
                 queue: f.queue,
                 pieces: vec![None; f.count as usize],
                 bytes: 0,
-                started: now,
             });
         if a.queue != f.queue || a.pieces.len() != f.count as usize {
             return Err(TransportError::Fragment);
