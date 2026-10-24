@@ -232,8 +232,9 @@ NPC/object authoring. Double-click `OpenContentEditor.cmd` for the graphical
 catalog browser, native interior/creature 3D preview and position map (Python with Tk required), or run
 `python tools/content_editor.py --game-data PATH`. The GUI is syntax checked;
 actual DAT geometry/material extraction is verified, while interactive acceptance
-remains pending. Animation, full textured rendering and outdoor preview remain
-unfinished. `--lifestones true` enables development binding/recall;
+remains pending. The Windows renderer now supports actual UV textures and depth
+buffering, with a software fallback; native shader parity remains unfinished.
+`--lifestones true` enables development binding/recall;
 `--portals true` enables 156 imported portal routes plus the authored training
 gateway when that source is loaded. Four source/destination entries remain
 unresolved. Original binding/portal presentation and rules, NPC

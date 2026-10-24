@@ -150,11 +150,14 @@ pan, zoom and **Fit cell**. Clicking it sets X/Y while retaining Z. Existing
 placements can supply a position and entity for a new addition; their identities
 are retained. Neither preview changes existing objects.
 
-The 3D view uses authored bind-pose geometry with colors sampled from supported
-native material textures. DXT1/3/5 mips are decoded read-only from `portal.dat`
-and optional `highres.dat`. It does not implement animation, per-pixel textured
-rendering, complete shader/material inheritance, collision, native BSP visibility
-or outdoor terrain. Some attached visual groups and nearby props remain
+The Windows 3D view uses embedded OpenGL with actual native UV texture pixels,
+linear filtering, cutout alpha, a depth buffer and preview lighting. DXT1/3/5
+mips are decoded read-only from `portal.dat` and optional `highres.dat`; base
+material properties are applied before ordered instance overrides. It requires
+no extra Python rendering packages. If Windows cannot create its OpenGL context,
+the position aid falls back to sampled triangle colors and reports the reason
+in **Details**. Full native shader passes, translucency blending, collision and
+native BSP visibility remain unfinished. Some attached visual groups and nearby props remain
 unsupported; **Details** lists omissions instead of substituting made-up models.
 Loading is bounded to 32 cells and 50,000 scene triangles; the viewport draws up
 to 30,000, prioritizing the selected creature and reporting truncation. DAT work

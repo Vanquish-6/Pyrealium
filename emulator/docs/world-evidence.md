@@ -1,5 +1,21 @@
 # Build 7148 character and world event evidence
 
+## Per-pixel texture viewport (2026-10-24)
+
+`preview_gl.py` provides an embedded Win32 child window with its own device
+context and OpenGL context. The renderer uses real mesh UVs, decoded RGBA texture
+pixels, linear filtering, perspective interpolation, depth testing and normal
+lighting. It does not change Tk's pixel format. Input hit testing passes to the
+Tk parent so the existing camera and placement controls remain usable. Geometry
+arrays and uploaded textures are reused and bounded; old scene resources are
+released. The view reports the active driver or the reason for software fallback.
+Cutout alpha uses an explicit editor threshold; complete native translucency,
+multi-pass shaders and material lighting parity are not claimed.
+
+Python syntax and source/interface inspection completed. No GUI, native client
+or test suite was launched, so hardware-driver and interactive acceptance remain
+unverified.
+
 ## Material defaults and zero-category surfaces (2026-10-24)
 
 `preview_material.py` now reads the base RenderMaterial's embedded modifier

@@ -68,6 +68,8 @@ class Preview3D(ttk.Frame):
         self.pending = None
         self.drag = None
         self.closed = False
+        self.gpu = None
+        self.gpu_error = None
         controls = ttk.Frame(self)
         controls.pack(fill="x", pady=(0, 4))
         ttk.Button(controls, text="Focus creature (F)", command=self.focus_placement).pack(side="left")
@@ -134,6 +136,10 @@ class Preview3D(ttk.Frame):
                 "role": source.get("role", "world"),
                 "triangle_colors": mesh.get("triangle_colors", ()),
                 "did": mesh.get("did"),
+                "local_normals": mesh.get("normals", ()),
+                "uvs": mesh.get("uvs", ()),
+                "groups": mesh.get("groups", ()),
+                "material_images": mesh.get("material_images", {}),
             }
             item["base_position"] = item["position"]
             item["base_quaternion"] = item["quaternion"]
@@ -151,6 +157,8 @@ class Preview3D(ttk.Frame):
         scale, quaternion, position = item["scale"], item["quaternion"], item["position"]
         item["vertices"] = [add(rotate(tuple(value * factor for value, factor in zip(vertex, scale)), quaternion), position)
                             for vertex in item["local"]]
+        item["normals"] = [unit(rotate(tuple(value/factor for value,factor in zip(normal,scale)),quaternion))
+                           for normal in item["local_normals"]]
 
     def update_placement(self, position, heading, scale=None):
         """Move the preview without changing the camera or any world instance."""
@@ -247,9 +255,7 @@ class Preview3D(ttk.Frame):
         if not self.closed and self.pending is None:
             self.pending = self.after_idle(self.draw)
 
-    def visible_triangles(self):
-        height = self.placement[2] + 3.5
-        cutaway = self.cutaway.get()
+    def visible_instances(self):
         for item in self.instances:
             # Copying a saved placement can put the preview exactly on top of
             # it. Draw that geometry once; the saved instance reappears as soon
@@ -262,6 +268,12 @@ class Preview3D(ttk.Frame):
                 for other in self.instances
             ):
                 continue
+            yield item
+
+    def visible_triangles(self):
+        height = self.placement[2] + 3.5
+        cutaway = self.cutaway.get()
+        for item in self.visible_instances():
             points, indices = item["vertices"], item["indices"]
             colors = item["triangle_colors"]
             for offset in range(0, len(indices), 3):
@@ -279,12 +291,33 @@ class Preview3D(ttk.Frame):
         width, height = self.canvas.winfo_width(), self.canvas.winfo_height()
         if width < 40 or height < 40:
             return
-        self.canvas.delete("all")
         if not self.instances:
+            if self.gpu:
+                self.gpu.close()
+                self.gpu = None
+            self.canvas.delete("all")
             self.canvas.create_text(width/2, height/2, text="No native geometry loaded", fill="#bed0df")
             self.status.set(" · ".join(self.scene_warnings + self.geometry_warnings) or "Choose a cell and entity to load their DAT geometry.")
             return
         eye, forward, right, up = self.camera()
+        if self.gpu_error is None:
+            try:
+                from preview_gl import GLRenderer
+                if self.gpu is None:
+                    self.canvas.delete("all")
+                    self.gpu = GLRenderer(self.canvas, self.redraw)
+                count = self.gpu.render(list(self.visible_instances()), eye, forward, right, up,
+                                        width, height, self.placement[2]+3.5 if self.cutaway.get() else None)
+                self.status.set(f"Native UV textures · depth buffer · {count:,} triangles · "
+                                f"{self.gpu.info['renderer']}"
+                                + (f" · {len(self.scene_warnings)} loading notes in Details" if self.scene_warnings else ""))
+                return
+            except (RuntimeError, OSError, ValueError, ImportError) as error:
+                if self.gpu:
+                    self.gpu.close()
+                    self.gpu = None
+                self.gpu_error = str(error)
+        self.canvas.delete("all")
         focal = min(width, height) * 0.92
         light = unit((0.25, -0.4, 0.85))
         triangles = []
@@ -328,7 +361,7 @@ class Preview3D(ttk.Frame):
             self.canvas.create_line(x, y-7, x, y+7, fill="#ffcb75", width=2)
         self.canvas.create_text(10, 10, anchor="nw", fill="#d7e4ef", text=f"{len(triangles):,} visible faces · orbit / pan / zoom")
         warnings = self.scene_warnings + self.geometry_warnings
-        self.status.set("DAT geometry and sampled material colors; bind pose; animation pending."
+        self.status.set("Software fallback: sampled material colors; native OpenGL unavailable."
                         + (f" {len(set(warnings))} loading notes; see Details." if warnings else ""))
 
     def details(self):
@@ -341,9 +374,13 @@ class Preview3D(ttk.Frame):
         text.pack(side="left", fill="both", expand=True)
         scroll.pack(side="right", fill="y")
         notes = list(dict.fromkeys(self.scene_warnings + self.geometry_warnings))
-        text.insert("end", "Actual DAT geometry with sampled material colors and flat lighting.\n"
-                    "The selected model uses its stored bind pose. Animation, full per-pixel textures,\n"
-                    "complete material shaders and native visibility/BSP evaluation are unfinished.\n\n")
+        text.insert("end", "Actual DAT geometry with native UV textures, depth buffering and preview lighting.\n"
+                    "Complete native material shaders, blending and visibility/BSP evaluation remain unfinished.\n\n")
+        if self.gpu:
+            text.insert("end", "OpenGL: " + str(self.gpu.info) + "\n\n")
+            notes.extend(self.gpu.warnings)
+        if self.gpu_error:
+            text.insert("end", "OpenGL unavailable: " + self.gpu_error + "\n\n")
         text.insert("end", "\n\n".join(notes) if notes else "All requested geometry loaded without additional notes.")
         text.configure(state="disabled")
 
@@ -384,6 +421,9 @@ class Preview3D(ttk.Frame):
 
     def close(self):
         self.closed = True
+        if self.gpu:
+            self.gpu.close()
+            self.gpu = None
         if self.pending is not None:
             try:
                 self.after_cancel(self.pending)
