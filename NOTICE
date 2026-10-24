@@ -11,6 +11,7 @@ This program is distributed without any warranty, including the implied
 warranties of merchantability or fitness for a particular purpose.
 
 Third-party components retain their own copyright and license notices.
+Dependency versions and retained notices are listed in LICENSES/third-party/README.md.
 The game client, game assets, DAT archives, packet captures and independently
 owned reference materials are not relicensed by this notice. Their respective
 owners retain their rights.

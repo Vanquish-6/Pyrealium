@@ -397,7 +397,7 @@ pub fn decode_fragment_packet(bytes: &[u8]) -> Result<(Header, Fragment<'_>), Wi
     Ok((h, frag))
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Login {
     pub version: String,
     pub auth_type: u32,
@@ -408,7 +408,44 @@ pub struct Login {
     pub crypto_data: Vec<u8>,
     pub extra_data: Vec<u8>,
 }
+impl fmt::Debug for Login {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Login")
+            .field("version", &self.version)
+            .field("auth_type", &self.auth_type)
+            .field("auth_flags", &self.auth_flags)
+            .field("account", &self.account)
+            .field("crypto_bytes", &self.crypto_data.len())
+            .field("extra_bytes", &self.extra_data.len())
+            .finish_non_exhaustive()
+    }
+}
 impl Login {
+    /// Native gmClient::InitAuth 00404e10 packs /glsticket as auth 40000002.
+    /// Native string obfuscation is not encryption. Never log this result.
+    pub fn native_ticket(&self) -> Result<String, WireError> {
+        if !matches!(self.version.as_str(), "7148" | "7230")
+            || self.auth_type != 0x40000002
+            || self.auth_flags & !1 != 0
+            || self.account_override.is_some()
+            || self.extra_data.len() > 132
+            || (self.auth_flags & 1 == 0 && !self.crypto_data.is_empty())
+            || (self.auth_flags & 1 != 0 && !(12..=4096).contains(&self.crypto_data.len()))
+        {
+            return Err(WireError::UnsupportedFlags);
+        }
+        let mut reader = Reader::new(&self.extra_data);
+        let token = reader.string()?;
+        if reader.remaining() != 0
+            || token.len() != 64
+            || !token
+                .bytes()
+                .all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c))
+        {
+            return Err(WireError::Length);
+        }
+        Ok(token)
+    }
     /// Local identity policy only. Native Init (004c9050) exports a CryptoAPI
     /// SIMPLEBLOB and SetCryptoKey (004c4f10) sets bit 0. Its encrypted key remains
     /// opaque here; queue-7 payload encryption is not implemented or authenticated.

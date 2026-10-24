@@ -1,7 +1,9 @@
 //! Build 7148 protocol laboratory and local emulator.
 //! Native compatibility is established per codec, not inferred from simulated tests.
 pub mod abilities;
+pub mod account_web;
 pub mod allegiance;
+pub mod auth;
 pub mod bootstrap;
 pub mod combat_visual;
 pub mod content;

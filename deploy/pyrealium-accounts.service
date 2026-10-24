@@ -1,0 +1,26 @@
+[Unit]
+Description=Pyrealium account registration and launcher login
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pyrealium
+Group=pyrealium
+WorkingDirectory=/opt/pyrealium
+EnvironmentFile=/etc/pyrealium/online.env
+ExecStart=/opt/pyrealium/pyrealium account-web --auth-data /var/lib/pyrealium/auth --data /var/lib/pyrealium/game --web-bind 127.0.0.1:19400 --public-origin ${PYREALIUM_ACCOUNT_ORIGIN} --public-host ${PYREALIUM_GAME_HOST} --public-port 19370
+ExecStop=/opt/pyrealium/pyrealium account-stop --auth-data /var/lib/pyrealium/auth --seconds 20
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/pyrealium
+MemoryMax=1G
+
+[Install]
+WantedBy=multi-user.target

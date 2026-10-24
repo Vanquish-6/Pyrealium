@@ -8,6 +8,14 @@ license = "AGPL-3.0-only"
 repository = "https://github.com/Vanquish-6/Pyrealium"
 
 [dependencies]
+argon2 = "0.5.3"
+getrandom = "0.2.16"
+rpassword = "7.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+tiny_http = "0.12"
+zeroize = "1.8"
 
 [[bench]]
 name = "transport"

@@ -9,8 +9,7 @@ use crate::{
     world,
 };
 use std::{
-    collections::{BTreeMap, BTreeSet, VecDeque, hash_map::RandomState},
-    hash::BuildHasher,
+    collections::{BTreeMap, BTreeSet, VecDeque},
     io,
     net::{SocketAddr, UdpSocket},
     path::PathBuf,
@@ -37,6 +36,7 @@ struct Peer {
     session: Session,
     transport: Transport,
     connect_packet: Vec<u8>,
+    login_proof: String,
     id: u16,
     iteration: u16,
     blob: u32,
@@ -1391,11 +1391,24 @@ fn craft_item(
 }
 
 pub fn run(config: Config) -> io::Result<()> {
+    run_with_auth(config, None)
+}
+pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<()> {
     println!("{}", crate::licensing::notice());
-    if !config.bind.ip().is_loopback() || !config.bind.is_ipv4() {
+    if !config.bind.is_ipv4() || (auth_data.is_none() && !config.bind.ip().is_loopback()) {
         return Err(invalid(
             "developer authentication requires an IPv4 loopback bind",
         ));
+    }
+    if let Some(root) = &auth_data {
+        if !root.join("accounts.journal").is_file() || !root.join("tickets").is_dir() {
+            return Err(invalid(
+                "Initialize account storage before enabling public ticket authentication.",
+            ));
+        }
+        println!(
+            "Public native-ticket authentication enabled; developer/no-ticket login is disabled."
+        );
     }
     if config.bind.port() == 0 || config.bind.port() == u16::MAX {
         return Err(invalid("choose a nonzero base port with a free port+1"));
@@ -1592,8 +1605,14 @@ pub fn run(config: Config) -> io::Result<()> {
     primary.set_nonblocking(true)?;
     secondary.set_nonblocking(true)?;
     println!(
-        "Listening on {} and {}; local developer account configured (7148 / experimental 7230).",
-        config.bind, secondary_addr
+        "Listening on {} and {}; {} (7148 / experimental 7230).",
+        config.bind,
+        secondary_addr,
+        if auth_data.is_some() {
+            "authenticated native-ticket accounts"
+        } else {
+            "local developer account configured"
+        }
     );
     if bootstrap.is_some() {
         println!(
@@ -1634,7 +1653,7 @@ pub fn run(config: Config) -> io::Result<()> {
     let mut groups = crate::groups::Runtime::default();
     let mut group_cache = BTreeMap::new();
     let mut next_group_refresh = 0u64;
-    let random = RandomState::new();
+    let mut login_limits = crate::auth::RateLimit::new(60);
     let mut generation = 0u64;
     let mut counters = Counters::default();
     let mut buffer = [0u8; 65536];
@@ -1678,7 +1697,7 @@ pub fn run(config: Config) -> io::Result<()> {
                     Err(e) => return Err(e),
                 };
                 counters.received += 1;
-                if !addr.ip().is_loopback() || len > 4096 {
+                if (auth_data.is_none() && !addr.ip().is_loopback()) || len > 4096 {
                     counters.rejected += 1;
                     continue;
                 }
@@ -1689,6 +1708,37 @@ pub fn run(config: Config) -> io::Result<()> {
                         counters.rejected += 1;
                         continue;
                     }
+                };
+                // Endpoint-dependent NAT may map the same client socket to a
+                // different source port when it contacts our secondary port.
+                // Only a valid current cookie + net ID + iteration on the same
+                // IP can map this ACK back to its original login endpoint.
+                let addr = if h.flags == wire::CONNECT_ACK
+                    && port_index == 1
+                    && !peers.contains_key(&addr)
+                {
+                    let cookie = wire::decode_handshake(bytes)
+                        .ok()
+                        .and_then(|(_, payload)| wire::decode_connect_ack(payload).ok());
+                    cookie
+                        .and_then(|cookie| {
+                            peers.iter().find_map(|(original, peer)| {
+                                if original.ip() != addr.ip()
+                                    || peer.id != h.recipient
+                                    || peer.iteration != h.iteration
+                                {
+                                    return None;
+                                }
+                                let mut candidate = peer.session.clone();
+                                candidate
+                                    .connect_ack(cookie, now_ms)
+                                    .ok()
+                                    .map(|()| *original)
+                            })
+                        })
+                        .unwrap_or(addr)
+                } else {
+                    addr
                 };
                 if failed_peers.contains(&addr) {
                     continue;
@@ -1703,11 +1753,14 @@ pub fn run(config: Config) -> io::Result<()> {
                         if port_index != 0 {
                             return Err(invalid("login on wrong port"));
                         }
+                        if auth_data.is_some() && !login_limits.allow(addr.ip(), now_ms / 1000) {
+                            return Err(invalid("Login rate limit."));
+                        }
                         let (_, payload) = wire::decode_handshake(bytes).map_err(other)?;
                         let login = wire::Login::decode(payload).map_err(other)?;
                         // Type 1 is the recovered native admin client's no-ticket path.
                         // This is an explicit local development identity, not password authentication.
-                        if !login.supports_developer_auth(&config.account) {
+                        if auth_data.is_none() && !login.supports_developer_auth(&config.account) {
                             return Err(invalid(&format!(
                                 "unsupported login: build={:?} type={:#x} flags={:#x} account_match={} crypto_bytes={} extra_bytes={}",
                                 login.version,
@@ -1718,13 +1771,46 @@ pub fn run(config: Config) -> io::Result<()> {
                                 login.extra_data.len()
                             )));
                         }
+                        let proof = crate::auth::login_proof(&login);
                         if let Some(peer) = peers.get(&addr) {
-                            if !peer.session.expired(now_ms) {
+                            if !peer.session.expired(now_ms) && peer.login_proof == proof {
                                 return Ok(vec![peer.connect_packet.clone()]);
                             }
                         }
-                        if peers.len() >= 64 {
+                        if peers.len() >= 64 && !peers.contains_key(&addr)
+                            && !(auth_data.is_some() && peers.values().any(|peer| peer.session.account == login.account)) {
                             return Err(invalid("session capacity"));
+                        }
+                        if let Some(root) = &auth_data {
+                            let token = zeroize::Zeroizing::new(
+                                login
+                                    .native_ticket()
+                                    .map_err(|_| invalid("Public login rejected."))?,
+                            );
+                            crate::auth::consume(root, &login.account, addr.ip(), &token)?;
+                            // A fresh authenticated login replaces this account's
+                            // previous endpoint; it cannot occupy every player slot.
+                            let previous: Vec<_> = peers
+                                .iter()
+                                .filter_map(|(old_addr, peer)| {
+                                    (*old_addr != addr && peer.session.account == login.account)
+                                        .then_some(*old_addr)
+                                })
+                                .collect();
+                            for old_addr in previous {
+                                let old = peers.remove(&old_addr).unwrap();
+                                if let Phase::Entering { character }
+                                | Phase::InWorld { character } = old.session.phase
+                                {
+                                    if active_characters.get(&character) == Some(&old_addr) {
+                                        active_characters.remove(&character);
+                                        if let Some(runtime) = &mut encounters {
+                                            runtime.stop(character);
+                                        }
+                                        deliveries.extend(scene.remove(character));
+                                    }
+                                }
+                            }
                         }
                         generation = generation
                             .checked_add(1)
@@ -1734,9 +1820,10 @@ pub fn run(config: Config) -> io::Result<()> {
                             .ok_or_else(|| invalid("session IDs exhausted"))?;
                         let iteration = u16::try_from(generation)
                             .map_err(|_| invalid("restart required before iteration reuse"))?;
-                        let cookie = random.hash_one((generation, now_ms, addr));
-                        let incoming = random.hash_one((cookie, 1u32)) as u32;
-                        let outgoing = random.hash_one((cookie, 2u32)) as u32;
+                        let secrets = crate::auth::random::<16>()?;
+                        let cookie = u64::from_le_bytes(secrets[..8].try_into().unwrap());
+                        let incoming = u32::from_le_bytes(secrets[8..12].try_into().unwrap());
+                        let outgoing = u32::from_le_bytes(secrets[12..].try_into().unwrap());
                         let connect = wire::Connect {
                             server_time: start.elapsed().as_secs_f64(),
                             cookie,
@@ -1758,7 +1845,8 @@ pub fn run(config: Config) -> io::Result<()> {
                             addr,
                             Peer {
                                 client_version: login.version.clone(),
-                                session: Session::new(config.account.clone(), cookie, now_ms),
+                                session: Session::new(login.account.clone(), cookie, now_ms),
+                                login_proof: proof,
                                 transport: Transport::new(incoming, outgoing, id, iteration),
                                 connect_packet: packet.clone(),
                                 id,
@@ -1817,7 +1905,7 @@ pub fn run(config: Config) -> io::Result<()> {
                         let characters: Vec<_> = store
                             .characters
                             .values()
-                            .filter(|c| c.account == config.account && !c.deleted)
+                            .filter(|c| c.account == peer.session.account && !c.deleted)
                             .collect();
                         let list = if let Some(profile) = &bootstrap {
                             let selection: Vec<_> = characters
@@ -1829,7 +1917,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                         .map(|r| profile.selection(c.id, r))
                                 })
                                 .collect();
-                            world::character_set(config.account.as_bytes(), 5, &selection)
+                            world::character_set(peer.session.account.as_bytes(), 5, &selection)
                                 .map_err(other)?
                         } else if let Some(did) = config.visual_did {
                             let selection: Vec<_> = characters
@@ -1841,10 +1929,10 @@ pub fn run(config: Config) -> io::Result<()> {
                                     parent_visual_did: did,
                                 })
                                 .collect();
-                            world::character_set(config.account.as_bytes(), 5, &selection)
+                            world::character_set(peer.session.account.as_bytes(), 5, &selection)
                                 .map_err(other)?
                         } else {
-                            world::empty_character_set(config.account.as_bytes(), 5)
+                            world::empty_character_set(peer.session.account.as_bytes(), 5)
                                 .map_err(other)?
                         };
                         // Local asset mode: finish the zero-download DAT phase before
@@ -3774,12 +3862,9 @@ pub fn run(config: Config) -> io::Result<()> {
                                                             .progression,
                                                     )
                                                     .map_err(other)?;
+                                                let owner = peer.session.account.clone();
                                                 peer.session
-                                                    .request_enter(
-                                                        character_id,
-                                                        &config.account,
-                                                        true,
-                                                    )
+                                                    .request_enter(character_id, &owner, true)
                                                     .map_err(other)?;
                                                 peer.ordered_stamp = 0;
                                                 peer.clear_scene_outbox();
@@ -4404,6 +4489,7 @@ mod tests {
             session: Session::new("local".into(), 1, 0),
             transport: Transport::new(1, 2, 1, 1),
             connect_packet: Vec::new(),
+            login_proof: String::new(),
             id: 1,
             iteration: 1,
             blob: 0,

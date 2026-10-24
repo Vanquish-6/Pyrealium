@@ -1,0 +1,26 @@
+[Unit]
+Description=Pyrealium authenticated training world
+After=network-online.target pyrealium-accounts.service
+Wants=network-online.target
+Requires=pyrealium-accounts.service
+
+[Service]
+Type=simple
+User=pyrealium
+Group=pyrealium
+WorkingDirectory=/opt/pyrealium
+ExecStart=/opt/pyrealium/pyrealium serve-training --auth-data /var/lib/pyrealium/auth --bind 0.0.0.0:19370 --data /var/lib/pyrealium/game --game-data /srv/pyrealium/game-data --content /srv/pyrealium/live-world.tsv
+ExecStop=/opt/pyrealium/pyrealium stop --data /var/lib/pyrealium/game --seconds 20
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/pyrealium
+MemoryMax=1G
+
+[Install]
+WantedBy=multi-user.target

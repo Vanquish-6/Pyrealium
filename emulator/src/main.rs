@@ -6,6 +6,9 @@ use std::{env, net::SocketAddr, path::PathBuf, process::ExitCode};
 
 fn usage() {
     println!(
+        "  account-web --auth-data PATH --data GAME_STORE --web-bind 127.0.0.1:19400 --public-origin https://accounts.example.com --public-host game.example.com --public-port 19370\n    Account registration and HTTPS-proxied launcher login backend.\n  account-create --auth-data PATH --account NAME\n    Offline owner account provisioning with hidden password prompts. Stop the account backend first.\n  serve-training --auth-data PATH --bind 0.0.0.0:19370 --game-data PATH\n    Public native-ticket mode; rejects developer/no-ticket authentication."
+    );
+    println!(
         "{}\n  license / --license: display the complete AGPL-3.0 license.\n",
         pyrealium::licensing::notice()
     );
@@ -64,6 +67,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     }
     let mut bind: SocketAddr = "127.0.0.1:9000".parse()?;
     let mut account = "local".to_string();
+    let mut auth_data = None;
+    let mut web_bind: SocketAddr = "127.0.0.1:19400".parse()?;
+    let mut public_origin = None;
+    let mut public_host = None;
+    let mut public_port = None;
     let mut data = PathBuf::from("data");
     let mut seconds = None;
     let mut visual = None;
@@ -93,6 +101,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         match arg.as_str() {
             "--bind" => bind = value.parse()?,
             "--account" => account = value,
+            "--auth-data" => auth_data = Some(PathBuf::from(value)),
+            "--web-bind" => web_bind = value.parse()?,
+            "--public-origin" => public_origin = Some(value),
+            "--public-host" => public_host = Some(value),
+            "--public-port" => public_port = Some(value.parse::<u16>()?),
             "--data" => data = value.into(),
             "--seconds" => seconds = Some(value.parse::<u64>()?),
             "--visual-did" => {
@@ -318,6 +331,37 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 bytes.len()
             );
         }
+        "account-web" => {
+            pyrealium::account_web::run(pyrealium::account_web::Config {
+                bind: web_bind,
+                auth_data: auth_data.ok_or("--auth-data is required")?,
+                game_data: data,
+                origin: public_origin.ok_or("--public-origin is required")?,
+                game_host: public_host.ok_or("--public-host is required")?,
+                game_port: public_port.unwrap_or(bind.port()),
+            })?;
+        }
+        "account-stop" => {
+            let root = auth_data.ok_or("--auth-data is required")?;
+            if !root.join("accounts.lock").is_file() {
+                return Err("No account backend lock found.".into());
+            }
+            std::fs::write(root.join("account-stop.request"), b"stop\n")?;
+            wait_for_stop(&root.join("accounts.lock"), seconds.unwrap_or(20))?;
+            println!("Account backend stopped.");
+        }
+        "account-create" => {
+            let mut accounts =
+                pyrealium::auth::Accounts::open(&auth_data.ok_or("--auth-data is required")?)?;
+            let password = zeroize::Zeroizing::new(rpassword::prompt_password("Password: ")?);
+            let confirm =
+                zeroize::Zeroizing::new(rpassword::prompt_password("Confirm password: ")?);
+            if *password != *confirm {
+                return Err("Passwords do not match".into());
+            }
+            accounts.create(&account.to_ascii_lowercase(), &password)?;
+            println!("Account created. No password was written to command-line arguments or logs.");
+        }
         "serve" | "serve-training" => {
             if command == "serve-training" {
                 initialize_ui = true;
@@ -327,26 +371,32 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 content.get_or_insert_with(|| PathBuf::from("training"));
                 encounters.get_or_insert_with(|| PathBuf::from("training"));
             }
-            server::run(Config {
-                bind,
-                account,
-                data,
-                run_seconds: seconds,
-                visual_did: visual,
-                game_data,
-                initialize_ui,
-                training_kit,
-                lifestones,
-                portals,
-                content,
-                encounters,
-            })?;
+            server::run_with_auth(
+                Config {
+                    bind,
+                    account,
+                    data,
+                    run_seconds: seconds,
+                    visual_did: visual,
+                    game_data,
+                    initialize_ui,
+                    training_kit,
+                    lifestones,
+                    portals,
+                    content,
+                    encounters,
+                },
+                auth_data,
+            )?;
         }
         "stop" => {
             if !data.join("server.lock").is_file() {
                 return Err("no server lock found at the selected data directory".into());
             }
             std::fs::write(data.join("stop.request"), b"stop\n")?;
+            if let Some(seconds) = seconds {
+                wait_for_stop(&data.join("server.lock"), seconds)?;
+            }
             println!("Graceful stop requested.");
         }
         "character-create" | "character-create-human" => {
@@ -379,6 +429,21 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+fn wait_for_stop(lock: &std::path::Path, seconds: u64) -> Result<(), Box<dyn std::error::Error>> {
+    if !(1..=60).contains(&seconds) {
+        return Err("Stop wait must be 1-60 seconds.".into());
+    }
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(seconds);
+    while lock.exists() {
+        if std::time::Instant::now() >= deadline {
+            return Err(
+                "Server has not stopped; inspect the process before changing its lock.".into(),
+            );
+        }
+        std::thread::sleep(std::time::Duration::from_millis(50));
+    }
+    Ok(())
+}
 fn main() -> ExitCode {
     match run() {
         Ok(()) => ExitCode::SUCCESS,

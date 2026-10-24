@@ -1,0 +1,23 @@
+{
+    servers {
+        timeouts {
+            read_header 5s
+            read_body 10s
+            write 30s
+            idle 2m
+        }
+    }
+}
+
+# Replace this name with the same HTTPS origin used by the account backend.
+accounts.example.com {
+    request_body {
+        max_size 4KB
+    }
+    header Strict-Transport-Security "max-age=31536000"
+    reverse_proxy 127.0.0.1:19400 {
+        # Replace, rather than append, untrusted client forwarding headers.
+        header_up X-Forwarded-For {remote_host}
+        request_buffers 4KB
+    }
+}

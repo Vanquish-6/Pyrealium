@@ -368,13 +368,23 @@ and persistent groups are not implemented. Fresh two-client UI acceptance is pen
   sight, and complete native outdoor/interior boundary visibility behavior.
 - Original portal/binding eligibility and presentation, death penalties and
   broader supported races/classes.
-- Public account/password authentication, remote hosting readiness, production
-  operations and demonstrated multiplayer stability/capacity.
+- Public deployment/native ticket-login acceptance, account recovery and email
+  verification, production operations and demonstrated multiplayer capacity.
 
 The content editor's 3D rendering is a separate authoring feature. Its latest
 paint-callback crash repair still needs a fresh GUI load; renderer progress does
 not establish completion of any missing gameplay system. Each native milestone
 needs fresh client evidence; compilation or packet checks alone do not close it.
+
+## Online account registration
+
+Account registration, Argon2id password storage and native one-time-ticket login
+are implemented for an initial hosted alpha. Public mode uses per-account
+characters and rejects developer/no-ticket login. The account backend stays on
+loopback behind HTTPS; the existing local mode remains loopback-only.
+See [online hosting](docs/online-hosting.md) for the account page, separate online
+launcher, service templates, sizing and remaining acceptance/security boundaries.
+No public host or native internet login has been verified yet.
 
 ## License and source offer
 
