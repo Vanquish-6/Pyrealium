@@ -509,6 +509,41 @@ pub fn empty_player_description(qualities_did: u32) -> Vec<u8> {
     bytes
 }
 
+/// Contained item subset: no world position or physics parent. Ownership is in
+/// gmWeenieDesc's container/wielder fields, not a client-supplied transform.
+pub fn create_inventory_item(
+    item: &crate::inventory::Item,
+    owner: u64,
+    instance: u16,
+) -> Result<Vec<u8>, WorldError> {
+    if owner == 0
+        || instance == 0
+        || item.id == 0
+        || item.visual == 0
+        || item.definition >> 24 != 0x47
+        || item.quantity == 0
+    {
+        return Err(WorldError::InvalidValue);
+    }
+    let mut bytes = CREATE_OBJECT.to_le_bytes().to_vec();
+    bytes.extend(item.id.to_le_bytes());
+    bytes.extend(2u32.to_le_bytes()); // VisualDesc parent-DID bit, 0063d7f0.
+    bytes.extend(item.visual.to_le_bytes());
+    bytes.extend(0u32.to_le_bytes()); // PhysicsDesc has no optional fields.
+    bytes.extend(instance.to_le_bytes());
+    bytes.extend(0u16.to_le_bytes());
+    bytes.extend([0; 8]); // Four mandatory PhysicsDesc timestamp ushorts.
+    let owner_flag = match item.location {
+        crate::inventory::Location::Bag(_) => 0x20,
+        crate::inventory::Location::Equipped(_) => 0x40,
+    };
+    bytes.extend((0x02000800u32 | owner_flag).to_le_bytes());
+    bytes.extend(item.definition.to_le_bytes());
+    bytes.extend(owner.to_le_bytes());
+    bytes.extend(u32::from(item.quantity).to_le_bytes());
+    Ok(bytes)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

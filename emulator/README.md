@@ -37,8 +37,9 @@ implementation or acceptance. A MusicLoader error can require Continue.
   acceptance remains pending. Bindings do not grant skills or items.
 - Transactional inventory storage with bag moves/swaps, stack merge/split,
   equipment swaps, unequip and consumption, plus offline management commands.
-  This is stored gameplay state; native item creation/display and inventory
-  request/reply integration remain unfinished. No automatic starter grants.
+  The opt-in HUD path now initializes owned item objects and inventory maps;
+  native presentation is unverified and inventory request/reply integration
+  remains unfinished. No automatic starter grants.
 - Bounded read-only DAT and extracted terrain readers. The supplied corpus of
   **65,025 terrain records** passed full validation with no missing/empty linked
   info records. Terrain decoding is not yet server physics.

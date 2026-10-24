@@ -11,6 +11,12 @@ const NULL: u32 = u32::MAX;
 /// VTableSection::StreamPack 006e89d0 stores two nested word arrays, followed by
 /// (size, checksum) package-info pairs. This checks layout, not script semantics.
 pub fn validate_wlib(bytes: &[u8]) -> Result<(), WorldError> {
+    validate_layouts(bytes, &[(0x1a4, 2), (0x233, 8), (0x14f, 14), (0x24a7, 2)])
+}
+pub fn validate_inventory_wlib(bytes: &[u8]) -> Result<(), WorldError> {
+    validate_layouts(bytes, &[(0x1a2, 3), (0x1f9, 6)])
+}
+fn validate_layouts(bytes: &[u8], layouts: &[(usize, u32)]) -> Result<(), WorldError> {
     struct Reader<'a> {
         bytes: &'a [u8],
         pos: usize,
@@ -73,7 +79,7 @@ pub fn validate_wlib(bytes: &[u8]) -> Result<(), WorldError> {
         return Err(WorldError::LimitExceeded);
     }
     let info = reader.take(count.checked_mul(8).ok_or(WorldError::LimitExceeded)?)?;
-    for (package, size) in [(0x1a4, 2u32), (0x233, 8), (0x14f, 14), (0x24a7, 2)] {
+    for &(package, size) in layouts {
         let entry = info
             .get(package * 8..package * 8 + 4)
             .ok_or(WorldError::InvalidValue)?;
@@ -143,6 +149,13 @@ pub fn player(
     settings: Option<&crate::preferences::UiSettings>,
     hotbar: Option<&crate::preferences::Hotbar>,
 ) -> Result<Vec<u8>, WorldError> {
+    player_inventory(settings, hotbar, None)
+}
+pub fn player_inventory(
+    settings: Option<&crate::preferences::UiSettings>,
+    hotbar: Option<&crate::preferences::Hotbar>,
+    inventory: Option<&crate::inventory::Inventory>,
+) -> Result<Vec<u8>, WorldError> {
     let mut args = script::integer(0); // Gold.
     graph(
         &mut args,
@@ -204,24 +217,107 @@ pub fn player(
         ],
     );
     args.extend(script::integer(0)); // Empty effect/inventory sequence.
-    graph(&mut args, &[Object::native(0x11, &[0])]); // Equipment slot map.
-    graph(&mut args, &[Object::native(0x40, &[0])]); // Item instance map.
+    inventory_map(&mut args, inventory, true);
+    inventory_map(&mut args, inventory, false);
     // Four empty development bags. Capacity is policy, not a recovered grant.
     graph(
         &mut args,
         &[
             Object::native(0x65, &[4, 2, 3, 4, 5]),
-            Object::interpreted(0x24a7, &[(42, INT), (0, INT)]),
-            Object::interpreted(0x24a7, &[(12, INT), (0, INT)]),
-            Object::interpreted(0x24a7, &[(12, INT), (0, INT)]),
-            Object::interpreted(0x24a7, &[(12, INT), (0, INT)]),
+            Object::interpreted(0x24a7, &[(42, INT), (bag_count(inventory, 0, 42), INT)]),
+            Object::interpreted(0x24a7, &[(12, INT), (bag_count(inventory, 42, 54), INT)]),
+            Object::interpreted(0x24a7, &[(12, INT), (bag_count(inventory, 54, 66), INT)]),
+            Object::interpreted(0x24a7, &[(12, INT), (bag_count(inventory, 66, 78), INT)]),
         ],
     );
     graph(&mut args, &[Object::native(0x3b, &[0])]);
-    graph(&mut args, &[Object::native(0x3b, &[0])]);
+    let mut bag_items = Vec::new();
+    if let Some(inventory) = inventory {
+        for item in inventory.items() {
+            if let crate::inventory::Location::Bag(slot) = item.location {
+                bag_items.resize(bag_items.len().max(slot as usize + 1), 0u64);
+                bag_items[slot as usize] = item.id;
+            }
+        }
+    }
+    let mut list = vec![bag_items.len() as u32];
+    for id in bag_items {
+        list.extend([id as u32, (id >> 32) as u32]);
+    }
+    graph(&mut args, &[Object::native(0x3b, &list)]);
     args.extend(script::integer(1));
     args.extend(script::integer(0));
     script::private_call(LOAD, &args)
+}
+
+fn bag_count(inventory: Option<&crate::inventory::Inventory>, start: u16, end: u16) -> u32 {
+    inventory.map(|inventory|inventory.items().filter(|item|matches!(item.location,crate::inventory::Location::Bag(slot) if slot>=start && slot<end)).count() as u32).unwrap_or(0)
+}
+fn inventory_map(
+    out: &mut Vec<u8>,
+    inventory: Option<&crate::inventory::Inventory>,
+    equipment: bool,
+) {
+    use crate::inventory::Location;
+    let mut items: Vec<_> = inventory
+        .into_iter()
+        .flat_map(|inventory| inventory.items())
+        .filter(|item| !equipment || matches!(item.location, Location::Equipped(_)))
+        .collect();
+    // LRHash uses the full u64 remainder; the equipment ARHash uses u32 slots.
+    items.sort_unstable_by_key(|item| {
+        let key = if equipment {
+            match item.location {
+                Location::Equipped(slot) => u64::from(slot),
+                _ => 0,
+            }
+        } else {
+            item.id
+        };
+        (key % 11, key)
+    });
+    let mut payload = vec![items.len() as u32];
+    for (index, item) in items.iter().enumerate() {
+        if equipment {
+            let Location::Equipped(slot) = item.location else {
+                unreachable!()
+            };
+            payload.push(u32::from(slot));
+        } else {
+            payload.extend([item.id as u32, (item.id >> 32) as u32]);
+        }
+        payload.push(2 + index as u32 * 5);
+    }
+    let mut objects = vec![Object::native(
+        if equipment { 0x11 } else { 0x40 },
+        &payload,
+    )];
+    for item in items {
+        let root = objects.len() as u32 + 1;
+        let slot = match item.location {
+            Location::Equipped(slot) => u32::from(slot),
+            _ => 0,
+        };
+        objects.push(Object::interpreted(
+            0x1f9,
+            &[
+                (root + 1, REF),
+                (u32::from(item.equipment_mask), INT),
+                (slot, INT),
+                (0, INT),
+                (item.id as u32, 0x82),
+                ((item.id >> 32) as u32, 0xcd),
+            ],
+        ));
+        objects.push(Object::interpreted(
+            0x1a2,
+            &[(root + 2, REF), (root + 3, REF), (root + 4, REF)],
+        ));
+        objects.push(Object::native(0x70, &[1f32.to_bits(); 3]));
+        objects.push(Object::native(0xf, &[0])); // No unverified appearance overrides.
+        objects.push(Object::native(0x71, &[2, item.visual]));
+    }
+    graph(out, &objects);
 }
 
 #[cfg(test)]

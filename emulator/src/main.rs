@@ -150,7 +150,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             };
             store.inventory_command(&account, character, operation)?;
             println!(
-                "Inventory change saved. Native item display/replication is not implemented yet."
+                "Inventory change saved. Native inventory initialization requires --initialize-ui true and remains unverified."
             );
         }
         "character-restore" => {

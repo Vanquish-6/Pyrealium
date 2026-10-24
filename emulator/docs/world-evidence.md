@@ -800,3 +800,33 @@ HUD item maps and appearance replication are not connected to this stored state
 yet. Two-handed occupancy, cross-character trade, loot and economy rules also
 remain separate work. No automated tests were added or run at the user's request;
 the code was formatted and compiled only.
+
+## Owned-item native initialization (2026-10-24)
+
+The opt-in HUD path now emits contained CreateObject records for every owned item
+before its populated inventory UI_Load. VisualDesc uses its parent-DID field
+(`0063d7f0`); PhysicsDesc has no world position/parent and includes mandatory
+instance/visual stamps and four timestamps (`00641530`). gmWeenieDesc carries
+the stored definition, container or wielder owner, and quantity (`006037c0`).
+Items use the owning avatar's durable lifetime stamp and remain private to that
+connection; they are not inserted into the world-cell scene index.
+
+The HUD encoder emits equipment ARHash and item LRHash graphs with ItemData
+(`0x1f9`, six fields), appearance (`0x1a2`, three fields), unit scale, empty
+appearance overrides and parent VisualDesc references. The matching factory
+maps native kinds `0x0f`, `0x70` and `0x71` to AppearanceInfo hash, Vector and
+VisualDesc. LRHash packing `00456c20` and insertion `00456eb0` use full-u64 modulo
+bucket selection. Both map types are sorted by their actual native hash bucket.
+Bag descriptors contain current per-bag counts; the bag IID list preserves flat
+slot positions with zero empty entries. Sparse-slot presentation is unverified.
+
+Startup checks the two additional interpreted class sizes when stored items are
+present, and verifies all active owners' item definition/visual records exist.
+The owned item CreateObjects and HUD packet queue as one transaction: a failed
+send restores transport, blob and ordering counters before any packet reaches
+the socket. This avoids publishing only part of an inventory initialization.
+
+Native equip/move request/reply handling, server-driven worn appearance updates,
+and complete item metadata/tooltip presentation remain unfinished. No items were
+automatically granted. The code was compiled only; no automated tests or native
+client checks were run, following the user's instruction.

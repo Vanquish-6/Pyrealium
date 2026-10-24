@@ -59,6 +59,22 @@ fn other(e: impl std::fmt::Debug) -> io::Error {
 }
 
 impl Peer {
+    /// Queue a dependent reply group completely or preserve the prior transport.
+    /// Nothing has reached the socket while these packets are being assembled.
+    fn send_event_batch(&mut self, events: &[Vec<u8>], now: Instant) -> io::Result<Vec<Vec<u8>>> {
+        let before = (self.transport.clone(), self.blob, self.ordered_stamp);
+        let mut packets = Vec::new();
+        for event in events {
+            match self.send_event(event, now) {
+                Ok(next) => packets.extend(next),
+                Err(error) => {
+                    (self.transport, self.blob, self.ordered_stamp) = before;
+                    return Err(error);
+                }
+            }
+        }
+        Ok(packets)
+    }
     fn send_world_event(
         &mut self,
         bytes: &[u8],
@@ -239,9 +255,23 @@ pub fn run(config: Config) -> io::Result<()> {
     let initial_ui = if config.initialize_ui {
         let directory = config.game_data.as_ref().unwrap();
         let mut portal = crate::dat::Dat::open(directory.join("portal.dat"))?;
-        crate::ui::validate_wlib(&portal.read(0x56000005)?).map_err(other)?;
+        let wlib = portal.read(0x56000005)?;
+        crate::ui::validate_wlib(&wlib).map_err(other)?;
+        if store
+            .characters
+            .values()
+            .any(|c| !c.deleted && c.inventory.items().next().is_some())
+        {
+            crate::ui::validate_inventory_wlib(&wlib).map_err(other)?;
+            for character in store.characters.values().filter(|c| !c.deleted) {
+                for item in character.inventory.items() {
+                    portal.read(item.definition)?;
+                    portal.read(item.visual)?;
+                }
+            }
+        }
         println!(
-            "Experimental empty-player HUD initialization enabled; native acceptance pending."
+            "Experimental HUD and owned-inventory initialization enabled; native acceptance pending."
         );
         Some(crate::ui::empty_player().map_err(other)?)
     } else {
@@ -943,18 +973,34 @@ pub fn run(config: Config) -> io::Result<()> {
                                             let saved = match peer.session.phase {
                                                 Phase::Entering { character } => {
                                                     store.characters.get(&character).filter(|c| {
-                                                        c.ui.is_some() || !c.hotbar.is_empty()
+                                                        c.ui.is_some()
+                                                            || !c.hotbar.is_empty()
+                                                            || c.inventory.items().next().is_some()
                                                     })
                                                 }
                                                 _ => None,
                                             };
                                             if let Some(saved) = saved {
-                                                let restored = crate::ui::player(
+                                                let restored = crate::ui::player_inventory(
                                                     saved.ui.as_ref(),
                                                     Some(&saved.hotbar),
+                                                    Some(&saved.inventory),
                                                 )
                                                 .map_err(other)?;
-                                                replies.extend(peer.send_event(&restored, now)?);
+                                                let instance=peer.motion.as_ref().ok_or_else(||invalid("inventory bootstrap without avatar lifetime"))?.instance;
+                                                let mut events = saved
+                                                    .inventory
+                                                    .items()
+                                                    .map(|item| {
+                                                        world::create_inventory_item(
+                                                            item, saved.id, instance,
+                                                        )
+                                                        .map_err(other)
+                                                    })
+                                                    .collect::<io::Result<Vec<_>>>()?;
+                                                events.push(restored);
+                                                replies
+                                                    .extend(peer.send_event_batch(&events, now)?);
                                             } else {
                                                 replies.extend(peer.send_event(packet, now)?);
                                             }
