@@ -63,7 +63,22 @@ impl Content {
         Self::parse(include_str!("../content/observed-world.tsv"), game_data)
     }
     pub fn training(game_data: &Path) -> io::Result<Self> {
-        Self::parse(include_str!("../content/training-world.tsv"), game_data)
+        let mut combined = String::from("pyrealium-world-v3\n");
+        for line in include_str!("../content/world.tsv").lines().skip(1) {
+            combined.push_str(line);
+            if !line.is_empty() && !line.starts_with('#') {
+                combined.push_str("\t-");
+            }
+            combined.push('\n');
+        }
+        for line in include_str!("../content/training-world.tsv")
+            .lines()
+            .skip(1)
+        {
+            combined.push_str(line);
+            combined.push('\n');
+        }
+        Self::parse(&combined, game_data)
     }
     pub fn len(&self) -> usize {
         self.objects.len()

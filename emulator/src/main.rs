@@ -6,6 +6,9 @@ use std::{env, net::SocketAddr, path::PathBuf, process::ExitCode};
 
 fn usage() {
     println!(
+        "  serve --initialize-ui true --portals true --game-data PATH\n    Explicit development instant portal routes; enabled by serve-training."
+    );
+    println!(
         "  compact-data --data PATH\n    Offline checked journal compaction; retains the preceding journal backup. Server must be stopped."
     );
     println!(
@@ -62,6 +65,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut initialize_ui = false;
     let mut training_kit = false;
     let mut lifestones = false;
+    let mut portals = false;
     let mut item_id = None;
     let mut slot = None;
     let mut source_slot = None;
@@ -92,6 +96,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             "--initialize-ui" => initialize_ui = value.parse::<bool>()?,
             "--training-kit" => training_kit = value.parse::<bool>()?,
             "--lifestones" => lifestones = value.parse::<bool>()?,
+            "--portals" => portals = value.parse::<bool>()?,
             "--item-id" => {
                 item_id = Some(if let Some(hex) = value.strip_prefix("0x") {
                     u64::from_str_radix(hex, 16)?
@@ -306,6 +311,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 initialize_ui = true;
                 training_kit = true;
                 lifestones = true;
+                portals = true;
                 content.get_or_insert_with(|| PathBuf::from("training"));
                 encounters.get_or_insert_with(|| PathBuf::from("training"));
             }
@@ -319,6 +325,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 initialize_ui,
                 training_kit,
                 lifestones,
+                portals,
                 content,
                 encounters,
             })?;

@@ -1,0 +1,29 @@
+{
+  "portal_snapshot_sha256": "793762ab4fc2dfe05016de32a32b25e7ed8d52e3edc48cdc962f3867a2ee38bb",
+  "telepad_source_sha256": "c1caa67d0cf0f9ccad017b80f688a5a974bd7adc06c74ee9b2bfd6473543adcd",
+  "routes": 157,
+  "imported_routes": 156,
+  "authored_routes": 1,
+  "unresolved": [
+    {
+      "id": "8140000000010091",
+      "telepad": 1530,
+      "reason": "source-not-placed"
+    },
+    {
+      "id": "8140000000010092",
+      "telepad": 1531,
+      "reason": "missing-destination-cell"
+    },
+    {
+      "id": "8140000000010093",
+      "telepad": 1529,
+      "reason": "source-not-placed"
+    },
+    {
+      "id": "8140000000010094",
+      "telepad": 1532,
+      "reason": "missing-destination-cell"
+    }
+  ]
+}

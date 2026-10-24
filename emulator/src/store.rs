@@ -238,6 +238,22 @@ impl Store {
         self.characters.get_mut(&id).unwrap().skills = skills;
         Ok(true)
     }
+    /// Destination must have passed world/cell validation before this transaction.
+    pub fn relocate(&mut self, account: &str, id: u64, placement: Placement) -> io::Result<()> {
+        if !placement.valid()
+            || !self.characters.get(&id).is_some_and(|character| {
+                character.account == account && !character.deleted && character.progression.alive()
+            })
+        {
+            return Err(invalid(
+                "relocation requires an owned living character and valid placement",
+            ));
+        }
+        self.append_record(&format!("p2\t{id}\t{}", encode_placement(placement)))?;
+        self.positions.insert(id, placement);
+        self.positions_dirty = true;
+        Ok(())
+    }
     /// Binding must have passed world/cell validation before this transaction.
     pub fn return_to_binding(
         &mut self,
@@ -1001,7 +1017,7 @@ fn decode_journal_collect(
             character.progression = progression;
             continue;
         }
-        if fields.len() == 3 && matches!(fields[0], "l1" | "l2" | "p1" | "r2") {
+        if fields.len() == 3 && matches!(fields[0], "l1" | "l2" | "p1" | "p2" | "r2") {
             let id = fields[1]
                 .parse::<u64>()
                 .map_err(|_| invalid("invalid lifestone character"))?;
@@ -1028,7 +1044,7 @@ fn decode_journal_collect(
                         .map_err(|_| invalid("invalid bound recall skill"))?;
                 }
             } else {
-                if character.binding != Some(placement) {
+                if fields[0] != "p2" && character.binding != Some(placement) {
                     return Err(invalid("relocation differs from saved binding"));
                 }
                 if fields[0] == "r2" {

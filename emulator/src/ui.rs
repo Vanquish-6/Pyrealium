@@ -14,6 +14,25 @@ pub fn lifestone_bound(
     target: u64,
     point: crate::movement::Placement,
 ) -> Result<Vec<u8>, WorldError> {
+    use_success(owner, target, point, None)
+}
+pub fn portal_used(
+    owner: u64,
+    target: u64,
+    point: crate::movement::Placement,
+    distance: f32,
+) -> Result<Vec<u8>, WorldError> {
+    if !distance.is_finite() || !(0.0..=4.0).contains(&distance) {
+        return Err(WorldError::InvalidValue);
+    }
+    use_success(owner, target, point, Some(distance))
+}
+fn use_success(
+    owner: u64,
+    target: u64,
+    point: crate::movement::Placement,
+    portal_distance: Option<f32>,
+) -> Result<Vec<u8>, WorldError> {
     if !point.valid() {
         return Err(WorldError::InvalidValue);
     }
@@ -31,9 +50,20 @@ pub fn lifestone_bound(
     fields[8] = (-1f32).to_bits();
     fields[11] = 0x405;
     fields[17] = 0x13c;
-    let tags = [
+    let mut tags = [
         1, 1, 0x84, 0xcd, 1, 4, 0x84, 0xcd, 3, 0x82, 0xcd, 2, 0x82, 0xcd, 2, 1, 2, 2, 2, 2,
     ];
+    if let Some(distance) = portal_distance {
+        fields[8] = distance.to_bits();
+        fields[11] = 0;
+        fields[12] = owner as u32;
+        fields[13] = (owner >> 32) as u32;
+        fields[17] = 0x3b4;
+        fields[18] = 1;
+        tags = [
+            1, 1, 0x84, 0xcd, 1, 4, 0x84, 0xcd, 4, 0x82, 0xcd, 2, 0x84, 0xcd, 4, 1, 4, 2, 4, 4,
+        ];
+    }
     let root: Vec<_> = fields.into_iter().zip(tags).collect();
     let mut position = vec![point.cell];
     position.extend(

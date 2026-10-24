@@ -186,7 +186,8 @@ Exact addresses, identities, policies, test boundaries and open work:
 `serve-training --game-data PATH` selects the bundled starter encounter, initialized
 HUD, once-per-character development hand item and an authored nearby lifestone.
 The preset enables development binding, native Recall skill use, `@recall` and
-bound resurrection. Binding grants the locked development Recall skill for use
+bound resurrection, plus an authored gateway to a retained human bootcamp exit
+telepad. The training pack includes the base world placements. Binding grants the locked development Recall skill for use
 from the skill list or hotbar. Add the normal account, bind
 and data options as needed. The rules and placement are embedded, so this preset
 does not depend on launching from the emulator directory. It is an authored
@@ -220,8 +221,10 @@ The combined pack contains 89 lifestones and 158 portals with DAT-backed visuals
 The server creates/removes them as players enter/leave their cell. Two additional
 portal locations remain in the unresolved report because their terrain is missing.
 A 7,583-entry entity/visual catalog and offline placement tool support explicit
-NPC/object authoring. `--lifestones true` enables development binding/recall under
-local range and eligibility rules. Original binding rules, portal travel, NPC
+NPC/object authoring. `--lifestones true` enables development binding/recall;
+`--portals true` enables 156 imported portal routes plus the authored training
+gateway when that source is loaded. Four source/destination entries remain
+unresolved. Original binding/portal presentation and rules, NPC
 behavior and other interactions remain unfinished; native appearance is unverified.
 See [content format and provenance](content/README.md).
 

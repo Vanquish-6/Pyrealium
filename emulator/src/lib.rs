@@ -11,6 +11,7 @@ pub mod inventory;
 pub mod inventory_request;
 pub mod legacy;
 pub mod movement;
+pub mod portals;
 pub mod preferences;
 pub mod progression;
 pub mod scene;

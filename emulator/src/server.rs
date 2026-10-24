@@ -28,6 +28,7 @@ pub struct Config {
     pub initialize_ui: bool,
     pub training_kit: bool,
     pub lifestones: bool,
+    pub portals: bool,
     pub content: Option<PathBuf>,
     pub encounters: Option<PathBuf>,
 }
@@ -277,6 +278,69 @@ fn prepare_forced_move(
         update,
         wire,
     })
+}
+fn use_portal(
+    peer: &mut Peer,
+    character: u64,
+    target: u64,
+    route: crate::portals::Route,
+    store: &mut Store,
+    scene: &mut crate::scene::Scene,
+    encounters: &mut Option<crate::encounters::Encounters>,
+    bootstrap: &mut Option<crate::bootstrap::Bootstrap>,
+    now_ms: u64,
+) -> io::Result<Vec<crate::scene::Delivery>> {
+    let saved = &store.characters[&character];
+    if peer.combat || !saved.progression.alive() {
+        return Err(invalid("Use a portal while alive and out of combat."));
+    }
+    if saved.progression.level().number < route.level {
+        return Err(io::Error::other(format!(
+            "This portal requires level {}.",
+            route.level
+        )));
+    }
+    if peer
+        .last_world_use_ms
+        .is_some_and(|last| now_ms.saturating_sub(last) < 5000)
+    {
+        return Err(invalid("Wait a few seconds before using a portal."));
+    }
+    let player = scene
+        .player_placement(character)
+        .ok_or_else(|| invalid("Player is not ready."))?;
+    let portal = scene
+        .examination_content(character, target)
+        .ok_or_else(|| invalid("Portal is not visible."))?;
+    let distance: f64 = player
+        .coordinates
+        .into_iter()
+        .zip(portal.placement.coordinates)
+        .map(|(a, b)| (f64::from(a) - f64::from(b)).powi(2))
+        .sum();
+    if player.cell != portal.placement.cell || distance > 16.0 {
+        return Err(invalid("Move within four meters of the portal."));
+    }
+    let prepared = prepare_forced_move(peer, character, route.destination, scene, bootstrap)?;
+    let events = vec![
+        crate::ui::portal_used(character, target, route.destination, distance.sqrt() as f32)
+            .map_err(other)?,
+        prepared.wire,
+        script::private_call(script::COMBAT_STATE, &script::integer(0)).map_err(other)?,
+    ];
+    peer.validate_scene_batch(&events)?;
+    store.relocate(&peer.session.account, character, route.destination)?;
+    if let Some(runtime) = encounters {
+        runtime.stop(character);
+    }
+    let updates = scene
+        .update(character, prepared.motion.position_stamp, &prepared.update)
+        .map_err(other)?;
+    peer.motion = Some(prepared.motion);
+    peer.target = None;
+    peer.last_world_use_ms = Some(now_ms);
+    peer.queue_ordered_batch(events)?;
+    Ok(updates)
 }
 fn recall_character(
     peer: &mut Peer,
@@ -577,9 +641,9 @@ pub fn run(config: Config) -> io::Result<()> {
         ));
     }
     let mut inventory_metadata = BTreeMap::new();
-    if (config.training_kit || config.lifestones) && !config.initialize_ui {
+    if (config.training_kit || config.lifestones || config.portals) && !config.initialize_ui {
         return Err(invalid(
-            "training kits and lifestones require --initialize-ui true",
+            "training kits and world interactions require --initialize-ui true",
         ));
     }
     let initial_ui = if config.initialize_ui {
@@ -591,13 +655,14 @@ pub fn run(config: Config) -> io::Result<()> {
         crate::skills::validate_assets(&mut portal)?;
         if config.training_kit
             || config.lifestones
+            || config.portals
             || store
                 .characters
                 .values()
                 .any(|c| !c.deleted && c.inventory.items().next().is_some())
         {
             crate::ui::validate_inventory_wlib(&wlib).map_err(other)?;
-            if config.lifestones {
+            if config.lifestones || config.portals {
                 portal.read(0x25000014)?;
             }
             if config.training_kit {
@@ -682,6 +747,17 @@ pub fn run(config: Config) -> io::Result<()> {
         .as_deref()
         .map(|path| crate::encounters::Encounters::load(path, &content))
         .transpose()?;
+    let portal_routes = if config.portals {
+        let routes =
+            crate::portals::Routes::bundled(&content, config.game_data.as_deref().unwrap())?;
+        println!(
+            "Loaded {} development portal routes for the selected content pack.",
+            routes.len()
+        );
+        routes
+    } else {
+        crate::portals::Routes::default()
+    };
     let examination_names = if config.initialize_ui {
         crate::examination::Names::load(
             config.game_data.as_deref().unwrap(),
@@ -1101,6 +1177,50 @@ pub fn run(config: Config) -> io::Result<()> {
                                             }
                                         }
                                         script::Request::UseObject(request) => {
+                                            if let Some(route) = portal_routes.get(request.item) {
+                                                if request.owner != character {
+                                                    return Err(invalid(
+                                                        "portal owner differs from active character",
+                                                    ));
+                                                }
+                                                match use_portal(
+                                                    peer,
+                                                    character,
+                                                    request.item,
+                                                    route,
+                                                    &mut store,
+                                                    &mut scene,
+                                                    &mut encounters,
+                                                    &mut bootstrap,
+                                                    now_ms,
+                                                ) {
+                                                    Ok(updates) => deliveries.extend(updates),
+                                                    Err(error) => replies.extend(
+                                                        peer.send_event(
+                                                            &script::chat(&error.to_string(), 1)
+                                                                .map_err(other)?,
+                                                            now,
+                                                        )?,
+                                                    ),
+                                                }
+                                                return Ok(replies);
+                                            }
+                                            if config.portals
+                                                && scene
+                                                    .examination_content(character, request.item)
+                                                    .is_some_and(|object| {
+                                                        matches!(
+                                                            object.entity,
+                                                            0x4700084d
+                                                                | 0x47001451
+                                                                | 0x47001454
+                                                                | 0x4700369a
+                                                        )
+                                                    })
+                                            {
+                                                replies.extend(peer.send_event(&script::chat("This portal's destination is unavailable.",1).map_err(other)?,now)?);
+                                                return Ok(replies);
+                                            }
                                             if config.lifestones
                                                 && scene
                                                     .examination_content(character, request.item)

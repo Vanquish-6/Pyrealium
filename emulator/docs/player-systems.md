@@ -459,3 +459,45 @@ repeated progression history rather than claiming unbounded storage.
 normal exclusive lock. No compaction command was executed against player data
 for this change. Compilation only; no tests, benchmarks, native game checks or
 running-server replacement were performed.
+
+## Imported development portal routes
+
+`tools/import_portal_routes.py` joins the retained placed-portal metadata to the
+numeric telepad table without executing SQL. It parses bounded tuples, requires
+active destinations, validates finite positions and planar normalized rotations,
+and checks backing cells. Source/target omissions and unsupported hero/kingdom
+eligibility are reported rather than bypassed. The output contains 156 imported
+routes and one explicitly authored training-gateway source, using telepad 1473's
+human bootcamp-exit destination. Four original entries remain unresolved.
+Source snapshot and telepad SHA256 provenance are retained with the route data.
+
+`--portals true` requires the initialized 7148 HUD and opts into instant
+development portal travel. `serve-training` enables it, merges the 247 base world
+placements with its three authored starter objects, and includes the gateway.
+Only routes whose source object is loaded are enabled. Startup checks source
+identity, definition, cell and coordinates against the loaded content and reads
+every used destination's backing cell. The source cannot be replaced with an
+arbitrary client-supplied destination or a phantom object.
+
+Native object use requires an owned active caster, a visible same-cell portal
+within four meters, sufficient imported minimum level, living/out-of-combat state
+and the five-second world-use cooldown. Unresolved placed portals are rejected
+with a readable destination-unavailable message. The captured portal-success
+profile uses `82160021`, package `245`, authoritative destination Position `5a`
+and server-computed interaction distance. The destination correction and combat
+reset follow in the owner's ordered queue after prevalidated admission.
+
+A single `p2` journal transaction durably relocates the character without changing
+its binding, XP, inventory or vitals. Replay validates a living owner and bounded
+placement; revised snapshots and compaction retain the relocation. Native
+position stamps reject stale pre-travel movement. Scene relocation retires old
+cell/player/hand objects and creates those visible at the destination.
+
+Heading is quantized to the supported native movement byte. Collision/LOS,
+original portal-space transitions, cast/animation timing, hero/kingdom access,
+portal linking/recall and native travel acceptance remain separate work. The
+retained `porting.into.linvak.weapons.chamber.elog` supports the success graph;
+its original build identity is unverified. Destination extraction used the
+original installed cell DAT after the earlier converted asset directory became
+unavailable. This is static data/code integration only; no tests, native game
+checks, existing-character travel or running-server replacement were performed.
