@@ -128,6 +128,29 @@ in base 16, not as decimal DIDs. The source workbook is never modified.
 
 To author a stationary NPC/object at a position chosen by the operator:
 
+The graphical tool is `tools/content_editor.py`. On Windows, double-click
+`OpenContentEditor.cmd` in the emulator directory, or run:
+
+```powershell
+python tools/content_editor.py --game-data PATH
+```
+
+It requires Python with Tk support and uses no third-party GUI packages. Search
+the catalog by label, entity or visual identifier; select an entry; choose the
+game-data folder and content file; then enter a cell, X/Y/Z, heading and optional
+scale. The preview shows positions within the selected cell. Clicking it sets
+X/Y while retaining Z. Existing placements can supply a position and entity for
+a new addition; their identities are retained. This is a top-down authoring aid,
+without terrain, asset rendering or collision checks. Native appearance remains
+unverified. The GUI was syntax checked only and has not been interactively run.
+
+The default output is `content/local-world.tsv`, a new standalone pack of your
+additions. To include base placements, choose a separate copy of `world.tsv` as
+the output. Serve the resulting file through `--content PATH` on the next normal
+server start. The tool does not reload or restart a running server.
+
+The command-line interface remains available:
+
 ```powershell
 python tools/place_content.py --catalog content/definitions.tsv --game-data PATH --output content/world.tsv --entity ENTITY_HEX --cell CELL_HEX --position X Y Z --heading 0
 ```
@@ -135,7 +158,11 @@ python tools/place_content.py --catalog content/definitions.tsv --game-data PATH
 The tool requires an unambiguous catalog entry, existing entity/visual/cell data,
 valid coordinates and available per-cell/global capacity. It allocates an unused
 IID in the operator range beginning `8140000000020000`, marks the placement as
-operator-authored, and replaces the manifest atomically. It does not alter a
+operator-authored, flushes the temporary file and replaces the manifest atomically.
+An exclusive `.edit.lock` prevents overlapping tool saves, and a changed-file
+check rejects external edits during validation. If a process crashes while
+holding that lock, close all placement tools and remove only the corresponding
+stale `.edit.lock` before retrying. It does not alter a
 running server. Regenerating `world.tsv` from source tables replaces such local
 edits, so retain them separately before regeneration. No made-up demonstration
 NPCs were added to the shipped pack.
@@ -149,11 +176,14 @@ decimal and heading is a decimal byte (0..255). Object IDs use the local
 `8140` namespace and must be unique. Entity/visual DIDs use `47`/`1f` prefixes.
 `pyrealium-world-v2` instead has eleven fields, replacing heading with quaternion
 W, X, Y, Z. All quaternion components must be finite with norm within 0.01 of 1.
-The combined pack and authoring tool use v2; existing v1 files remain supported.
+The combined pack uses v2; existing v1 files remain supported by the server.
 `pyrealium-world-v3` adds a twelfth field: a positive scale up to 100, or `-` to
 leave scale inherited. This is local content policy. The observation pack uses
 v3 and writes the scale as native gmWeenieDesc bit `0x80`; v1/v2 encodings are
-unchanged. The current operator authoring tool edits v2 manifests only.
+unchanged. The authoring tool accepts v2 and v3. Its optional `--scale NUMBER`
+upgrades a v2 file to v3 while preserving inherited scale (`-`) for every prior
+object. Both interfaces allocate additions only in the operator IID range
+`8140000000020000` through `814000000002ffff`.
 
 The runtime rejects files larger than 4 MiB, placement lines over 512 bytes,
 more than 16,384 objects or more than 64 objects in one cell. Positions must be

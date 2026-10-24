@@ -5,8 +5,10 @@ positions, implement NPC behavior, or modify a running server's world.
 """
 import argparse
 import math
+import os
 from pathlib import Path
 import struct
+import tempfile
 
 from ac2_dat import Dat
 
@@ -20,6 +22,20 @@ def bounded_text(path):
 
 
 def place(args):
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    lock = args.output.with_name(args.output.name + ".edit.lock")
+    # Cooperating authoring processes must not overwrite each other's additions.
+    with lock.open("x", encoding="utf-8") as guard:
+        try:
+            guard.write(str(os.getpid()))
+            guard.flush()
+            return _place(args)
+        finally:
+            guard.close()
+            lock.unlink()
+
+
+def _place(args):
     catalog = bounded_text(args.catalog).splitlines()
     if not catalog or catalog[0] != "pyrealium-definitions-v1":
         raise ValueError("unsupported definition catalog")
@@ -51,10 +67,17 @@ def place(args):
         portal.read(args.entity)
         portal.read(visual)
         cells.read(args.cell|65535 if low<=64 else args.cell)
-    text = bounded_text(args.output) if args.output.exists() else "pyrealium-world-v2\n"
+    original = bounded_text(args.output) if args.output.exists() else None
+    text = original if original is not None else "pyrealium-world-v2\n"
     lines = text.splitlines()
-    if not lines or lines[0] != "pyrealium-world-v2":
-        raise ValueError("authoring requires a quaternion world-v2 manifest")
+    if not lines or lines[0] not in ("pyrealium-world-v2", "pyrealium-world-v3"):
+        raise ValueError("authoring requires a quaternion world-v2 or world-v3 manifest")
+    version = int(lines[0][-1])
+    scale = getattr(args, "scale", None)
+    if scale is not None:
+        scale = struct.unpack("<f", struct.pack("<f", scale))[0]
+        if not math.isfinite(scale) or not 0 < scale <= 100:
+            raise ValueError("scale must be greater than zero and at most 100")
     occupied = set()
     count = 0
     same_cell = 0
@@ -62,7 +85,7 @@ def place(args):
         if not line or line.startswith("#"):
             continue
         fields = line.split("\t")
-        if len(fields) != 11:
+        if len(fields) != (11 if version == 2 else 12):
             raise ValueError("invalid existing placement")
         identity = int(fields[0],16)
         if identity in occupied or identity>>48 != 0x8140:
@@ -75,18 +98,42 @@ def place(args):
     identity = 0x8140000000020000
     while identity in occupied:
         identity += 1
+    if identity >= 0x8140000000030000:
+        raise ValueError("operator placement identity range exhausted")
     half = args.heading*math.pi/255
     row = "\t".join([f"{identity:016x}",f"{args.entity:08x}",f"{visual:08x}",f"{args.cell:08x}",
                      *(format(v,'.9g') for v in position),
                      *(format(v,'.9g') for v in [math.cos(half),0,0,-math.sin(half)])])
+    if version == 2 and scale is not None:
+        lines = ["pyrealium-world-v3"] + [
+            line + "\t-" if line and not line.startswith("#") else line
+            for line in lines[1:]
+        ]
+        text = "\n".join(lines) + "\n"
+        version = 3
+    if version == 3:
+        row += "\t" + ("-" if scale is None else format(scale, ".9g"))
+    if len(row.encode("utf-8")) > 512:
+        raise ValueError("placement exceeds native runtime line limit")
     result = text.rstrip("\n")+"\n# Operator-authored placement: "+label+"\n"+row+"\n"
     if len(result.encode("utf-8")) > 4*1024*1024:
         raise ValueError("result exceeds content file limit")
     args.output.parent.mkdir(parents=True,exist_ok=True)
-    temporary = args.output.with_name(args.output.name+".tmp")
-    temporary.write_text(result,encoding="utf-8",newline="\n")
-    temporary.replace(args.output)
+    descriptor, name = tempfile.mkstemp(prefix=args.output.name+".", suffix=".tmp", dir=args.output.parent)
+    temporary = Path(name)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as file:
+            file.write(result)
+            file.flush()
+            os.fsync(file.fileno())
+        current = bounded_text(args.output) if args.output.exists() else None
+        if current != original:
+            raise ValueError("manifest changed during authoring; reload it before saving")
+        temporary.replace(args.output)
+    finally:
+        temporary.unlink(missing_ok=True)
     print(f"Authored stationary placement {identity:016x}: {label}. Restart/reload requires the normal server lifecycle.")
+    return identity
 
 
 def main():
@@ -98,6 +145,7 @@ def main():
     parser.add_argument("--cell",type=lambda v:int(v,16),required=True)
     parser.add_argument("--position",type=float,nargs=3,required=True)
     parser.add_argument("--heading",type=int,default=0)
+    parser.add_argument("--scale",type=float,help="optional native scale; upgrades v2 to v3 without changing prior objects")
     place(parser.parse_args())
 
 

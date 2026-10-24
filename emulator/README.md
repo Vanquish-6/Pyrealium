@@ -228,7 +228,10 @@ The combined pack contains 89 lifestones and 158 portals with DAT-backed visuals
 The server creates/removes them as players enter/leave their cell. Two additional
 portal locations remain in the unresolved report because their terrain is missing.
 A 7,583-entry entity/visual catalog and offline placement tool support explicit
-NPC/object authoring. `--lifestones true` enables development binding/recall;
+NPC/object authoring. Double-click `OpenContentEditor.cmd` for the graphical
+catalog browser and cell-position preview (Python with Tk required), or run
+`python tools/content_editor.py --game-data PATH`. The GUI is syntax checked;
+interactive acceptance remains pending. `--lifestones true` enables development binding/recall;
 `--portals true` enables 156 imported portal routes plus the authored training
 gateway when that source is loaded. Four source/destination entries remain
 unresolved. Original binding/portal presentation and rules, NPC
