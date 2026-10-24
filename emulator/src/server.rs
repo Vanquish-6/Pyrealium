@@ -2920,16 +2920,15 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                             })();
                                             match result {
                                                 Ok((command, acknowledgment)) => {
+                                                    let events = vec![acknowledgment];
+                                                    peer.validate_scene_batch(&events)?;
                                                     store.inventory_command(
                                                         &peer.session.account,
                                                         character,
                                                         command,
                                                     )?;
                                                     peer.last_inventory_ms = Some(now_ms);
-                                                    deliveries.push(crate::scene::Delivery {
-                                                        recipient: character,
-                                                        data: acknowledgment.into(),
-                                                    });
+                                                    peer.queue_ordered_batch(events)?;
                                                 }
                                                 Err(error) => replies.extend(
                                                     peer.send_event(
