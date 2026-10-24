@@ -1079,6 +1079,7 @@ fn group_publish(
 
 const TRAINING_MERCHANT: u64 = 0x8140000000030003;
 const TRAINING_MERCHANT_OUTDOOR: u64 = 0x8140000000030006;
+const TRAINING_MERCHANT_CORRIDOR: u64 = 0x814000000003000d;
 const TRAINING_MENTORS: [u64; 3] = [0x8140000000030008, 0x8140000000030009, 0x814000000003000a];
 
 fn use_training_mentor(
@@ -1126,24 +1127,28 @@ fn merchant_ready(character: u64, scene: &crate::scene::Scene) -> io::Result<u64
     let player = scene
         .player_placement(character)
         .ok_or_else(|| invalid("Player is not ready."))?;
-    let nearby = [TRAINING_MERCHANT, TRAINING_MERCHANT_OUTDOOR]
-        .into_iter()
-        .find(|id| {
-            let Some(merchant) = scene
-                .examination_content(character, *id)
-                .filter(|object| object.entity == crate::merchants::MERCHANT_ENTITY)
-            else {
-                return false;
-            };
-            player.cell == merchant.placement.cell
-                && player
-                    .coordinates
-                    .iter()
-                    .zip(merchant.placement.coordinates)
-                    .map(|(a, b)| (a - b).powi(2))
-                    .sum::<f32>()
-                    <= 16.0
-        });
+    let nearby = [
+        TRAINING_MERCHANT,
+        TRAINING_MERCHANT_OUTDOOR,
+        TRAINING_MERCHANT_CORRIDOR,
+    ]
+    .into_iter()
+    .find(|id| {
+        let Some(merchant) = scene
+            .examination_content(character, *id)
+            .filter(|object| object.entity == crate::merchants::MERCHANT_ENTITY)
+        else {
+            return false;
+        };
+        player.cell == merchant.placement.cell
+            && player
+                .coordinates
+                .iter()
+                .zip(merchant.placement.coordinates)
+                .map(|(a, b)| (a - b).powi(2))
+                .sum::<f32>()
+                <= 16.0
+    });
     nearby.ok_or_else(|| invalid("Move within four metres of the training quartermaster."))
 }
 
@@ -2309,7 +2314,9 @@ pub fn run(config: Config) -> io::Result<()> {
                                             }
                                             if matches!(
                                                 request.item,
-                                                TRAINING_MERCHANT | TRAINING_MERCHANT_OUTDOOR
+                                                TRAINING_MERCHANT
+                                                    | TRAINING_MERCHANT_OUTDOOR
+                                                    | TRAINING_MERCHANT_CORRIDOR
                                             ) && config.training_kit
                                             {
                                                 if request.owner != character {

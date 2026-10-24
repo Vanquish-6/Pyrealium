@@ -715,3 +715,11 @@ errors now identify the expected/received application stamp and buffer use.
 This repairs confirmed source-level failure paths; fresh player acceptance of
 the reported interaction failure remains pending. No test or client runs were
 performed by the agent.
+
+The authored corridor training hub now also has a quartermaster and lifestone,
+using the same validated asset profiles as the start area. The corridor merchant
+is routed through native use and the existing shop/range/context validation.
+Players saved in cell 0299011d can buy ingredients and bind locally alongside the
+existing mentor, practice creatures and outdoor portal. These placements are
+development content on the previously observed corridor plane; collision and
+fresh client visibility remain unverified.
