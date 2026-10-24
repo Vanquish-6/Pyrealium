@@ -175,6 +175,9 @@ Offline inventory management is available through the `inventory-*` commands in
 `--help`; use the normal `--account`, `--character-id` and `--data` arguments.
 The server must be stopped. Development grants require existing definition and
 visual records in `--game-data`, with operator-supplied stack/equipment rules.
+`inventory-reorder --character-id N --request PATH` imports one reassembled
+296-byte native sorting request while offline. It requires matching owner/item
+identities and a dense bag list; it does not enable live client sorting.
 Existence of a DAT definition does not establish starter entitlement or balance.
 See [inventory storage boundaries](docs/world-evidence.md#transactional-inventory-storage-2026-10-24).
 

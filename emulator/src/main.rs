@@ -6,6 +6,9 @@ use std::{env, net::SocketAddr, path::PathBuf, process::ExitCode};
 
 fn usage() {
     println!(
+        "  inventory-reorder --character-id N --request PATH\n    Offline import of one reassembled native inventory sorting message (296 bytes)."
+    );
+    println!(
         "Offline inventory commands (server must be stopped):\n  inventory-list --character-id N\n  inventory-grant --character-id N --game-data PATH --id DEFINITION_HEX --visual-did VISUAL_HEX [--quantity N --stack-limit N --equipment-mask HEX --slot N]\n  inventory-move --character-id N --item-id IID --source-slot N --slot N\n  inventory-equip --character-id N --item-id IID --equipment-mask HEX\n  inventory-unequip --character-id N --item-id IID\n  inventory-split --character-id N --item-id IID --quantity N [--slot N]\n  inventory-consume --character-id N --item-id IID --quantity N\nAll accept --account local --data PATH. These manage stored state; native item replication remains unfinished.\n"
     );
     println!(
@@ -37,6 +40,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut item_id = None;
     let mut slot = None;
     let mut source_slot = None;
+    let mut inventory_request = None;
     let mut quantity = 1u16;
     let mut stack_limit = 1u16;
     let mut equipment_mask = 0u16;
@@ -67,6 +71,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             }
             "--slot" => slot = Some(value.parse::<u16>()?),
             "--source-slot" => source_slot = Some(value.parse::<u16>()?),
+            "--request" => inventory_request = Some(PathBuf::from(value)),
             "--quantity" => quantity = value.parse()?,
             "--stack-limit" => stack_limit = value.parse()?,
             "--equipment-mask" => {
@@ -77,7 +82,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     }
     match command.as_str() {
         "inventory-list" | "inventory-grant" | "inventory-move" | "inventory-equip"
-        | "inventory-unequip" | "inventory-split" | "inventory-consume" => {
+        | "inventory-unequip" | "inventory-split" | "inventory-consume" | "inventory-reorder" => {
             use pyrealium::inventory::{Command, Item, Location};
             let mut store = Store::open(&data)?;
             let character = character_id.ok_or("--character-id is required")?;
@@ -96,6 +101,16 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 return Ok(());
             }
             let operation = match command.as_str() {
+                "inventory-reorder" => {
+                    use pyrealium::inventory_request::{MESSAGE_BYTES, MoveRequest};
+                    use std::io::Read;
+                    let path = inventory_request.ok_or("--request is required")?;
+                    let mut bytes = Vec::with_capacity(MESSAGE_BYTES + 1);
+                    std::fs::File::open(path)?
+                        .take((MESSAGE_BYTES + 1) as u64)
+                        .read_to_end(&mut bytes)?;
+                    MoveRequest::decode(&bytes)?.command(character)?
+                }
                 "inventory-grant" => {
                     let directory =
                         game_data.ok_or("--game-data is required to validate grant assets")?;

@@ -45,6 +45,12 @@ pub enum Command {
         source: u16,
         destination: u16,
     },
+    /// Dense native bag-list insertion. Destination is the pre-removal boundary.
+    Reorder {
+        item: u64,
+        source: u16,
+        destination: u16,
+    },
     Equip {
         item: u64,
         slot: u16,
@@ -187,6 +193,31 @@ impl Inventory {
                     next.items.get_mut(item).unwrap().location = Location::Bag(*destination);
                 }
             }
+            Command::Reorder {
+                item,
+                source,
+                destination,
+            } => {
+                let moved = self.owned(*item)?;
+                if moved.location != Location::Bag(*source) {
+                    return Err(InventoryError::StaleLocation);
+                }
+                let mut order: Vec<u64> = self.bags.iter().flatten().copied().collect();
+                // Captures establish insertion in a dense list, not how holes
+                // should compact. Refuse sparse bags rather than moving them.
+                if self.bags[..order.len()].iter().any(Option::is_none)
+                    || usize::from(*source) >= order.len()
+                    || usize::from(*destination) > order.len()
+                {
+                    return Err(InventoryError::StaleLocation);
+                }
+                let destination = usize::from(*destination) - usize::from(source < destination);
+                order.remove(usize::from(*source));
+                order.insert(destination, *item);
+                for (slot, id) in order.into_iter().enumerate() {
+                    next.items.get_mut(&id).unwrap().location = Location::Bag(slot as u16);
+                }
+            }
             Command::Equip { item, slot } => {
                 let equipped = self.owned(*item)?;
                 if !slot.is_power_of_two()
@@ -282,6 +313,13 @@ impl Command {
                 source,
                 destination,
             } => format!("m,{item},{source},{destination}"),
+            Self::Reorder {
+                item,
+                source,
+                destination,
+            } => {
+                format!("r,{item},{source},{destination}")
+            }
             Self::Equip { item, slot } => format!("e,{item},{slot}"),
             Self::Unequip { item } => format!("u,{item}"),
             Self::Split {
@@ -315,6 +353,11 @@ impl Command {
                 location: Location::Bag(small(*slot)?),
             }),
             ("m", [item, source, destination]) => Self::Move {
+                item: *item,
+                source: small(*source)?,
+                destination: small(*destination)?,
+            },
+            ("r", [item, source, destination]) => Self::Reorder {
                 item: *item,
                 source: small(*source)?,
                 destination: small(*destination)?,

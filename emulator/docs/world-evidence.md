@@ -844,3 +844,31 @@ change the journal format, slot policies, or ownership rules.
 Formatted and compiled with `cargo check --all-targets`; no tests, benchmarks,
 or native client checks were run. This is an algorithmic improvement, not a
 measured performance claim.
+
+## Native sorting request import (2026-10-24)
+
+The retained `sorting.items.elog` capture contains `0x10053 / 0x820e0049`
+requests with one PackBuffer object: package `0x1f8`, 51 interpreted fields,
+51 type bytes and one padding byte. The decoder accepts this exact 296-byte
+application-message profile, including its declared 284-byte argument length.
+It checks repeated owner/item identities, source/destination fields, type tags,
+request discriminants, absent metadata and padding. It does not deserialize a
+general script graph. Capture build identity remains unknown; this is a narrow
+capture-derived profile, not proof of matching-client acceptance.
+
+`inventory-reorder --character-id N --request PATH` imports that message into
+the locked offline store. Input reads stop after 297 bytes, allowing rejection
+of oversized files without loading them in full. The request owner must match
+the active account-owned character; the item must already occupy the requested
+source. The `r` inventory journal operation removes the item and inserts it at
+the requested pre-removal boundary, shifting intervening items and adjusting a
+forward destination by one. It never merges stacks or changes equipment.
+Sparse bags are rejected because their compaction semantics are not established.
+The existing `m` slot-swap/merge operation retains its local policy.
+
+This importer uses normal candidate validation and flush-before-publish store
+handling. Journals containing `r` inventory commands require this newer reader.
+Live native move replies remain gated on authoritative icon/physical-definition
+metadata and matching-client verification; this change does not route sorting
+requests from a connected client or claim a complete inventory implementation.
+Formatted and compiled only; no tests or native game checks were run.
