@@ -155,7 +155,7 @@ pub fn decode(function: u32, bytes: &[u8]) -> Result<Request, WorldError> {
     Ok(result)
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Member {
     pub id: u64,
     pub name: String,
@@ -583,17 +583,57 @@ impl Runtime {
         player: u64,
         member: &Member,
     ) -> Result<Vec<Delivery>, GroupError> {
+        self.member_changes(player, member, None)
+    }
+    /// Emit only changed native member fields. Roster/name/level changes require
+    /// a full snapshot; callers must publish an admitted batch before caching it.
+    pub fn member_changes(
+        &self,
+        player: u64,
+        member: &Member,
+        previous: Option<&Member>,
+    ) -> Result<Vec<Delivery>, GroupError> {
         if member.id != player || !member.valid() {
             return Err(GroupError::InvalidMember);
         }
+        if previous.is_some_and(|old| {
+            !old.valid() || old.id != player || old.name != member.name || old.level != member.level
+        }) {
+            return Err(GroupError::InvalidMember);
+        }
         let mut packets = Vec::new();
-        for (function, first, value) in [
-            (0x820c0033, false, member.max_health),
-            (0x820c0030, true, member.health),
-            (0x820c0021, false, member.max_vigor),
-            (0x820c002d, true, member.vigor),
-            (0x820c003f, false, member.cell),
+        // Maxima precede current values so a growing bar never temporarily
+        // receives a current value larger than its old maximum.
+        for (function, first, value, old_value) in [
+            (
+                0x820c0033,
+                false,
+                member.max_health,
+                previous.map(|old| old.max_health),
+            ),
+            (
+                0x820c0030,
+                true,
+                member.health,
+                previous.map(|old| old.health),
+            ),
+            (
+                0x820c0021,
+                false,
+                member.max_vigor,
+                previous.map(|old| old.max_vigor),
+            ),
+            (
+                0x820c002d,
+                true,
+                member.vigor,
+                previous.map(|old| old.vigor),
+            ),
+            (0x820c003f, false, member.cell, previous.map(|old| old.cell)),
         ] {
+            if old_value == Some(value) {
+                continue;
+            }
             let mut args = Vec::new();
             if first {
                 args.extend(script::integer(0));

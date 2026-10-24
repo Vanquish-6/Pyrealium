@@ -347,7 +347,10 @@ Use `@group create NAME`, `@group invite PLAYER`, `@group accept PLAYER`,
 `@group disband`. Native requests, invitation dialogs and member snapshots are
 also wired. Groups have at most eight members and invitations expire in 30 seconds.
 Only individual XP/personal rewards are supported. The leader leaving or logging
-out disbands the session group. Member vitals/location refresh while online;
+out disbands the session group. Member vitals/location use changed-field native
+updates while online; full roster snapshots are retained for initial state and
+name/level changes. Updates are admitted for every recipient before the sent-state
+cache advances, so a busy connection can retry without silently missing a change;
 `@g MESSAGE` sends group chat. Original native group-chat routing, shared rewards
 and persistent groups are not implemented. Fresh two-client UI acceptance is pending.
 

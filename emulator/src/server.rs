@@ -1651,7 +1651,7 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
     let mut failed_peers = BTreeSet::new();
     let mut next_offer = 0x8160000000000000u64;
     let mut groups = crate::groups::Runtime::default();
-    let mut group_cache = BTreeMap::new();
+    let mut group_cache: BTreeMap<u64, crate::groups::Member> = BTreeMap::new();
     let mut next_group_refresh = 0u64;
     let mut login_limits = crate::auth::RateLimit::new(60);
     let mut generation = 0u64;
@@ -1777,8 +1777,13 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                 return Ok(vec![peer.connect_packet.clone()]);
                             }
                         }
-                        if peers.len() >= 64 && !peers.contains_key(&addr)
-                            && !(auth_data.is_some() && peers.values().any(|peer| peer.session.account == login.account)) {
+                        if peers.len() >= 64
+                            && !peers.contains_key(&addr)
+                            && !(auth_data.is_some()
+                                && peers
+                                    .values()
+                                    .any(|peer| peer.session.account == login.account))
+                        {
                             return Err(invalid("session capacity"));
                         }
                         if let Some(root) = &auth_data {
@@ -4403,40 +4408,50 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
         if now_ms >= next_group_refresh {
             let mut refreshed = BTreeSet::new();
             for player in groups.member_ids() {
-                let Some(member) = online.get(&player) else {
+                if refreshed.contains(&player) {
                     continue;
-                };
-                let stamp = (
-                    member.level,
-                    member.health,
-                    member.max_health,
-                    member.vigor,
-                    member.max_vigor,
-                    member.cell,
-                );
-                if group_cache.get(&player) == Some(&stamp) || refreshed.contains(&player) {
+                }
+                let members = groups.members(player);
+                let snapshot = members.iter().any(|id| {
+                    online.get(id).is_none_or(|member| {
+                        group_cache
+                            .get(id)
+                            .is_none_or(|old| old.name != member.name || old.level != member.level)
+                    })
+                });
+                if !snapshot
+                    && members
+                        .iter()
+                        .all(|id| group_cache.get(id) == online.get(id))
+                {
+                    refreshed.extend(members);
                     continue;
                 }
                 let result = (|| -> io::Result<()> {
-                    let updates = groups.refresh(player, &online).map_err(io::Error::other)?;
+                    let updates = if snapshot {
+                        groups.refresh(player, &online).map_err(io::Error::other)?
+                    } else {
+                        let mut updates = Vec::new();
+                        for id in &members {
+                            let member = online
+                                .get(id)
+                                .ok_or_else(|| invalid("Group member is unavailable."))?;
+                            updates.extend(
+                                groups
+                                    .member_changes(*id, member, group_cache.get(id))
+                                    .map_err(io::Error::other)?,
+                            );
+                        }
+                        updates
+                    };
                     let packets = group_admit(&updates, &active_characters, &peers)?;
                     group_publish(packets, &mut peers)
                 })();
                 if result.is_ok() {
-                    for id in groups.members(player) {
+                    for id in members {
                         refreshed.insert(id);
                         if let Some(m) = online.get(&id) {
-                            group_cache.insert(
-                                id,
-                                (
-                                    m.level,
-                                    m.health,
-                                    m.max_health,
-                                    m.vigor,
-                                    m.max_vigor,
-                                    m.cell,
-                                ),
-                            );
+                            group_cache.insert(id, m.clone());
                         }
                     }
                 }
