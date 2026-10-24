@@ -5,6 +5,7 @@ pub mod crypto;
 pub mod dat;
 pub mod legacy;
 pub mod movement;
+pub mod preferences;
 pub mod scene;
 pub mod script;
 pub mod server;

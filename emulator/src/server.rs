@@ -562,6 +562,13 @@ pub fn run(config: Config) -> io::Result<()> {
                                         }
                                     };
                                     match request {
+                                        script::Request::UiSettings(settings) => {
+                                            store.update_ui(
+                                                &peer.session.account,
+                                                character,
+                                                settings,
+                                            )?;
+                                        }
                                         script::Request::Target(target) => {
                                             if target.is_some_and(|target| {
                                                 !scene.can_observe(character, target)
@@ -926,7 +933,20 @@ pub fn run(config: Config) -> io::Result<()> {
                                         matches!(peer.session.phase, Phase::Entering { .. });
                                     if first {
                                         if let Some(packet) = initial_ui.as_deref() {
-                                            replies.extend(peer.send_event(packet, now)?);
+                                            let settings = match peer.session.phase {
+                                                Phase::Entering { character } => store
+                                                    .characters
+                                                    .get(&character)
+                                                    .and_then(|c| c.ui.as_ref()),
+                                                _ => None,
+                                            };
+                                            if let Some(settings) = settings {
+                                                let restored = crate::ui::player(Some(settings))
+                                                    .map_err(other)?;
+                                                replies.extend(peer.send_event(&restored, now)?);
+                                            } else {
+                                                replies.extend(peer.send_event(packet, now)?);
+                                            }
                                         }
                                     }
                                     peer.session.scene_complete().map_err(other)?;

@@ -15,6 +15,7 @@ pub const TARGET: u32 = 0x82120016;
 pub enum Request {
     Combat(bool),
     Attack(Option<u64>),
+    UiSettings(crate::preferences::UiSettings),
     Target(Option<u64>),
     Say(String),
     Tell { recipient: String, text: String },
@@ -74,6 +75,11 @@ pub fn decode(function: u32, bytes: &[u8]) -> Result<Request, WorldError> {
     }
     let mut r = Reader { bytes, pos: 0 };
     let request = match function {
+        crate::preferences::WINDOW_UPDATE => {
+            let settings = crate::preferences::UiSettings::decode(bytes)?;
+            r.pos = bytes.len();
+            Request::UiSettings(settings)
+        }
         COMBAT_START | COMBAT_STOP => {
             if function == COMBAT_START && bytes.len() == 12 {
                 let target = r.iid()?;

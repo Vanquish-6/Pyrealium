@@ -708,3 +708,33 @@ bytes. The two-peer real-UDP test rejects unknown/self targets before accepting
 the other ready player, then continues stop/chat/movement/logout. The native
 session later exited with no access violation recorded; HUD presentation and
 extended stability are still unverified without a fresh visual observation.
+
+## Durable UI placement and opacity (2026-10-24)
+
+`0x82120031` is now decoded as two bounded, standalone native graphs: a
+BaseHash<unsigned long,unsigned long,2> opacity table (kind 1) followed by
+UISaveLocations (kind `0x6f`). The latter is a hash of layout IDs to window hashes;
+each UILocationData contains four float coordinates and a 32-bit shown value.
+Factory `004b3980`, hash packing `004093a0`, and the retained window-update
+packet layout establish this structure. The decoder rejects duplicate keys,
+nonfinite coordinates, out-of-range opacity, trailing bytes, arbitrary graphs,
+oversized counts and interpreted fields on these native objects. Local bounds
+are 64 opacity entries, eight layouts, 64 windows per layout, 256 windows total,
+and coordinate magnitude at most 1024.
+
+Ready characters' updates merge with existing settings rather than erasing
+windows omitted by a partial upload. Identical state causes no journal write.
+Changed settings append a checksummed, flushed `u1` record before in-memory
+publication. Replay decodes and validates the canonical payload again, rejects
+unknown/deleted characters, and preserves preferences through deletion/restore.
+Older server binaries cannot read journals after their first `u1` record.
+
+When the opt-in HUD initializer is enabled, the next avatar lifetime restores
+saved locations and opacities through GameplayOptionsProfile's `0x890` mask,
+bit-field marker and version 4, in the order specified by `006000b0`. Every hash
+is re-encoded in bucket-contiguous order with the native 11-bucket size index.
+This reuses semantic values, not client-provided pointers or arbitrary serialized
+script state. Other options (hotbars, aliases, channel fonts) remain unfinished.
+
+Per the user's instruction, no automated tests were added or run for this
+change. Compilation succeeded; native persistence/restoration remains unverified.

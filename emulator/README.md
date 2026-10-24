@@ -111,11 +111,13 @@ corruption rather than silently discarding progress.
 
 ## Validation and measured performance
 
-The current standard suite passes **57 unit tests and seven integration checks**,
+The last executed standard suite passed **57 unit tests and seven integration checks**,
 including one real-UDP test. Three additional opt-in UDP tests cover the converted bootstrap, rejection
 of incompatible installed assets, and two-player movement/look/logout/re-entry,
 deletion and connection-logoff behavior. They passed on the supplied assets.
 These peers are synthetic; they do not establish native gameplay acceptance.
+The subsequent UI placement/opacity persistence change was compile checked only;
+automated tests were skipped at the user's request.
 
 ```powershell
 $env:AC2_TEST_COMPAT_DATA = 'C:\path\to\emulator\target\compat-7148'

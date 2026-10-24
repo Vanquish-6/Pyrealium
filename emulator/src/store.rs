@@ -22,6 +22,7 @@ pub struct Character {
     pub deleted: bool,
     /// Durable avatar lifetime; never reused by reconnecting transports.
     pub instance: u16,
+    pub ui: Option<crate::preferences::UiSettings>,
 }
 
 pub struct Store {
@@ -100,6 +101,37 @@ impl Store {
     }
     pub fn placement(&self, id: u64) -> Option<Placement> {
         self.positions.get(&id).copied()
+    }
+    pub fn update_ui(
+        &mut self,
+        account: &str,
+        id: u64,
+        patch: crate::preferences::UiSettings,
+    ) -> io::Result<()> {
+        let character = self
+            .characters
+            .get(&id)
+            .filter(|c| c.account == account && !c.deleted)
+            .ok_or_else(|| invalid("UI settings character not owned"))?;
+        let settings = match &character.ui {
+            Some(previous) => previous
+                .merge(&patch)
+                .map_err(|_| invalid("UI settings limit exceeded"))?,
+            None => patch,
+        };
+        if character.ui.as_ref() == Some(&settings) {
+            return Ok(());
+        }
+        let bytes = settings.encode();
+        let mut hex = String::with_capacity(bytes.len() * 2);
+        const DIGITS: &[u8; 16] = b"0123456789abcdef";
+        for byte in bytes {
+            hex.push(DIGITS[(byte >> 4) as usize] as char);
+            hex.push(DIGITS[(byte & 15) as usize] as char);
+        }
+        self.append_record(&format!("u1\t{id}\t{hex}"))?;
+        self.characters.get_mut(&id).unwrap().ui = Some(settings);
+        Ok(())
     }
     pub fn set_placement(&mut self, id: u64, placement: Placement) -> io::Result<()> {
         if self.characters.get(&id).is_none_or(|c| c.deleted) || !placement.valid() {
@@ -206,6 +238,7 @@ impl Store {
             creation: creation.cloned(),
             deleted: false,
             instance: 0,
+            ui: None,
         };
         let line = match creation {
             None => format!("v1\t{}\t{}\t{}", c.id, c.account, c.name),
@@ -354,6 +387,34 @@ pub fn decode_journal(bytes: &[u8]) -> io::Result<BTreeMap<u64, Character>> {
             return Err(invalid("character journal checksum mismatch"));
         }
         let fields: Vec<_> = data.split('\t').collect();
+        if fields.len() == 3 && fields[0] == "u1" {
+            let id = fields[1]
+                .parse::<u64>()
+                .map_err(|_| invalid("invalid UI character ID"))?;
+            let character = records
+                .get_mut(&id)
+                .filter(|c| !c.deleted)
+                .ok_or_else(|| invalid("UI event references unavailable character"))?;
+            let hex = fields[2].as_bytes();
+            if hex.len() > crate::preferences::MAX_BYTES * 2 || hex.len() % 2 != 0 {
+                return Err(invalid("invalid UI settings encoding size"));
+            }
+            let mut bytes = Vec::with_capacity(hex.len() / 2);
+            for pair in hex.chunks_exact(2) {
+                let high = (pair[0] as char)
+                    .to_digit(16)
+                    .ok_or_else(|| invalid("invalid UI hex"))?;
+                let low = (pair[1] as char)
+                    .to_digit(16)
+                    .ok_or_else(|| invalid("invalid UI hex"))?;
+                bytes.push(((high << 4) | low) as u8);
+            }
+            character.ui = Some(
+                crate::preferences::UiSettings::decode(&bytes)
+                    .map_err(|_| invalid("invalid saved UI settings"))?,
+            );
+            continue;
+        }
         if fields.len() == 3 && fields[0] == "e1" {
             let id = fields[1]
                 .parse::<u64>()
@@ -434,6 +495,7 @@ pub fn decode_journal(bytes: &[u8]) -> io::Result<BTreeMap<u64, Character>> {
                 creation,
                 deleted: false,
                 instance: 0,
+                ui: None,
             },
         );
     }

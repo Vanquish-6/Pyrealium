@@ -137,6 +137,9 @@ fn graph(bytes: &mut Vec<u8>, objects: &[Object]) {
 /// Deliberately empty development state: no grants, active effects, XP or gold.
 /// This initializes presentation only. It is not an inventory or progression store.
 pub fn empty_player() -> Result<Vec<u8>, WorldError> {
+    player(None)
+}
+pub fn player(settings: Option<&crate::preferences::UiSettings>) -> Result<Vec<u8>, WorldError> {
     let mut args = script::integer(0); // Gold.
     graph(
         &mut args,
@@ -148,7 +151,10 @@ pub fn empty_player() -> Result<Vec<u8>, WorldError> {
     graph(&mut args, &[Object::native(0xa1, &[0])]); // gmQuestInfoList.
     // GameplayOptionsProfile::StreamPack 006000b0 starts with a u64 mask.
     // A zero mask retains native Clear/default values; no captured settings.
-    graph(&mut args, &[Object::native(0x9b, &[0, 0])]);
+    let options = settings
+        .map(|settings| settings.options_words())
+        .unwrap_or_else(|| vec![0, 0]);
+    graph(&mut args, &[Object::native(0x9b, &options)]);
     graph(
         &mut args,
         &[
