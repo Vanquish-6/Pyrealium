@@ -2304,25 +2304,31 @@ pub fn run(config: Config) -> io::Result<()> {
                         scene.content_stat(actor, 0x102, health)?;
                         updates.extend(scene.respawn_content(actor)?);
                     }
-                    crate::encounters::Event::Owner { player, state } => {
+                    crate::encounters::Event::Owner {
+                        player,
+                        previous,
+                        state,
+                    } => {
                         updates.extend(scene.player_stats(player, &state));
-                        if config.initialize_ui {
+                        let skills = &store.characters[&player].skills;
+                        if config.initialize_ui
+                            && skills.available_credits(&previous)
+                                != skills.available_credits(&state)
+                        {
                             updates.push(crate::scene::Delivery {
                                 recipient: player,
-                                data: crate::ui::skill_credits(
-                                    store.characters[&player].skills.available_credits(&state),
-                                )
-                                .map_err(other)?
-                                .into(),
+                                data: crate::ui::skill_credits(skills.available_credits(&state))
+                                    .map_err(other)?
+                                    .into(),
                             });
                         }
-                        for wire in state.private_updates() {
+                        for wire in state.private_changes(&previous) {
                             updates.push(crate::scene::Delivery {
                                 recipient: player,
                                 data: wire.into(),
                             });
                         }
-                        if !state.alive() {
+                        if previous.alive() && !state.alive() {
                             for wire in [
                                 crate::ui::death_notice("You were defeated by a creature.")
                                     .map_err(other)?,

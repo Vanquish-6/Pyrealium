@@ -55,6 +55,10 @@ implementation or acceptance. A MusicLoader error can require Continue.
 - Checked journal compaction coalesces repeated combat/regeneration state while
   retaining transaction barriers, verifying replay and keeping a previous-journal
   backup. `compact-data --data PATH` provides offline maintenance under the store lock.
+- Combat and regeneration send changed private progression fields; full state
+  restoration remains available for login and resurrection. Regeneration builds
+  one set of engaged players per pass instead of scanning every creature for
+  each player. These reductions are compile checked, without runtime benchmarks.
 - Bounded read-only DAT and extracted terrain readers. The supplied corpus of
   **65,025 terrain records** passed full validation with no missing/empty linked
   info records. Terrain decoding is not yet server physics.

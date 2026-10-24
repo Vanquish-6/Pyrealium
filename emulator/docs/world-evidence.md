@@ -1,5 +1,27 @@
 # Build 7148 character and world event evidence
 
+## Combat update traffic and regeneration work (2026-10-24)
+
+Encounter owner events now retain their preceding committed progression state.
+Private updates compare integer qualities, earned/available XP, gold and Dead
+against that state, emitting only changed values in their established order.
+No network cache or acknowledged-state assumption is introduced: existing
+ordered reliable delivery remains responsible for transmitting every admitted
+delta. Login and resurrection retain full-state restoration.
+
+From the encoder shape, a health-only hit now creates one private quality
+message rather than eleven progression messages; health-and-vigor regeneration
+creates two. This is a source-level message-count reduction, not a throughput
+or latency benchmark. Skill-credit updates are emitted only when the available
+credit count changes, and death presentation requires a living-to-dead transition.
+Public nearby-player state still passes through the existing scene cache.
+
+Each regeneration pass builds a deterministic set from pending attacks and
+creature targets. Players use membership checks instead of rescanning the full
+creature map. Combat formulas, journal durability and regeneration eligibility
+are unchanged. Formatted and compile checked only; no tests, benchmarks or
+native client checks were run.
+
 ## Development training attack integration (2026-10-24)
 
 The explicit training profile grants skill `b0` with locked rank 1 and zero

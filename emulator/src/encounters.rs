@@ -8,7 +8,7 @@ use crate::{
     store::Store,
 };
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, BTreeSet},
     fs::File,
     io::{self, Read},
     path::Path,
@@ -40,11 +40,24 @@ struct Attack {
     repeat: bool,
 }
 pub enum Event {
-    Health { actor: u64, health: u32 },
+    Health {
+        actor: u64,
+        health: u32,
+    },
     Despawn(u64),
-    Respawn { actor: u64, health: u32 },
-    Owner { player: u64, state: Progression },
-    Note { player: u64, text: String },
+    Respawn {
+        actor: u64,
+        health: u32,
+    },
+    Owner {
+        player: u64,
+        previous: Progression,
+        state: Progression,
+    },
+    Note {
+        player: u64,
+        text: String,
+    },
     Stop(u64),
 }
 pub struct Encounters {
@@ -350,6 +363,7 @@ impl Encounters {
                 continue;
             }
             let account = character.account.clone();
+            let previous = character.progression.clone();
             store.progression_batch(&account, player, &commands)?;
             let until = now.saturating_add(self.interval);
             self.cooldowns.insert(player, until);
@@ -362,6 +376,7 @@ impl Encounters {
             });
             events.push(Event::Owner {
                 player,
+                previous,
                 state: store.characters[&player].progression.clone(),
             });
             events.push(Event::Note {
@@ -448,6 +463,7 @@ impl Encounters {
                 continue;
             }
             let account = store.characters[&target].account.clone();
+            let previous = store.characters[&target].progression.clone();
             store.progression_command(&account, target, Command::Damage(actor.rule.damage))?;
             actor.next_attack = now.saturating_add(actor.rule.interval);
             let state = store.characters[&target].progression.clone();
@@ -465,19 +481,20 @@ impl Encounters {
             }
             events.push(Event::Owner {
                 player: target,
+                previous,
                 state,
             });
         }
         if now >= self.next_regen {
             self.next_regen = now.saturating_add(self.regen_interval);
+            let busy: BTreeSet<_> = self
+                .attacks
+                .keys()
+                .copied()
+                .chain(self.actors.values().filter_map(|actor| actor.target))
+                .collect();
             for player in active {
-                if scene.player_placement(player).is_none()
-                    || self.attacks.contains_key(&player)
-                    || self
-                        .actors
-                        .values()
-                        .any(|actor| actor.target == Some(player))
-                {
+                if scene.player_placement(player).is_none() || busy.contains(&player) {
                     continue;
                 }
                 let Some(character) = store
@@ -500,9 +517,11 @@ impl Encounters {
                     continue;
                 }
                 let account = character.account.clone();
+                let previous = character.progression.clone();
                 store.progression_batch(&account, player, &commands)?;
                 events.push(Event::Owner {
                     player,
+                    previous,
                     state: store.characters[&player].progression.clone(),
                 });
             }

@@ -192,10 +192,20 @@ impl Progression {
         ]
     }
     pub fn private_updates(&self) -> Vec<Vec<u8>> {
+        self.private_since(None)
+    }
+    /// Ordered deltas against the preceding committed state, not a guessed cache.
+    pub fn private_changes(&self, previous: &Self) -> Vec<Vec<u8>> {
+        self.private_since(Some(previous))
+    }
+    fn private_since(&self, previous: Option<&Self>) -> Vec<Vec<u8>> {
+        let old_stats = previous.map(Self::int_stats);
         let mut events: Vec<_> = self
             .int_stats()
             .into_iter()
-            .map(|(key, value)| {
+            .enumerate()
+            .filter(|(index, (_, value))| old_stats.is_none_or(|old| old[*index].1 != *value))
+            .map(|(_, (key, value))| {
                 [
                     0x10069u32.to_le_bytes(),
                     key.to_le_bytes(),
@@ -204,20 +214,32 @@ impl Progression {
                 .concat()
             })
             .collect();
-        for (key, value) in [(0x12cu32, self.xp), (0x12d, self.available_xp)] {
+        for (key, value, old) in [
+            (0x12cu32, self.xp, previous.map(|state| state.xp)),
+            (
+                0x12d,
+                self.available_xp,
+                previous.map(|state| state.available_xp),
+            ),
+        ] {
+            if old == Some(value) {
+                continue;
+            }
             let mut event = 0x100d4u32.to_le_bytes().to_vec();
             event.extend(key.to_le_bytes());
             event.extend(value.to_le_bytes());
             events.push(event);
         }
-        events.push(
-            [
-                0x1006bu32.to_le_bytes(),
-                0x117u32.to_le_bytes(),
-                u32::from(!self.alive()).to_le_bytes(),
-            ]
-            .concat(),
-        );
+        if previous.is_none_or(|old| old.alive() != self.alive()) {
+            events.push(
+                [
+                    0x1006bu32.to_le_bytes(),
+                    0x117u32.to_le_bytes(),
+                    u32::from(!self.alive()).to_le_bytes(),
+                ]
+                .concat(),
+            );
+        }
         events
     }
 }
