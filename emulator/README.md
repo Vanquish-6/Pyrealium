@@ -39,8 +39,11 @@ implementation or acceptance. A MusicLoader error can require Continue.
   equipment swaps, unequip and consumption, plus offline management commands.
   The opt-in HUD path now initializes owned item objects and inventory maps;
   native dense-bag sorting requests now persist and return move acknowledgments
-  for single items with supported DAT metadata. Stack/equip/use requests and
-  native presentation remain unfinished. No automatic starter grants.
+  for single items with supported DAT metadata. The captured object-use profile
+  now toggles supported hand equipment, persists bag/equipment state, and creates
+  attached hand objects for the owner and nearby players. Armor composition,
+  equipment bonuses, general item use and native acceptance remain unfinished.
+  No automatic starter grants.
 - Bounded read-only DAT and extracted terrain readers. The supplied corpus of
   **65,025 terrain records** passed full validation with no missing/empty linked
   info records. Terrain decoding is not yet server physics.

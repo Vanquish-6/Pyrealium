@@ -17,6 +17,8 @@ pub struct Body {
     spawn: Vec<u8>,
     ready: bool,
     public_stats: BTreeMap<(u32, u32), (u32, Arc<[u8]>)>,
+    hands: BTreeMap<u64, Arc<[u8]>>,
+    item_instances: BTreeMap<u64, u16>,
 }
 impl Body {
     pub fn new(id: u64, placement: Placement, spawn: Vec<u8>) -> Result<Self, WorldError> {
@@ -40,11 +42,52 @@ impl Body {
             spawn,
             ready: false,
             public_stats: BTreeMap::new(),
+            hands: BTreeMap::new(),
+            item_instances: BTreeMap::new(),
         })
     }
     pub fn with_progression(mut self, state: &crate::progression::Progression) -> Self {
         self.save_public_stats(state);
         self
+    }
+    pub fn with_hands(mut self, spawns: Vec<Vec<u8>>) -> Result<Self, WorldError> {
+        if spawns.len() > 2 {
+            return Err(WorldError::LimitExceeded);
+        }
+        for spawn in spawns {
+            if spawn.len() != 72
+                || spawn[..4] != world::CREATE_OBJECT.to_le_bytes()
+                || spawn[20..24] != 0x20u32.to_le_bytes()
+                || spawn[28..36] != self.id.to_le_bytes()
+                || spawn[40..42] != self.instance.to_le_bytes()
+            {
+                return Err(WorldError::InvalidValue);
+            }
+            let id = u64::from_le_bytes(spawn[4..12].try_into().unwrap());
+            let instance = u16::from_le_bytes(spawn[24..26].try_into().unwrap());
+            if id == self.id || instance == 0 || self.hands.contains_key(&id) {
+                return Err(WorldError::InvalidValue);
+            }
+            self.item_instances.insert(id, instance);
+            self.hands.insert(id, spawn.into());
+        }
+        Ok(self)
+    }
+    fn hand_spawns(&self, recipient: u64, deliveries: &mut Vec<Delivery>) {
+        for data in self.hands.values() {
+            deliveries.push(Delivery {
+                recipient,
+                data: data.clone(),
+            });
+        }
+    }
+    fn hand_destroys(&self, recipient: u64, deliveries: &mut Vec<Delivery>) {
+        for id in self.hands.keys() {
+            deliveries.push(Delivery {
+                recipient,
+                data: world::destroy_inventory_item(*id, self.item_instances[id]).into(),
+            });
+        }
     }
     fn save_public_stats(&mut self, state: &crate::progression::Progression) -> Vec<Arc<[u8]>> {
         let mut updates = Vec::new();
@@ -116,6 +159,79 @@ pub struct Scene {
     content: crate::content::Content,
 }
 impl Scene {
+    pub fn next_item_instance(&self, owner: u64, item: u64) -> Result<u16, WorldError> {
+        let body = self
+            .bodies
+            .get(&owner)
+            .filter(|body| body.ready)
+            .ok_or(WorldError::InvalidValue)?;
+        body.item_instances
+            .get(&item)
+            .copied()
+            .unwrap_or(body.instance)
+            .checked_add(1)
+            .ok_or(WorldError::LimitExceeded)
+    }
+    pub fn hand_change(
+        &mut self,
+        owner: u64,
+        item: u64,
+        spawn: Vec<u8>,
+        equipped: bool,
+    ) -> Result<Vec<Delivery>, WorldError> {
+        let instance = self.next_item_instance(owner, item)?;
+        if spawn.len() < 36
+            || spawn[..4] != world::CREATE_OBJECT.to_le_bytes()
+            || spawn[4..12] != item.to_le_bytes()
+            || spawn[24..26] != instance.to_le_bytes()
+        {
+            return Err(WorldError::InvalidValue);
+        }
+        let body = self.bodies.get_mut(&owner).unwrap();
+        if body.item_instances.len() >= 89 && !body.item_instances.contains_key(&item)
+            || equipped && body.hands.len() >= 2 && !body.hands.contains_key(&item)
+        {
+            return Err(WorldError::LimitExceeded);
+        }
+        let old_instance = body
+            .item_instances
+            .get(&item)
+            .copied()
+            .unwrap_or(body.instance);
+        let previously_equipped = body.hands.remove(&item).is_some();
+        let spawn: Arc<[u8]> = spawn.into();
+        body.item_instances.insert(item, instance);
+        if equipped {
+            body.hands.insert(item, spawn.clone());
+        }
+        let cell = body.placement.cell;
+        let destroy: Arc<[u8]> = world::destroy_inventory_item(item, old_instance).into();
+        let mut deliveries = vec![
+            Delivery {
+                recipient: owner,
+                data: destroy.clone(),
+            },
+            Delivery {
+                recipient: owner,
+                data: spawn.clone(),
+            },
+        ];
+        for recipient in self.neighbor_ids(cell, owner) {
+            if previously_equipped {
+                deliveries.push(Delivery {
+                    recipient,
+                    data: destroy.clone(),
+                });
+            }
+            if equipped {
+                deliveries.push(Delivery {
+                    recipient,
+                    data: spawn.clone(),
+                });
+            }
+        }
+        Ok(deliveries)
+    }
     pub fn player_stats(
         &mut self,
         id: u64,
@@ -293,6 +409,7 @@ impl Scene {
                 recipient: id,
                 data: spawn.clone(),
             });
+            body.hand_spawns(id, &mut deliveries);
             for (_, data) in body.public_stats.values() {
                 deliveries.push(Delivery {
                     recipient: id,
@@ -303,6 +420,7 @@ impl Scene {
                 recipient: body.id,
                 data: self.bodies[&id].spawn.clone().into(),
             });
+            self.bodies[&id].hand_spawns(body.id, &mut deliveries);
             for (_, data) in self.bodies[&id].public_stats.values() {
                 deliveries.push(Delivery {
                     recipient: body.id,
@@ -329,13 +447,15 @@ impl Scene {
         }
         self.unindex(body.placement.cell, id);
         let event = body.destroy();
-        self.neighbors(body.placement.cell, id)
-            .into_iter()
-            .map(|recipient| Delivery {
+        let mut deliveries = Vec::new();
+        for recipient in self.neighbors(body.placement.cell, id) {
+            body.hand_destroys(recipient, &mut deliveries);
+            deliveries.push(Delivery {
                 recipient,
                 data: event.clone(),
-            })
-            .collect()
+            });
+        }
+        deliveries
     }
     pub fn update(
         &mut self,
@@ -393,10 +513,12 @@ impl Scene {
             }
         }
         for other in previous.difference(&current) {
+            body.hand_destroys(*other, &mut deliveries);
             deliveries.push(Delivery {
                 recipient: *other,
                 data: destroy.clone(),
             });
+            self.bodies[other].hand_destroys(id, &mut deliveries);
             deliveries.push(Delivery {
                 recipient: id,
                 data: self.bodies[other].destroy(),
@@ -416,6 +538,7 @@ impl Scene {
                 recipient: *other,
                 data: spawn.clone(),
             });
+            self.bodies[&id].hand_spawns(*other, &mut deliveries);
             for (_, data) in self.bodies[&id].public_stats.values() {
                 deliveries.push(Delivery {
                     recipient: *other,
@@ -426,6 +549,7 @@ impl Scene {
                 recipient: id,
                 data: self.bodies[other].spawn.clone().into(),
             });
+            self.bodies[other].hand_spawns(id, &mut deliveries);
             for (_, data) in self.bodies[other].public_stats.values() {
                 deliveries.push(Delivery {
                     recipient: id,

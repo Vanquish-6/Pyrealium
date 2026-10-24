@@ -20,7 +20,17 @@ pub fn validate_wlib(bytes: &[u8]) -> Result<(), WorldError> {
     validate_layouts(bytes, &[(0x1a4, 2), (0x233, 8), (0x14f, 14), (0x24a7, 2)])
 }
 pub fn validate_inventory_wlib(bytes: &[u8]) -> Result<(), WorldError> {
-    validate_layouts(bytes, &[(0x1a2, 3), (0x1f9, 6), (0x1f8, 51)])
+    validate_layouts(
+        bytes,
+        &[
+            (0x1a2, 3),
+            (0x1f9, 6),
+            (0x1f8, 51),
+            (0x245, 20),
+            (0x1f6, 19),
+            (0x1f5, 7),
+        ],
+    )
 }
 pub fn validate_skills_wlib(bytes: &[u8]) -> Result<(), WorldError> {
     validate_layouts(bytes, &[(0x231, 15)])
@@ -147,6 +157,67 @@ fn graph(bytes: &mut Vec<u8>, objects: &[Object]) {
             bytes.push(0);
         }
     }
+}
+
+pub fn hand_equipment(
+    owner: u64,
+    item: u64,
+    slot: u16,
+    other_hands: u16,
+    metadata: crate::inventory_request::Equipment,
+    equipped: bool,
+) -> Result<Vec<u8>, WorldError> {
+    if !matches!(slot, 0x40 | 0x80) || other_hands & !0xc0 != 0 || other_hands & slot != 0 {
+        return Err(WorldError::InvalidValue);
+    }
+    let mut fields = [0; 19];
+    fields[1] = 2;
+    fields[2] = 1;
+    fields[3] = item as u32;
+    fields[4] = (item >> 32) as u32;
+    fields[5] = u32::from(other_hands);
+    fields[7] = u32::from(slot);
+    for index in [8, 10] {
+        fields[index] = owner as u32;
+        fields[index + 1] = (owner >> 32) as u32;
+    }
+    fields[12] = if equipped {
+        if slot == 0x40 { 0xce } else { 0x8e }
+    } else {
+        0x9e
+    };
+    fields[14] = u32::from(slot | other_hands);
+    fields[15] = u32::from(slot);
+    let mut tags = [
+        2, 1, 2, 0x84, 0xcd, 4, 2, 4, 0x84, 0xcd, 0x84, 0xcd, 2, 2, 2, 4, 0x82, 0xcd, 2,
+    ];
+    if !equipped {
+        tags[7] = 2;
+        tags[15] = 2;
+    }
+    let root: Vec<_> = fields.into_iter().zip(tags).collect();
+    let data = if equipped {
+        vec![
+            (0, 4),
+            (metadata.primary, 4),
+            (metadata.secondary, 4),
+            (metadata.valid, 4),
+            (0, 2),
+            (metadata.preferred, 4),
+            (0, 4),
+        ]
+    } else {
+        vec![(0, 2); 7]
+    };
+    let mut arguments = Vec::new();
+    graph(
+        &mut arguments,
+        &[
+            Object::interpreted(0x1f6, &root),
+            Object::interpreted(0x1f5, &data),
+        ],
+    );
+    script::private_call(if equipped { 0x820e0051 } else { 0x820e0056 }, &arguments)
 }
 
 /// Deliberately empty development state: no grants, active effects, XP or gold.

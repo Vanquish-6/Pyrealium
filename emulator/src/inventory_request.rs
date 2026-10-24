@@ -159,6 +159,35 @@ impl MoveRequest {
 pub struct Metadata {
     pub icon: u32,
     pub physical: u32,
+    pub equipment: Option<Equipment>,
+}
+#[derive(Clone, Copy, Debug)]
+pub struct Equipment {
+    pub valid: u32,
+    pub preferred: u32,
+    pub primary: u32,
+    pub secondary: u32,
+}
+impl Equipment {
+    pub fn hand_slot(self, item: &crate::inventory::Item) -> Option<u16> {
+        let slot = match item.location {
+            crate::inventory::Location::Equipped(slot) => u32::from(slot),
+            _ => self.preferred,
+        };
+        // Explicit initial hand-equipment policy. Body armor needs VisualDesc
+        // composition. Arbitrary parenting selectors are never accepted.
+        if !matches!(slot, 0x40 | 0x80)
+            || self.valid & slot == 0
+            || u32::from(item.equipment_mask) & slot == 0
+            || !matches!(self.primary, 1 | 2)
+            || (slot == 0x40 && self.primary != 1)
+            || (slot == 0x80 && self.primary != 2)
+            || item.quantity != 1
+        {
+            return None;
+        }
+        Some(slot as u16)
+    }
 }
 impl Metadata {
     /// Read only the authoritative qualities prefix needed by bag acknowledgments.
@@ -268,6 +297,7 @@ impl Metadata {
         if desc & !DESC_BITS != 0 {
             return Err(invalid());
         }
+        let mut integers = std::collections::BTreeMap::new();
         for (bit, width) in [(2, 2), (4, 2), (8, 2), (0x10, 3)] {
             if mask & bit != 0 {
                 let header = word()?;
@@ -275,8 +305,19 @@ impl Metadata {
                 if header >> 24 > 22 || count > 512 {
                     return Err(invalid());
                 }
-                for _ in 0..count * width {
-                    word()?;
+                let mut keys = std::collections::BTreeSet::new();
+                for _ in 0..count {
+                    let key = word()?;
+                    let value = word()?;
+                    if !keys.insert(key) {
+                        return Err(invalid());
+                    }
+                    if bit == 2 {
+                        integers.insert(key, value);
+                    }
+                    for _ in 2..width {
+                        word()?;
+                    }
                 }
             }
         }
@@ -308,6 +349,18 @@ impl Metadata {
         }
         portal.read(icon)?;
         portal.read(physical)?;
-        Ok(Self { icon, physical })
+        let equipment = (|| {
+            Some(Equipment {
+                valid: *integers.get(&0x113)?,
+                preferred: *integers.get(&0x11a)?,
+                primary: *integers.get(&0x114)?,
+                secondary: *integers.get(&0x115)?,
+            })
+        })();
+        Ok(Self {
+            icon,
+            physical,
+            equipment,
+        })
     }
 }

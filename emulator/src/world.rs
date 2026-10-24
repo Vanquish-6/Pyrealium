@@ -574,6 +574,41 @@ pub fn create_inventory_item(
     Ok(bytes)
 }
 
+/// Hand item with the native PhysicsDesc parent subset. The player must be
+/// created first. No standalone cell/position is attached to a contained item.
+pub fn create_hand_item(
+    item: &crate::inventory::Item,
+    owner: u64,
+    instance: u16,
+    parent_instance: u16,
+    location: u32,
+) -> Result<Vec<u8>, WorldError> {
+    if !matches!(
+        item.location,
+        crate::inventory::Location::Equipped(0x40 | 0x80)
+    ) || !matches!(location, 1 | 2)
+        || parent_instance == 0
+    {
+        return Err(WorldError::InvalidValue);
+    }
+    let mut bytes = create_inventory_item(item, owner, instance)?;
+    bytes[20..24].copy_from_slice(&0x20u32.to_le_bytes());
+    let mut parent = owner.to_le_bytes().to_vec();
+    parent.extend(location.to_le_bytes());
+    parent.extend(parent_instance.to_le_bytes());
+    parent.extend(0u16.to_le_bytes()); // Native alignment before timestamps.
+    bytes.splice(28..28, parent);
+    Ok(bytes)
+}
+
+pub fn destroy_inventory_item(id: u64, instance: u16) -> Vec<u8> {
+    let mut bytes = 0x100c2u32.to_le_bytes().to_vec();
+    bytes.extend(id.to_le_bytes());
+    bytes.extend(instance.to_le_bytes());
+    bytes.extend(0u16.to_le_bytes());
+    bytes
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

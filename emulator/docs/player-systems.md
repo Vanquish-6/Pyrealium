@@ -191,9 +191,47 @@ Only the single-object, single-item profile is generated here. Capture build
 identity and native UI acceptance remain unverified. This change was compiled;
 no tests, native client launch, deployment or server restart were performed.
 
-Equipment integration remains open. The retained player equip captures send
+The retained player equip captures send
 general object-use function `82160016` with package `245`, rather than direct
 `820e004f`/`820e0015` requests. Replies use packages `1f6` and `1f5` and are
-accompanied by item/player appearance or parenting updates. Offline equipment
-storage does not establish that complete native transition; no live equipment
-mutation has been enabled from those declarations alone.
+accompanied by item/player appearance or parenting updates.
+
+## Hand equipment integration
+
+The bounded two-object, twenty-field object-use profile now accepts an owned
+item and the active owner. Both objects, reference links, field tags, reserved
+values and the localized display-hint shape are checked; no supplied graph is
+instantiated or executed. WLib initialization validates packages `245` (20),
+`1f6` (19) and `1f5` (7) before enabling the stored inventory profile.
+
+Out of combat, a living character can toggle a quantity-one hand item with a
+supported DAT primary location and saved equipment permission. The slot is
+selected from DAT preferred/valid locations (`11a`/`113`), with primary/secondary
+parenting (`114`/`115`) retained in the native acknowledgment. This initial local
+profile supports main/off hand (`40`/`80`) with primary locations 1/2, empty target
+slots and dense bags. It does not implement original skill/level/race equipment
+eligibility, bonuses, dual-wield policy, armor, or automatic equipment swaps.
+
+Native equipment replies use `820e0051` and `820e0056`, with fresh reference IDs
+and authoritative identities/metadata. Dense-list equip uses the new `w` form in
+the existing `i1` journal, flushes before acknowledging and compacts the remaining
+bag list. Historical `e` journal semantics retain their original behavior.
+Unequip appends to the dense bag list and rejects a full bag. Successful sorting
+and equipment actions share a 100 ms local cooldown to bound journal churn.
+
+The equipped object's CreateObject includes PhysicsDesc parent bit `20`, owner,
+primary location and parent lifetime, following `00641530`. Each live toggle
+uses a checked fresh item instance, retires the owner's old object, creates its
+replacement, then acknowledges. Nearby players receive only the visible hand
+object. Scene activation, cell transitions and disconnect also create/retire
+those children, with the player created before its children and children retired
+before the player. Reconnect restores supported equipped hand objects from the
+saved inventory; no starter items are inferred or granted.
+
+Retained capture evidence includes `equip.item.elog`, `equip.unequip.item.elog`
+and `unequip.item.elog`. The middle capture's SHA256 is
+`e08b702dc927dcd9432500899b7f10735128ef661446e0047a1eba27a3d7dfa7`.
+This is static packet/layout integration, not native gameplay acceptance. Held
+items currently use their primary attachment in both stances; stowing, animations,
+armor appearance composition, equipment effects and original eligibility remain
+unfinished. Compilation only; no automated tests or native game checks were run.

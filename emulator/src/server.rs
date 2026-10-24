@@ -43,6 +43,7 @@ struct Peer {
     target: Option<u64>,
     combat: bool,
     last_chat_ms: Option<u64>,
+    last_inventory_ms: Option<u64>,
     unhandled_scripts: BTreeSet<u32>,
     scene_outbox: VecDeque<Arc<[u8]>>,
     scene_bytes: usize,
@@ -251,6 +252,34 @@ fn resurrect_character(
         });
     }
     Ok(updates)
+}
+
+fn inventory_spawn(
+    item: &crate::inventory::Item,
+    owner: u64,
+    instance: u16,
+    parent_instance: u16,
+    metadata: &BTreeMap<u32, Option<crate::inventory_request::Metadata>>,
+) -> io::Result<Vec<u8>> {
+    if matches!(item.location, crate::inventory::Location::Equipped(_)) {
+        if let Some(hand) = metadata
+            .get(&item.definition)
+            .and_then(|entry| *entry)
+            .and_then(|entry| entry.equipment)
+        {
+            if hand.hand_slot(item).is_some() {
+                return world::create_hand_item(
+                    item,
+                    owner,
+                    instance,
+                    parent_instance,
+                    hand.primary,
+                )
+                .map_err(other);
+            }
+        }
+    }
+    world::create_inventory_item(item, owner, instance).map_err(other)
 }
 
 fn selection_list(
@@ -599,6 +628,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                 target: None,
                                 combat: false,
                                 last_chat_ms: None,
+                                last_inventory_ms: None,
                                 unhandled_scripts: BTreeSet::new(),
                                 scene_outbox: VecDeque::new(),
                                 scene_bytes: 0,
@@ -763,7 +793,75 @@ pub fn run(config: Config) -> io::Result<()> {
                                         }
                                     };
                                     match request {
+                                        script::Request::UseItem(request) => {
+                                            if peer.last_inventory_ms.is_some_and(|last| {
+                                                now_ms.saturating_sub(last) < 100
+                                            }) {
+                                                return Err(invalid("inventory action cooldown"));
+                                            }
+                                            let prepared = (|| -> io::Result<(crate::inventory::Command, Vec<u8>, Vec<u8>, bool)> {
+                                                if !config.initialize_ui { return Err(invalid("Inventory is not initialized.")); }
+                                                if request.owner != character { return Err(invalid("Item owner does not match this character.")); }
+                                                let saved = &store.characters[&character];
+                                                if !saved.progression.alive() || peer.combat { return Err(invalid("Change equipment while alive and out of combat.")); }
+                                                if !saved.inventory.dense_bags() { return Err(invalid("This equipment profile requires a dense bag list.")); }
+                                                let item = saved.inventory.items().find(|item| item.id == request.item).ok_or_else(||invalid("Item is not owned."))?;
+                                                let hand = inventory_metadata.get(&item.definition).and_then(|entry| *entry).and_then(|entry| entry.equipment).ok_or_else(||invalid("This item-use profile is not available."))?;
+                                                let slot = hand.hand_slot(item).ok_or_else(||invalid("Only supported single hand-held items can be equipped here."))?;
+                                                let equipped = matches!(item.location, crate::inventory::Location::Bag(_));
+                                                let command = if equipped { crate::inventory::Command::Wear {item: item.id, slot} } else {crate::inventory::Command::Unequip {item:item.id}};
+                                                let candidate = saved.inventory.apply(&command).map_err(other)?;
+                                                let changed = candidate.items().find(|item| item.id == request.item).unwrap();
+                                                let other_hands = saved.inventory.items().filter(|other| other.id != item.id).fold(0, |mask, other| match other.location {
+                                                    crate::inventory::Location::Equipped(slot) => mask | (slot & 0xc0), _ => mask,
+                                                });
+                                                let acknowledgment = crate::ui::hand_equipment(character, item.id, slot, other_hands, hand, equipped).map_err(other)?;
+                                                let instance = scene.next_item_instance(character, item.id).map_err(other)?;
+                                                let parent_instance = peer.motion.as_ref().ok_or_else(||invalid("Equipment has no avatar lifetime."))?.instance;
+                                                let spawn = inventory_spawn(changed, character, instance, parent_instance, &inventory_metadata)?;
+                                                Ok((command, spawn, acknowledgment, equipped))
+                                            })();
+                                            match prepared {
+                                                Ok((command, spawn, acknowledgment, equipped)) => {
+                                                    store.inventory_command(
+                                                        &peer.session.account,
+                                                        character,
+                                                        command,
+                                                    )?;
+                                                    peer.last_inventory_ms = Some(now_ms);
+                                                    deliveries.extend(
+                                                        scene
+                                                            .hand_change(
+                                                                character,
+                                                                request.item,
+                                                                spawn,
+                                                                equipped,
+                                                            )
+                                                            .map_err(other)?,
+                                                    );
+                                                    deliveries.push(crate::scene::Delivery {
+                                                        recipient: character,
+                                                        data: acknowledgment.into(),
+                                                    });
+                                                }
+                                                Err(error) => replies.extend(
+                                                    peer.send_event(
+                                                        &script::chat(
+                                                            &format!("Item use rejected: {error}"),
+                                                            1,
+                                                        )
+                                                        .map_err(other)?,
+                                                        now,
+                                                    )?,
+                                                ),
+                                            }
+                                        }
                                         script::Request::InventoryMove(request) => {
+                                            if peer.last_inventory_ms.is_some_and(|last| {
+                                                now_ms.saturating_sub(last) < 100
+                                            }) {
+                                                return Err(invalid("inventory action cooldown"));
+                                            }
                                             let result = (|| -> io::Result<(crate::inventory::Command, Vec<u8>)> {
                                                 if !config.initialize_ui { return Err(invalid("Inventory is not initialized.")); }
                                                 let saved = &store.characters[&character];
@@ -782,6 +880,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                                         character,
                                                         command,
                                                     )?;
+                                                    peer.last_inventory_ms = Some(now_ms);
                                                     deliveries.push(crate::scene::Delivery {
                                                         recipient: character,
                                                         data: acknowledgment.into(),
@@ -1316,7 +1415,13 @@ pub fn run(config: Config) -> io::Result<()> {
                                                         .with_progression(
                                                             &store.characters[&character_id]
                                                                 .progression,
-                                                        ),
+                                                        )
+                                                        .with_hands(store.characters[&character_id].inventory.items()
+                                                            .filter(|item| matches!(item.location, crate::inventory::Location::Equipped(_)))
+                                                            .filter(|item| inventory_metadata.get(&item.definition).and_then(|entry| *entry).and_then(|entry| entry.equipment).is_some_and(|hand| hand.hand_slot(item).is_some()))
+                                                            .map(|item| inventory_spawn(item, character_id, instance, instance, &inventory_metadata))
+                                                            .collect::<io::Result<Vec<_>>>()?)
+                                                        .map_err(other)?,
                                                     )
                                                     .map_err(other)?;
                                                 for (index, event) in events.iter().enumerate() {
@@ -1394,10 +1499,13 @@ pub fn run(config: Config) -> io::Result<()> {
                                                     .inventory
                                                     .items()
                                                     .map(|item| {
-                                                        world::create_inventory_item(
-                                                            item, saved.id, instance,
+                                                        inventory_spawn(
+                                                            item,
+                                                            saved.id,
+                                                            instance,
+                                                            instance,
+                                                            &inventory_metadata,
                                                         )
-                                                        .map_err(other)
                                                     })
                                                     .collect::<io::Result<Vec<_>>>()?;
                                                 events.push(restored);
@@ -1639,6 +1747,7 @@ mod tests {
             target: None,
             combat: false,
             last_chat_ms: None,
+            last_inventory_ms: None,
             unhandled_scripts: BTreeSet::new(),
             scene_outbox: VecDeque::new(),
             scene_bytes: 0,

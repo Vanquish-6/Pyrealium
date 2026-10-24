@@ -55,6 +55,12 @@ pub enum Command {
         item: u64,
         slot: u16,
     },
+    /// Native dense-list removal into an empty equipment slot. Kept distinct
+    /// from historical `Equip` journal semantics, which can leave bag holes.
+    Wear {
+        item: u64,
+        slot: u16,
+    },
     Unequip {
         item: u64,
     },
@@ -96,6 +102,10 @@ impl Inventory {
             .iter()
             .position(Option::is_none)
             .map(|slot| slot as u16)
+    }
+    pub fn dense_bags(&self) -> bool {
+        let count = self.bags.iter().flatten().count();
+        self.bags[..count].iter().all(Option::is_some)
     }
     fn at(&self, location: Location) -> Option<u64> {
         match location {
@@ -218,6 +228,22 @@ impl Inventory {
                     next.items.get_mut(&id).unwrap().location = Location::Bag(slot as u16);
                 }
             }
+            Command::Wear { item, slot } => {
+                let order: Vec<u64> = self.bags.iter().flatten().copied().collect();
+                if self.bags[..order.len()].iter().any(Option::is_none)
+                    || self.at(Location::Equipped(*slot)).is_some()
+                    || !matches!(self.owned(*item)?.location, Location::Bag(_))
+                {
+                    return Err(InventoryError::StaleLocation);
+                }
+                next = self.apply(&Command::Equip {
+                    item: *item,
+                    slot: *slot,
+                })?;
+                for (slot, id) in order.into_iter().filter(|id| id != item).enumerate() {
+                    next.items.get_mut(&id).unwrap().location = Location::Bag(slot as u16);
+                }
+            }
             Command::Equip { item, slot } => {
                 let equipped = self.owned(*item)?;
                 if !slot.is_power_of_two()
@@ -321,6 +347,7 @@ impl Command {
                 format!("r,{item},{source},{destination}")
             }
             Self::Equip { item, slot } => format!("e,{item},{slot}"),
+            Self::Wear { item, slot } => format!("w,{item},{slot}"),
             Self::Unequip { item } => format!("u,{item}"),
             Self::Split {
                 item,
@@ -363,6 +390,10 @@ impl Command {
                 destination: small(*destination)?,
             },
             ("e", [item, slot]) => Self::Equip {
+                item: *item,
+                slot: small(*slot)?,
+            },
+            ("w", [item, slot]) => Self::Wear {
                 item: *item,
                 slot: small(*slot)?,
             },
