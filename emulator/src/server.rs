@@ -3453,7 +3453,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                         }
                                         if first && config.training_kit {
                                             deliveries.push(crate::scene::Delivery { recipient: character, data: script::chat(
-                                                "Training world: portals lead outside and back. Near a quartermaster use @shop, @buy mushroom, @buy tallow, or @sell SLOT. Use @craft health or @craft vigor, @quest, and @group for player systems. Original world population and gameplay remain incomplete.", 1).map_err(other)?.into() });
+                                                "Training: equip the weapon from your bag. Defeat three Idol Spawn, then speak to Pectar, Training Master, for your reward. Speak to Tebor the Armorer to open the shop. Open Crafting to make potions with 1 Mucor Mushroom and 100 Tallow. The portals lead outside and back. Training uses authored rules.", 1).map_err(other)?.into() });
                                         }
                                         eprintln!(
                                             "Scene ready for character {character}: cell={:08x}, visible content={}",
