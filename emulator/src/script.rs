@@ -5,6 +5,7 @@ use crate::world::{self, WorldError};
 pub const MAX_ARGUMENT_BYTES: usize = 64 * 1024;
 pub const COMBAT_START: u32 = 0x82040008;
 pub const COMBAT_STOP: u32 = 0x82040010;
+pub const STOP_ATTACKING: u32 = 0x82040025;
 pub const COMBAT_STATE: u32 = 0x8204001b;
 pub const SAY: u32 = 0x82050006;
 pub const TELL: u32 = 0x82050002;
@@ -30,11 +31,13 @@ pub enum Request {
     UnEquip(crate::equipment::UnEquipRequest),
     Examine(u64),
     UseSkill {
+        request_id: u32,
         skill: u32,
         target: u64,
     },
     Combat(bool),
     Attack(Option<u64>),
+    StopAttack(u64),
     UiSettings(crate::preferences::UiSettings),
     Hotbar(crate::preferences::HotbarUpdate),
     Skill {
@@ -160,15 +163,19 @@ pub fn decode(function: u32, bytes: &[u8]) -> Result<Request, WorldError> {
         }
         RESURRECT => Request::Resurrect,
         crate::skills::USE => {
-            if r.int()? != 8 {
-                return Err(WorldError::InvalidValue);
-            }
+            // Native 1aa400d7 increments player field 2a; this is an opaque
+            // uint32 action counter, not a constant flag or skill category.
+            let request_id = r.int()?;
             let skill = r.int()?;
             if skill == 0 || skill > 65535 {
                 return Err(WorldError::InvalidValue);
             }
             let target = r.iid()?;
-            Request::UseSkill { skill, target }
+            Request::UseSkill {
+                request_id,
+                skill,
+                target,
+            }
         }
         crate::examination::REQUEST => {
             let target = crate::examination::decode_request(bytes)?;
@@ -214,6 +221,13 @@ pub fn decode(function: u32, bytes: &[u8]) -> Result<Request, WorldError> {
             let settings = crate::preferences::UiSettings::decode(bytes)?;
             r.pos = bytes.len();
             Request::UiSettings(settings)
+        }
+        STOP_ATTACKING => {
+            let target = r.iid()?;
+            if [0, u64::MAX].contains(&target) {
+                return Err(WorldError::InvalidValue);
+            }
+            Request::StopAttack(target)
         }
         COMBAT_START | COMBAT_STOP => {
             if function == COMBAT_START && bytes.len() == 12 {
@@ -292,6 +306,12 @@ pub fn chat(text: &str, kind: u32) -> Result<Vec<u8>, WorldError> {
     let mut arguments = literal(text)?;
     arguments.extend(integer(kind));
     private_call(CHAT_STRING, &arguments)
+}
+
+/// 82040019 -> 1aa400b2 -> 9aac000f -> native EndSpecialAttack.
+/// Echo only the action counter, never a skill ID or an error code.
+pub fn skill_finished(request_id: u32) -> Result<Vec<u8>, WorldError> {
+    private_call(0x82040019, &integer(request_id))
 }
 
 #[cfg(test)]

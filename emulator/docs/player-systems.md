@@ -782,3 +782,22 @@ All five grants are validated before the single fsynced record is appended.
 The existing native inventory restoration publishes the saved items on entry.
 No crafting XP, recipe entitlement, armor grants or original loot rules are
 inferred from the old character inventory capture.
+
+### Skill action completion and native stop requests
+
+UseSkill 8204000b now preserves its first tagged integer as the native uint32
+action counter. It is not a fixed value of 8: matching bytecode 1aa400d7
+increments player field 2a before sender 82040017 packs the request, and cleaned
+Fight captures contain successive counters 35/36/37. Skill-ID bounds remain
+separate; the opaque action counter may wrap through zero.
+
+Native completion 82040019 echoes that counter. The shortcut UI records pending
+actions and disables dragging in 004376c0; 00437820 clears the matching pending
+entry on completion. Synchronous heals, rejected/unsupported skills and Recall
+now finish their action. A queued training strike retains one pending counter
+until an accepted hit or cancellation, including combat stop and resurrection.
+No success result is fabricated for an unsupported effect.
+
+Target-specific StopAttacking 82040025 (native 00463580 through b40104/9aac0013)
+accepts its exact tagged-IID argument and stops only the matching current target.
+A delayed stop for a different target does not cancel the current attack.

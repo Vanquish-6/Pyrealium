@@ -45,6 +45,7 @@ struct Peer {
     motion: Option<Motion>,
     target: Option<u64>,
     combat: bool,
+    pending_skill: Option<u32>,
     emotes: crate::emotes::State,
     last_chat_ms: Option<u64>,
     last_inventory_ms: Option<u64>,
@@ -426,6 +427,9 @@ fn resurrect_character(
     owner_events.push(crate::ui::lock_player(false).map_err(other)?);
     owner_events
         .push(script::private_call(script::COMBAT_STATE, &script::integer(0)).map_err(other)?);
+    if let Some(request_id) = peer.pending_skill {
+        owner_events.push(script::skill_finished(request_id).map_err(other)?);
+    }
     peer.validate_scene_batch(&owner_events)?;
     if forced.is_some() {
         store.return_to_binding(&peer.session.account, character, true)?;
@@ -441,6 +445,7 @@ fn resurrect_character(
     }
     peer.combat = false;
     peer.target = None;
+    peer.pending_skill = None;
     let state = &store.characters[&character].progression;
     let mut updates = scene.player_stats(character, state);
     if let Some(prepared) = forced {
@@ -1692,6 +1697,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                 motion: None,
                                 target: None,
                                 combat: false,
+                                pending_skill: None,
                                 last_chat_ms: None,
                                 emotes: crate::emotes::State::default(),
                                 last_inventory_ms: None,
@@ -2126,7 +2132,18 @@ pub fn run(config: Config) -> io::Result<()> {
                                                 );
                                             }
                                         }
-                                        script::Request::UseSkill { skill, target } => {
+                                        script::Request::UseSkill {
+                                            request_id,
+                                            skill,
+                                            target,
+                                        } => {
+                                            if peer.pending_skill.is_some() {
+                                                peer.queue_ordered_batch(vec![
+                                                    script::chat("Finish or cancel your current attack before using another skill.", 1).map_err(other)?,
+                                                    script::skill_finished(request_id).map_err(other)?,
+                                                ])?;
+                                                return Ok(replies);
+                                            }
                                             if abilities
                                                 .as_ref()
                                                 .is_some_and(|runtime| runtime.supports(skill))
@@ -2169,6 +2186,10 @@ pub fn run(config: Config) -> io::Result<()> {
                                                         )
                                                         .map_err(other)?,
                                                     );
+                                                    events.push(
+                                                        script::skill_finished(request_id)
+                                                            .map_err(other)?,
+                                                    );
                                                     peer.validate_scene_batch(&events)?;
                                                     store.progression_batch(
                                                         &peer.session.account,
@@ -2184,13 +2205,12 @@ pub fn run(config: Config) -> io::Result<()> {
                                                 })(
                                                 );
                                                 if let Err(error) = result {
-                                                    replies.extend(
-                                                        peer.send_event(
-                                                            &script::chat(&error.to_string(), 1)
-                                                                .map_err(other)?,
-                                                            now,
-                                                        )?,
-                                                    );
+                                                    peer.queue_ordered_batch(vec![
+                                                        script::chat(&error.to_string(), 1)
+                                                            .map_err(other)?,
+                                                        script::skill_finished(request_id)
+                                                            .map_err(other)?,
+                                                    ])?;
                                                 }
                                                 return Ok(replies);
                                             }
@@ -2237,6 +2257,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                                     peer.queue_ordered_batch(events)?;
                                                     peer.combat = true;
                                                     peer.target = Some(target);
+                                                    peer.pending_skill = Some(request_id);
                                                     deliveries.extend(training_combat_visual(
                                                         peer, character, &store, &scene, true,
                                                         false,
@@ -2245,13 +2266,15 @@ pub fn run(config: Config) -> io::Result<()> {
                                                 })(
                                                 );
                                                 if let Err(error) = attack {
-                                                    replies.extend(
-                                                        peer.send_event(
-                                                            &script::chat(&error.to_string(), 1)
-                                                                .map_err(other)?,
-                                                            now,
-                                                        )?,
-                                                    );
+                                                    // A queued strike owns its completion until
+                                                    // the tick accepts it or cancels it.
+                                                    peer.pending_skill = None;
+                                                    peer.queue_ordered_batch(vec![
+                                                        script::chat(&error.to_string(), 1)
+                                                            .map_err(other)?,
+                                                        script::skill_finished(request_id)
+                                                            .map_err(other)?,
+                                                    ])?;
                                                 }
                                                 return Ok(replies);
                                             }
@@ -2259,7 +2282,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                                 || !config.lifestones
                                                 || skill != crate::skills::LIFESTONE_RECALL
                                             {
-                                                replies.extend(peer.send_event(&script::chat("This active skill is not available in the current server profile.",1).map_err(other)?,now)?);
+                                                peer.queue_ordered_batch(vec![script::chat("This active skill is not available in the current server profile.",1).map_err(other)?,script::skill_finished(request_id).map_err(other)?])?;
                                                 return Ok(replies);
                                             }
                                             if store.characters[&character]
@@ -2267,7 +2290,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                                 .get(skill)
                                                 .is_none()
                                             {
-                                                replies.extend(peer.send_event(&script::chat("Bind to a lifestone to unlock development Recall.",1).map_err(other)?,now)?);
+                                                peer.queue_ordered_batch(vec![script::chat("Bind to a lifestone to unlock development Recall.",1).map_err(other)?,script::skill_finished(request_id).map_err(other)?])?;
                                                 return Ok(replies);
                                             }
                                             match recall_character(
@@ -2288,6 +2311,10 @@ pub fn run(config: Config) -> io::Result<()> {
                                                     )?,
                                                 ),
                                             }
+                                            peer.queue_ordered_batch(vec![
+                                                script::skill_finished(request_id)
+                                                    .map_err(other)?,
+                                            ])?;
                                         }
                                         script::Request::Examine(target) => {
                                             if !config.initialize_ui {
@@ -2846,8 +2873,28 @@ pub fn run(config: Config) -> io::Result<()> {
                                             peer.target = target;
                                         }
                                         request @ (script::Request::Combat(_)
-                                        | script::Request::Attack(_)) => {
+                                        | script::Request::Attack(_)
+                                        | script::Request::StopAttack(_)) => {
+                                            // A delayed stop for an old target must not
+                                            // cancel a newly selected/current attack.
+                                            if let script::Request::StopAttack(target) = &request {
+                                                if peer.target != Some(*target) {
+                                                    return Ok(replies);
+                                                }
+                                            }
+                                            if let Some(request_id) = peer.pending_skill.take() {
+                                                peer.queue_ordered_batch(vec![
+                                                    script::skill_finished(request_id)
+                                                        .map_err(other)?,
+                                                ])?;
+                                            }
                                             let enabled = match request {
+                                                script::Request::StopAttack(_) => {
+                                                    if let Some(runtime) = &mut encounters {
+                                                        runtime.stop(character);
+                                                    }
+                                                    false
+                                                }
                                                 script::Request::Combat(enabled) => {
                                                     if enabled
                                                         && !store.characters[&character]
@@ -3577,6 +3624,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                                 peer.clear_scene_outbox();
                                                 peer.target = None;
                                                 peer.combat = false;
+                                                peer.pending_skill = None;
                                                 peer.motion =
                                                     Some(Motion::new(placement, instance));
                                                 active_characters.insert(character_id, addr);
@@ -3841,6 +3889,14 @@ pub fn run(config: Config) -> io::Result<()> {
                     crate::encounters::Event::Swing(player) => {
                         if let Some(addr) = active_characters.get(&player) {
                             if let Some(peer) = peers.get_mut(addr) {
+                                if let Some(request_id) = peer.pending_skill.take() {
+                                    updates.push(crate::scene::Delivery {
+                                        recipient: player,
+                                        data: script::skill_finished(request_id)
+                                            .map_err(other)?
+                                            .into(),
+                                    });
+                                }
                                 match training_combat_visual(
                                     peer, player, &store, &scene, true, true,
                                 ) {
@@ -3973,6 +4029,12 @@ pub fn run(config: Config) -> io::Result<()> {
                         {
                             peer.combat = false;
                             peer.target = None;
+                            if let Some(request_id) = peer.pending_skill.take() {
+                                updates.push(crate::scene::Delivery {
+                                    recipient: player,
+                                    data: script::skill_finished(request_id).map_err(other)?.into(),
+                                });
+                            }
                             match training_combat_visual(peer, player, &store, &scene, false, false)
                             {
                                 Ok(deliveries) => updates.extend(deliveries),
@@ -4167,6 +4229,7 @@ mod tests {
             motion: None,
             target: None,
             combat: false,
+            pending_skill: None,
             last_chat_ms: None,
             emotes: crate::emotes::State::default(),
             last_inventory_ms: None,
