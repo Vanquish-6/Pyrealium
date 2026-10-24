@@ -104,6 +104,7 @@ fn run_enter_rejection(game_data: Option<std::path::PathBuf>, expect_bootstrap: 
             encounters: None,
             initialize_ui: expect_bootstrap,
             training_kit: false,
+            lifestones: false,
             bind: addr,
             account: "local".into(),
             data: server_dir,

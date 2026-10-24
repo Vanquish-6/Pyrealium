@@ -171,6 +171,7 @@ pub struct Motion {
     pub instance: u16,
     pub position_stamp: u16,
     pub last: Option<ClientPosition>,
+    force_stamp: u16,
 }
 impl Motion {
     pub fn new(placement: Placement, instance: u16) -> Self {
@@ -179,10 +180,11 @@ impl Motion {
             instance,
             position_stamp: 0,
             last: None,
+            force_stamp: 0,
         }
     }
     pub fn accept(&mut self, update: ClientPosition) -> Result<(), WorldError> {
-        if update.stamps[..3] != [self.instance, 0, 0]
+        if update.stamps[..3] != [self.instance, 0, self.force_stamp]
             || self.last.is_some_and(|last| update.time <= last.time)
         {
             return Err(WorldError::InvalidValue);
@@ -193,6 +195,30 @@ impl Motion {
         self.placement = update.placement;
         self.last = Some(update);
         Ok(())
+    }
+    /// Development instant relocation using the recovered forced-position
+    /// stamp. Prepare on a candidate before making durable world-state changes.
+    pub fn forced(&self, destination: Placement) -> Result<(Self, ClientPosition), WorldError> {
+        if !destination.valid() {
+            return Err(WorldError::InvalidValue);
+        }
+        let mut next = self.clone();
+        next.force_stamp = self
+            .force_stamp
+            .checked_add(1)
+            .ok_or(WorldError::LimitExceeded)?;
+        next.position_stamp = self.position_stamp.wrapping_add(1);
+        next.placement = destination;
+        let update = ClientPosition {
+            time: self.last.map_or(0.0, |last| last.time),
+            placement: destination,
+            motion: (u32::from(destination.heading) << 24) | 0x007f7f7f,
+            cancel_moveto: true,
+            stamps: [self.instance, 0, next.force_stamp, 0],
+            jump_velocity: None,
+        };
+        update.validate()?;
+        Ok((next, update))
     }
 }
 

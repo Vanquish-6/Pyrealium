@@ -6,6 +6,9 @@ use std::{env, net::SocketAddr, path::PathBuf, process::ExitCode};
 
 fn usage() {
     println!(
+        "  serve --initialize-ui true --lifestones true --game-data PATH\n    Development lifestone binding, @recall, and bound resurrection. Enabled by serve-training."
+    );
+    println!(
         "  serve-training --game-data PATH [--account local --data PATH --bind 127.0.0.1:9000]\n    Development preset: initialized HUD, bundled training encounter, and once-per-character hand item."
     );
     println!(
@@ -55,6 +58,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut character_id = None;
     let mut initialize_ui = false;
     let mut training_kit = false;
+    let mut lifestones = false;
     let mut item_id = None;
     let mut slot = None;
     let mut source_slot = None;
@@ -84,6 +88,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             "--character-id" => character_id = Some(value.parse::<u64>()?),
             "--initialize-ui" => initialize_ui = value.parse::<bool>()?,
             "--training-kit" => training_kit = value.parse::<bool>()?,
+            "--lifestones" => lifestones = value.parse::<bool>()?,
             "--item-id" => {
                 item_id = Some(if let Some(hex) = value.strip_prefix("0x") {
                     u64::from_str_radix(hex, 16)?
@@ -281,6 +286,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             if command == "serve-training" {
                 initialize_ui = true;
                 training_kit = true;
+                lifestones = true;
                 content.get_or_insert_with(|| PathBuf::from("training"));
                 encounters.get_or_insert_with(|| PathBuf::from("training"));
             }
@@ -293,6 +299,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 game_data,
                 initialize_ui,
                 training_kit,
+                lifestones,
                 content,
                 encounters,
             })?;

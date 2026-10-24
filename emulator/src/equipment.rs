@@ -1,4 +1,4 @@
-//! Narrow captured object-use profile for owned hand equipment. No VM execution.
+//! Narrow captured object-use profile for equipment and lifestones. No VM execution.
 use crate::world::WorldError;
 
 pub const USE: u32 = 0x82160016;

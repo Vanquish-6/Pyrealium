@@ -12,7 +12,7 @@ use std::{
 const MAX_JOURNAL_BYTES: u64 = 16 * 1024 * 1024;
 const MAX_PHYSICAL_VALUES: usize = 256;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Character {
     pub id: u64,
     pub account: String,
@@ -28,6 +28,7 @@ pub struct Character {
     pub progression: crate::progression::Progression,
     pub skills: crate::skills::Book,
     pub training_kit: bool,
+    pub binding: Option<Placement>,
 }
 
 pub struct Store {
@@ -38,6 +39,7 @@ pub struct Store {
     positions_path: PathBuf,
     positions: BTreeMap<u64, Placement>,
     positions_dirty: bool,
+    revision: u64,
 }
 
 fn invalid(msg: &str) -> io::Error {
@@ -74,17 +76,28 @@ impl Store {
             }
             let mut bytes = Vec::new();
             file.read_to_end(&mut bytes)?;
-            let characters = decode_journal(&bytes)?;
+            let journal = decode_journal_state(&bytes)?;
+            let characters = journal.characters;
             let positions_path = dir.join("positions.snapshot");
-            let positions = match File::open(&positions_path) {
+            let (position_revision, mut positions) = match File::open(&positions_path) {
                 Ok(file) => {
                     let mut bytes = Vec::new();
                     file.take(1024 * 1024 + 1).read_to_end(&mut bytes)?;
-                    decode_positions(&bytes, &characters)?
+                    decode_position_snapshot(&bytes, &characters)?
                 }
-                Err(e) if e.kind() == io::ErrorKind::NotFound => BTreeMap::new(),
+                Err(e) if e.kind() == io::ErrorKind::NotFound => (0, BTreeMap::new()),
                 Err(e) => return Err(e),
             };
+            if position_revision > journal.revision {
+                return Err(invalid("position snapshot is newer than character journal"));
+            }
+            let mut positions_dirty = false;
+            for (id, (revision, placement)) in journal.relocations {
+                if revision > position_revision {
+                    positions.insert(id, placement);
+                    positions_dirty = true;
+                }
+            }
             Ok(Self {
                 file,
                 lock: lock.clone(),
@@ -92,7 +105,8 @@ impl Store {
                 poisoned: false,
                 positions_path,
                 positions,
-                positions_dirty: false,
+                positions_dirty,
+                revision: journal.revision,
             })
         })();
         if result.is_err() {
@@ -150,6 +164,63 @@ impl Store {
         character.inventory = next;
         character.training_kit = true;
         Ok(true)
+    }
+    pub fn bind_lifestone(
+        &mut self,
+        account: &str,
+        id: u64,
+        placement: Placement,
+    ) -> io::Result<()> {
+        let character = self
+            .characters
+            .get(&id)
+            .filter(|c| c.account == account && !c.deleted && c.progression.alive())
+            .ok_or_else(|| invalid("binding requires an owned living character"))?;
+        if !placement.valid() {
+            return Err(invalid("invalid lifestone bind point"));
+        }
+        if character.binding == Some(placement) {
+            return Ok(());
+        }
+        self.append_record(&format!("l1\t{id}\t{}", encode_placement(placement)))?;
+        self.characters.get_mut(&id).unwrap().binding = Some(placement);
+        Ok(())
+    }
+    /// Binding must have passed world/cell validation before this transaction.
+    pub fn return_to_binding(
+        &mut self,
+        account: &str,
+        id: u64,
+        resurrect: bool,
+    ) -> io::Result<Placement> {
+        let character = self
+            .characters
+            .get(&id)
+            .filter(|c| c.account == account && !c.deleted)
+            .ok_or_else(|| invalid("recall character not owned"))?;
+        let placement = character
+            .binding
+            .ok_or_else(|| invalid("character is not bound to a lifestone"))?;
+        let next = if resurrect {
+            character
+                .progression
+                .apply(&crate::progression::Command::Resurrect)
+                .map_err(|_| invalid("resurrection requires a dead character"))?
+        } else {
+            if !character.progression.alive() {
+                return Err(invalid("recall requires a living character"));
+            }
+            character.progression.clone()
+        };
+        self.append_record(&format!(
+            "{}\t{id}\t{}",
+            if resurrect { "r2" } else { "p1" },
+            encode_placement(placement)
+        ))?;
+        self.characters.get_mut(&id).unwrap().progression = next;
+        self.positions.insert(id, placement);
+        self.positions_dirty = true;
+        Ok(placement)
     }
     pub fn progression_command(
         &mut self,
@@ -334,7 +405,7 @@ impl Store {
         if !self.positions_dirty {
             return Ok(());
         }
-        let size = 16usize
+        let size = 24usize
             .checked_add(
                 self.positions
                     .len()
@@ -344,7 +415,8 @@ impl Store {
             .filter(|size| *size <= 1024 * 1024)
             .ok_or_else(|| invalid("placement snapshot limit"))?;
         let mut bytes = Vec::with_capacity(size);
-        bytes.extend(b"AC2POS01");
+        bytes.extend(b"AC2POS02");
+        bytes.extend(self.revision.to_le_bytes());
         bytes.extend((self.positions.len() as u32).to_le_bytes());
         for (id, placement) in &self.positions {
             bytes.extend(id.to_le_bytes());
@@ -429,6 +501,7 @@ impl Store {
             progression: crate::progression::Progression::default(),
             skills: crate::skills::Book::default(),
             training_kit: false,
+            binding: None,
         };
         let line = match creation {
             None => format!("v1\t{}\t{}\t{}", c.id, c.account, c.name),
@@ -492,6 +565,10 @@ impl Store {
         Ok(instance)
     }
     fn append_record(&mut self, line: &str) -> io::Result<()> {
+        let revision = self
+            .revision
+            .checked_add(1)
+            .ok_or_else(|| invalid("journal revision exhausted"))?;
         if self.poisoned {
             return Err(invalid(
                 "journal write failed previously; restart and inspect journal",
@@ -515,19 +592,34 @@ impl Store {
             self.poisoned = true;
             return Err(e);
         }
+        self.revision = revision;
         Ok(())
     }
 }
 
+#[cfg(test)]
 fn decode_positions(
     bytes: &[u8],
     characters: &BTreeMap<u64, Character>,
 ) -> io::Result<BTreeMap<u64, Placement>> {
-    if bytes.len() < 16 || bytes.len() > 1024 * 1024 || &bytes[..8] != b"AC2POS01" {
+    decode_position_snapshot(bytes, characters).map(|(_, positions)| positions)
+}
+fn decode_position_snapshot(
+    bytes: &[u8],
+    characters: &BTreeMap<u64, Character>,
+) -> io::Result<(u64, BTreeMap<u64, Placement>)> {
+    if bytes.len() < 16 || bytes.len() > 1024 * 1024 {
         return Err(invalid("invalid placement snapshot header/size"));
     }
-    let count = u32::from_le_bytes(bytes[8..12].try_into().unwrap()) as usize;
-    if count.checked_mul(25).and_then(|n| n.checked_add(16)) != Some(bytes.len()) {
+    let (revision, start, base) = match &bytes[..8] {
+        b"AC2POS01" => (0, 12, 16),
+        b"AC2POS02" if bytes.len() >= 24 => {
+            (u64::from_le_bytes(bytes[8..16].try_into().unwrap()), 20, 24)
+        }
+        _ => return Err(invalid("invalid placement snapshot version")),
+    };
+    let count = u32::from_le_bytes(bytes[start - 4..start].try_into().unwrap()) as usize;
+    if count.checked_mul(25).and_then(|n| n.checked_add(base)) != Some(bytes.len()) {
         return Err(invalid("invalid placement snapshot length"));
     }
     let end = bytes.len() - 4;
@@ -535,7 +627,7 @@ fn decode_positions(
         return Err(invalid("placement snapshot checksum mismatch"));
     }
     let mut positions = BTreeMap::new();
-    for record in bytes[12..end].chunks_exact(25) {
+    for record in bytes[start..end].chunks_exact(25) {
         let id = u64::from_le_bytes(record[..8].try_into().unwrap());
         let placement = Placement {
             cell: u32::from_le_bytes(record[8..12].try_into().unwrap()),
@@ -551,7 +643,7 @@ fn decode_positions(
             return Err(invalid("unknown, duplicate or invalid saved placement"));
         }
     }
-    Ok(positions)
+    Ok((revision, positions))
 }
 impl Drop for Store {
     fn drop(&mut self) {
@@ -560,6 +652,51 @@ impl Drop for Store {
 }
 
 pub fn decode_journal(bytes: &[u8]) -> io::Result<BTreeMap<u64, Character>> {
+    decode_journal_state(bytes).map(|journal| journal.characters)
+}
+struct JournalState {
+    characters: BTreeMap<u64, Character>,
+    relocations: BTreeMap<u64, (u64, Placement)>,
+    revision: u64,
+}
+fn encode_placement(placement: Placement) -> String {
+    format!(
+        "{:08x},{:08x},{:08x},{:08x},{}",
+        placement.cell,
+        placement.coordinates[0].to_bits(),
+        placement.coordinates[1].to_bits(),
+        placement.coordinates[2].to_bits(),
+        placement.heading
+    )
+}
+fn decode_placement(text: &str) -> io::Result<Placement> {
+    if text.len() > 64 {
+        return Err(invalid("placement field limit"));
+    }
+    let fields: Vec<_> = text.split(',').collect();
+    if fields.len() != 5 {
+        return Err(invalid("placement field count"));
+    }
+    let word = |index: usize| {
+        u32::from_str_radix(fields[index], 16).map_err(|_| invalid("invalid placement word"))
+    };
+    let placement = Placement {
+        cell: word(0)?,
+        coordinates: [
+            f32::from_bits(word(1)?),
+            f32::from_bits(word(2)?),
+            f32::from_bits(word(3)?),
+        ],
+        heading: fields[4]
+            .parse()
+            .map_err(|_| invalid("invalid placement heading"))?,
+    };
+    if !placement.valid() {
+        return Err(invalid("invalid persisted placement"));
+    }
+    Ok(placement)
+}
+fn decode_journal_state(bytes: &[u8]) -> io::Result<JournalState> {
     if bytes.len() as u64 > MAX_JOURNAL_BYTES {
         return Err(invalid("journal exceeds 16 MiB limit"));
     }
@@ -569,7 +706,12 @@ pub fn decode_journal(bytes: &[u8]) -> io::Result<BTreeMap<u64, Character>> {
     let text =
         std::str::from_utf8(bytes).map_err(|_| invalid("invalid character journal encoding"))?;
     let mut records: BTreeMap<u64, Character> = BTreeMap::new();
+    let mut relocations = BTreeMap::new();
+    let mut revision = 0u64;
     for line in text.lines() {
+        revision = revision
+            .checked_add(1)
+            .ok_or_else(|| invalid("journal revision exhausted"))?;
         let (data, sum) = line
             .rsplit_once('\t')
             .ok_or_else(|| invalid("missing journal checksum"))?;
@@ -577,6 +719,36 @@ pub fn decode_journal(bytes: &[u8]) -> io::Result<BTreeMap<u64, Character>> {
             return Err(invalid("character journal checksum mismatch"));
         }
         let fields: Vec<_> = data.split('\t').collect();
+        if fields.len() == 3 && matches!(fields[0], "l1" | "p1" | "r2") {
+            let id = fields[1]
+                .parse::<u64>()
+                .map_err(|_| invalid("invalid lifestone character"))?;
+            let placement = decode_placement(fields[2])?;
+            let character = records
+                .get_mut(&id)
+                .filter(|character| !character.deleted)
+                .ok_or_else(|| invalid("unavailable lifestone character"))?;
+            if fields[0] == "l1" {
+                if !character.progression.alive() {
+                    return Err(invalid("dead character binding"));
+                }
+                character.binding = Some(placement);
+            } else {
+                if character.binding != Some(placement) {
+                    return Err(invalid("relocation differs from saved binding"));
+                }
+                if fields[0] == "r2" {
+                    character.progression = character
+                        .progression
+                        .apply(&crate::progression::Command::Resurrect)
+                        .map_err(|_| invalid("invalid bound resurrection"))?;
+                } else if !character.progression.alive() {
+                    return Err(invalid("dead character recall"));
+                }
+                relocations.insert(id, (revision, placement));
+            }
+            continue;
+        }
         if fields.len() == 3 && fields[0] == "t1" {
             let id = fields[1]
                 .parse::<u64>()
@@ -825,10 +997,15 @@ pub fn decode_journal(bytes: &[u8]) -> io::Result<BTreeMap<u64, Character>> {
                 progression: crate::progression::Progression::default(),
                 skills: crate::skills::Book::default(),
                 training_kit: false,
+                binding: None,
             },
         );
     }
-    Ok(records)
+    Ok(JournalState {
+        characters: records,
+        relocations,
+        revision,
+    })
 }
 
 // Journal v2 uses canonical little-endian words encoded as hex, independent of network

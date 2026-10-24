@@ -27,6 +27,7 @@ pub struct Config {
     pub game_data: Option<PathBuf>,
     pub initialize_ui: bool,
     pub training_kit: bool,
+    pub lifestones: bool,
     pub content: Option<PathBuf>,
     pub encounters: Option<PathBuf>,
 }
@@ -46,8 +47,9 @@ struct Peer {
     last_chat_ms: Option<u64>,
     last_inventory_ms: Option<u64>,
     last_examine_ms: Option<u64>,
+    last_world_use_ms: Option<u64>,
     unhandled_scripts: BTreeSet<u32>,
-    scene_outbox: VecDeque<Arc<[u8]>>,
+    scene_outbox: VecDeque<(Arc<[u8]>, bool)>,
     scene_bytes: usize,
 }
 #[derive(Default)]
@@ -72,6 +74,18 @@ impl Peer {
         self.scene_bytes = 0;
     }
     fn queue_scene(&mut self, data: Arc<[u8]>) -> io::Result<()> {
+        let ordered = Self::scene_ordered(&data);
+        self.queue_scene_as(data, ordered)
+    }
+    fn scene_ordered(data: &[u8]) -> bool {
+        data.get(..4).is_some_and(|opcode| {
+            matches!(
+                u32::from_le_bytes(opcode.try_into().unwrap()),
+                0x10058 | 0x100c2 | 0x10069..=0x10076 | 0x100d4 | 0x100d5 | 0x10066
+            )
+        })
+    }
+    fn queue_scene_as(&mut self, data: Arc<[u8]>, ordered: bool) -> io::Result<()> {
         if data.len() < 4
             || data.len() > 65536
             || self.scene_outbox.len() >= 1024
@@ -80,7 +94,7 @@ impl Peer {
             return Err(invalid("scene outbox limit"));
         }
         self.scene_bytes += data.len();
-        self.scene_outbox.push_back(data);
+        self.scene_outbox.push_back((data, ordered));
         Ok(())
     }
     fn flush_scene(
@@ -97,17 +111,12 @@ impl Peer {
             return Ok(());
         }
         for _ in 0..32 {
-            let Some(data) = self.scene_outbox.front().cloned() else {
+            let Some((data, ordered)) = self.scene_outbox.front().cloned() else {
                 break;
             };
             if !self.transport.send_available(data.len()).map_err(other)? {
                 break;
             }
-            let opcode = u32::from_le_bytes(data[..4].try_into().unwrap());
-            let ordered = matches!(
-                opcode,
-                0x10058 | 0x100c2 | 0x10069..=0x10076 | 0x100d4 | 0x100d5 | 0x10066
-            );
             let packets = self.send_world_event(&data, ordered, now)?;
             self.scene_outbox.pop_front();
             self.scene_bytes -= data.len();
@@ -120,12 +129,12 @@ impl Peer {
     /// Admit a dependent group completely before changing the outgoing queue.
     /// Fragment-window pressure is handled by flush_scene, without cloning
     /// transport/ISAAC history or requiring every event to fit in one send window.
-    fn queue_event_batch(&mut self, events: Vec<Vec<u8>>) -> io::Result<()> {
+    fn validate_scene_batch(&self, events: &[Vec<u8>]) -> io::Result<usize> {
         let mut total = self.scene_bytes;
         if self.scene_outbox.len().saturating_add(events.len()) > 1024 {
             return Err(invalid("scene batch event limit"));
         }
-        for event in &events {
+        for event in events {
             if !(4..=65536).contains(&event.len()) {
                 return Err(invalid("scene batch message limit"));
             }
@@ -134,8 +143,23 @@ impl Peer {
                 .filter(|size| *size <= 1024 * 1024)
                 .ok_or_else(|| invalid("scene batch byte limit"))?;
         }
-        self.scene_outbox.extend(events.into_iter().map(Arc::from));
+        Ok(total)
+    }
+    fn queue_event_batch(&mut self, events: Vec<Vec<u8>>) -> io::Result<()> {
+        let total = self.validate_scene_batch(&events)?;
+        self.scene_outbox.extend(events.into_iter().map(|data| {
+            let ordered = Self::scene_ordered(&data);
+            (Arc::from(data), ordered)
+        }));
         self.scene_bytes = total;
+        Ok(())
+    }
+    fn queue_ordered_batch(&mut self, events: Vec<Vec<u8>>) -> io::Result<()> {
+        let count = events.len();
+        self.queue_event_batch(events)?;
+        for (_, ordered) in self.scene_outbox.iter_mut().rev().take(count) {
+            *ordered = true;
+        }
         Ok(())
     }
     fn send_world_event(
@@ -216,12 +240,90 @@ impl Peer {
     }
 }
 
+struct ForcedMove {
+    motion: Motion,
+    update: crate::movement::ClientPosition,
+    wire: Vec<u8>,
+}
+fn prepare_forced_move(
+    peer: &Peer,
+    character: u64,
+    destination: Placement,
+    scene: &crate::scene::Scene,
+    bootstrap: &mut Option<crate::bootstrap::Bootstrap>,
+) -> io::Result<ForcedMove> {
+    if scene.player_placement(character).is_none()
+        || !bootstrap
+            .as_mut()
+            .is_some_and(|profile| profile.contains_cell(destination.cell))
+    {
+        return Err(invalid("Saved destination is not available in this world."));
+    }
+    let (motion, update) = peer
+        .motion
+        .as_ref()
+        .ok_or_else(|| invalid("Missing player motion state."))?
+        .forced(destination)
+        .map_err(other)?;
+    let wire = crate::movement::server_position(
+        character,
+        motion.instance,
+        motion.position_stamp,
+        &update,
+    )
+    .map_err(other)?;
+    Ok(ForcedMove {
+        motion,
+        update,
+        wire,
+    })
+}
+fn recall_character(
+    peer: &mut Peer,
+    character: u64,
+    store: &mut Store,
+    scene: &mut crate::scene::Scene,
+    encounters: &mut Option<crate::encounters::Encounters>,
+    bootstrap: &mut Option<crate::bootstrap::Bootstrap>,
+    now_ms: u64,
+) -> io::Result<Vec<crate::scene::Delivery>> {
+    let saved = &store.characters[&character];
+    if peer.combat || !saved.progression.alive() {
+        return Err(invalid("Recall while alive and out of combat."));
+    }
+    if peer
+        .last_world_use_ms
+        .is_some_and(|last| now_ms.saturating_sub(last) < 5000)
+    {
+        return Err(invalid("Wait a few seconds before recalling."));
+    }
+    let destination = saved
+        .binding
+        .ok_or_else(|| invalid("Bind to a lifestone before recalling."))?;
+    let prepared = prepare_forced_move(peer, character, destination, scene, bootstrap)?;
+    let events = vec![prepared.wire];
+    peer.validate_scene_batch(&events)?;
+    store.return_to_binding(&peer.session.account, character, false)?;
+    if let Some(runtime) = encounters {
+        runtime.stop(character);
+    }
+    let updates = scene
+        .update(character, prepared.motion.position_stamp, &prepared.update)
+        .map_err(other)?;
+    peer.motion = Some(prepared.motion);
+    peer.target = None;
+    peer.last_world_use_ms = Some(now_ms);
+    peer.queue_ordered_batch(events)?;
+    Ok(updates)
+}
 fn resurrect_character(
     peer: &mut Peer,
     character: u64,
     store: &mut Store,
     scene: &mut crate::scene::Scene,
     encounters: &mut Option<crate::encounters::Encounters>,
+    lifestones: bool,
+    bootstrap: &mut Option<crate::bootstrap::Bootstrap>,
 ) -> io::Result<Vec<crate::scene::Delivery>> {
     let saved = store
         .characters
@@ -231,11 +333,35 @@ fn resurrect_character(
     if saved.progression.alive() {
         return Err(invalid("You are already alive."));
     }
-    store.progression_command(
-        &peer.session.account,
-        character,
-        crate::progression::Command::Resurrect,
-    )?;
+    let next = saved
+        .progression
+        .apply(&crate::progression::Command::Resurrect)
+        .map_err(other)?;
+    let forced = if lifestones {
+        saved
+            .binding
+            .map(|destination| prepare_forced_move(peer, character, destination, scene, bootstrap))
+            .transpose()?
+    } else {
+        None
+    };
+    let mut owner_events = next.private_updates();
+    if let Some(prepared) = &forced {
+        owner_events.push(prepared.wire.clone());
+    }
+    owner_events.push(crate::ui::lock_player(false).map_err(other)?);
+    owner_events
+        .push(script::private_call(script::COMBAT_STATE, &script::integer(0)).map_err(other)?);
+    peer.validate_scene_batch(&owner_events)?;
+    if forced.is_some() {
+        store.return_to_binding(&peer.session.account, character, true)?;
+    } else {
+        store.progression_command(
+            &peer.session.account,
+            character,
+            crate::progression::Command::Resurrect,
+        )?;
+    }
     if let Some(runtime) = encounters {
         runtime.stop(character);
     }
@@ -243,21 +369,15 @@ fn resurrect_character(
     peer.target = None;
     let state = &store.characters[&character].progression;
     let mut updates = scene.player_stats(character, state);
-    for wire in state.private_updates() {
-        updates.push(crate::scene::Delivery {
-            recipient: character,
-            data: wire.into(),
-        });
+    if let Some(prepared) = forced {
+        updates.extend(
+            scene
+                .update(character, prepared.motion.position_stamp, &prepared.update)
+                .map_err(other)?,
+        );
+        peer.motion = Some(prepared.motion);
     }
-    for wire in [
-        crate::ui::lock_player(false).map_err(other)?,
-        script::private_call(script::COMBAT_STATE, &script::integer(0)).map_err(other)?,
-    ] {
-        updates.push(crate::scene::Delivery {
-            recipient: character,
-            data: wire.into(),
-        });
-    }
+    peer.queue_ordered_batch(owner_events)?;
     Ok(updates)
 }
 
@@ -320,6 +440,9 @@ fn examine_target(
                 format!("Available experience: {}", state.available_xp),
                 format!("Gold: {}", state.gold),
             ]);
+            if player.binding.is_some() {
+                lines.push("Bound to a lifestone.".to_owned());
+            }
         }
         return examination::response(target, Name::Literal(player.name.clone()), &lines)
             .map_err(other);
@@ -449,8 +572,10 @@ pub fn run(config: Config) -> io::Result<()> {
         ));
     }
     let mut inventory_metadata = BTreeMap::new();
-    if config.training_kit && !config.initialize_ui {
-        return Err(invalid("--training-kit true requires --initialize-ui true"));
+    if (config.training_kit || config.lifestones) && !config.initialize_ui {
+        return Err(invalid(
+            "training kits and lifestones require --initialize-ui true",
+        ));
     }
     let initial_ui = if config.initialize_ui {
         let directory = config.game_data.as_ref().unwrap();
@@ -460,12 +585,16 @@ pub fn run(config: Config) -> io::Result<()> {
         crate::ui::validate_skills_wlib(&wlib).map_err(other)?;
         crate::skills::validate_assets(&mut portal)?;
         if config.training_kit
+            || config.lifestones
             || store
                 .characters
                 .values()
                 .any(|c| !c.deleted && c.inventory.items().next().is_some())
         {
             crate::ui::validate_inventory_wlib(&wlib).map_err(other)?;
+            if config.lifestones {
+                portal.read(0x25000014)?;
+            }
             if config.training_kit {
                 let metadata = crate::training_kit::validate(&mut portal)?;
                 inventory_metadata.insert(crate::training_kit::DEFINITION, Some(metadata));
@@ -730,6 +859,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                 last_chat_ms: None,
                                 last_inventory_ms: None,
                                 last_examine_ms: None,
+                                last_world_use_ms: None,
                                 unhandled_scripts: BTreeSet::new(),
                                 scene_outbox: VecDeque::new(),
                                 scene_bytes: 0,
@@ -931,6 +1061,80 @@ pub fn run(config: Config) -> io::Result<()> {
                                             }
                                         }
                                         script::Request::UseItem(request) => {
+                                            if config.lifestones
+                                                && scene
+                                                    .examination_content(character, request.item)
+                                                    .is_some_and(|object| {
+                                                        object.entity == 0x470007de
+                                                    })
+                                            {
+                                                let result = (|| -> io::Result<Vec<Vec<u8>>> {
+                                                    if request.owner != character
+                                                        || peer.combat
+                                                        || !store.characters[&character]
+                                                            .progression
+                                                            .alive()
+                                                    {
+                                                        return Err(invalid(
+                                                            "Bind while alive and out of combat.",
+                                                        ));
+                                                    }
+                                                    if peer.last_world_use_ms.is_some_and(|last| {
+                                                        now_ms.saturating_sub(last) < 1000
+                                                    }) {
+                                                        return Err(invalid(
+                                                            "Wait before using the lifestone again.",
+                                                        ));
+                                                    }
+                                                    let player = scene
+                                                        .player_placement(character)
+                                                        .ok_or_else(|| {
+                                                            invalid("Player is not ready.")
+                                                        })?;
+                                                    let stone = scene
+                                                        .content_placement(request.item)
+                                                        .ok_or_else(|| {
+                                                            invalid("Lifestone is not available.")
+                                                        })?;
+                                                    let distance: f64 = player
+                                                        .coordinates
+                                                        .into_iter()
+                                                        .zip(stone.coordinates)
+                                                        .map(|(a, b)| {
+                                                            (f64::from(a) - f64::from(b)).powi(2)
+                                                        })
+                                                        .sum();
+                                                    if player.cell != stone.cell || distance > 16.0
+                                                    {
+                                                        return Err(invalid(
+                                                            "Move within four meters of the lifestone.",
+                                                        ));
+                                                    }
+                                                    let events = vec![crate::ui::lifestone_bound(character,request.item,player).map_err(other)?,script::chat("You are bound to this lifestone. Use @recall to return under development travel rules.",1).map_err(other)?];
+                                                    peer.validate_scene_batch(&events)?;
+                                                    store.bind_lifestone(
+                                                        &peer.session.account,
+                                                        character,
+                                                        player,
+                                                    )?;
+                                                    peer.last_world_use_ms = Some(now_ms);
+                                                    Ok(events)
+                                                })(
+                                                );
+                                                match result {
+                                                    Ok(events) => {
+                                                        peer.queue_ordered_batch(events)?
+                                                    }
+                                                    Err(error) => replies.extend(
+                                                        peer.send_event(
+                                                            &script::chat(&error.to_string(), 1)
+                                                                .map_err(other)?,
+                                                            now,
+                                                        )?,
+                                                    ),
+                                                }
+                                                return Ok(replies);
+                                            }
                                             if peer.last_inventory_ms.is_some_and(|last| {
                                                 now_ms.saturating_sub(last) < 100
                                             }) {
@@ -1042,6 +1246,8 @@ pub fn run(config: Config) -> io::Result<()> {
                                                 &mut store,
                                                 &mut scene,
                                                 &mut encounters,
+                                                config.lifestones,
+                                                &mut bootstrap,
                                             ) {
                                                 Ok(updates) => deliveries.extend(updates),
                                                 Err(error) => replies.extend(
@@ -1238,6 +1444,35 @@ pub fn run(config: Config) -> io::Result<()> {
                                             let name = &store.characters[&character].name;
                                             match request {
                                                 script::Request::Say(text) => {
+                                                    if text.trim().eq_ignore_ascii_case("@recall")
+                                                        && config.lifestones
+                                                    {
+                                                        peer.last_chat_ms = Some(now_ms);
+                                                        match recall_character(
+                                                            peer,
+                                                            character,
+                                                            &mut store,
+                                                            &mut scene,
+                                                            &mut encounters,
+                                                            &mut bootstrap,
+                                                            now_ms,
+                                                        ) {
+                                                            Ok(updates) => {
+                                                                deliveries.extend(updates)
+                                                            }
+                                                            Err(error) => replies.extend(
+                                                                peer.send_event(
+                                                                    &script::chat(
+                                                                        &error.to_string(),
+                                                                        1,
+                                                                    )
+                                                                    .map_err(other)?,
+                                                                    now,
+                                                                )?,
+                                                            ),
+                                                        }
+                                                        return Ok(replies);
+                                                    }
                                                     if text
                                                         .trim()
                                                         .eq_ignore_ascii_case("@resurrect")
@@ -1250,6 +1485,8 @@ pub fn run(config: Config) -> io::Result<()> {
                                                             &mut store,
                                                             &mut scene,
                                                             &mut encounters,
+                                                            config.lifestones,
+                                                            &mut bootstrap,
                                                         ) {
                                                             Ok(updates) => {
                                                                 deliveries.extend(updates)
@@ -1904,6 +2141,7 @@ mod tests {
             last_chat_ms: None,
             last_inventory_ms: None,
             last_examine_ms: None,
+            last_world_use_ms: None,
             unhandled_scripts: BTreeSet::new(),
             scene_outbox: VecDeque::new(),
             scene_bytes: 0,

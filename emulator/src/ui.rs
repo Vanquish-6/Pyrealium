@@ -9,6 +9,51 @@ pub fn death_notice(reason: &str) -> Result<Vec<u8>, WorldError> {
 pub fn lock_player(locked: bool) -> Result<Vec<u8>, WorldError> {
     script::private_call(0x82070033, &script::integer(u32::from(locked)))
 }
+pub fn lifestone_bound(
+    owner: u64,
+    target: u64,
+    point: crate::movement::Placement,
+) -> Result<Vec<u8>, WorldError> {
+    if !point.valid() {
+        return Err(WorldError::InvalidValue);
+    }
+    let mut fields = [0u32; 20];
+    fields[0] = 2;
+    for index in [1, 15] {
+        fields[index] = u32::MAX;
+    }
+    fields[2] = target as u32;
+    fields[3] = (target >> 32) as u32;
+    fields[4] = 3;
+    fields[5] = 0x1f;
+    fields[6] = owner as u32;
+    fields[7] = (owner >> 32) as u32;
+    fields[8] = (-1f32).to_bits();
+    fields[11] = 0x405;
+    fields[17] = 0x13c;
+    let tags = [
+        1, 1, 0x84, 0xcd, 1, 4, 0x84, 0xcd, 3, 0x82, 0xcd, 2, 0x82, 0xcd, 2, 1, 2, 2, 2, 2,
+    ];
+    let root: Vec<_> = fields.into_iter().zip(tags).collect();
+    let mut position = vec![point.cell];
+    position.extend(
+        point
+            .coordinates
+            .into_iter()
+            .chain(point.orientation())
+            .map(f32::to_bits),
+    );
+    let mut args = Vec::new();
+    graph(
+        &mut args,
+        &[
+            Object::interpreted(0x245, &root),
+            Object::native(0x6a, &[0x4e1aec40, 0x25000014, 0]),
+            Object::native(0x5a, &position),
+        ],
+    );
+    script::private_call(0x82160021, &args)
+}
 const REF: u8 = 1;
 const INT: u8 = 2;
 const NULL: u32 = u32::MAX;

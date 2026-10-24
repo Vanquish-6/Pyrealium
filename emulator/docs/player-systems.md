@@ -112,8 +112,9 @@ notice after scene initialization. Resurrection persists the recovery before
 clearing combat, publishing live vitals/Dead and unlocking the UI. The same
 recovery remains available if the encounter profile has subsequently changed;
 `@resurrect` is a development chat fallback when encounters are enabled.
-This is local recovery policy; lifestone binding, corpse recovery, death
-animations, teleportation and original penalties remain unfinished.
+This is local recovery policy. The optional development binding/return path is
+described below; corpse recovery, death animations and original penalties remain
+unfinished.
 Ordinary chat rate limits still apply. Encounter/world state is transient across
 server restarts; player rewards and vitals are durable. Journals with `g2` require
 the newer reader. Training does not yet grant starter equipment or abilities.
@@ -307,3 +308,51 @@ before it can be granted. The owned item enters the normal inventory bootstrap,
 sorting, hand-equipment and examination paths. This change was compile checked
 only; no grants were executed against existing player data and no tests or native
 client checks were run.
+
+## Development lifestone binding and return
+
+`--lifestones true` requires the initialized 7148 HUD and enables explicit local
+binding/return rules. `serve-training` enables it and includes an authored nearby
+lifestone using the existing DAT-backed definition/visual. Ordinary `serve` keeps
+it disabled. This is not original level/hero/kingdom eligibility or cast timing.
+
+The captured object-use profile can bind to an active, visible same-cell lifestone
+definition `470007de` within four meters. The character must be alive and out of
+combat. The saved return point is the player's current accepted position, avoiding
+an invented offset at the center of the lifestone. The bind is fsynced before a
+native `82160021` success reply and chat confirmation. The reply uses package
+`245`, a localized use hint, and native Position `5a`, following retained binding
+captures. A one-second interaction cooldown bounds repeated binding writes.
+
+`@recall` provides development instant return while alive and out of combat, with
+a five-second cooldown. The native Resurrect button restores vitals and returns
+to a saved binding when this mode is enabled. Unbound characters retain in-place
+recovery. Destination cells must exist in the configured world. World/cell checks,
+outgoing queue admission and native position encoding complete before persistence.
+Native recall skill casts, portal-space presentation, animations and original
+death penalties are not implemented by this command.
+
+Forced movement increments a checked native force-position stamp, preserves the
+avatar lifetime, and uses the neutral `7f7f7f` motion vector. Old-stamp movement is
+rejected after return; subsequent client updates must echo the new force stamp.
+The owner receives an ordered correction, while normal movement retains its prior
+delivery policy. Scene relocation updates nearby player/hand-object lifecycles
+and old/new cell content. Resurrected vitals/Dead state precede the correction and
+UI unlock in the owner's ordered queue.
+
+Binding uses journal event `l1`; live recall uses `p1`; bound resurrection uses a
+single `r2` event for restored vitals and destination. Replay validates ownership,
+life state and the saved bind point. New position snapshots use `AC2POS02`, with
+the character-journal revision included in their checksum. Startup reads both
+`AC2POS01` and `AC2POS02`, rejects snapshots newer than the journal, and overlays
+only journal relocations newer than the snapshot. Later ordinary movement in a
+flushed snapshot therefore supersedes an earlier recall, while an acknowledged
+relocation survives a crash before the next movement checkpoint. Old readers
+cannot read these new journal events/snapshots.
+
+Retained evidence includes `binding.to.lifestone.1.elog`,
+`binding.to.lifestone.2.elog` and `recalling.to.lifestone.elog`. Native position
+packing follows `0069be20`; position reception is recovered at `004ed470`.
+The new gameplay/restore path is compile checked only. No automated tests, native
+client checks, existing player-data mutations or running-server replacement were
+performed.

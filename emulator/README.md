@@ -181,7 +181,8 @@ Exact addresses, identities, policies, test boundaries and open work:
 ## Remaining gameplay work
 
 `serve-training --game-data PATH` selects the bundled starter encounter, initialized
-HUD and once-per-character development hand item. Add the normal account, bind
+HUD, once-per-character development hand item and an authored nearby lifestone.
+The preset enables development binding, `@recall` and bound resurrection. Add the normal account, bind
 and data options as needed. The rules and placement are embedded, so this preset
 does not depend on launching from the emulator directory. It is an authored
 development slice; full original progression and native acceptance remain open.
@@ -193,7 +194,8 @@ to server health/vigor changes, stationary retaliation, XP/gold rewards, levels,
 regeneration and timed creature respawn. Saved player state is restored on entry.
 Death and the native Resurrect button now share persisted vitals, the client Dead
 flag, death notice and UI locking, including reconnect while dead. Resurrection
-currently restores the character in place under development recovery policy.
+restores the character in place unless development lifestones are enabled and
+the character has a saved binding, in which case it returns to that bind point.
 The rules and starter placement are development content; original combat formulas,
 skills, animations, collision, item looting and native acceptance are unfinished.
 See [player systems integration](docs/player-systems.md).
@@ -211,8 +213,9 @@ The combined pack contains 89 lifestones and 158 portals with DAT-backed visuals
 The server creates/removes them as players enter/leave their cell. Two additional
 portal locations remain in the unresolved report because their terrain is missing.
 A 7,583-entry entity/visual catalog and offline placement tool support explicit
-NPC/object authoring. Binding, portal travel, NPC behavior and other interactions
-remain unfinished, and native appearance has not been checked.
+NPC/object authoring. `--lifestones true` enables development binding/recall under
+local range and eligibility rules. Original binding rules, portal travel, NPC
+behavior and other interactions remain unfinished; native appearance is unverified.
 See [content format and provenance](content/README.md).
 
 An additional snapshot is available with `--content observed`: it adds 30
