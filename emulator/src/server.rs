@@ -279,6 +279,7 @@ pub fn run(config: Config) -> io::Result<()> {
         None
     };
     let content = match config.content.as_deref() {
+        Some(path) if path == std::path::Path::new("none") => crate::content::Content::default(),
         Some(path) => {
             let directory = config
                 .game_data
@@ -291,7 +292,17 @@ pub fn run(config: Config) -> io::Result<()> {
             );
             content
         }
-        None => crate::content::Content::default(),
+        None => match config.game_data.as_deref() {
+            Some(directory) => {
+                let content = crate::content::Content::bundled(directory)?;
+                println!(
+                    "Loaded {} bundled stationary content objects; interactions and AI remain unfinished.",
+                    content.len()
+                );
+                content
+            }
+            None => crate::content::Content::default(),
+        },
     };
     let primary = UdpSocket::bind(config.bind)?;
     let mut secondary_addr = config.bind;

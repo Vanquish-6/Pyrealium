@@ -1,0 +1,1920 @@
+{
+  "source_sha256": "f2b31ccceef1f32ea497f8db9a0e68c87f1a7b7143e7634ffb38882f4f72aead",
+  "definitions": 7583,
+  "unresolved": [
+    {
+      "row": 4243,
+      "entity": "470010F2",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 4244,
+      "entity": "470010F3",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 4245,
+      "entity": "470010F4",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 4246,
+      "entity": "470010F5",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 4251,
+      "entity": "470010FA",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 4255,
+      "entity": "470010FE",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 4256,
+      "entity": "470010FF",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 4265,
+      "entity": "47001108.0",
+      "visual": "181.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 4934,
+      "entity": "47001400.0",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 4935,
+      "entity": "4700141F",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 5535,
+      "entity": "47001716.0",
+      "visual": "0EFD",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 5536,
+      "entity": "47001717.0",
+      "visual": "0EFF",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 5537,
+      "entity": "47001718.0",
+      "visual": "0F03",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 7079,
+      "entity": "47001D80",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 7814,
+      "entity": "47002076.0",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 7815,
+      "entity": "47002077.0",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 7816,
+      "entity": "47002078.0",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 7817,
+      "entity": "47002079.0",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 7818,
+      "entity": "4700207A",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 7819,
+      "entity": "4700207B",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 7820,
+      "entity": "4700207C",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 7821,
+      "entity": "4700207D",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 7822,
+      "entity": "4700207E",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 7823,
+      "entity": "4700207F",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 7824,
+      "entity": "47002080.0",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8126,
+      "entity": "470021B9",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8127,
+      "entity": "470021BA",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8128,
+      "entity": "470021BB",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8129,
+      "entity": "470021BC",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8130,
+      "entity": "470021BD",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8131,
+      "entity": "470021BE",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8132,
+      "entity": "470021BF",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8133,
+      "entity": "470021C0",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8197,
+      "entity": "47002200.0",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8198,
+      "entity": "47002201.0",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8199,
+      "entity": "47002202.0",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8200,
+      "entity": "47002203.0",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8201,
+      "entity": "47002204.0",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8202,
+      "entity": "47002205.0",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8203,
+      "entity": "47002206.0",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8204,
+      "entity": "47002207.0",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8205,
+      "entity": "47002208.0",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8206,
+      "entity": "47002209.0",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8207,
+      "entity": "4700220A",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8695,
+      "entity": "47002400.0",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8716,
+      "entity": "47002417.0",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8717,
+      "entity": "47002418.0",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8751,
+      "entity": "4700243C",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8816,
+      "entity": "4700247E",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8817,
+      "entity": "4700247F",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8818,
+      "entity": "47002480.0",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8819,
+      "entity": "47002481.0",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8914,
+      "entity": "0x470024E4",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8915,
+      "entity": "0x470024E5",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8916,
+      "entity": "0x470024E6",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8917,
+      "entity": "0x470024E7",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8918,
+      "entity": "0x470024E8",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8919,
+      "entity": "0x470024E9",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8920,
+      "entity": "470024EA",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8921,
+      "entity": "470024EB",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8922,
+      "entity": "470024EC",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8923,
+      "entity": "470024ED",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8924,
+      "entity": "470024EE",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8925,
+      "entity": "470024EF",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8926,
+      "entity": "470024F0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8927,
+      "entity": "470024F1",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8928,
+      "entity": "470024F2",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8929,
+      "entity": "470024F3",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8930,
+      "entity": "470024F4",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8931,
+      "entity": "470024F5",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8932,
+      "entity": "470024F6",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8933,
+      "entity": "470024F7",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8934,
+      "entity": "470024F8",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8935,
+      "entity": "470024F9",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8936,
+      "entity": "470024FA",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8937,
+      "entity": "470024FB",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8938,
+      "entity": "470024FC",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8939,
+      "entity": "470024FD",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8940,
+      "entity": "470024FE",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8941,
+      "entity": "470024FF",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8942,
+      "entity": "47002500.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8943,
+      "entity": "47002501.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8944,
+      "entity": "47002502.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8945,
+      "entity": "47002503.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8946,
+      "entity": "47002504.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8947,
+      "entity": "47002505.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8948,
+      "entity": "47002506.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8949,
+      "entity": "47002507.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8950,
+      "entity": "47002508.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8951,
+      "entity": "47002509.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8952,
+      "entity": "4700250A",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8953,
+      "entity": "4700250B",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8954,
+      "entity": "4700250C",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8955,
+      "entity": "4700250D",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8956,
+      "entity": "4700250E",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8957,
+      "entity": "4700250F",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8958,
+      "entity": "47002510.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8959,
+      "entity": "47002511.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8960,
+      "entity": "47002512.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8961,
+      "entity": "47002513.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8962,
+      "entity": "47002514.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8963,
+      "entity": "47002515.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8964,
+      "entity": "47002516.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8965,
+      "entity": "47002517.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8966,
+      "entity": "47002518.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8967,
+      "entity": "47002519.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8968,
+      "entity": "4700251A",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8969,
+      "entity": "4700251B",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8970,
+      "entity": "4700251C",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8971,
+      "entity": "4700251D",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8972,
+      "entity": "4700251E",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8973,
+      "entity": "4700251F",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8974,
+      "entity": "47002520.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8975,
+      "entity": "47002521.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8976,
+      "entity": "47002522.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8977,
+      "entity": "47002523.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8978,
+      "entity": "47002524.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8979,
+      "entity": "47002525.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8980,
+      "entity": "47002526.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8981,
+      "entity": "47002527.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8982,
+      "entity": "47002528.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8983,
+      "entity": "47002529.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8984,
+      "entity": "4700252A",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8985,
+      "entity": "4700252B",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8986,
+      "entity": "4700252C",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8987,
+      "entity": "4700252D",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8988,
+      "entity": "4700252E",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8989,
+      "entity": "4700252F",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8990,
+      "entity": "47002530.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8991,
+      "entity": "47002531.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8992,
+      "entity": "47002532.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8993,
+      "entity": "47002533.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8994,
+      "entity": "47002534.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8995,
+      "entity": "47002535.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8996,
+      "entity": "47002536.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8997,
+      "entity": "47002537.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8998,
+      "entity": "47002538.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 8999,
+      "entity": "47002539.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9000,
+      "entity": "4700253A",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9001,
+      "entity": "4700253B",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9002,
+      "entity": "4700253C",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9003,
+      "entity": "4700253D",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9004,
+      "entity": "4700253E",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9005,
+      "entity": "4700253F",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9006,
+      "entity": "47002540.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9007,
+      "entity": "47002541.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9008,
+      "entity": "47002542.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9009,
+      "entity": "47002543.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9010,
+      "entity": "47002544.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9011,
+      "entity": "47002545.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9012,
+      "entity": "47002546.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9013,
+      "entity": "47002547.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9014,
+      "entity": "47002548.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9015,
+      "entity": "47002549.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9016,
+      "entity": "4700254A",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9017,
+      "entity": "4700254B",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9018,
+      "entity": "4700254C",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9019,
+      "entity": "4700254D",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9020,
+      "entity": "4700254E",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9021,
+      "entity": "4700254F",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9022,
+      "entity": "47002550.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9023,
+      "entity": "47002551.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9024,
+      "entity": "47002552.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9025,
+      "entity": "47002553.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9026,
+      "entity": "47002554.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9027,
+      "entity": "47002555.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9028,
+      "entity": "47002556.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9029,
+      "entity": "47002557.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9030,
+      "entity": "47002558.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9031,
+      "entity": "47002559.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9032,
+      "entity": "4700255A",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9033,
+      "entity": "4700255B",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9034,
+      "entity": "4700255C",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9035,
+      "entity": "4700255D",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9036,
+      "entity": "4700255E",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9037,
+      "entity": "4700255F",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9038,
+      "entity": "47002560.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9039,
+      "entity": "47002561.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9040,
+      "entity": "47002562.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9041,
+      "entity": "47002563.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9042,
+      "entity": "47002564.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9043,
+      "entity": "47002565.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9044,
+      "entity": "47002566.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9045,
+      "entity": "47002567.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9046,
+      "entity": "47002568.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9047,
+      "entity": "47002569.0",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9048,
+      "entity": "4700256A",
+      "visual": "47002689.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9095,
+      "entity": "4700259A",
+      "visual": "0F0B",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9096,
+      "entity": "4700259B",
+      "visual": "0F0B",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9167,
+      "entity": "0x470025E4",
+      "visual": "33F0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9479,
+      "entity": "47002725.0",
+      "visual": "0F0A",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9486,
+      "entity": "4700272C",
+      "visual": "0F0A",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9487,
+      "entity": "4700272D",
+      "visual": "0F0A",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9600,
+      "entity": "470027A0",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9601,
+      "entity": "470027A2",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9602,
+      "entity": "470027A3",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9603,
+      "entity": "470027A4",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9604,
+      "entity": "470027A5",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9605,
+      "entity": "470027A6",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9606,
+      "entity": "470027A7",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9607,
+      "entity": "470027A8",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9774,
+      "entity": "47002854.0",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 9927,
+      "entity": "470028F1",
+      "visual": "33F0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 10276,
+      "entity": "47002AD4",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 10277,
+      "entity": "47002AD5",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 10506,
+      "entity": "47002BD0",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 10507,
+      "entity": "47002BD1",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 10508,
+      "entity": "47002BD2",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 10509,
+      "entity": "47002BD3",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 10510,
+      "entity": "47002BD4",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 10511,
+      "entity": "47002BD5",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 10512,
+      "entity": "47002BD6",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 10513,
+      "entity": "47002BD7",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 10514,
+      "entity": "47002BD8",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 10515,
+      "entity": "47002BD9",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 10516,
+      "entity": "47002BDA",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 10517,
+      "entity": "47002BDB",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 10660,
+      "entity": "0x47002E26",
+      "visual": "3642.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 11353,
+      "entity": "4700334D",
+      "visual": "0F12",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 11944,
+      "entity": "47003646.0",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 11946,
+      "entity": "47003648.0",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 11948,
+      "entity": "4700364A",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 11950,
+      "entity": "4700364C",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 11952,
+      "entity": "4700364E",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 11963,
+      "entity": "47003659.0",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 11964,
+      "entity": "4700365A",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 11965,
+      "entity": "4700365B",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 11966,
+      "entity": "4700365C",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 11967,
+      "entity": "4700365D",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13230,
+      "entity": "47003BC5",
+      "visual": "3DEA",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13280,
+      "entity": "47003BFC",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13621,
+      "entity": "47003D64",
+      "visual": "3384.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13623,
+      "entity": "47003D66",
+      "visual": "3384.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13628,
+      "entity": "47003D6B",
+      "visual": "47003D6C",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13629,
+      "entity": "47003D6C",
+      "visual": "3DE7",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13631,
+      "entity": "47003D6E",
+      "visual": "47003D6C",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13633,
+      "entity": "47003D70",
+      "visual": "47003D6C",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13635,
+      "entity": "47003D72",
+      "visual": "47003D6C",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13637,
+      "entity": "47003D74",
+      "visual": "47003D6C",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13639,
+      "entity": "47003D76",
+      "visual": "47003D77",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13640,
+      "entity": "47003D77",
+      "visual": "47003BC5",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13641,
+      "entity": "47003D78",
+      "visual": "47003D77",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13642,
+      "entity": "47003D79",
+      "visual": "47003D77",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13643,
+      "entity": "47003D7A",
+      "visual": "47003D77",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13644,
+      "entity": "47003D7B",
+      "visual": "47003D77",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13645,
+      "entity": "47003D7C",
+      "visual": "47003D7D",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13646,
+      "entity": "47003D7D",
+      "visual": "47003BC5",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13647,
+      "entity": "47003D7E",
+      "visual": "47003D7D",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13648,
+      "entity": "47003D7F",
+      "visual": "47003D7D",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13649,
+      "entity": "47003D80",
+      "visual": "47003D7D",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13650,
+      "entity": "47003D81",
+      "visual": "47003D7D",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13651,
+      "entity": "47003D82",
+      "visual": "47003D83",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13652,
+      "entity": "47003D83",
+      "visual": "47003BC5",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13653,
+      "entity": "47003D84",
+      "visual": "47003D83",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13654,
+      "entity": "47003D85",
+      "visual": "47003D83",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13655,
+      "entity": "47003D86",
+      "visual": "47003D83",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13656,
+      "entity": "47003D87",
+      "visual": "47003D83",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13657,
+      "entity": "47003D88",
+      "visual": "47003D9D",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13658,
+      "entity": "47003D89",
+      "visual": "47003D9D",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13659,
+      "entity": "47003D8A",
+      "visual": "47003D9D",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13660,
+      "entity": "47003D8B",
+      "visual": "47003D9D",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13661,
+      "entity": "47003D8C",
+      "visual": "47003D9D",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13662,
+      "entity": "47003D8D",
+      "visual": "47003D8E",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13663,
+      "entity": "47003D8E",
+      "visual": "47003BC5",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13664,
+      "entity": "47003D8F",
+      "visual": "47003D8E",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13665,
+      "entity": "47003D90",
+      "visual": "47003D8E",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13666,
+      "entity": "47003D91",
+      "visual": "47003D8E",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13667,
+      "entity": "47003D92",
+      "visual": "47003D8E",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13669,
+      "entity": "47003D94",
+      "visual": "3384.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13677,
+      "entity": "47003D9D",
+      "visual": "47003BC5",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13681,
+      "entity": "47003DA2",
+      "visual": "1005.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13686,
+      "entity": "47003DA8",
+      "visual": "3DE8",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13688,
+      "entity": "47003DAA",
+      "visual": "47003DA8",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13694,
+      "entity": "47003DB0",
+      "visual": "47003DA8",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13700,
+      "entity": "47003DB6",
+      "visual": "47003DA8",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13706,
+      "entity": "47003DBC",
+      "visual": "47003DA8",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 13712,
+      "entity": "47003DC2",
+      "visual": "47003DA8",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14591,
+      "entity": "47004163.0",
+      "visual": "47004178.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14592,
+      "entity": "47004164.0",
+      "visual": "47004179.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14593,
+      "entity": "47004165.0",
+      "visual": "4700417A",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14594,
+      "entity": "47004166.0",
+      "visual": "4700417B",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14595,
+      "entity": "47004167.0",
+      "visual": "4700417B",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14596,
+      "entity": "47004168.0",
+      "visual": "47004178.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14597,
+      "entity": "47004169.0",
+      "visual": "47004179.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14598,
+      "entity": "4700416A",
+      "visual": "4700417A",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14599,
+      "entity": "4700416B",
+      "visual": "4700417B",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14600,
+      "entity": "4700416C",
+      "visual": "47004178.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14601,
+      "entity": "4700416D",
+      "visual": "47004179.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14602,
+      "entity": "4700416E",
+      "visual": "4700417A",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14603,
+      "entity": "4700416F",
+      "visual": "4700417B",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14604,
+      "entity": "47004170.0",
+      "visual": "47004178.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14605,
+      "entity": "47004171.0",
+      "visual": "47004179.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14606,
+      "entity": "47004172.0",
+      "visual": "4700417A",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14607,
+      "entity": "47004173.0",
+      "visual": "4700417B",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14608,
+      "entity": "47004174.0",
+      "visual": "47004178.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14609,
+      "entity": "47004175.0",
+      "visual": "47004179.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14610,
+      "entity": "47004176.0",
+      "visual": "4700417A",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14659,
+      "entity": "470041A7",
+      "visual": "4700385A",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14664,
+      "entity": "470041AC",
+      "visual": "0F0B",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14859,
+      "entity": "47004276.0",
+      "visual": "47004277.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14861,
+      "entity": "47004278.0",
+      "visual": "47004277.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14862,
+      "entity": "47004279.0",
+      "visual": "47004277.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14863,
+      "entity": "4700427A",
+      "visual": "47004277.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14864,
+      "entity": "4700427B",
+      "visual": "47004277.0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 14872,
+      "entity": "47004283.0",
+      "visual": "47003B3C",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 15543,
+      "entity": "47004533.0",
+      "visual": "03A1",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 15757,
+      "entity": "4700460E",
+      "visual": "4700460F",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 15763,
+      "entity": "47004614.0",
+      "visual": "4700460F",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 15816,
+      "entity": "4700464A",
+      "visual": "470018D6",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 15979,
+      "entity": "470046EF",
+      "visual": "470046F0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 15982,
+      "entity": "470046F2",
+      "visual": "470046F0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 15983,
+      "entity": "470046F3",
+      "visual": "470046F0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 15984,
+      "entity": "470046F4",
+      "visual": "470046F0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 15985,
+      "entity": "470046F5",
+      "visual": "470046F0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 15986,
+      "entity": "470046F6",
+      "visual": "470046F0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 15987,
+      "entity": "470046F7",
+      "visual": "470046F0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 15988,
+      "entity": "470046F8",
+      "visual": "470046F0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 15989,
+      "entity": "470046F9",
+      "visual": "470046F0",
+      "reason": "expected full entity/visual DIDs"
+    },
+    {
+      "row": 15990,
+      "entity": "470046FA",
+      "visual": "470046F0",
+      "reason": "expected full entity/visual DIDs"
+    }
+  ]
+}

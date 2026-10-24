@@ -171,12 +171,16 @@ Exact addresses, identities, policies, test boundaries and open work:
 
 ## Remaining gameplay work
 
-Stationary world content can now be loaded with `serve --game-data PATH
---content content/lifestones.tsv` alongside the normal bind/account/data options.
-The included file contains 89 imported lifestone placements with DAT-backed
-visuals. The server creates/removes them as players enter/leave their cell.
-Binding, resurrection and other interactions remain unfinished, and native
-appearance has not been checked. See [content format and provenance](content/README.md).
+Game-data mode (`serve --game-data PATH`) now loads the bundled stationary world
+pack automatically. Use `--content content/world.tsv` for an editable external
+pack, or `--content none` to disable content, alongside normal bind/account/data options.
+The combined pack contains 89 lifestones and 158 portals with DAT-backed visuals.
+The server creates/removes them as players enter/leave their cell. Two additional
+portal locations remain in the unresolved report because their terrain is missing.
+A 7,583-entry entity/visual catalog and offline placement tool support explicit
+NPC/object authoring. Binding, portal travel, NPC behavior and other interactions
+remain unfinished, and native appearance has not been checked.
+See [content format and provenance](content/README.md).
 
 Offline inventory management is available through the `inventory-*` commands in
 `--help`; use the normal `--account`, `--character-id` and `--data` arguments.

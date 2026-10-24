@@ -1,0 +1,5129 @@
+{
+  "source_sha256": "793762ab4fc2dfe05016de32a32b25e7ed8d52e3edc48cdc962f3867a2ee38bb",
+  "lifestones": 89,
+  "placed_portals": 158,
+  "unresolved_portals": 2,
+  "portal_interactions_implemented": false,
+  "portals": [
+    {
+      "id": "8140000000010001",
+      "entity": "47001454",
+      "telepad": 1329,
+      "cell": "6fa7001b",
+      "position": [
+        65.0608,
+        55.4285,
+        79.9443
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        87482227
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010002",
+      "entity": "47001454",
+      "telepad": 1327,
+      "cell": "6fa70003",
+      "position": [
+        12.279,
+        56.2679,
+        79.8487
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        3807286872
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010003",
+      "entity": "47001454",
+      "telepad": 1337,
+      "cell": "76b80024",
+      "position": [
+        89.0292,
+        62.8051,
+        183.661
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        8712403
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010004",
+      "entity": "47001454",
+      "telepad": 1320,
+      "cell": "70aa0018",
+      "position": [
+        54.5998,
+        144.642,
+        82.8685
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        3130164658
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010005",
+      "entity": "47001454",
+      "telepad": 1325,
+      "cell": "76b7003d",
+      "position": [
+        146.152,
+        91.2764,
+        199.233
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        3931439948
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010006",
+      "entity": "47001454",
+      "telepad": 1323,
+      "cell": "76b70038",
+      "position": [
+        132.838,
+        145.386,
+        198.857
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        4091819138
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010007",
+      "entity": "47001454",
+      "telepad": 1322,
+      "cell": "66b1000b",
+      "position": [
+        35.1465,
+        46.9276,
+        78.445
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        3130164658
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010008",
+      "entity": "47001454",
+      "telepad": 1339,
+      "cell": "66b1002e",
+      "position": [
+        112.232,
+        112.583,
+        76.945
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        8712403
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010009",
+      "entity": "47001454",
+      "telepad": 1321,
+      "cell": "8eb7003c",
+      "position": [
+        151.49,
+        68.192,
+        104.088
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        3130164658
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001000a",
+      "entity": "47001454",
+      "telepad": 1338,
+      "cell": "8eb7002c",
+      "position": [
+        100.271,
+        67.0684,
+        96.0631
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        8712403
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001000b",
+      "entity": "47001454",
+      "telepad": 1326,
+      "cell": "70aa0026",
+      "position": [
+        83.0143,
+        107.07,
+        84.8553
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        3931439948
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001000c",
+      "entity": "47001454",
+      "telepad": 1324,
+      "cell": "70aa0006",
+      "position": [
+        10.1656,
+        109.279,
+        78.9726
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        4091819138
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001000d",
+      "entity": "47001454",
+      "telepad": 1332,
+      "cell": "80920037",
+      "position": [
+        125.193,
+        132.93,
+        169.308
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        1472299395
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001000e",
+      "entity": "47001454",
+      "telepad": 1340,
+      "cell": "80920010",
+      "position": [
+        32.3403,
+        148.282,
+        160.357
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        4033105231
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001000f",
+      "entity": "47001454",
+      "telepad": 1334,
+      "cell": "9b8d001f",
+      "position": [
+        74.471,
+        133.411,
+        156.979
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        3807286872
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010010",
+      "entity": "47001454",
+      "telepad": 1336,
+      "cell": "9b8d0040",
+      "position": [
+        150.78,
+        140.541,
+        159.83
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2565525562
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010011",
+      "entity": "47001454",
+      "telepad": 1330,
+      "cell": "a0930032",
+      "position": [
+        134.912,
+        39.5126,
+        116.691
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        1472299395
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010012",
+      "entity": "47001454",
+      "telepad": 1328,
+      "cell": "a093003f",
+      "position": [
+        140.059,
+        127.669,
+        115.575
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        87482227
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010013",
+      "entity": "47001454",
+      "telepad": 1335,
+      "cell": "849f003a",
+      "position": [
+        149.208,
+        39.4746,
+        115.785
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2565525562
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010014",
+      "entity": "47001454",
+      "telepad": 1341,
+      "cell": "849f0026",
+      "position": [
+        83.8854,
+        113.636,
+        129.201
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        4033105231
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010015",
+      "entity": "47001454",
+      "telepad": 1478,
+      "cell": "75b9003d",
+      "position": [
+        146.065,
+        82.0764,
+        123.517
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        1393000555
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010016",
+      "entity": "47001454",
+      "telepad": 1477,
+      "cell": "7fbb001b",
+      "position": [
+        77.8671,
+        41.3594,
+        194.536
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        3005723699
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010017",
+      "entity": "47001454",
+      "telepad": 1479,
+      "cell": "8ab50019",
+      "position": [
+        67.8038,
+        15.2085,
+        105.711
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        1407680643
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010018",
+      "entity": "47001454",
+      "telepad": 1480,
+      "cell": "7dab0003",
+      "position": [
+        8.62833,
+        56.4358,
+        105.716
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        1458992075
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010019",
+      "entity": "47001454",
+      "telepad": 1481,
+      "cell": "66af001f",
+      "position": [
+        61.0058,
+        125.505,
+        147.704
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2429036558
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001001a",
+      "entity": "47001454",
+      "telepad": 1482,
+      "cell": "6cb90039",
+      "position": [
+        147.256,
+        11.4253,
+        150.676
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2563254300
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001001b",
+      "entity": "47001454",
+      "telepad": 1483,
+      "cell": "5eb40021",
+      "position": [
+        95.2211,
+        12.7972,
+        91.9117
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2552768756
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001001c",
+      "entity": "47001454",
+      "telepad": 1484,
+      "cell": "5fa50035",
+      "position": [
+        136.2,
+        85.9125,
+        93.8391
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        1415307399
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001001d",
+      "entity": "47001454",
+      "telepad": 1486,
+      "cell": "8db70040",
+      "position": [
+        147.242,
+        146.054,
+        94.8291
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2563250204
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001001e",
+      "entity": "47001454",
+      "telepad": 1485,
+      "cell": "8cc3000b",
+      "position": [
+        23.416,
+        52.7596,
+        82.5003
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2429032462
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001001f",
+      "entity": "47001454",
+      "telepad": 1487,
+      "cell": "97c30037",
+      "position": [
+        121.516,
+        130.598,
+        88.9746
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2418546918
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010020",
+      "entity": "47001454",
+      "telepad": 1488,
+      "cell": "9abb002f",
+      "position": [
+        119.591,
+        135.99,
+        148.515
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2362980235
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010021",
+      "entity": "47001454",
+      "telepad": 1489,
+      "cell": "8290000b",
+      "position": [
+        29.1642,
+        49.2252,
+        165.515
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        1392939627
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010022",
+      "entity": "47001454",
+      "telepad": 1490,
+      "cell": "769c0039",
+      "position": [
+        144.98,
+        16.2316,
+        125.515
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        4079396515
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010023",
+      "entity": "47001454",
+      "telepad": 1491,
+      "cell": "6c970008",
+      "position": [
+        16.0166,
+        141.649,
+        104.515
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        4103092539
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010024",
+      "entity": "47001454",
+      "telepad": 1493,
+      "cell": "839f003b",
+      "position": [
+        145.008,
+        54.2741,
+        114.465
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2563322908
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010025",
+      "entity": "47001454",
+      "telepad": 1492,
+      "cell": "88a50016",
+      "position": [
+        56.5959,
+        115.037,
+        207.585
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2429105166
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010026",
+      "entity": "47001454",
+      "telepad": 1494,
+      "cell": "99a3002c",
+      "position": [
+        109.971,
+        77.7446,
+        220.415
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2418619622
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010027",
+      "entity": "47001454",
+      "telepad": 1495,
+      "cell": "9c9f0023",
+      "position": [
+        82.1627,
+        54.9996,
+        245.216
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        150580162
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010028",
+      "entity": "47001454",
+      "telepad": 1502,
+      "cell": "a1940023",
+      "position": [
+        80.657,
+        40.0096,
+        98.515
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2553165044
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010029",
+      "entity": "47001454",
+      "telepad": 1501,
+      "cell": "9092001b",
+      "position": [
+        73.0469,
+        58.606,
+        109.515
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2563650588
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001002a",
+      "entity": "47001454",
+      "telepad": 1500,
+      "cell": "8e99003e",
+      "position": [
+        145.073,
+        110.468,
+        114.515
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2429432846
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001002b",
+      "entity": "47001454",
+      "telepad": 1503,
+      "cell": "a5a5002d",
+      "position": [
+        107.807,
+        86.5337,
+        150.549
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2286789547
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001002c",
+      "entity": "47001454",
+      "telepad": 1496,
+      "cell": "9a8d000f",
+      "position": [
+        23.4415,
+        134.349,
+        127.586
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        1301719644
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001002d",
+      "entity": "47001454",
+      "telepad": 1498,
+      "cell": "7f8a0009",
+      "position": [
+        32.7697,
+        14.8003,
+        154.515
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        1714559214
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001002e",
+      "entity": "47001454",
+      "telepad": 1497,
+      "cell": "8b7f002d",
+      "position": [
+        103.282,
+        94.1052,
+        105.767
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        852814012
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001002f",
+      "entity": "47001454",
+      "telepad": 1499,
+      "cell": "99800015",
+      "position": [
+        53.8924,
+        97.4953,
+        186.515
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        4287054666
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010030",
+      "entity": "47001454",
+      "telepad": 1362,
+      "cell": "9e89001e",
+      "position": [
+        75.0806,
+        113.033,
+        134.945
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2224014600
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010031",
+      "entity": "47001451",
+      "telepad": 107,
+      "cell": "00ec0120",
+      "position": [
+        -15.4575,
+        -0.0322935,
+        -5.353
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762504,
+        3875550822
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010032",
+      "entity": "4700084d",
+      "telepad": 106,
+      "cell": "85ac0100",
+      "position": [
+        60.3128,
+        99.9639,
+        140.005
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762504,
+        1909793850
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010033",
+      "entity": "47001451",
+      "telepad": 105,
+      "cell": "00de0126",
+      "position": [
+        -39.8498,
+        66.3123,
+        2.055
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762504,
+        2200719187
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010034",
+      "entity": "47001454",
+      "telepad": 1342,
+      "cell": "a68b0032",
+      "position": [
+        136.46,
+        23.9489,
+        99.8004
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        1247586358
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010035",
+      "entity": "47001454",
+      "telepad": 1319,
+      "cell": "a494002a",
+      "position": [
+        116.506,
+        37.1937,
+        93.9541
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2224014600
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010036",
+      "entity": "47001454",
+      "telepad": 1343,
+      "cell": "a68a0038",
+      "position": [
+        123.749,
+        145.623,
+        107.187
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2204052241
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010037",
+      "entity": "47001454",
+      "telepad": 1534,
+      "cell": "aa89001c",
+      "position": [
+        62.259,
+        66.5903,
+        136.718
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        3676317847
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010038",
+      "entity": "47001454",
+      "telepad": 1533,
+      "cell": "b5900026",
+      "position": [
+        85.0058,
+        110.714,
+        108.523
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        3598886295
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010039",
+      "entity": "47001454",
+      "telepad": 1536,
+      "cell": "b684000d",
+      "position": [
+        25.063,
+        93.6702,
+        166.651
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        3211170104
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001003a",
+      "entity": "47001454",
+      "telepad": 1535,
+      "cell": "b879000a",
+      "position": [
+        33.5777,
+        24.778,
+        111.515
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2552456191
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001003b",
+      "entity": "47001454",
+      "telepad": 1366,
+      "cell": "b8790004",
+      "position": [
+        9.42708,
+        70.7302,
+        120.745
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        3130577056
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001003c",
+      "entity": "47001454",
+      "telepad": 1363,
+      "cell": "cc8b000c",
+      "position": [
+        21.0545,
+        77.7851,
+        76.8715
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        330421297
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001003d",
+      "entity": "47001454",
+      "telepad": 1369,
+      "cell": "b879002f",
+      "position": [
+        103.59,
+        126.467,
+        118.845
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2070605121
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001003e",
+      "entity": "47001454",
+      "telepad": 1364,
+      "cell": "d679001f",
+      "position": [
+        78.1606,
+        131.093,
+        74.498
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        330421297
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001003f",
+      "entity": "47001454",
+      "telepad": 1372,
+      "cell": "d679001c",
+      "position": [
+        69.2401,
+        78.9514,
+        74.5024
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2590299491
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010040",
+      "entity": "47001454",
+      "telepad": 1370,
+      "cell": "de950022",
+      "position": [
+        90.2699,
+        24.3432,
+        81.5058
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        1777254865
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010041",
+      "entity": "47001454",
+      "telepad": 1543,
+      "cell": "d679002c",
+      "position": [
+        104.076,
+        78.917,
+        74.2191
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2418865382
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010042",
+      "entity": "47001454",
+      "telepad": 1541,
+      "cell": "df7f000a",
+      "position": [
+        35.5463,
+        22.9582,
+        80.5259
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        1392727147
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010043",
+      "entity": "47001454",
+      "telepad": 1542,
+      "cell": "d1840001",
+      "position": [
+        19.3964,
+        12.4998,
+        80.916
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2563568668
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010044",
+      "entity": "47001454",
+      "telepad": 1544,
+      "cell": "c67e0029",
+      "position": [
+        113.332,
+        14.0761,
+        102.526
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2310873075
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010045",
+      "entity": "47001454",
+      "telepad": 1368,
+      "cell": "de950036",
+      "position": [
+        135.408,
+        118.033,
+        80.9125
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2257724114
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010046",
+      "entity": "47001454",
+      "telepad": 1374,
+      "cell": "cc8b001f",
+      "position": [
+        70.0201,
+        126.955,
+        74.5674
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2590299491
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010047",
+      "entity": "47001454",
+      "telepad": 1551,
+      "cell": "de95000e",
+      "position": [
+        20.3151,
+        109.529,
+        85.3175
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        1407997059
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010048",
+      "entity": "47001454",
+      "telepad": 1550,
+      "cell": "d38d002f",
+      "position": [
+        109.744,
+        122.471,
+        119.5
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2562978844
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010049",
+      "entity": "47001454",
+      "telepad": 1549,
+      "cell": "cb9c000f",
+      "position": [
+        35.4944,
+        124.142,
+        92.9718
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2428761102
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001004a",
+      "entity": "47001454",
+      "telepad": 1552,
+      "cell": "d6a20011",
+      "position": [
+        59.8959,
+        11.4739,
+        89.7738
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2113042565
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001004b",
+      "entity": "47001454",
+      "telepad": 1537,
+      "cell": "cd8b002e",
+      "position": [
+        100.037,
+        114.748,
+        78.0167
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2429350414
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001004c",
+      "entity": "47001454",
+      "telepad": 1538,
+      "cell": "cb97000d",
+      "position": [
+        39.5516,
+        88.267,
+        107.515
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2563568156
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001004d",
+      "entity": "47001454",
+      "telepad": 1539,
+      "cell": "bc950026",
+      "position": [
+        95.4566,
+        118.611,
+        78.8163
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        4079183523
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001004e",
+      "entity": "47001454",
+      "telepad": 1540,
+      "cell": "bf8f001b",
+      "position": [
+        71.4095,
+        48.1362,
+        73.515
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        1352722707
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001004f",
+      "entity": "47001454",
+      "telepad": 1377,
+      "cell": "cd8c0015",
+      "position": [
+        46.1197,
+        81.6512,
+        76.9749
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        643345733
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010050",
+      "entity": "47001454",
+      "telepad": 1365,
+      "cell": "e08b0033",
+      "position": [
+        125.39,
+        51.4973,
+        85.945
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2257724114
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010051",
+      "entity": "47001454",
+      "telepad": 1375,
+      "cell": "e08b0037",
+      "position": [
+        123.52,
+        134.038,
+        86.497
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2157790412
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010052",
+      "entity": "47001454",
+      "telepad": 1558,
+      "cell": "e08c0036",
+      "position": [
+        137.976,
+        101.902,
+        74.2237
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        1393382507
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010053",
+      "entity": "47001454",
+      "telepad": 1557,
+      "cell": "eb8f0013",
+      "position": [
+        40.3249,
+        42.9278,
+        92.068
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        3006095411
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010054",
+      "entity": "47001454",
+      "telepad": 1559,
+      "cell": "f58e0027",
+      "position": [
+        81.6052,
+        124.591,
+        76.7963
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        3829557993
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010055",
+      "entity": "47001454",
+      "telepad": 1560,
+      "cell": "ef74003c",
+      "position": [
+        142.34,
+        69.5172,
+        173.515
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        603641738
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010056",
+      "entity": "47001454",
+      "telepad": 1378,
+      "cell": "dca30029",
+      "position": [
+        113.848,
+        14.5829,
+        109.838
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        643345733
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010057",
+      "entity": "47001454",
+      "telepad": 1373,
+      "cell": "dca30030",
+      "position": [
+        103.25,
+        144.556,
+        78.6452
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        643778373
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010058",
+      "entity": "47001454",
+      "telepad": 1553,
+      "cell": "daa5003c",
+      "position": [
+        145.945,
+        77.9401,
+        78.6647
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        680353634
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010059",
+      "entity": "47001454",
+      "telepad": 1554,
+      "cell": "e2a10003",
+      "position": [
+        15.7025,
+        59.0455,
+        77.8824
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2428695054
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001005a",
+      "entity": "47001454",
+      "telepad": 1555,
+      "cell": "f2a7000c",
+      "position": [
+        27.5208,
+        67.8676,
+        77.0716
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2418209510
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001005b",
+      "entity": "47001454",
+      "telepad": 1556,
+      "cell": "ee98003a",
+      "position": [
+        151.174,
+        23.7278,
+        84.722
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        690626195
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001005c",
+      "entity": "47001454",
+      "telepad": 1376,
+      "cell": "c6a10036",
+      "position": [
+        135.347,
+        113.58,
+        169.746
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2157790412
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001005d",
+      "entity": "47001454",
+      "telepad": 1367,
+      "cell": "c6a1001c",
+      "position": [
+        70.1806,
+        66.0297,
+        175.746
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2257724114
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001005e",
+      "entity": "47001454",
+      "telepad": 1371,
+      "cell": "cd8c0020",
+      "position": [
+        76.6864,
+        143.706,
+        77.2974
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        643778373
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001005f",
+      "entity": "47001454",
+      "telepad": 1546,
+      "cell": "c7a10018",
+      "position": [
+        40.0338,
+        145.425,
+        179.42
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2562978332
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010060",
+      "entity": "47001454",
+      "telepad": 1545,
+      "cell": "c2ad0001",
+      "position": [
+        19.522,
+        18.9142,
+        76.5481
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2428760590
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010061",
+      "entity": "47001454",
+      "telepad": 1547,
+      "cell": "d1ac0002",
+      "position": [
+        15.6371,
+        29.069,
+        81.668
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2418275046
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010062",
+      "entity": "47001454",
+      "telepad": 1548,
+      "cell": "cfa5002e",
+      "position": [
+        107.542,
+        111.974,
+        86.3727
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2566640011
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010063",
+      "entity": "47001454",
+      "telepad": 1379,
+      "cell": "f595003c",
+      "position": [
+        140.998,
+        65.71,
+        73.9306
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        1445686163
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010064",
+      "entity": "47001454",
+      "telepad": 1361,
+      "cell": "846f001d",
+      "position": [
+        65.8835,
+        90.8541,
+        165.839
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2224014600
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010065",
+      "entity": "4700369a",
+      "telepad": 47,
+      "cell": "cf8c001d",
+      "position": [
+        84.7757,
+        120.209,
+        97.21
+      ],
+      "orientation": [
+        -0.374606,
+        0.0,
+        0.0,
+        0.927184
+      ],
+      "name": [
+        620786980,
+        932471444
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010066",
+      "entity": "4700369a",
+      "telepad": 49,
+      "cell": "cf8c001d",
+      "position": [
+        78.2,
+        91.9,
+        96.65
+      ],
+      "orientation": [
+        -0.173648,
+        0.0,
+        0.0,
+        0.984808
+      ],
+      "name": [
+        620786980,
+        1139031060
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010067",
+      "entity": "4700369a",
+      "telepad": 51,
+      "cell": "cf8c001d",
+      "position": [
+        79.8907,
+        61.3085,
+        97.95
+      ],
+      "orientation": [
+        0.522498,
+        0.0,
+        0.0,
+        0.85264
+      ],
+      "name": [
+        620786980,
+        2682629993
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010068",
+      "entity": "4700369a",
+      "telepad": 43,
+      "cell": "cf8c0015",
+      "position": [
+        32.698,
+        124.503,
+        94.2218
+      ],
+      "orientation": [
+        0.887011,
+        0.0,
+        0.0,
+        -0.461749
+      ],
+      "name": [
+        620786980,
+        1132748030
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010069",
+      "entity": "4700369a",
+      "telepad": 46,
+      "cell": "fcfa0100",
+      "position": [
+        -137.521,
+        98.5665,
+        -11.1587
+      ],
+      "orientation": [
+        0.0479786,
+        0.0,
+        0.0,
+        0.998848
+      ],
+      "name": [
+        620762508,
+        468503151
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001006a",
+      "entity": "4700369a",
+      "telepad": 52,
+      "cell": "fcfd0100",
+      "position": [
+        -141.172,
+        95.9194,
+        -14.0654
+      ],
+      "orientation": [
+        0.99999,
+        0.0,
+        0.0,
+        0.00427775
+      ],
+      "name": [
+        620762508,
+        468503151
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001006b",
+      "entity": "4700369a",
+      "telepad": 50,
+      "cell": "fcfe0100",
+      "position": [
+        -0.5,
+        23.2,
+        102.8
+      ],
+      "orientation": [
+        1e-06,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": [
+        620762508,
+        468503151
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001006c",
+      "entity": "4700369a",
+      "telepad": 48,
+      "cell": "fcfb0100",
+      "position": [
+        -138.449,
+        98.4537,
+        -12.1587
+      ],
+      "orientation": [
+        0.0610491,
+        0.0,
+        0.0,
+        0.998135
+      ],
+      "name": [
+        620762508,
+        468503151
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001006d",
+      "entity": "4700369a",
+      "telepad": 44,
+      "cell": "fcfc0100",
+      "position": [
+        -135.617,
+        93.5632,
+        -13.0242
+      ],
+      "orientation": [
+        0.713251,
+        0.0,
+        0.0,
+        0.700909
+      ],
+      "name": [
+        620762508,
+        468503151
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001006e",
+      "entity": "4700369a",
+      "telepad": 45,
+      "cell": "cf8c001a",
+      "position": [
+        67.9865,
+        34.0853,
+        93.5046
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620786980,
+        2877869382
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001006f",
+      "entity": "47001454",
+      "telepad": 1507,
+      "cell": "806e003d",
+      "position": [
+        142.939,
+        80.164,
+        189.209
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2895742881
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010070",
+      "entity": "47001454",
+      "telepad": 1505,
+      "cell": "79650032",
+      "position": [
+        131.594,
+        39.2437,
+        139.291
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        3540283497
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010071",
+      "entity": "47001454",
+      "telepad": 1506,
+      "cell": "756f001e",
+      "position": [
+        76.7202,
+        112.737,
+        93.879
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        1931756705
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010072",
+      "entity": "47001454",
+      "telepad": 1504,
+      "cell": "7468002e",
+      "position": [
+        107.408,
+        107.063,
+        85.3185
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        858014769
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010073",
+      "entity": "47001454",
+      "telepad": 1348,
+      "cell": "79650019",
+      "position": [
+        77.004,
+        18.9159,
+        138.146
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        3532670243
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010074",
+      "entity": "47001454",
+      "telepad": 1344,
+      "cell": "6d67002d",
+      "position": [
+        109.329,
+        99.411,
+        212.52
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2906974161
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010075",
+      "entity": "47001454",
+      "telepad": 1350,
+      "cell": "6d67001f",
+      "position": [
+        72.7974,
+        139.342,
+        218.84
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2051610944
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010076",
+      "entity": "47001454",
+      "telepad": 1345,
+      "cell": "59720026",
+      "position": [
+        95.2796,
+        117.103,
+        144.045
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2906974161
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010077",
+      "entity": "47001454",
+      "telepad": 1352,
+      "cell": "79650011",
+      "position": [
+        46.9443,
+        19.8179,
+        138.348
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2051610944
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010078",
+      "entity": "47001454",
+      "telepad": 1347,
+      "cell": "59720025",
+      "position": [
+        95.6208,
+        94.6511,
+        144.635
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        3532670243
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010079",
+      "entity": "47001454",
+      "telepad": 1508,
+      "cell": "6d67000d",
+      "position": [
+        38.7573,
+        90.9108,
+        224.015
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        3897323634
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001007a",
+      "entity": "47001454",
+      "telepad": 1510,
+      "cell": "63630036",
+      "position": [
+        122.0,
+        113.621,
+        101.516
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        3801952062
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001007b",
+      "entity": "47001454",
+      "telepad": 1509,
+      "cell": "5c5d0024",
+      "position": [
+        91.6496,
+        65.8693,
+        80.2092
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        849145663
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001007c",
+      "entity": "47001454",
+      "telepad": 1511,
+      "cell": "5e690016",
+      "position": [
+        40.9038,
+        100.57,
+        160.942
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        1305474458
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001007d",
+      "entity": "47001454",
+      "telepad": 1513,
+      "cell": "5a73000f",
+      "position": [
+        38.5415,
+        125.305,
+        129.061
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        3708514419
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001007e",
+      "entity": "47001454",
+      "telepad": 1514,
+      "cell": "6379003e",
+      "position": [
+        146.702,
+        108.953,
+        119.598
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        218804338
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001007f",
+      "entity": "47001454",
+      "telepad": 1512,
+      "cell": "646e0006",
+      "position": [
+        15.1519,
+        119.281,
+        116.725
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        1825255451
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010080",
+      "entity": "47001454",
+      "telepad": 1515,
+      "cell": "67720022",
+      "position": [
+        94.9677,
+        24.7218,
+        99.9151
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        3133629736
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010081",
+      "entity": "47001454",
+      "telepad": 1354,
+      "cell": "5774001c",
+      "position": [
+        73.4228,
+        67.5623,
+        156.946
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2559197615
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010082",
+      "entity": "47001454",
+      "telepad": 1351,
+      "cell": "57670023",
+      "position": [
+        82.261,
+        47.9884,
+        185.813
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2388272536
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010083",
+      "entity": "47001454",
+      "telepad": 1357,
+      "cell": "57670011",
+      "position": [
+        54.1572,
+        19.5084,
+        184.722
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2567898544
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010084",
+      "entity": "47001454",
+      "telepad": 1353,
+      "cell": "4e5b002f",
+      "position": [
+        104.665,
+        129.464,
+        87.7257
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2559197615
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010085",
+      "entity": "47001454",
+      "telepad": 1360,
+      "cell": "4e5b001e",
+      "position": [
+        61.789,
+        119.047,
+        89.3158
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        1612327095
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010086",
+      "entity": "47001454",
+      "telepad": 1358,
+      "cell": "327a0022",
+      "position": [
+        82.6592,
+        25.5319,
+        92.4485
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2567898544
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010087",
+      "entity": "47001454",
+      "telepad": 1356,
+      "cell": "327a0014",
+      "position": [
+        52.8961,
+        76.5577,
+        92.4414
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        3122341626
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010088",
+      "entity": "47001454",
+      "telepad": 1359,
+      "cell": "46780019",
+      "position": [
+        68.4073,
+        11.3416,
+        118.62
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        1612327095
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010089",
+      "entity": "47001454",
+      "telepad": 1349,
+      "cell": "4678000c",
+      "position": [
+        39.1803,
+        60.0099,
+        121.366
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2388272536
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001008a",
+      "entity": "47001454",
+      "telepad": 1355,
+      "cell": "5774002c",
+      "position": [
+        106.161,
+        66.6278,
+        158.445
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        3122341626
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001008b",
+      "entity": "47001454",
+      "telepad": 1525,
+      "cell": "4e5b0037",
+      "position": [
+        135.482,
+        139.849,
+        91.0279
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        849144639
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001008c",
+      "entity": "47001454",
+      "telepad": 1524,
+      "cell": "45560017",
+      "position": [
+        58.6592,
+        125.859,
+        169.818
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        1825256471
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001008d",
+      "entity": "47001454",
+      "telepad": 1526,
+      "cell": "4d560034",
+      "position": [
+        122.762,
+        66.9946,
+        103.532
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        3331140414
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001008e",
+      "entity": "47001454",
+      "telepad": 1527,
+      "cell": "484d0030",
+      "position": [
+        114.99,
+        141.717,
+        216.289
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        3801951038
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001008f",
+      "entity": "47001454",
+      "telepad": 1528,
+      "cell": "424b0006",
+      "position": [
+        15.3299,
+        115.104,
+        215.446
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        4229395153
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010090",
+      "entity": "47001454",
+      "telepad": 1526,
+      "cell": "4e5c0021",
+      "position": [
+        93.2067,
+        16.1004,
+        83.141
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        3331140414
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010091",
+      "entity": "47001454",
+      "telepad": 1530,
+      "cell": "30780019",
+      "position": [
+        76.9624,
+        17.1849,
+        156.779
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        218805362
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "missing-cell"
+    },
+    {
+      "id": "8140000000010092",
+      "entity": "47001454",
+      "telepad": 1531,
+      "cell": "3a620003",
+      "position": [
+        15.4464,
+        48.2024,
+        82.5004
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        1279996954
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010093",
+      "entity": "47001454",
+      "telepad": 1529,
+      "cell": "2e720032",
+      "position": [
+        129.713,
+        29.1844,
+        76.6908
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        1825256475
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "missing-cell"
+    },
+    {
+      "id": "8140000000010094",
+      "entity": "47001454",
+      "telepad": 1532,
+      "cell": "3c73001c",
+      "position": [
+        73.9726,
+        77.3556,
+        143.465
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        2671421737
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010095",
+      "entity": "47001454",
+      "telepad": 1520,
+      "cell": "46780028",
+      "position": [
+        91.9471,
+        152.502,
+        118.466
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        3897325182
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010096",
+      "entity": "47001454",
+      "telepad": 1521,
+      "cell": "5277000b",
+      "position": [
+        34.0582,
+        46.6829,
+        147.561
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        3708515955
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010097",
+      "entity": "47001454",
+      "telepad": 1522,
+      "cell": "4e7f002e",
+      "position": [
+        119.1,
+        102.668,
+        116.062
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        378333491
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010098",
+      "entity": "47001454",
+      "telepad": 1523,
+      "cell": "597e002a",
+      "position": [
+        103.526,
+        31.0598,
+        101.671
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        4290309356
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "8140000000010099",
+      "entity": "47001454",
+      "telepad": 1523,
+      "cell": "4e7f0030",
+      "position": [
+        104.791,
+        143.571,
+        115.804
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        4290309356
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001009a",
+      "entity": "47001454",
+      "telepad": 1517,
+      "cell": "5767002c",
+      "position": [
+        119.891,
+        73.6404,
+        191.015
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        849144127
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001009b",
+      "entity": "47001454",
+      "telepad": 1516,
+      "cell": "4e6d000f",
+      "position": [
+        33.4724,
+        125.112,
+        178.582
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        378333503
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001009c",
+      "entity": "47001454",
+      "telepad": 1519,
+      "cell": "576b001e",
+      "position": [
+        60.6253,
+        104.274,
+        178.587
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        1543968623
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001009d",
+      "entity": "47001454",
+      "telepad": 1518,
+      "cell": "4e6d0026",
+      "position": [
+        88.5228,
+        113.502,
+        177.315
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        3801950526
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001009e",
+      "entity": "47001454",
+      "telepad": 1519,
+      "cell": "505f000c",
+      "position": [
+        24.9367,
+        69.2851,
+        85.5058
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762507,
+        1543968623
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "814000000001009f",
+      "entity": "47001454",
+      "telepad": 1358,
+      "cell": "3c73002c",
+      "position": [
+        100.455,
+        67.1834,
+        141.187
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        2567898544
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    },
+    {
+      "id": "81400000000100a0",
+      "entity": "47001454",
+      "telepad": 1529,
+      "cell": "4e5c000a",
+      "position": [
+        38.7782,
+        20.983,
+        88.4505
+      ],
+      "orientation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "name": [
+        620762505,
+        467736636
+      ],
+      "examine": [
+        null,
+        null
+      ],
+      "requirements": {
+        "level": 0,
+        "hero": 0,
+        "kingdom": 0,
+        "summonable": 0
+      },
+      "status": "placed"
+    }
+  ]
+}

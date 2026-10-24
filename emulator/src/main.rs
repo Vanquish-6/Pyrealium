@@ -6,7 +6,7 @@ use std::{env, net::SocketAddr, path::PathBuf, process::ExitCode};
 
 fn usage() {
     println!(
-        "  serve --content PATH --game-data PATH\n    Load stationary world placements after validating their assets and cells."
+        "  serve --game-data PATH [--content PATH|none]\n    Game-data mode loads the bundled world pack. Override it with a placement file or disable it with none."
     );
     println!(
         "  inventory-reorder --character-id N --request PATH\n    Offline import of one reassembled native inventory sorting message (296 bytes)."
