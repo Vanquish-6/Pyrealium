@@ -14,6 +14,7 @@ pub struct Bootstrap {
     qualities: Vec<u8>,
     client_version: &'static str,
     cells: Dat,
+    validated_cells: std::collections::BTreeSet<u32>,
 }
 // Content identity for the two narrowly supported experimental layouts. This
 // fingerprint is a compatibility check, not authentication of untrusted assets.
@@ -78,6 +79,7 @@ impl Bootstrap {
             qualities,
             client_version,
             cells,
+            validated_cells: std::collections::BTreeSet::new(),
         })
     }
     pub fn supports(&self, request: &CharacterCreationRequest) -> bool {
@@ -114,7 +116,20 @@ impl Bootstrap {
         self.events_at(id, request, crate::movement::Placement::HUMAN_START, 1)
     }
     pub fn contains_cell(&mut self, cell: u32) -> bool {
-        cell != 0 && self.cells.read(cell).is_ok()
+        if self.validated_cells.contains(&cell) {
+            return true;
+        }
+        let Ok(record) = crate::dat::world_cell_record(cell) else {
+            return false;
+        };
+        if self.cells.read(record).is_err() {
+            return false;
+        }
+        if self.validated_cells.len() >= 4096 {
+            self.validated_cells.clear();
+        }
+        self.validated_cells.insert(cell);
+        true
     }
     pub fn events_at(
         &self,

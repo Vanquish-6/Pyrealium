@@ -15,6 +15,17 @@ pub const MAX_RECORD_BYTES: usize = 64 * 1024 * 1024;
 const MAX_TREE_DEPTH: usize = 64;
 const MAX_VISITED_NODES: usize = 100_000;
 
+/// Outdoor cells are synthesized from their block terrain, not separate DAT
+/// records. The supported profile has 8x8 outdoor cells and envcells >= 0x100.
+/// This identifies backing data; it does not establish traversability.
+pub fn world_cell_record(cell: u32) -> io::Result<u32> {
+    match cell & 0xffff {
+        1..=64 => Ok(cell | 0xffff),
+        0x100..=0xfffb => Ok(cell),
+        _ => Err(invalid("invalid world cell or reserved record identifier")),
+    }
+}
+
 fn invalid(message: impl Into<String>) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, message.into())
 }

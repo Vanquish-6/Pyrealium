@@ -6,6 +6,9 @@ use std::{env, net::SocketAddr, path::PathBuf, process::ExitCode};
 
 fn usage() {
     println!(
+        "  serve --content PATH --game-data PATH\n    Load stationary world placements after validating their assets and cells."
+    );
+    println!(
         "  inventory-reorder --character-id N --request PATH\n    Offline import of one reassembled native inventory sorting message (296 bytes)."
     );
     println!(
@@ -33,6 +36,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut visual = None;
     let mut name = None;
     let mut game_data = None;
+    let mut content = None;
     let mut landblocks = None;
     let mut record_id = None;
     let mut character_id = None;
@@ -58,6 +62,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             }
             "--name" => name = Some(value),
             "--game-data" => game_data = Some(PathBuf::from(value)),
+            "--content" => content = Some(PathBuf::from(value)),
             "--landblocks" => landblocks = Some(PathBuf::from(value)),
             "--id" => record_id = Some(u32::from_str_radix(value.trim_start_matches("0x"), 16)?),
             "--character-id" => character_id = Some(value.parse::<u64>()?),
@@ -217,6 +222,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             visual_did: visual,
             game_data,
             initialize_ui,
+            content,
         })?,
         "stop" => {
             if !data.join("server.lock").is_file() {

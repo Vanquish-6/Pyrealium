@@ -100,6 +100,7 @@ fn run_enter_rejection(game_data: Option<std::path::PathBuf>, expect_bootstrap: 
     let server_dir = dir.clone();
     let worker = std::thread::spawn(move || {
         server::run(Config {
+            content: None,
             initialize_ui: expect_bootstrap,
             bind: addr,
             account: "local".into(),

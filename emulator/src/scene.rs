@@ -74,9 +74,22 @@ pub struct Delivery {
 pub struct Scene {
     bodies: BTreeMap<u64, Body>,
     cells: BTreeMap<u32, BTreeSet<u64>>,
+    content: crate::content::Content,
 }
 impl Scene {
+    pub fn with_content(content: crate::content::Content) -> Self {
+        Self {
+            content,
+            ..Self::default()
+        }
+    }
     pub fn can_observe(&self, observer: u64, target: u64) -> bool {
+        if let Some(cell) = self.content.cell(target) {
+            return self
+                .bodies
+                .get(&observer)
+                .is_some_and(|body| body.ready && body.placement.cell == cell);
+        }
         self.bodies
             .get(&observer)
             .zip(self.bodies.get(&target))
@@ -116,7 +129,10 @@ impl Scene {
         self.activate(id)
     }
     pub fn enter_hidden(&mut self, body: Body) -> Result<(), WorldError> {
-        if self.bodies.len() >= 64 || self.bodies.contains_key(&body.id) {
+        if self.bodies.len() >= 64
+            || self.bodies.contains_key(&body.id)
+            || self.content.cell(body.id).is_some()
+        {
             return Err(WorldError::LimitExceeded);
         }
         self.bodies.insert(body.id, body);
@@ -134,6 +150,12 @@ impl Scene {
             .insert(id);
         let body = &self.bodies[&id];
         let mut deliveries = Vec::new();
+        for object in self.content.at(body.placement.cell) {
+            deliveries.push(Delivery {
+                recipient: body.id,
+                data: object.spawn.clone(),
+            });
+        }
         let spawn: Arc<[u8]> = body.spawn.clone().into();
         for id in self.neighbors(body.placement.cell, body.id) {
             deliveries.push(Delivery {
@@ -209,6 +231,18 @@ impl Scene {
         let movement: Arc<[u8]> =
             movement::server_position(id, body.instance, stamp, update)?.into();
         let mut deliveries = Vec::new();
+        for object in self.content.at(old_cell) {
+            deliveries.push(Delivery {
+                recipient: id,
+                data: object.destroy.clone(),
+            });
+        }
+        for object in self.content.at(update.placement.cell) {
+            deliveries.push(Delivery {
+                recipient: id,
+                data: object.spawn.clone(),
+            });
+        }
         for other in previous.difference(&current) {
             deliveries.push(Delivery {
                 recipient: *other,

@@ -25,6 +25,7 @@ pub struct Config {
     pub visual_did: Option<u32>,
     pub game_data: Option<PathBuf>,
     pub initialize_ui: bool,
+    pub content: Option<PathBuf>,
 }
 struct Peer {
     client_version: String,
@@ -277,6 +278,21 @@ pub fn run(config: Config) -> io::Result<()> {
     } else {
         None
     };
+    let content = match config.content.as_deref() {
+        Some(path) => {
+            let directory = config
+                .game_data
+                .as_deref()
+                .ok_or_else(|| invalid("--content requires --game-data"))?;
+            let content = crate::content::Content::load(path, directory)?;
+            println!(
+                "Loaded {} stationary content objects; interactions and AI remain unfinished.",
+                content.len()
+            );
+            content
+        }
+        None => crate::content::Content::default(),
+    };
     let primary = UdpSocket::bind(config.bind)?;
     let mut secondary_addr = config.bind;
     secondary_addr.set_port(config.bind.port() + 1);
@@ -299,7 +315,7 @@ pub fn run(config: Config) -> io::Result<()> {
     let start = Instant::now();
     let mut peers: BTreeMap<SocketAddr, Peer> = BTreeMap::new();
     let mut active_characters = BTreeMap::new();
-    let mut scene = crate::scene::Scene::default();
+    let mut scene = crate::scene::Scene::with_content(content);
     let mut failed_peers = BTreeSet::new();
     let random = RandomState::new();
     let mut generation = 0u64;

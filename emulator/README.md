@@ -171,6 +171,13 @@ Exact addresses, identities, policies, test boundaries and open work:
 
 ## Remaining gameplay work
 
+Stationary world content can now be loaded with `serve --game-data PATH
+--content content/lifestones.tsv` alongside the normal bind/account/data options.
+The included file contains 89 imported lifestone placements with DAT-backed
+visuals. The server creates/removes them as players enter/leave their cell.
+Binding, resurrection and other interactions remain unfinished, and native
+appearance has not been checked. See [content format and provenance](content/README.md).
+
 Offline inventory management is available through the `inventory-*` commands in
 `--help`; use the normal `--account`, `--character-id` and `--data` arguments.
 The server must be stopped. Development grants require existing definition and
