@@ -610,6 +610,43 @@ fn deliver_scene(
     Ok(())
 }
 
+fn training_combat_visual(
+    peer: &mut Peer,
+    character: u64,
+    store: &Store,
+    scene: &crate::scene::Scene,
+    fighting: bool,
+    swing: bool,
+) -> io::Result<Vec<crate::scene::Delivery>> {
+    let saved = &store.characters[&character];
+    // This combo is validated for the authored main-hand training weapon.
+    // Do not assign sword animations to arbitrary assets or unarmed attacks.
+    if fighting
+        && !saved.inventory.items().any(|item| {
+            item.definition == crate::training_kit::DEFINITION
+                && item.location == crate::inventory::Location::Equipped(0x40)
+        })
+    {
+        return Ok(Vec::new());
+    }
+    let (mut next, stamp) = peer.emotes.next_visual(saved.instance).map_err(other)?;
+    let mut events = vec![
+        crate::combat_visual::mode(character, saved.instance, stamp, fighting).map_err(other)?,
+    ];
+    if swing {
+        let (after, stamp) = next.next_visual(saved.instance).map_err(other)?;
+        next = after;
+        events.push(crate::combat_visual::swing(character, saved.instance, stamp).map_err(other)?);
+    }
+    peer.validate_scene_batch(&events)?;
+    let mut deliveries = Vec::new();
+    for event in events {
+        deliveries.extend(scene.broadcast(character, event).map_err(other)?);
+    }
+    peer.emotes = next;
+    Ok(deliveries)
+}
+
 fn use_training_potion(
     peer: &mut Peer,
     character: u64,
@@ -2200,6 +2237,10 @@ pub fn run(config: Config) -> io::Result<()> {
                                                     peer.queue_ordered_batch(events)?;
                                                     peer.combat = true;
                                                     peer.target = Some(target);
+                                                    deliveries.extend(training_combat_visual(
+                                                        peer, character, &store, &scene, true,
+                                                        false,
+                                                    )?);
                                                     Ok(())
                                                 })(
                                                 );
@@ -2889,6 +2930,11 @@ pub fn run(config: Config) -> io::Result<()> {
                                             .map_err(other)?;
                                             replies.extend(peer.send_event(&response, now)?);
                                             peer.combat = enabled;
+                                            if config.training_kit {
+                                                deliveries.extend(training_combat_visual(
+                                                    peer, character, &store, &scene, enabled, false,
+                                                )?);
+                                            }
                                         }
                                         request @ (script::Request::Say(_)
                                         | script::Request::Tell { .. }) => {
@@ -3761,6 +3807,23 @@ pub fn run(config: Config) -> io::Result<()> {
             let mut updates = Vec::new();
             for event in events {
                 match event {
+                    crate::encounters::Event::Swing(player) => {
+                        if let Some(addr) = active_characters.get(&player) {
+                            if let Some(peer) = peers.get_mut(addr) {
+                                match training_combat_visual(
+                                    peer, player, &store, &scene, true, true,
+                                ) {
+                                    Ok(deliveries) => updates.extend(deliveries),
+                                    Err(error) => {
+                                        eprintln!(
+                                            "Combat presentation failed for character {player}: {error}"
+                                        );
+                                        failed_peers.insert(*addr);
+                                    }
+                                }
+                            }
+                        }
+                    }
                     crate::encounters::Event::Item {
                         player,
                         item,
@@ -3879,6 +3942,15 @@ pub fn run(config: Config) -> io::Result<()> {
                         {
                             peer.combat = false;
                             peer.target = None;
+                            match training_combat_visual(peer, player, &store, &scene, false, false)
+                            {
+                                Ok(deliveries) => updates.extend(deliveries),
+                                Err(_) => {
+                                    if let Some(addr) = active_characters.get(&player) {
+                                        failed_peers.insert(*addr);
+                                    }
+                                }
+                            }
                         }
                         updates.push(crate::scene::Delivery {
                             recipient: player,

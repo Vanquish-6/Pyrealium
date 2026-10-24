@@ -41,6 +41,7 @@ struct Attack {
     repeat: bool,
 }
 pub enum Event {
+    Swing(u64),
     Item {
         player: u64,
         item: crate::inventory::Item,
@@ -437,6 +438,7 @@ impl Encounters {
             self.attacks.get_mut(&player).unwrap().next = until;
             let actor = self.actors.get_mut(&attack.target).unwrap();
             actor.health -= dealt;
+            events.push(Event::Swing(player));
             events.push(Event::Health {
                 actor: attack.target,
                 health: actor.health,

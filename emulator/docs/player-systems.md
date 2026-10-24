@@ -723,3 +723,37 @@ Players saved in cell 0299011d can buy ingredients and bind locally alongside th
 existing mentor, practice creatures and outdoor portal. These placements are
 development content on the previously observed corridor plane; collision and
 fresh client visibility remain unverified.
+
+### Native selection and training sword presentation
+
+The cleaned packet corpus supplied on 2026-10-24 contains 492 PCAP files, with
+489 unique hashes; 411 hashes are absent from the earlier top-level Packets
+folder (505 files). This comparison does not establish that every hash is a
+different gameplay scenario or a build-7148 recording.
+
+The player's next session dispatched 751 events from 779 received packets, with
+34 rejections, and no ordered-buffer Capacity failure. It also exposed an
+unhandled native selection event 82040001. Matching native SetSelection at
+0044faa0/00462700 and eight requests in the cleaned Fight captures establish its
+12-byte tagged-IID profile. It now uses target-selection validation; selection
+does not itself start an attack or apply damage.
+
+Training combat previously updated UI state and vitals without native sword
+stance or swing messages. The runtime now emits DoMode 10082 (one-handed mode
+4100000a), and DoBehavior 1007f (minimal flags 1, Melee_Auto1 41000089) for an
+accepted hit with the authored main-hand weapon. Peace restores mode 40000001.
+Combat and emotes share a checked visual-stamp allocator. No captured owner,
+instance, context or callback IDs are replayed.
+
+Native serializers 004946d0, 00495420 and 00679220 establish the wire layout.
+Human BehaviorTable 44000001 has the one-handed/41000089 combo at e698;
+the minimal behavior packet itself is NPC-observed, while the player pairing
+is DAT-backed. Cleaned Fight captures include
+AC2_KampfLog_MitKampfbeginn_und_mob_in_oute_range.elog
+(SHA256 fe78584f8b9c6d1f3462c0875fdb19181d0b6d231302123b0b6fe1a021565501),
+ac2_zulange_kampflog.elog
+(SHA256 5611b4cbf427113984c72dea4cbdb35af545eaedcf584363f5b315af3f3c3f36),
+and kampf_onyx_pynthos_wasp.elog
+(SHA256 aed46be5aebd877cb441406747a26e86fa09fdec1a20dbb566e014a05204452f).
+Damage/range/cooldown remain authored training rules. NPC animations, original
+action timing and fresh player sword-animation acceptance remain incomplete.

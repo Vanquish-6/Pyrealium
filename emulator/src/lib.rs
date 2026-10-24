@@ -2,6 +2,7 @@
 //! Native compatibility is established per codec, not inferred from simulated tests.
 pub mod abilities;
 pub mod bootstrap;
+pub mod combat_visual;
 pub mod content;
 pub mod crafting;
 pub mod crypto;

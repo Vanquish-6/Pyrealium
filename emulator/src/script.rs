@@ -10,6 +10,8 @@ pub const SAY: u32 = 0x82050006;
 pub const TELL: u32 = 0x82050002;
 pub const CHAT_STRING: u32 = 0x82050011;
 pub const TARGET: u32 = 0x82120016;
+/// gmCWInterface::SetSelection (0044faa0 / 00462700), also emitted in combat.
+pub const COMBAT_SELECTION: u32 = 0x82040001;
 pub const RESURRECT: u32 = 0x8207000e;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -225,7 +227,7 @@ pub fn decode(function: u32, bytes: &[u8]) -> Result<Request, WorldError> {
                 Request::Combat(function == COMBAT_START)
             }
         }
-        TARGET => {
+        TARGET | COMBAT_SELECTION => {
             let id = r.iid()?;
             Request::Target((id != 0 && id != u64::MAX).then_some(id))
         }

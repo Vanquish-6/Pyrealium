@@ -158,6 +158,27 @@ pub struct State {
 }
 
 impl State {
+    /// Shared checked visual order for emotes and combat physics messages.
+    /// Return a candidate; callers publish it only after outgoing admission.
+    pub fn next_visual(self, instance: u16) -> Result<(Self, u16), WorldError> {
+        if instance == 0 {
+            return Err(WorldError::InvalidValue);
+        }
+        let previous = if instance == self.instance {
+            self.stamp
+        } else {
+            0
+        };
+        let stamp = previous.checked_add(1).ok_or(WorldError::LimitExceeded)?;
+        Ok((
+            Self {
+                instance,
+                stamp,
+                ..self
+            },
+            stamp,
+        ))
+    }
     /// Candidate only: publish this returned state after outgoing admission.
     /// The server must independently require ownership, ready visibility, a
     /// living character and its chosen out-of-combat policy before calling.
@@ -174,18 +195,12 @@ impl State {
         {
             return Err(WorldError::LimitExceeded);
         }
-        let previous = if instance == self.instance {
-            self.stamp
-        } else {
-            0
-        };
-        let stamp = previous.checked_add(1).ok_or(WorldError::LimitExceeded)?;
+        let (next, stamp) = self.next_visual(instance)?;
         let wire = encode(owner, instance, stamp, token)?;
         Ok((
             Self {
-                instance,
-                stamp,
                 last_ms: Some(now_ms),
+                ..next
             },
             wire,
         ))
