@@ -50,10 +50,22 @@ pub fn validate_potion(portal: &mut Dat) -> io::Result<Metadata> {
         || io::Error::other("development potion is incompatible with supplied DAT assets");
     portal.read(POTION_DEFINITION)?;
     portal.read(POTION_VISUAL)?;
-    let metadata = Metadata::load(portal, POTION_DEFINITION)?;
-    if metadata.icon != POTION_ICON || metadata.physical != POTION_PHYSICAL {
+    // The generic qualities reader deliberately rejects this record's string
+    // quality tail. Accept only the complete known descriptor, rather than
+    // relaxing that reader or scanning for plausible asset IDs.
+    let descriptor = portal.read(0x81001745)?;
+    let fingerprint = descriptor.iter().fold(0xcbf29ce484222325u64, |hash, byte| {
+        (hash ^ u64::from(*byte)).wrapping_mul(0x100000001b3)
+    });
+    if descriptor.len() != 288 || fingerprint != 0xeffeb5ec9e8b026a {
         return Err(invalid());
     }
+    portal.read(POTION_ICON)?;
+    let metadata = Metadata {
+        icon: POTION_ICON,
+        physical: POTION_PHYSICAL,
+        equipment: None,
+    };
     let physical = portal.read(POTION_PHYSICAL)?;
     let expected: Vec<u8> = [0x0bu32, POTION_PHYSICAL, 0x40000001, POTION_VISUAL]
         .into_iter()

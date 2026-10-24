@@ -27,7 +27,30 @@ pub fn validate(portal: &mut Dat) -> io::Result<Metadata> {
     let invalid = || io::Error::other("training kit is incompatible with supplied DAT assets");
     portal.read(DEFINITION)?;
     portal.read(VISUAL)?;
-    let metadata = Metadata::load(portal, DEFINITION)?;
+    // The known weapon description has additional crafting/string fields that
+    // the generic metadata reader deliberately does not accept. Verify the
+    // complete known record before supplying its observed native properties.
+    // Do not widen the generic reader or infer offsets for other definitions.
+    fn fingerprint(bytes: &[u8]) -> u64 {
+        bytes.iter().fold(0xcbf29ce484222325, |hash, byte| {
+            (hash ^ u64::from(*byte)).wrapping_mul(0x100000001b3)
+        })
+    }
+    let ui = portal.read(0x81000f1e)?;
+    if ui.len() != 332 || fingerprint(&ui) != 0xf5e92f85457db882 {
+        return Err(invalid());
+    }
+    let metadata = Metadata {
+        icon: 0x2000012f,
+        physical: PHYSICAL,
+        equipment: Some(crate::inventory_request::Equipment {
+            valid: 0xc0,
+            preferred: 0x40,
+            primary: 1,
+            secondary: 0x40000006,
+        }),
+    };
+    portal.read(metadata.icon)?;
     let hand = metadata.equipment.ok_or_else(invalid)?;
     if metadata.physical != PHYSICAL
         || hand.valid != 0xc0
@@ -38,6 +61,9 @@ pub fn validate(portal: &mut Dat) -> io::Result<Metadata> {
     }
     // Narrow native physical-definition prefix; no scan for a plausible DID.
     let physical = portal.read(PHYSICAL)?;
+    if physical.len() != 36 || fingerprint(&physical) != 0xe3dc378c33dd44d1 {
+        return Err(invalid());
+    }
     let expected: Vec<u8> = [0x8bu32, PHYSICAL, 0x40000001, VISUAL]
         .into_iter()
         .flat_map(u32::to_le_bytes)

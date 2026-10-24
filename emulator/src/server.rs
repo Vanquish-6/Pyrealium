@@ -805,7 +805,9 @@ pub fn run(config: Config) -> io::Result<()> {
         {
             crate::ui::validate_inventory_wlib(&wlib).map_err(other)?;
             if config.lifestones || config.portals {
-                portal.read(0x25000014)?;
+                // String tables live in the locale archive, not portal.dat.
+                let mut locale = crate::dat::Dat::open(directory.join("local_English.dat"))?;
+                locale.read(0x25000014)?;
             }
             if config.training_kit {
                 let metadata = crate::training_kit::validate(&mut portal)?;
