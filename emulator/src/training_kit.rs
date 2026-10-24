@@ -6,6 +6,40 @@ use crate::{
 };
 use std::io;
 
+/// Immutable authored supply pack for journal t3, separate from t1/t2's weapon.
+pub const SUPPLIES_COUNT: usize = 5;
+pub fn supply_inventory(
+    inventory: &crate::inventory::Inventory,
+    first: u64,
+) -> Result<crate::inventory::Inventory, crate::inventory::InventoryError> {
+    use crate::{
+        crafting,
+        inventory::{Command, InventoryError},
+    };
+    if !inventory.dense_bags() {
+        return Err(InventoryError::StaleLocation);
+    }
+    let mut bag = inventory.clone();
+    for (offset, definition) in [
+        crafting::HEALTH_OUTPUT,
+        crafting::HEALTH_OUTPUT,
+        crafting::VIGOR_OUTPUT,
+        crafting::MUCOR,
+        crafting::TALLOW,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let id = first
+            .checked_add(offset as u64)
+            .ok_or(InventoryError::InvalidItem)?;
+        let slot = bag.free_slot().ok_or(InventoryError::NoSpace)?;
+        let item = crafting::item(definition, id, slot).map_err(|_| InventoryError::InvalidItem)?;
+        bag = bag.apply(&Command::Grant(item))?;
+    }
+    Ok(bag)
+}
+
 // Immutable for journal event t1. A changed kit requires a new event revision.
 pub const DEFINITION: u32 = 0x47000f1e;
 const PHYSICAL: u32 = 0x4700035b;

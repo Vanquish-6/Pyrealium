@@ -31,6 +31,7 @@ pub struct Character {
     pub skills: crate::skills::Book,
     pub quests: crate::quests::Book,
     pub training_kit: bool,
+    pub training_supplies: bool,
     pub binding: Option<Placement>,
 }
 
@@ -179,6 +180,30 @@ impl Store {
         character.inventory = next;
         character.skills = skills;
         character.training_kit = true;
+        Ok(true)
+    }
+    pub fn grant_training_supplies(&mut self, account: &str, id: u64) -> io::Result<bool> {
+        let character = self
+            .characters
+            .get(&id)
+            .filter(|c| c.account == account && !c.deleted && c.training_kit)
+            .ok_or_else(|| {
+                invalid("training supplies character not owned or equipped for training")
+            })?;
+        if character.training_supplies {
+            return Ok(false);
+        }
+        if !character.progression.alive() {
+            return Err(invalid("training supplies require a living character"));
+        }
+        let first = self.next_item_id()?;
+        let next = crate::training_kit::supply_inventory(&character.inventory, first)
+            .map_err(io::Error::other)?;
+        // One durable record grants all five items and the once-only marker.
+        self.append_record(&format!("t3\t{id}\t{first}"))?;
+        let character = self.characters.get_mut(&id).unwrap();
+        character.inventory = next;
+        character.training_supplies = true;
         Ok(true)
     }
     pub fn ensure_training_attack(&mut self, account: &str, id: u64) -> io::Result<bool> {
@@ -774,6 +799,7 @@ impl Store {
             skills: crate::skills::Book::default(),
             quests: crate::quests::Book::default(),
             training_kit: false,
+            training_supplies: false,
             binding: None,
         };
         let line = match creation {
@@ -1310,6 +1336,33 @@ fn decode_journal_collect(
             }
             continue;
         }
+        if fields.len() == 3 && fields[0] == "t3" {
+            let id = fields[1]
+                .parse::<u64>()
+                .map_err(|_| invalid("training supplies owner"))?;
+            let first = fields[2]
+                .parse::<u64>()
+                .map_err(|_| invalid("training supplies identity"))?;
+            let high = records
+                .values()
+                .map(|c| c.inventory.high_water())
+                .max()
+                .unwrap_or(crate::inventory::ITEM_NAMESPACE);
+            if high.checked_add(1) != Some(first) {
+                return Err(invalid("nonsequential training supplies identity"));
+            }
+            let character = records
+                .get_mut(&id)
+                .filter(|c| {
+                    !c.deleted && c.training_kit && !c.training_supplies && c.progression.alive()
+                })
+                .ok_or_else(|| invalid("invalid repeated training supplies grant"))?;
+            character.inventory =
+                crate::training_kit::supply_inventory(&character.inventory, first)
+                    .map_err(io::Error::other)?;
+            character.training_supplies = true;
+            continue;
+        }
         if fields.len() == 3 && matches!(fields[0], "t1" | "t2") {
             let id = fields[1]
                 .parse::<u64>()
@@ -1654,6 +1707,7 @@ fn decode_journal_collect(
                 skills: crate::skills::Book::default(),
                 quests: crate::quests::Book::default(),
                 training_kit: false,
+                training_supplies: false,
                 binding: None,
             },
         );

@@ -765,3 +765,20 @@ that narrow initialization, and scene validation accepts the corresponding
 92-byte profile alongside the existing 72-byte parent-only profile. Other item
 definitions retain their existing profile. The capture also has appearance
 overrides; those are not copied or treated as recovered starter entitlement.
+
+### Once-only training supplies
+
+The supported human training profile now grants two health potions, one vigor
+potion, one Mucor Mushroom and one 100-unit Tallow bundle on world entry. This is
+explicitly authored training content, not a reconstructed original starter list.
+Existing characters that already received the weapon are eligible once too.
+
+Journal t3 stores the first of five sequential global item identities. Replay
+reconstructs the immutable supply profile and its once-only marker atomically;
+older t1/t2 weapon grants retain their existing meanings. Reconnecting, consuming
+or selling supplies does not reset the marker. Dead characters, sparse bags or
+fewer than five free bag positions defer the whole pack until a later entry.
+All five grants are validated before the single fsynced record is appended.
+The existing native inventory restoration publishes the saved items on entry.
+No crafting XP, recipe entitlement, armor grants or original loot rules are
+inferred from the old character inventory capture.

@@ -3490,6 +3490,37 @@ pub fn run(config: Config) -> io::Result<()> {
                                                         );
                                                     }
                                                 }
+                                                if config.training_kit {
+                                                    let saved = &store.characters[&character_id];
+                                                    if saved.training_kit
+                                                        && !saved.training_supplies
+                                                        && saved.progression.alive()
+                                                        && saved.inventory.dense_bags()
+                                                        && saved
+                                                            .inventory
+                                                            .items()
+                                                            .filter(|item| {
+                                                                matches!(
+                                                                    item.location,
+                                                                    crate::inventory::Location::Bag(
+                                                                        _
+                                                                    )
+                                                                )
+                                                            })
+                                                            .count()
+                                                            + crate::training_kit::SUPPLIES_COUNT
+                                                            <= crate::inventory::BAG_SLOTS as usize
+                                                    {
+                                                        if store.grant_training_supplies(
+                                                            &peer.session.account,
+                                                            character_id,
+                                                        )? {
+                                                            eprintln!(
+                                                                "Development training supplies saved for character {character_id}"
+                                                            );
+                                                        }
+                                                    }
+                                                }
                                                 if config.lifestones {
                                                     let saved = &store.characters[&character_id];
                                                     if saved.binding.is_some()
@@ -3687,7 +3718,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                         }
                                         if first && config.training_kit {
                                             deliveries.push(crate::scene::Delivery { recipient: character, data: script::chat(
-                                                "Training: equip the weapon from your bag. Defeat three Idol Spawn, then speak to Pectar, Training Master, for your reward. Speak to Tebor the Armorer to open the shop. Open Crafting to make potions with 1 Mucor Mushroom and 100 Tallow. The portals lead outside and back. Training uses authored rules.", 1).map_err(other)?.into() });
+                                                "Training: use your bag weapon to equip it, select an Idol Spawn and start attacking within three metres. Speak to Pectar for the three-kill reward. Tebor opens the shop. A once-only supply pack provides two health potions, one vigor potion, 1 Mucor Mushroom and 100 Tallow. Use Crafting to make another potion. Lifestones bind your return; portals lead outside and back. Training uses authored rules.", 1).map_err(other)?.into() });
                                         }
                                         eprintln!(
                                             "Scene ready for character {character}: cell={:08x}, visible content={}",
