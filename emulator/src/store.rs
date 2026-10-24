@@ -1,4 +1,5 @@
-//! Append-only local character journal. A write is acknowledged only after fsync.
+//! Transactional local character journal with checked progression compaction.
+//! A write is acknowledged only after fsync.
 //! Corruption/torn tails stop startup rather than silently discarding characters.
 use crate::movement::Placement;
 use crate::world::CharacterCreationRequest;
@@ -11,6 +12,7 @@ use std::{
 
 const MAX_JOURNAL_BYTES: u64 = 16 * 1024 * 1024;
 const MAX_PHYSICAL_VALUES: usize = 256;
+mod compaction;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Character {
@@ -33,6 +35,8 @@ pub struct Character {
 
 pub struct Store {
     file: File,
+    journal_path: PathBuf,
+    compact_after: u64,
     lock: PathBuf,
     pub characters: BTreeMap<u64, Character>,
     poisoned: bool,
@@ -100,6 +104,8 @@ impl Store {
             }
             Ok(Self {
                 file,
+                journal_path: dir.join("characters.journal"),
+                compact_after: MAX_JOURNAL_BYTES / 2,
                 lock: lock.clone(),
                 characters,
                 poisoned: false,
@@ -652,6 +658,15 @@ impl Store {
             .metadata()?
             .len()
             .saturating_add(record.len() as u64)
+            > self.compact_after
+        {
+            self.compact_journal()?;
+        }
+        if self
+            .file
+            .metadata()?
+            .len()
+            .saturating_add(record.len() as u64)
             > MAX_JOURNAL_BYTES
         {
             return Err(invalid("journal exceeds 16 MiB limit"));
@@ -666,6 +681,104 @@ impl Store {
         }
         self.revision = revision;
         Ok(())
+    }
+    /// Bound repetitive progression history while retaining every non-progression
+    /// transaction and verifying complete replay before replacing the file.
+    pub fn compact_journal(&mut self) -> io::Result<bool> {
+        if self.poisoned {
+            return Err(invalid("cannot compact a poisoned journal"));
+        }
+        let mut raw = Vec::new();
+        File::open(&self.journal_path)?
+            .take(MAX_JOURNAL_BYTES + 1)
+            .read_to_end(&mut raw)?;
+        let mut lines = Vec::new();
+        let before = match decode_journal_collect(&raw, Some(&mut lines)) {
+            Ok(state) => state,
+            Err(error) => {
+                self.poisoned = true;
+                return Err(error);
+            }
+        };
+        if before.characters != self.characters || before.revision != self.revision {
+            self.poisoned = true;
+            return Err(invalid("journal differs from active character state"));
+        }
+        let base = self
+            .revision
+            .checked_sub(lines.len() as u64)
+            .ok_or_else(|| invalid("compaction revision underflow"))?;
+        let header = format!("j1\t{base}");
+        let mut bytes = format!("{header}\t{:08x}\n", hash(header.as_bytes())).into_bytes();
+        for line in lines {
+            bytes.extend(line.as_bytes());
+            bytes.push(b'\n');
+        }
+        let next_attempt = (raw.len() as u64)
+            .saturating_add(1024 * 1024)
+            .clamp(MAX_JOURNAL_BYTES / 2, MAX_JOURNAL_BYTES);
+        if bytes.len() >= raw.len() {
+            self.compact_after = next_attempt;
+            return Ok(false);
+        }
+        let after = match decode_journal_state(&bytes) {
+            Ok(state) => state,
+            Err(error) => {
+                self.poisoned = true;
+                return Err(error);
+            }
+        };
+        if after.characters != before.characters
+            || after.revision != before.revision
+            || after.relocations.len() != before.relocations.len()
+            || before.relocations.iter().any(|(id, (_, position))| {
+                after
+                    .relocations
+                    .get(id)
+                    .is_none_or(|(_, other)| position != other)
+            })
+        {
+            self.poisoned = true;
+            return Err(invalid("compaction replay differs from original state"));
+        }
+        // Anchor all old relocation revisions before rebasing their replay order.
+        // Both the old and compacted journals end at this same revision.
+        self.positions_dirty = true;
+        self.flush_positions()?;
+        let temporary = self.journal_path.with_extension("journal.compact.tmp");
+        let mut file = OpenOptions::new()
+            .create(true)
+            .truncate(true)
+            .write(true)
+            .open(&temporary)?;
+        file.write_all(&bytes)?;
+        file.sync_all()?;
+        drop(file);
+        let backup = self.journal_path.with_extension("journal.previous");
+        fs::copy(&self.journal_path, &backup)?;
+        OpenOptions::new().write(true).open(&backup)?.sync_all()?;
+        fs::rename(&temporary, &self.journal_path)?;
+        match OpenOptions::new()
+            .read(true)
+            .append(true)
+            .open(&self.journal_path)
+        {
+            Ok(file) => self.file = file,
+            Err(error) => {
+                self.poisoned = true;
+                return Err(error);
+            }
+        }
+        self.compact_after = (bytes.len() as u64)
+            .saturating_add(1024 * 1024)
+            .clamp(MAX_JOURNAL_BYTES / 2, MAX_JOURNAL_BYTES);
+        eprintln!(
+            "Compacted character journal: {} -> {} bytes at revision {}.",
+            raw.len(),
+            bytes.len(),
+            self.revision
+        );
+        Ok(true)
     }
 }
 
@@ -769,6 +882,12 @@ fn decode_placement(text: &str) -> io::Result<Placement> {
     Ok(placement)
 }
 fn decode_journal_state(bytes: &[u8]) -> io::Result<JournalState> {
+    decode_journal_collect(bytes, None)
+}
+fn decode_journal_collect(
+    bytes: &[u8],
+    mut compacted: Option<&mut Vec<String>>,
+) -> io::Result<JournalState> {
     if bytes.len() as u64 > MAX_JOURNAL_BYTES {
         return Err(invalid("journal exceeds 16 MiB limit"));
     }
@@ -780,7 +899,8 @@ fn decode_journal_state(bytes: &[u8]) -> io::Result<JournalState> {
     let mut records: BTreeMap<u64, Character> = BTreeMap::new();
     let mut relocations = BTreeMap::new();
     let mut revision = 0u64;
-    for line in text.lines() {
+    let mut run = compaction::Run::default();
+    for (index, line) in text.lines().enumerate() {
         revision = revision
             .checked_add(1)
             .ok_or_else(|| invalid("journal revision exhausted"))?;
@@ -791,6 +911,35 @@ fn decode_journal_state(bytes: &[u8]) -> io::Result<JournalState> {
             return Err(invalid("character journal checksum mismatch"));
         }
         let fields: Vec<_> = data.split('\t').collect();
+        if fields.len() == 2 && fields[0] == "j1" {
+            if index != 0 {
+                return Err(invalid("journal revision base must be first"));
+            }
+            revision = fields[1]
+                .parse::<u64>()
+                .map_err(|_| invalid("invalid journal revision base"))?;
+            continue;
+        }
+        if let Some(output) = compacted.as_mut() {
+            if !(fields.len() == 3 && matches!(fields[0], "g1" | "g2" | "g3")) {
+                run.flush(output);
+                output.push(line.to_owned());
+            }
+        }
+        if fields.len() == 3 && fields[0] == "g3" {
+            let id = fields[1]
+                .parse::<u64>()
+                .map_err(|_| invalid("invalid progression checkpoint character"))?;
+            let character = records
+                .get_mut(&id)
+                .filter(|character| !character.deleted)
+                .ok_or_else(|| invalid("unavailable progression checkpoint character"))?;
+            character.progression = compaction::progression(fields[2], &character.progression)?;
+            if compacted.is_some() {
+                run.record(id, &character.progression, line);
+            }
+            continue;
+        }
         if fields.len() == 2 && fields[0] == "k3" {
             let id = fields[1]
                 .parse::<u64>()
@@ -975,6 +1124,9 @@ fn decode_journal_state(bytes: &[u8]) -> io::Result<JournalState> {
                     .map_err(|_| invalid("invalid progression batch transition"))?;
             }
             character.progression = next;
+            if compacted.is_some() {
+                run.record(id, &character.progression, line);
+            }
             continue;
         }
         if fields.len() == 3 && fields[0] == "g1" {
@@ -991,6 +1143,9 @@ fn decode_journal_state(bytes: &[u8]) -> io::Result<JournalState> {
                 .progression
                 .apply(&command)
                 .map_err(|_| invalid("invalid progression transition"))?;
+            if compacted.is_some() {
+                run.record(id, &character.progression, line);
+            }
             continue;
         }
         if fields.len() == 3 && fields[0] == "i1" {
@@ -1145,6 +1300,9 @@ fn decode_journal_state(bytes: &[u8]) -> io::Result<JournalState> {
                 binding: None,
             },
         );
+    }
+    if let Some(output) = compacted {
+        run.flush(output);
     }
     Ok(JournalState {
         characters: records,

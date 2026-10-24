@@ -64,13 +64,15 @@ impl Progression {
     pub fn alive(&self) -> bool {
         self.health > 0
     }
+    pub fn valid(&self) -> bool {
+        self.available_xp <= self.xp
+            && self.xp <= i64::MAX as u64
+            && self.gold <= i32::MAX as u32
+            && self.health <= self.level().health
+            && self.vigor <= self.level().vigor
+    }
     pub fn apply(&self, command: &Command) -> Result<Self, ProgressionError> {
-        if self.available_xp > self.xp
-            || self.xp > i64::MAX as u64
-            || self.gold > i32::MAX as u32
-            || self.health > self.level().health
-            || self.vigor > self.level().vigor
-        {
+        if !self.valid() {
             return Err(ProgressionError::InvalidCommand);
         }
         let mut next = self.clone();

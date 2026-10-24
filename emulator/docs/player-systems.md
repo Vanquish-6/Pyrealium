@@ -424,3 +424,38 @@ grant rules are not inferred from this explicit development policy.
 `recalling.to.lifestone.elog` contains the tagged Recall request and native skill
 update. This integration is compile checked only, with no automated tests, native
 client checks or changes to existing player data.
+
+## Bounded progression-journal compaction
+
+Repeated combat and regeneration append progression events; the bounded journal
+previously stopped all mutations once it reached 16 MiB. Before a new write would
+cross 8 MiB, the store now attempts checked compaction. It coalesces uninterrupted
+`g1`/`g2`/`g3` runs into final per-character progression checkpoints only when
+that run becomes smaller. Every skill, inventory, binding, creation/deletion,
+appearance/preference and avatar-lifetime event remains a replay barrier and is
+retained. Non-progression history is not discarded. New `g3` states validate
+vitals, currency, monotonic earned XP and available-XP growth bounds.
+
+The store replays the old journal and verifies it matches active character state,
+then replays the compacted result and compares all characters, logical revision
+and final relocation destinations before publication. A `j1` revision base keeps
+future append revisions monotonic despite fewer physical records. The current
+position snapshot is flushed at that revision before replacement, so rebased old
+relocation records cannot override later checkpointed ordinary movement.
+
+The replacement is written and fsynced separately, the prior journal is copied
+and fsynced to `characters.journal.previous`, then the canonical journal is
+replaced and reopened for append. The exclusive store lock remains held.
+Integrity/replay mismatches poison further writes; a failed post-replacement
+reopen also stops writes. The preceding backup is bounded and replaced at the
+next successful compaction; it is not a complete long-term combat audit archive.
+
+Unproductive attempts back off by at least 1 MiB instead of rewriting on every
+mutation. The 16 MiB input limit remains: a journal dominated by retained
+non-progression transactions can still exhaust that cap. This change addresses
+repeated progression history rather than claiming unbounded storage.
+
+`compact-data --data PATH` runs the same checked operation offline under the
+normal exclusive lock. No compaction command was executed against player data
+for this change. Compilation only; no tests, benchmarks, native game checks or
+running-server replacement were performed.

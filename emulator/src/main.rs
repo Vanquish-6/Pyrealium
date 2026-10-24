@@ -6,6 +6,9 @@ use std::{env, net::SocketAddr, path::PathBuf, process::ExitCode};
 
 fn usage() {
     println!(
+        "  compact-data --data PATH\n    Offline checked journal compaction; retains the preceding journal backup. Server must be stopped."
+    );
+    println!(
         "  serve --initialize-ui true --lifestones true --game-data PATH\n    Development lifestone binding, @recall, and bound resurrection. Enabled by serve-training."
     );
     println!(
@@ -109,6 +112,14 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     match command.as_str() {
+        "compact-data" => {
+            let mut store = Store::open(&data)?;
+            if store.compact_journal()? {
+                println!("Journal compacted after replay verification; previous journal retained.");
+            } else {
+                println!("Journal is already as small as this compaction profile can make it.");
+            }
+        }
         "skill-state" => {
             let mut store = Store::open(&data)?;
             let id = character_id.ok_or("--character-id is required")?;

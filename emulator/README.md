@@ -49,6 +49,9 @@ implementation or acceptance. A MusicLoader error can require Continue.
   equipment and active same-cell content. Names use supported DAT localization
   references; live health and the owner's private progression come from server
   state. Full original item descriptions and native acceptance remain open.
+- Checked journal compaction coalesces repeated combat/regeneration state while
+  retaining transaction barriers, verifying replay and keeping a previous-journal
+  backup. `compact-data --data PATH` provides offline maintenance under the store lock.
 - Bounded read-only DAT and extracted terrain readers. The supplied corpus of
   **65,025 terrain records** passed full validation with no missing/empty linked
   info records. Terrain decoding is not yet server physics.
