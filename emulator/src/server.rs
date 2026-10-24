@@ -45,6 +45,7 @@ struct Peer {
     motion: Option<Motion>,
     target: Option<u64>,
     combat: bool,
+    emotes: crate::emotes::State,
     last_chat_ms: Option<u64>,
     last_inventory_ms: Option<u64>,
     last_examine_ms: Option<u64>,
@@ -82,7 +83,8 @@ impl Peer {
         data.get(..4).is_some_and(|opcode| {
             matches!(
                 u32::from_le_bytes(opcode.try_into().unwrap()),
-                0x10058 | 0x100c2 | 0x10069..=0x10076 | 0x100d4 | 0x100d5 | 0x10066
+                0x10058 | 0x100c2 | 0x10069
+                    ..=0x10076 | 0x100d4 | 0x100d5 | 0x10066 | crate::emotes::EVENT
             )
         })
     }
@@ -653,6 +655,7 @@ pub fn run(config: Config) -> io::Result<()> {
         crate::ui::validate_wlib(&wlib).map_err(other)?;
         crate::ui::validate_skills_wlib(&wlib).map_err(other)?;
         crate::skills::validate_assets(&mut portal)?;
+        crate::emotes::validate_assets(&mut portal)?;
         if config.training_kit
             || config.lifestones
             || config.portals
@@ -943,6 +946,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                 target: None,
                                 combat: false,
                                 last_chat_ms: None,
+                                emotes: crate::emotes::State::default(),
                                 last_inventory_ms: None,
                                 last_examine_ms: None,
                                 last_world_use_ms: None,
@@ -1110,6 +1114,46 @@ pub fn run(config: Config) -> io::Result<()> {
                                         }
                                     };
                                     match request {
+                                        script::Request::Emote(token) => {
+                                            let result = (|| -> io::Result<()> {
+                                                let saved = &store.characters[&character];
+                                                if !config.initialize_ui
+                                                    || !scene.can_observe(character, character)
+                                                    || !saved.progression.alive()
+                                                    || peer.combat
+                                                {
+                                                    return Err(invalid(
+                                                        "Emotes require a ready, living character out of combat.",
+                                                    ));
+                                                }
+                                                let (next, wire) = peer
+                                                    .emotes
+                                                    .prepare(
+                                                        character,
+                                                        saved.instance,
+                                                        now_ms,
+                                                        token,
+                                                    )
+                                                    .map_err(other)?;
+                                                peer.validate_scene_batch(&[wire.clone()])?;
+                                                let updates = scene
+                                                    .broadcast(character, wire)
+                                                    .map_err(other)?;
+                                                peer.emotes = next;
+                                                deliveries.extend(updates);
+                                                Ok(())
+                                            })(
+                                            );
+                                            if let Err(error) = result {
+                                                replies.extend(
+                                                    peer.send_event(
+                                                        &script::chat(&error.to_string(), 1)
+                                                            .map_err(other)?,
+                                                        now,
+                                                    )?,
+                                                );
+                                            }
+                                        }
                                         script::Request::UseSkill { skill, target } => {
                                             if abilities
                                                 .as_ref()
@@ -2529,6 +2573,7 @@ mod tests {
             target: None,
             combat: false,
             last_chat_ms: None,
+            emotes: crate::emotes::State::default(),
             last_inventory_ms: None,
             last_examine_ms: None,
             last_world_use_ms: None,

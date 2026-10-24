@@ -58,6 +58,10 @@ implementation or acceptance. A MusicLoader error can require Continue.
   spending commit together; cooldowns remain active across reconnects during
   the same server run. This is authored development balance, without native
   cast animation/cooldown-bar acceptance or original effect formulas.
+- Initialized players can use eight supported native emotes: Wave, Yawn, Moose,
+  four dances and the AFK gesture. Behavior messages use current avatar lifetime
+  stamps and are delivered to same-cell players. Dead/in-combat use and request
+  flooding are rejected. Broader social/away-state semantics remain unfinished.
 - Checked journal compaction coalesces repeated combat/regeneration state while
   retaining transaction barriers, verifying replay and keeping a previous-journal
   backup. `compact-data --data PATH` provides offline maintenance under the store lock.

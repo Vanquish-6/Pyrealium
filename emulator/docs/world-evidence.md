@@ -1,5 +1,24 @@
 # Build 7148 character and world event evidence
 
+## Native player emote routing (2026-10-24)
+
+Strict `8205000b` decoding accepts a tagged token from an eight-emote allowlist.
+Wave, Yawn, Moose, Dance 1–4 and AFK token/behavior pairings are corroborated by
+retained capture messages; capture build identity remains unverified. Native
+behavior encoding follows `004946d0`, `00679220`, `006795b0`, `00497a00` and
+`004ec680`, including stop-on-move, supported child fading and AFK visual effect.
+Fresh `1007f` messages use the active owned avatar, current instance and a checked
+behavior counter. Captured context counters and the reference implementation's
+guessed `0xAA` are not replayed.
+
+Initialized UI startup pins enum `23000027` and default-human behavior table
+`44000001`. The runtime requires a ready living player out of combat, reserves
+owner queue capacity before publishing emote state, then broadcasts through
+same-cell scene delivery. Behavior messages join the ordered lifecycle queue.
+The one-second cooldown is explicit server policy. Full emote coverage, social
+AFK state and ongoing-behavior restoration for late arrivals remain incomplete.
+Formatted and compile checked; no tests or native client were run.
+
 ## Learned active healing with durable payment (2026-10-24)
 
 The explicit initialized training profile routes native UseSkill `8204000b`

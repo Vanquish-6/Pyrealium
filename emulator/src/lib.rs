@@ -5,6 +5,7 @@ pub mod bootstrap;
 pub mod content;
 pub mod crypto;
 pub mod dat;
+pub mod emotes;
 pub mod encounters;
 pub mod equipment;
 pub mod examination;
