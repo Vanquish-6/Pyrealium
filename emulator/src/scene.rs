@@ -56,12 +56,7 @@ impl Body {
             return Err(WorldError::LimitExceeded);
         }
         for spawn in spawns {
-            if spawn.len() != 72
-                || spawn[..4] != world::CREATE_OBJECT.to_le_bytes()
-                || spawn[20..24] != 0x20u32.to_le_bytes()
-                || spawn[28..36] != self.id.to_le_bytes()
-                || spawn[40..42] != self.instance.to_le_bytes()
-            {
+            if world::hand_parent(&spawn)? != (self.id, self.instance) {
                 return Err(WorldError::InvalidValue);
             }
             let id = u64::from_le_bytes(spawn[4..12].try_into().unwrap());
@@ -273,18 +268,15 @@ impl Scene {
         equipped: bool,
     ) -> Result<u16, WorldError> {
         let instance = self.next_item_instance(owner, item)?;
-        if spawn.len() != if equipped { 72 } else { 56 }
+        let body = &self.bodies[&owner];
+        if (equipped && world::hand_parent(spawn)? != (owner, body.instance))
+            || (!equipped && (spawn.len() != 56 || spawn[20..24] != 0u32.to_le_bytes()))
             || spawn[..4] != world::CREATE_OBJECT.to_le_bytes()
             || spawn[4..12] != item.to_le_bytes()
             || spawn[24..26] != instance.to_le_bytes()
-            || spawn[20..24] != (if equipped { 0x20u32 } else { 0 }).to_le_bytes()
         {
             return Err(WorldError::InvalidValue);
         }
-        if equipped && spawn[28..36] != owner.to_le_bytes() {
-            return Err(WorldError::InvalidValue);
-        }
-        let body = &self.bodies[&owner];
         if body.item_instances.len() >= 89 && !body.item_instances.contains_key(&item)
             || equipped && body.hands.len() >= 2 && !body.hands.contains_key(&item)
         {

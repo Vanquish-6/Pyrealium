@@ -623,13 +623,57 @@ pub fn create_hand_item(
         return Err(WorldError::InvalidValue);
     }
     let mut bytes = create_inventory_item(item, owner, instance)?;
-    bytes[20..24].copy_from_slice(&0x20u32.to_le_bytes());
-    let mut parent = owner.to_le_bytes().to_vec();
+    let initialized =
+        item.definition == crate::training_kit::DEFINITION && item.visual == 0x1f000056;
+    bytes[20..24].copy_from_slice(&(if initialized { 0xa2u32 } else { 0x20 }).to_le_bytes());
+    let mut parent = Vec::new();
+    if initialized {
+        // Same-definition held weapon in cleaned Inventar/ac2_load_inventar:
+        // native initial mode and scale slider precede the physics parent.
+        parent.extend(0x40000001u32.to_le_bytes());
+        parent.extend(1u32.to_le_bytes());
+        parent.extend(0x4000000au32.to_le_bytes());
+        parent.extend(1f32.to_le_bytes());
+        parent.extend(0f32.to_le_bytes());
+    }
+    parent.extend(owner.to_le_bytes());
     parent.extend(location.to_le_bytes());
     parent.extend(parent_instance.to_le_bytes());
     parent.extend(0u16.to_le_bytes()); // Native alignment before timestamps.
     bytes.splice(28..28, parent);
     Ok(bytes)
+}
+
+/// Validate the two generated hand profiles and locate their stamped parent.
+/// Centralize offsets so visibility and equipment updates accept the same wire.
+pub(crate) fn hand_parent(spawn: &[u8]) -> Result<(u64, u16), WorldError> {
+    if spawn.len() < 72 || spawn[..4] != CREATE_OBJECT.to_le_bytes() {
+        return Err(WorldError::InvalidValue);
+    }
+    let flags = u32::from_le_bytes(spawn[20..24].try_into().unwrap());
+    let offset = match (flags, spawn.len()) {
+        (0x20, 72) => 28,
+        (0xa2, 92) => {
+            let expected: Vec<u8> = [0x40000001u32, 1, 0x4000000a, 1f32.to_bits(), 0]
+                .into_iter()
+                .flat_map(u32::to_le_bytes)
+                .collect();
+            if spawn[28..48] != expected
+                || spawn[16..20] != 0x1f000056u32.to_le_bytes()
+                || spawn[76..80] != crate::training_kit::DEFINITION.to_le_bytes()
+            {
+                return Err(WorldError::InvalidValue);
+            }
+            48
+        }
+        _ => return Err(WorldError::InvalidValue),
+    };
+    let owner = u64::from_le_bytes(spawn[offset..offset + 8].try_into().unwrap());
+    let instance = u16::from_le_bytes(spawn[offset + 12..offset + 14].try_into().unwrap());
+    if [0, u64::MAX].contains(&owner) || instance == 0 {
+        return Err(WorldError::InvalidValue);
+    }
+    Ok((owner, instance))
 }
 
 pub fn destroy_inventory_item(id: u64, instance: u16) -> Vec<u8> {

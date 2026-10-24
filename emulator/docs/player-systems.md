@@ -757,3 +757,11 @@ and kampf_onyx_pynthos_wasp.elog
 (SHA256 aed46be5aebd877cb441406747a26e86fa09fdec1a20dbb566e014a05204452f).
 Damage/range/cooldown remain authored training rules. NPC animations, original
 action timing and fresh player sword-animation acceptance remain incomplete.
+
+The same cleaned inventory capture also contains the exact authored weapon
+definition 47000f1e / visual 1f000056. Its held physics initializes mode 40000001
+and scale slider 4000000a=1.0 before the stamped parent. Hand creation now includes
+that narrow initialization, and scene validation accepts the corresponding
+92-byte profile alongside the existing 72-byte parent-only profile. Other item
+definitions retain their existing profile. The capture also has appearance
+overrides; those are not copied or treated as recovered starter entitlement.
