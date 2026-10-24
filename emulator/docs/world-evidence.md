@@ -616,3 +616,25 @@ rejects both send paths, acknowledges the queue, and checks the next serialized
 fragment uses world stamp one. Empty payload rejection and stamp exhaustion
 also leave the counters unchanged. This does not implement application retries
 or a complete gameplay transaction system.
+
+## Native movement observation (2026-10-24)
+
+The original build-7148 client entered the world against release `087904c` on
+the local native-test realm (UDP 19370/19371). The matching executable hash was
+verified by the read-only movement probe. Explorer rendered at the start and
+later at another position with the inventory panel open. The probe reported
+player ID 1, no locked actions, and actively_moving=1. The server's persisted
+placement subsequently contained cell `0x02990108`, coordinates approximately
+`[-8.711257, 234.96587, -43.98427]`, heading 171, compared with the configured
+start cell `0x02990109` at `[59.060577, 240.199, -44.606205]`. This establishes
+native movement and saved placement across a cell boundary in this session.
+
+The user was providing input during the observation; the automation's attempted
+W tap was refused because user input had occurred. Do not attribute the walking
+to an automated key hold. A screenshot is retained outside version control at
+the recovery checkout's `emulator/target/play-native/native-world-lifetimes.png`.
+The native client later exited; no cause was captured, so this is not an
+assertion of crash-free extended play. HUD labels/vitals remained incomplete,
+and opening the skills panel showed an empty list. Initial loading emitted
+rejected pre-ready script calls; unsupported `0x100c7` and `0x82030005` requests
+were also logged. These remain integration work, not completed gameplay.
