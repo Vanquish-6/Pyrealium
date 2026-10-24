@@ -7,6 +7,83 @@ const REF: u8 = 1;
 const INT: u8 = 2;
 const NULL: u32 = u32::MAX;
 
+/// Check serialized interpreted-object sizes before enabling this fixed profile.
+/// VTableSection::StreamPack 006e89d0 stores two nested word arrays, followed by
+/// (size, checksum) package-info pairs. This checks layout, not script semantics.
+pub fn validate_wlib(bytes: &[u8]) -> Result<(), WorldError> {
+    struct Reader<'a> {
+        bytes: &'a [u8],
+        pos: usize,
+    }
+    impl Reader<'_> {
+        fn take(&mut self, size: usize) -> Result<&[u8], WorldError> {
+            let end = self
+                .pos
+                .checked_add(size)
+                .ok_or(WorldError::LimitExceeded)?;
+            let value = self.bytes.get(self.pos..end).ok_or(WorldError::Truncated)?;
+            self.pos = end;
+            Ok(value)
+        }
+        fn word(&mut self) -> Result<u32, WorldError> {
+            Ok(u32::from_le_bytes(self.take(4)?.try_into().unwrap()))
+        }
+        fn nested(&mut self) -> Result<(), WorldError> {
+            let count = self.word()?;
+            if count > 32768 {
+                return Err(WorldError::LimitExceeded);
+            }
+            for _ in 0..count {
+                let count = self.word()? as usize;
+                self.take(count.checked_mul(4).ok_or(WorldError::LimitExceeded)?)?;
+            }
+            Ok(())
+        }
+    }
+    let mut reader = Reader { bytes, pos: 0 };
+    if reader.word()? != 0x56000005 || reader.word()? != 0x1a015342 || reader.word()? != 15 {
+        return Err(WorldError::InvalidValue);
+    }
+    let mut vtable = None;
+    let mut sections = 0;
+    while reader.pos < bytes.len() {
+        sections += 1;
+        if sections > 128 {
+            return Err(WorldError::LimitExceeded);
+        }
+        let kind = reader.word()?;
+        let size = reader.word()? as usize;
+        let start = reader.pos;
+        reader.take(size)?;
+        if kind == 6 {
+            if vtable.is_some() {
+                return Err(WorldError::InvalidValue);
+            }
+            vtable = Some(&bytes[start..start + size]);
+        }
+    }
+    let mut reader = Reader {
+        bytes: vtable.ok_or(WorldError::InvalidValue)?,
+        pos: 0,
+    };
+    reader.nested()?;
+    reader.nested()?;
+    let count = reader.word()? as usize;
+    if count > 32768 {
+        return Err(WorldError::LimitExceeded);
+    }
+    let info = reader.take(count.checked_mul(8).ok_or(WorldError::LimitExceeded)?)?;
+    for (package, size) in [(0x1a4, 2u32), (0x233, 8), (0x14f, 14), (0x24a7, 2)] {
+        let entry = info
+            .get(package * 8..package * 8 + 4)
+            .ok_or(WorldError::InvalidValue)?;
+        if entry != size.to_le_bytes() {
+            return Err(WorldError::InvalidValue);
+        }
+    }
+    Ok(())
+}
+
 struct Object {
     kind: u32,
     native: Vec<u32>,
@@ -143,6 +220,41 @@ pub fn empty_player() -> Result<Vec<u8>, WorldError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn layout_gate_rejects_changed_sizes_truncation_and_unbounded_counts() {
+        let mut section = Vec::new();
+        for value in [1, 0, 1, 0, 0x24a8] {
+            word(&mut section, value);
+        }
+        section.resize(section.len() + 0x24a8 * 8, 0);
+        for (package, size) in [(0x1a4, 2u32), (0x233, 8), (0x14f, 14), (0x24a7, 2)] {
+            section[20 + package * 8..24 + package * 8].copy_from_slice(&size.to_le_bytes());
+        }
+        let mut wlib = Vec::new();
+        for value in [0x56000005, 0x1a015342, 15, 6, section.len() as u32] {
+            word(&mut wlib, value);
+        }
+        wlib.extend(&section);
+        validate_wlib(&wlib).unwrap();
+        for length in [0, 1, 4, 8, 11, 12, 16, 19, 20, 24, wlib.len() - 1] {
+            assert!(validate_wlib(&wlib[..length]).is_err());
+        }
+        for (offset, value) in [
+            (8, 16),
+            (16, u32::MAX),
+            (20, 32769),
+            (28, 32769),
+            (36, u32::MAX),
+            (40 + 0x14f * 8, 13),
+        ] {
+            let mut invalid = wlib.clone();
+            invalid[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
+            assert!(validate_wlib(&invalid).is_err());
+        }
+        let mut duplicate = wlib.clone();
+        duplicate.extend(&wlib[12..]);
+        assert!(validate_wlib(&duplicate).is_err());
+    }
     #[test]
     fn profile_has_fourteen_arguments_and_closed_reference_graphs() {
         let bytes = empty_player().unwrap();

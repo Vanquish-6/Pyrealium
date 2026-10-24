@@ -681,3 +681,11 @@ Tests independently walk all fourteen arguments, verify closed reference graphs,
 check alignment and field tags, and exercise ordered delivery over real UDP after
 scene completion plus duplicate completion. This does not establish native HUD
 acceptance; keep the switch opt-in until a matching-client run validates it.
+
+Enabling the switch now also performs a bounded read of WLib's VTable package
+metadata before binding the server ports. Changed/missing interpreted sizes,
+truncated sections, duplicate VTable sections and oversized counts fail startup.
+This gate checks the four serialized class layouts, not script behavior. The
+constant HUD packet is built once at startup and reused for each new avatar
+lifetime. Tests cover the gate's valid/malformed layouts, and the supplied
+converted archive passes the enabled real-UDP bootstrap test.

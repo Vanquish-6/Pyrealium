@@ -111,7 +111,7 @@ corruption rather than silently discarding progress.
 
 ## Validation and measured performance
 
-The current standard suite passes **55 unit tests and seven integration checks**,
+The current standard suite passes **56 unit tests and seven integration checks**,
 including one real-UDP test. Three additional opt-in UDP tests cover the converted bootstrap, rejection
 of incompatible installed assets, and two-player movement/look/logout/re-entry,
 deletion and connection-logoff behavior. They passed on the supplied assets.

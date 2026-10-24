@@ -236,6 +236,17 @@ pub fn run(config: Config) -> io::Result<()> {
             "experimental UI initialization requires converted build-7148 game data",
         ));
     }
+    let initial_ui = if config.initialize_ui {
+        let directory = config.game_data.as_ref().unwrap();
+        let mut portal = crate::dat::Dat::open(directory.join("portal.dat"))?;
+        crate::ui::validate_wlib(&portal.read(0x56000005)?).map_err(other)?;
+        println!(
+            "Experimental empty-player HUD initialization enabled; native acceptance pending."
+        );
+        Some(crate::ui::empty_player().map_err(other)?)
+    } else {
+        None
+    };
     let primary = UdpSocket::bind(config.bind)?;
     let mut secondary_addr = config.bind;
     secondary_addr.set_port(config.bind.port() + 1);
@@ -896,9 +907,10 @@ pub fn run(config: Config) -> io::Result<()> {
                                 world::ClientEvent::SceneRenderingComplete => {
                                     let first =
                                         matches!(peer.session.phase, Phase::Entering { .. });
-                                    if first && config.initialize_ui {
-                                        let packet = crate::ui::empty_player().map_err(other)?;
-                                        replies.extend(peer.send_event(&packet, now)?);
+                                    if first {
+                                        if let Some(packet) = initial_ui.as_deref() {
+                                            replies.extend(peer.send_event(packet, now)?);
+                                        }
                                     }
                                     peer.session.scene_complete().map_err(other)?;
                                     if let Phase::InWorld { character } = peer.session.phase {
