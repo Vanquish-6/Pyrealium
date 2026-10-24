@@ -11,3 +11,4 @@
 *.service text eol=lf
 *.slice text eol=lf
 *.conf.example text eol=lf
+*.conf text eol=lf

@@ -77,6 +77,31 @@ account backend on 127.0.0.1:19400 and use only UDP 19370/19371 for AC2, leaving
 Aetherium's UDP 9000/9001 and 9100/9101 untouched. Add only the AC2-specific
 firewall rules after the isolated service is ready; never flush either firewall.
 
+The operator selected separate AC2 storage. OCI block volumes have a minimum
+size of **50 GB**, so the earlier 40 GB suggestion does not fit that service.
+Create the volume in the instance's availability domain, review the tenancy's
+storage quota and billing, and attach it to this instance. There was no OCI CLI
+or cloud-management configuration available through the inspected SSH account;
+creating/attaching the volume requires Oracle Console or separately configured
+cloud API access. No volume has been created or formatted by this preparation.
+See [Oracle's volume creation guide](https://docs.oracle.com/en-us/iaas/Content/Block/Tasks/creatingavolume.htm).
+
+Mount the verified new volume at `/srv/pyrealium` using its filesystem UUID.
+Identify the attached device explicitly and inspect its signatures before
+formatting anything; `/dev/sda` is the existing Aetherium boot disk. Never infer
+the new device from an arbitrary disk ordering. Back up `/etc/fstab` before
+adding the new UUID entry. Use `nofail` so an unavailable AC2 disk does not
+prevent the existing host from booting.
+
+Create `/srv/pyrealium/state/{auth,game}` on that volume. On a fresh AC2 install,
+make `/var/lib/pyrealium` a symlink to `/srv/pyrealium/state`; if that path already
+exists, stop and inspect it instead of replacing or moving unknown state. Keep
+the service user as owner and use mode 0700 for private state. Install
+`deploy/oracle-volume.conf` as a drop-in for **both** AC2 services. The mount
+condition and mount dependency stop AC2 from falling back to the root disk if
+its volume is unavailable. Assets and the content manifest also live on the
+mounted volume; the small executable and legal notices can remain under `/opt`.
+
 Stage small release bundles under the operator's home directory first. Check
 their SHA-256 before installation. Provision a separate `pyrealium` user and
 directories using the layout below; leave the services disabled until storage,
