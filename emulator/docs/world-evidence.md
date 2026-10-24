@@ -830,3 +830,17 @@ Native equip/move request/reply handling, server-driven worn appearance updates,
 and complete item metadata/tooltip presentation remain unfinished. No items were
 automatically granted. The code was compiled only; no automated tests or native
 client checks were run, following the user's instruction.
+
+## Inventory location indexes (2026-10-24)
+
+Inventory candidates now carry fixed, bounded bag and equipment indexes derived
+from their owned item map. Occupancy checks read one index entry, and finding a
+free bag slot scans at most 78 entries instead of repeatedly searching every
+item. Every changed candidate rebuilds its indexes and rejects duplicate or
+out-of-range locations before the store can journal or publish it. Failed
+commands leave the original map and indexes intact. The derived indexes do not
+change the journal format, slot policies, or ownership rules.
+
+Formatted and compiled with `cargo check --all-targets`; no tests, benchmarks,
+or native client checks were run. This is an algorithmic improvement, not a
+measured performance claim.

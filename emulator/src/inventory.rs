@@ -18,10 +18,24 @@ pub struct Item {
     pub equipment_mask: u16,
     pub location: Location,
 }
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Inventory {
     items: BTreeMap<u64, Item>,
     high_water: u64,
+    // Derived indexes are rebuilt on candidates before Store can publish them.
+    // They never enter the journal or provide a second source of ownership.
+    bags: [Option<u64>; BAG_SLOTS as usize],
+    equipment: [Option<u64>; 11],
+}
+impl Default for Inventory {
+    fn default() -> Self {
+        Self {
+            items: BTreeMap::new(),
+            high_water: 0,
+            bags: [None; BAG_SLOTS as usize],
+            equipment: [None; 11],
+        }
+    }
 }
 #[derive(Clone, Debug)]
 pub enum Command {
@@ -72,13 +86,37 @@ impl Inventory {
         self.high_water.max(ITEM_NAMESPACE)
     }
     pub fn free_slot(&self) -> Option<u16> {
-        (0..BAG_SLOTS).find(|&slot| self.at(Location::Bag(slot)).is_none())
+        self.bags
+            .iter()
+            .position(Option::is_none)
+            .map(|slot| slot as u16)
     }
     fn at(&self, location: Location) -> Option<u64> {
-        self.items
-            .values()
-            .find(|item| item.location == location)
-            .map(|item| item.id)
+        match location {
+            Location::Bag(slot) => self.bags.get(usize::from(slot)).copied().flatten(),
+            Location::Equipped(slot) if slot.is_power_of_two() && slot <= 0x400 => {
+                self.equipment[slot.trailing_zeros() as usize]
+            }
+            Location::Equipped(_) => None,
+        }
+    }
+    fn reindex(&mut self) -> Result<(), InventoryError> {
+        self.bags.fill(None);
+        self.equipment.fill(None);
+        for item in self.items.values() {
+            let occupied = match item.location {
+                Location::Bag(slot) => self.bags.get_mut(usize::from(slot)),
+                Location::Equipped(slot) if slot.is_power_of_two() && slot <= 0x400 => {
+                    self.equipment.get_mut(slot.trailing_zeros() as usize)
+                }
+                Location::Equipped(_) => None,
+            }
+            .ok_or(InventoryError::StaleLocation)?;
+            if occupied.replace(item.id).is_some() {
+                return Err(InventoryError::StaleLocation);
+            }
+        }
+        Ok(())
     }
     fn owned(&self, id: u64) -> Result<&Item, InventoryError> {
         self.items.get(&id).ok_or(InventoryError::NotOwned)
@@ -218,6 +256,7 @@ impl Inventory {
                 }
             }
         }
+        next.reindex()?;
         Ok(next)
     }
 }
