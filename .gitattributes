@@ -7,3 +7,7 @@
 *.yml text eol=lf
 *.ps1 text eol=crlf
 *.cs text eol=crlf
+*.sh text eol=lf
+*.service text eol=lf
+*.slice text eol=lf
+*.conf.example text eol=lf
