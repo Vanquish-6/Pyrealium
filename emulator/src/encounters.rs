@@ -424,8 +424,7 @@ impl Encounters {
                 events.push(Event::Stop(target));
                 events.push(Event::Note {
                     player: target,
-                    text: "You have fallen. Development encounters support @resurrect in chat."
-                        .into(),
+                    text: "You have fallen. Use Resurrect to recover.".into(),
                 });
             }
             events.push(Event::Owner {

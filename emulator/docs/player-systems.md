@@ -94,9 +94,16 @@ XP, gold and other private player state are sent only to the owning connection.
 The initialized HUD receives skill-credit updates as levels change. Native
 animation and interface acceptance remain unverified.
 
-Dead characters cannot attack or submit movement. In this development profile,
-chat command `@resurrect` restores saved vitals at the current location; it is
-not lifestone binding, corpse recovery or original resurrection/penalty behavior.
+Dead characters cannot attack or submit movement. The native Resurrect button
+now restores saved vitals at the current location. Death sends the private and
+public boolean Dead quality (`117`), the native death notice (`8207002b`) and
+UI lock (`82070033`). Reconnecting a dead character restores that state and
+notice after scene initialization. Resurrection persists the recovery before
+clearing combat, publishing live vitals/Dead and unlocking the UI. The same
+recovery remains available if the encounter profile has subsequently changed;
+`@resurrect` is a development chat fallback when encounters are enabled.
+This is local recovery policy; lifestone binding, corpse recovery, death
+animations, teleportation and original penalties remain unfinished.
 Ordinary chat rate limits still apply. Encounter/world state is transient across
 server restarts; player rewards and vitals are durable. Journals with `g2` require
 the newer reader. Training does not yet grant starter equipment or abilities.

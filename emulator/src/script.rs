@@ -10,9 +10,11 @@ pub const SAY: u32 = 0x82050006;
 pub const TELL: u32 = 0x82050002;
 pub const CHAT_STRING: u32 = 0x82050011;
 pub const TARGET: u32 = 0x82120016;
+pub const RESURRECT: u32 = 0x8207000e;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Request {
+    Resurrect,
     Combat(bool),
     Attack(Option<u64>),
     UiSettings(crate::preferences::UiSettings),
@@ -83,6 +85,7 @@ pub fn decode(function: u32, bytes: &[u8]) -> Result<Request, WorldError> {
     }
     let mut r = Reader { bytes, pos: 0 };
     let request = match function {
+        RESURRECT => Request::Resurrect,
         crate::skills::TRAIN | crate::skills::UNTRAIN | crate::skills::RAISE => {
             let skill = r.int()?;
             if skill == 0 || skill > 65535 {

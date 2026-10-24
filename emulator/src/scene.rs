@@ -16,7 +16,7 @@ pub struct Body {
     instance: u16,
     spawn: Vec<u8>,
     ready: bool,
-    public_stats: BTreeMap<u32, (u32, Arc<[u8]>)>,
+    public_stats: BTreeMap<(u32, u32), (u32, Arc<[u8]>)>,
 }
 impl Body {
     pub fn new(id: u64, placement: Placement, spawn: Vec<u8>) -> Result<Self, WorldError> {
@@ -55,13 +55,26 @@ impl Body {
         ] {
             if self
                 .public_stats
-                .get(&key)
+                .get(&(0x1006a, key))
                 .is_some_and(|(old, _)| *old == value)
             {
                 continue;
             }
             let wire: Arc<[u8]> = world::visual_int(self.id, self.instance, key, value).into();
-            self.public_stats.insert(key, (value, wire.clone()));
+            self.public_stats
+                .insert((0x1006a, key), (value, wire.clone()));
+            updates.push(wire);
+        }
+        let dead = u32::from(!state.alive());
+        if !self
+            .public_stats
+            .get(&(0x1006c, 0x117))
+            .is_some_and(|(value, _)| *value == dead)
+        {
+            let wire: Arc<[u8]> =
+                world::visual_bool(self.id, self.instance, 0x117, !state.alive()).into();
+            self.public_stats
+                .insert((0x1006c, 0x117), (dead, wire.clone()));
             updates.push(wire);
         }
         updates

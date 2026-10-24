@@ -203,7 +203,22 @@ impl Bootstrap {
             player.extend(key.to_le_bytes());
             player.extend(value.to_le_bytes());
         }
-        player.extend_from_slice(&self.qualities[96..200]);
+        let mut booleans = std::collections::BTreeMap::new();
+        for entry in self.qualities[100..180].chunks_exact(8) {
+            booleans.insert(
+                u32::from_le_bytes(entry[..4].try_into().unwrap()),
+                u32::from_le_bytes(entry[4..].try_into().unwrap()),
+            );
+        }
+        booleans.insert(0x117, u32::from(!progression.alive()));
+        let mut booleans = booleans.into_iter().collect::<Vec<_>>();
+        booleans.sort_unstable_by_key(|(key, _)| (key % 11, *key));
+        player.extend((booleans.len() as u32).to_le_bytes());
+        for (key, value) in booleans {
+            player.extend(key.to_le_bytes());
+            player.extend(value.to_le_bytes());
+        }
+        player.extend_from_slice(&self.qualities[180..200]);
         player.extend(
             (if request.sex == 0x2000 {
                 0x470000ceu32

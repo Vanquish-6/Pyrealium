@@ -472,6 +472,11 @@ pub fn visual_int(id: u64, instance: u16, key: u32, value: u32) -> Vec<u8> {
     wire.extend(value.to_le_bytes());
     wire
 }
+pub fn visual_bool(id: u64, instance: u16, key: u32, value: bool) -> Vec<u8> {
+    let mut wire = visual_int(id, instance, key, u32::from(value));
+    wire[..4].copy_from_slice(&0x1006cu32.to_le_bytes());
+    wire
+}
 
 /// Builds a syntactically recovered CreateObject subset; not a complete player bootstrap.
 pub fn create_stationary_object(object: &StationaryObject) -> Result<Vec<u8>, WorldError> {

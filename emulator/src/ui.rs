@@ -3,6 +3,12 @@
 use crate::{script, world::WorldError};
 
 pub const LOAD: u32 = 0x82120027;
+pub fn death_notice(reason: &str) -> Result<Vec<u8>, WorldError> {
+    script::private_call(0x8207002b, &script::literal(reason)?)
+}
+pub fn lock_player(locked: bool) -> Result<Vec<u8>, WorldError> {
+    script::private_call(0x82070033, &script::integer(u32::from(locked)))
+}
 const REF: u8 = 1;
 const INT: u8 = 2;
 const NULL: u32 = u32::MAX;

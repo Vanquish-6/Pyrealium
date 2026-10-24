@@ -194,6 +194,14 @@ impl Progression {
             event.extend(value.to_le_bytes());
             events.push(event);
         }
+        events.push(
+            [
+                0x1006bu32.to_le_bytes(),
+                0x117u32.to_le_bytes(),
+                u32::from(!self.alive()).to_le_bytes(),
+            ]
+            .concat(),
+        );
         events
     }
 }

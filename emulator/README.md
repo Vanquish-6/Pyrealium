@@ -176,6 +176,9 @@ An explicit development encounter loop is available with `--content training
 the normal game-data/account/bind/data options. It connects native attack targets
 to server health/vigor changes, stationary retaliation, XP/gold rewards, levels,
 regeneration and timed creature respawn. Saved player state is restored on entry.
+Death and the native Resurrect button now share persisted vitals, the client Dead
+flag, death notice and UI locking, including reconnect while dead. Resurrection
+currently restores the character in place under development recovery policy.
 The rules and starter placement are development content; original combat formulas,
 skills, animations, collision, item looting and native acceptance are unfinished.
 See [player systems integration](docs/player-systems.md).

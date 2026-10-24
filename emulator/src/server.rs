@@ -103,7 +103,7 @@ impl Peer {
             let opcode = u32::from_le_bytes(data[..4].try_into().unwrap());
             let ordered = matches!(
                 opcode,
-                0x10058 | 0x100c2 | 0x10069 | 0x1006a | 0x1006c | 0x100d4 | 0x100d5 | 0x10066
+                0x10058 | 0x100c2 | 0x10069..=0x10076 | 0x100d4 | 0x100d5 | 0x10066
             );
             let packets = self.send_world_event(&data, ordered, now)?;
             self.scene_outbox.pop_front();
@@ -206,6 +206,51 @@ impl Peer {
         )
         .map_err(other)
     }
+}
+
+fn resurrect_character(
+    peer: &mut Peer,
+    character: u64,
+    store: &mut Store,
+    scene: &mut crate::scene::Scene,
+    encounters: &mut Option<crate::encounters::Encounters>,
+) -> io::Result<Vec<crate::scene::Delivery>> {
+    let saved = store
+        .characters
+        .get(&character)
+        .filter(|c| !c.deleted && c.account == peer.session.account)
+        .ok_or_else(|| invalid("Character unavailable."))?;
+    if saved.progression.alive() {
+        return Err(invalid("You are already alive."));
+    }
+    store.progression_command(
+        &peer.session.account,
+        character,
+        crate::progression::Command::Resurrect,
+    )?;
+    if let Some(runtime) = encounters {
+        runtime.stop(character);
+    }
+    peer.combat = false;
+    peer.target = None;
+    let state = &store.characters[&character].progression;
+    let mut updates = scene.player_stats(character, state);
+    for wire in state.private_updates() {
+        updates.push(crate::scene::Delivery {
+            recipient: character,
+            data: wire.into(),
+        });
+    }
+    for wire in [
+        crate::ui::lock_player(false).map_err(other)?,
+        script::private_call(script::COMBAT_STATE, &script::integer(0)).map_err(other)?,
+    ] {
+        updates.push(crate::scene::Delivery {
+            recipient: character,
+            data: wire.into(),
+        });
+    }
+    Ok(updates)
 }
 
 fn selection_list(
@@ -703,6 +748,24 @@ pub fn run(config: Config) -> io::Result<()> {
                                         }
                                     };
                                     match request {
+                                        script::Request::Resurrect => {
+                                            match resurrect_character(
+                                                peer,
+                                                character,
+                                                &mut store,
+                                                &mut scene,
+                                                &mut encounters,
+                                            ) {
+                                                Ok(updates) => deliveries.extend(updates),
+                                                Err(error) => replies.extend(
+                                                    peer.send_event(
+                                                        &script::chat(&error.to_string(), 1)
+                                                            .map_err(other)?,
+                                                        now,
+                                                    )?,
+                                                ),
+                                            }
+                                        }
                                         script::Request::Skill { action, skill } => {
                                             if !config.initialize_ui {
                                                 replies.extend(peer.send_event(&script::chat("Skills are not available in this session.",1).map_err(other)?,now)?);
@@ -894,61 +957,27 @@ pub fn run(config: Config) -> io::Result<()> {
                                                         && encounters.is_some()
                                                     {
                                                         peer.last_chat_ms = Some(now_ms);
-                                                        if store.characters[&character]
-                                                            .progression
-                                                            .alive()
-                                                        {
-                                                            replies.extend(
+                                                        match resurrect_character(
+                                                            peer,
+                                                            character,
+                                                            &mut store,
+                                                            &mut scene,
+                                                            &mut encounters,
+                                                        ) {
+                                                            Ok(updates) => {
+                                                                deliveries.extend(updates)
+                                                            }
+                                                            Err(error) => replies.extend(
                                                                 peer.send_event(
                                                                     &script::chat(
-                                                                        "You are already alive.",
+                                                                        &error.to_string(),
                                                                         1,
                                                                     )
                                                                     .map_err(other)?,
                                                                     now,
                                                                 )?,
-                                                            );
-                                                            return Ok(replies);
-                                                        }
-                                                        store.progression_command(
-                                                            &peer.session.account,
-                                                            character,
-                                                            crate::progression::Command::Resurrect,
-                                                        )?;
-                                                        encounters
-                                                            .as_mut()
-                                                            .unwrap()
-                                                            .stop(character);
-                                                        peer.combat = false;
-                                                        peer.target = None;
-                                                        deliveries.extend(
-                                                            scene.player_stats(
-                                                                character,
-                                                                &store.characters[&character]
-                                                                    .progression,
                                                             ),
-                                                        );
-                                                        for event in store.characters[&character]
-                                                            .progression
-                                                            .private_updates()
-                                                        {
-                                                            deliveries.push(
-                                                                crate::scene::Delivery {
-                                                                    recipient: character,
-                                                                    data: event.into(),
-                                                                },
-                                                            );
                                                         }
-                                                        deliveries.push(crate::scene::Delivery {
-                                                            recipient: character,
-                                                            data: script::private_call(
-                                                                script::COMBAT_STATE,
-                                                                &script::integer(0),
-                                                            )
-                                                            .map_err(other)?
-                                                            .into(),
-                                                        });
-                                                        replies.extend(peer.send_event(&script::chat("Development resurrection restored your vitals at this location.",1).map_err(other)?,now)?);
                                                         return Ok(replies);
                                                     }
                                                     let packet = script::chat(
@@ -1332,6 +1361,20 @@ pub fn run(config: Config) -> io::Result<()> {
                                     if let Phase::InWorld { character } = peer.session.phase {
                                         deliveries
                                             .extend(scene.activate(character).map_err(other)?);
+                                        if first
+                                            && !store.characters[&character].progression.alive()
+                                        {
+                                            for wire in [
+                                                crate::ui::death_notice("You have fallen.")
+                                                    .map_err(other)?,
+                                                crate::ui::lock_player(true).map_err(other)?,
+                                            ] {
+                                                deliveries.push(crate::scene::Delivery {
+                                                    recipient: character,
+                                                    data: wire.into(),
+                                                });
+                                            }
+                                        }
                                     }
                                     eprintln!("client reported SceneRenderingComplete");
                                     return Ok(replies);
@@ -1415,6 +1458,18 @@ pub fn run(config: Config) -> io::Result<()> {
                                 recipient: player,
                                 data: wire.into(),
                             });
+                        }
+                        if !state.alive() {
+                            for wire in [
+                                crate::ui::death_notice("You were defeated by a creature.")
+                                    .map_err(other)?,
+                                crate::ui::lock_player(true).map_err(other)?,
+                            ] {
+                                updates.push(crate::scene::Delivery {
+                                    recipient: player,
+                                    data: wire.into(),
+                                });
+                            }
                         }
                     }
                     crate::encounters::Event::Note { player, text } => {
