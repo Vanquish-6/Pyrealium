@@ -963,7 +963,7 @@ pub fn run(config: Config) -> io::Result<()> {
             .as_ref()
             .is_some_and(|runtime| runtime.includes_entity(crate::quests::TARGET_ENTITY));
     let mut abilities = if config.initialize_ui && config.training_kit {
-        Some(crate::abilities::Runtime::development().map_err(other)?)
+        Some(crate::abilities::Runtime::development().map_err(io::Error::other)?)
     } else {
         None
     };
@@ -1327,7 +1327,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                                             &saved.progression,
                                                             now_ms,
                                                         )
-                                                        .map_err(other)?;
+                                                        .map_err(io::Error::other)?;
                                                     let next = cast.next().clone();
                                                     let mut events =
                                                         next.private_changes(cast.previous());
