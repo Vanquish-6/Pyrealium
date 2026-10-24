@@ -17,6 +17,7 @@ pub const RESURRECT: u32 = 0x8207000e;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Request {
+    Allegiance(crate::allegiance::Query),
     Group(crate::groups::Request),
     MerchantSell(crate::merchants::SellRequest),
     MerchantBuy(crate::merchants::BuyRequest),
@@ -29,6 +30,7 @@ pub enum Request {
     Emote(u32),
     InventoryMove(crate::inventory_request::MoveRequest),
     UseObject(crate::equipment::UseRequest),
+    Equip(crate::equipment::EquipRequest),
     UnEquip(crate::equipment::UnEquipRequest),
     Examine(u64),
     UseSkill {
@@ -107,6 +109,16 @@ pub fn decode(function: u32, bytes: &[u8]) -> Result<Request, WorldError> {
     }
     let mut r = Reader { bytes, pos: 0 };
     let request = match function {
+        crate::allegiance::QUERY => {
+            let query = crate::allegiance::Query::decode(bytes)?;
+            r.pos = bytes.len();
+            Request::Allegiance(query)
+        }
+        crate::equipment::EQUIP => {
+            let request = crate::equipment::EquipRequest::decode(bytes)?;
+            r.pos = bytes.len();
+            Request::Equip(request)
+        }
         function if crate::groups::handles(function) => {
             let request = crate::groups::decode(function, bytes)?;
             r.pos = bytes.len();

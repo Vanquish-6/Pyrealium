@@ -814,11 +814,16 @@ fn quest_action(
     Ok(updates)
 }
 
+enum HandChange {
+    Toggle,
+    Equip { slot: u16, source: u16 },
+    Unequip { slot: u16, destination: u16 },
+}
 fn change_hand_item(
     peer: &mut Peer,
     character: u64,
     request: &crate::equipment::UseRequest,
-    destination: Option<(u16, u16)>,
+    action: HandChange,
     store: &mut Store,
     scene: &mut crate::scene::Scene,
     metadata: &BTreeMap<u32, Option<crate::inventory_request::Metadata>>,
@@ -853,9 +858,24 @@ fn change_hand_item(
     let slot = hand
         .hand_slot(item)
         .ok_or_else(|| invalid("Only supported hand-held items can be changed here."))?;
-    let equipped =
-        destination.is_none() && matches!(item.location, crate::inventory::Location::Bag(_));
-    let command = if let Some((expected_slot, requested)) = destination {
+    let equipped = !matches!(action, HandChange::Unequip { .. })
+        && matches!(item.location, crate::inventory::Location::Bag(_));
+    if let HandChange::Equip {
+        slot: requested,
+        source,
+    } = action
+    {
+        if requested != slot || item.location != crate::inventory::Location::Bag(source) {
+            return Err(invalid(
+                "The equip source or supported hand slot has changed.",
+            ));
+        }
+    }
+    let command = if let HandChange::Unequip {
+        slot: expected_slot,
+        destination: requested,
+    } = action
+    {
         if item.location != crate::inventory::Location::Equipped(expected_slot)
             || slot != expected_slot
         {
@@ -1426,6 +1446,7 @@ pub fn run(config: Config) -> io::Result<()> {
         crate::ui::validate_layouts(&wlib, &crate::merchants::LAYOUTS).map_err(other)?;
         crate::ui::validate_layouts(&wlib, &crate::groups::LAYOUTS).map_err(other)?;
         crate::ui::validate_layouts(&wlib, &crate::interaction::LAYOUTS).map_err(other)?;
+        crate::ui::validate_layouts(&wlib, &crate::allegiance::LAYOUTS).map_err(other)?;
         if config.training_kit
             || config.lifestones
             || config.portals
@@ -1931,6 +1952,26 @@ pub fn run(config: Config) -> io::Result<()> {
                                         }
                                     };
                                     match request {
+                                        script::Request::Allegiance(query) => {
+                                            let target = query.target.unwrap_or(character);
+                                            if !store
+                                                .characters
+                                                .get(&target)
+                                                .is_some_and(|saved| !saved.deleted)
+                                                || (target != character
+                                                    && !scene.can_observe(character, target))
+                                            {
+                                                return Err(invalid(
+                                                    "That player is not available to examine.",
+                                                ));
+                                            }
+                                            // No server operation currently creates allegiance membership.
+                                            // Report actual unaffiliated state, never a captured hierarchy.
+                                            peer.queue_ordered_batch(vec![
+                                                crate::allegiance::unaffiliated().map_err(other)?,
+                                            ])?;
+                                            return Ok(replies);
+                                        }
                                         script::Request::Group(request) => {
                                             if !config.initialize_ui
                                                 || !scene.can_observe(character, character)
@@ -2654,7 +2695,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                                     peer,
                                                     character,
                                                     &request,
-                                                    None,
+                                                    HandChange::Toggle,
                                                     &mut store,
                                                     &mut scene,
                                                     &inventory_metadata,
@@ -2676,6 +2717,52 @@ pub fn run(config: Config) -> io::Result<()> {
                                                     )?,
                                                 ),
                                             }
+                                        }
+                                        script::Request::Equip(request) => {
+                                            let result =
+                                                (|| -> io::Result<Vec<crate::scene::Delivery>> {
+                                                    if !config.initialize_ui {
+                                                        return Err(invalid(
+                                                            "Inventory is not initialized.",
+                                                        ));
+                                                    }
+                                                    let action = HandChange::Equip {
+                                                        slot: u16::try_from(request.slot).map_err(
+                                                            |_| invalid("Invalid equipment slot."),
+                                                        )?,
+                                                        source: u16::try_from(request.source)
+                                                            .map_err(|_| {
+                                                                invalid(
+                                                                    "Invalid backpack position.",
+                                                                )
+                                                            })?,
+                                                    };
+                                                    change_hand_item(
+                                                        peer,
+                                                        character,
+                                                        &crate::equipment::UseRequest {
+                                                            owner: request.owner,
+                                                            item: request.item,
+                                                        },
+                                                        action,
+                                                        &mut store,
+                                                        &mut scene,
+                                                        &inventory_metadata,
+                                                        now_ms,
+                                                    )
+                                                })(
+                                                );
+                                            match result {
+                                                Ok(updates) => deliveries.extend(updates),
+                                                Err(error) => peer.queue_ordered_batch(vec![
+                                                    script::chat(
+                                                        &format!("Equip rejected: {error}"),
+                                                        1,
+                                                    )
+                                                    .map_err(other)?,
+                                                ])?,
+                                            }
+                                            return Ok(replies);
                                         }
                                         script::Request::UnEquip(request) => {
                                             let result =
@@ -2704,7 +2791,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                                         peer,
                                                         character,
                                                         &item,
-                                                        Some((slot, destination)),
+                                                        HandChange::Unequip { slot, destination },
                                                         &mut store,
                                                         &mut scene,
                                                         &inventory_metadata,

@@ -870,3 +870,20 @@ Native VisualDesc inheritance 0063ee40 supplies its DAT appearance. Pectar's
 1f000deb DAT likewise supplies setup 040001cb and animation map 03000044.
 No guessed inline clothing graph was added to either NPC; an exact Pectar
 creation capture remains unfound.
+
+### Equipment-panel Equip and unaffiliated profile queries
+
+The player's unsupported 820e004f request is native Equip, distinct from generic
+Use and Unequip. Its strict 180-byte 1f6/1f5 graph carries a requested equipment
+slot and source bag index. The server checks both against the owned item and
+DAT hand metadata, then uses the existing admitted/journaled Wear transition.
+An explicit equip can never toggle an already equipped item back into the bag.
+Native path: 004504f0 / 00459140 -> b4000d -> 9ab40016 -> 820e0059.
+
+Unsupported 82030005 is QueryAllegianceProfile, not a combat or NPC-use action.
+Its exact tagged IID is resolved to self (zero) or a visible stored player.
+Because this server has no allegiance-membership operation, it returns a fresh
+unaffiliated constructor profile through 8203002e. All nullable 1b5 references
+remain absent; native 0043d790 selects the no-allegiance state rather than
+traversing a made-up hierarchy. The package layout is checked at startup.
+Swearing, patronage and allegiance XP remain unimplemented.

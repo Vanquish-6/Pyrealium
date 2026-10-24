@@ -3,6 +3,85 @@ use crate::world::WorldError;
 
 pub const USE: u32 = 0x82160016;
 pub const UNEQUIP: u32 = 0x820e0015;
+pub const EQUIP: u32 = 0x820e004f;
+
+/// Native drag from the player's backpack onto an equipment location.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EquipRequest {
+    pub owner: u64,
+    pub item: u64,
+    pub slot: u32,
+    pub source: u32,
+}
+impl EquipRequest {
+    pub fn decode(arguments: &[u8]) -> Result<Self, WorldError> {
+        // gmCWInterface::EquipItem 004504f0 / glue 00459140 -> b4000d
+        // (object 1aa4, code 98f50) constructs 1f6 using 1f6002b.
+        // 9ab40016 records source index using 1f6001f, then 820e0059
+        // (1005c0) packs the graph for client event 820e004f.
+        if arguments.len() != 180 {
+            return Err(WorldError::InvalidValue);
+        }
+        let word =
+            |offset: usize| u32::from_le_bytes(arguments[offset..offset + 4].try_into().unwrap());
+        let first = word(8);
+        let second = word(12);
+        if first == second
+            || [0, u32::MAX].contains(&first)
+            || [0, u32::MAX].contains(&second)
+            || [word(0), word(4), word(16), word(20), word(24), word(28)]
+                != [5, 2, 0x44000100, 0, 0x01f60000, 19]
+            || [word(128), word(132), word(136), word(140)] != [0x44000100, 0, 0x01f50000, 7]
+        {
+            return Err(WorldError::InvalidValue);
+        }
+        let fields: [u32; 19] = std::array::from_fn(|index| word(32 + index * 4));
+        let item = u64::from(fields[3]) | (u64::from(fields[4]) << 32);
+        let owner = u64::from(fields[8]) | (u64::from(fields[9]) << 32);
+        let slot = fields[7];
+        let source = fields[18];
+        if [0, u64::MAX].contains(&item)
+            || [0, u64::MAX].contains(&owner)
+            || item == owner
+            || [0, u32::MAX].contains(&slot)
+            || source >= u32::from(crate::inventory::BAG_SLOTS)
+        {
+            return Err(WorldError::InvalidValue);
+        }
+        let mut expected = [0; 19];
+        expected[1] = second;
+        expected[2] = 1;
+        for index in [3, 4, 8, 9] {
+            expected[index] = fields[index];
+        }
+        expected[7] = slot;
+        // The client finds the source container/index before sending. Support
+        // only direct ownership in our player's backpack; no nested containers.
+        expected[10] = fields[8];
+        expected[11] = fields[9];
+        expected[12] = 0x9e;
+        expected[15] = slot;
+        expected[18] = source;
+        const TAGS: [u8; 19] = [
+            2, 1, 2, 0x84, 0xcd, 2, 2, 4, 0x84, 0xcd, 0x84, 0xcd, 2, 2, 2, 4, 0x82, 0xcd, 4,
+        ];
+        if fields != expected
+            || arguments[108..127] != TAGS
+            || arguments[127] != 0
+            || arguments[144..172].iter().any(|&byte| byte != 0)
+            || arguments[172..179] != [2; 7]
+            || arguments[179] != 0
+        {
+            return Err(WorldError::InvalidValue);
+        }
+        Ok(Self {
+            owner,
+            item,
+            slot,
+            source,
+        })
+    }
+}
 
 /// Native equipment-panel drag to a backpack position, distinct from Use.
 #[derive(Clone, Debug, PartialEq, Eq)]
