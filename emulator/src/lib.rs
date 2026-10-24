@@ -6,6 +6,7 @@ pub mod crypto;
 pub mod dat;
 pub mod encounters;
 pub mod equipment;
+pub mod examination;
 pub mod inventory;
 pub mod inventory_request;
 pub mod legacy;

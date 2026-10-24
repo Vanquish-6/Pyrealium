@@ -30,6 +30,9 @@ pub struct Object {
     stats: BTreeMap<u32, (u32, Arc<[u8]>)>,
 }
 impl Object {
+    pub fn stat(&self, key: u32) -> Option<u32> {
+        self.stats.get(&key).map(|(value, _)| *value)
+    }
     pub fn updates(&self) -> impl Iterator<Item = &Arc<[u8]>> {
         self.stats
             .get(&0x107)

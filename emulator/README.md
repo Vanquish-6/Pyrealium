@@ -44,6 +44,10 @@ implementation or acceptance. A MusicLoader error can require Continue.
   attached hand objects for the owner and nearby players. Armor composition,
   equipment bonuses, general item use and native acceptance remain unfinished.
   No automatic starter grants.
+- Native object examination for visible players, owned inventory, visible hand
+  equipment and active same-cell content. Names use supported DAT localization
+  references; live health and the owner's private progression come from server
+  state. Full original item descriptions and native acceptance remain open.
 - Bounded read-only DAT and extracted terrain readers. The supplied corpus of
   **65,025 terrain records** passed full validation with no missing/empty linked
   info records. Terrain decoding is not yet server physics.

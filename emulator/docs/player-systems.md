@@ -244,3 +244,37 @@ This is static packet/layout integration, not native gameplay acceptance. Held
 items currently use their primary attachment in both stances; stowing, animations,
 armor appearance composition, equipment effects and original eligibility remain
 unfinished. Compilation only; no automated tests or native game checks were run.
+
+## Native object examination
+
+The initialized 7148 HUD now handles `820a0007` with a single native
+ExaminationRequest (`9a`), non-admin object type `40000002`, and zero interpreted
+fields. The exact argument length is 44 bytes. The matching serializer
+`00609660` does not contain the newer options word in the retained captures;
+those newer request layouts are rejected instead of accepted by offset.
+
+Replies use `820a0009`, native ExaminationProfile `99`, native request fields,
+and a bounded list of string/break nodes. `00608380`, `00608490`, `00609140` and
+`006dbb00` define the matching native profile, nodes, list and heap field count.
+No newer native-profile trailing fields are replayed. Text uses supported
+StringInfo literal serialization and retained header/body appearance selectors.
+
+The handler allows the current player, owned items, visible equipped hand items,
+other active visible players and active same-cell content. Player replies include
+public level/health/death state; vigor, XP, spendable XP and gold are included only
+when examining oneself. Owned items show quantity and stored location. Content
+replies include encounter health when available. Other players' inventories and
+private progression are not exposed. Unavailable/out-of-view targets are rejected.
+
+Default definition names are cached from bounded DAT qualities prefixes, using
+localized StringInfo references without substitutions. Unsupported names use a
+generic fallback. The cache holds at most 16,384 unique definitions, covers saved
+inventory and loaded content, and performs no disk reads per request. A 100 ms
+request cooldown bounds repeated examination work. Full original descriptions,
+item effects, quest facts and examination of skills/recipes are separate work.
+
+Retained `ac2_npc_target.elog` and
+`ac2_player_target_npc_pets_objects_buff_pets.elog` demonstrate the newer envelope
+and string/break node pattern; their build identity remains unverified. Matching
+7148 recovered serializers govern the emitted layout. This was compiled only;
+no tests, native game launch or running-server replacement were performed.

@@ -44,6 +44,7 @@ struct Peer {
     combat: bool,
     last_chat_ms: Option<u64>,
     last_inventory_ms: Option<u64>,
+    last_examine_ms: Option<u64>,
     unhandled_scripts: BTreeSet<u32>,
     scene_outbox: VecDeque<Arc<[u8]>>,
     scene_bytes: usize,
@@ -287,6 +288,73 @@ fn inventory_spawn(
     world::create_inventory_item(item, owner, instance).map_err(other)
 }
 
+fn examine_target(
+    character: u64,
+    target: u64,
+    store: &Store,
+    scene: &crate::scene::Scene,
+    names: &crate::examination::Names,
+) -> io::Result<Vec<u8>> {
+    use crate::{
+        examination::{self, Name},
+        inventory::Location,
+    };
+    if let Some(player) = store
+        .characters
+        .get(&target)
+        .filter(|player| !player.deleted && scene.can_observe(character, player.id))
+    {
+        let state = &player.progression;
+        let mut lines = vec![
+            format!("Level {}", state.level().number),
+            format!("Health: {} / {}", state.health, state.level().health),
+        ];
+        if !state.alive() {
+            lines.push("Dead".to_owned());
+        }
+        if character == target {
+            lines.extend([
+                format!("Vigor: {} / {}", state.vigor, state.level().vigor),
+                format!("Experience: {}", state.xp),
+                format!("Available experience: {}", state.available_xp),
+                format!("Gold: {}", state.gold),
+            ]);
+        }
+        return examination::response(target, Name::Literal(player.name.clone()), &lines)
+            .map_err(other);
+    }
+    if let Some(item) = store.characters[&character]
+        .inventory
+        .items()
+        .find(|item| item.id == target)
+    {
+        let location = match item.location {
+            Location::Equipped(0x40) => "Equipped in main hand.",
+            Location::Equipped(0x80) => "Equipped in off hand.",
+            Location::Equipped(_) => "Equipped.",
+            Location::Bag(_) => "In your inventory.",
+        };
+        return examination::response(
+            target,
+            names.get(item.definition, "Item"),
+            &[format!("Quantity: {}", item.quantity), location.to_owned()],
+        )
+        .map_err(other);
+    }
+    if let Some(definition) = scene.visible_hand_definition(character, target) {
+        return examination::response(target, names.get(definition, "Item"), &[]).map_err(other);
+    }
+    if let Some(object) = scene.examination_content(character, target) {
+        let mut lines = Vec::new();
+        if let Some((health, maximum)) = object.stat(0x102).zip(object.stat(0x107)) {
+            lines.push(format!("Health: {health} / {maximum}"));
+        }
+        return examination::response(target, names.get(object.entity, "Object"), &lines)
+            .map_err(other);
+    }
+    Err(invalid("That object is not available to examine."))
+}
+
 fn selection_list(
     store: &Store,
     account: &str,
@@ -471,6 +539,20 @@ pub fn run(config: Config) -> io::Result<()> {
         .as_deref()
         .map(|path| crate::encounters::Encounters::load(path, &content))
         .transpose()?;
+    let examination_names = if config.initialize_ui {
+        crate::examination::Names::load(
+            config.game_data.as_deref().unwrap(),
+            content.objects().map(|object| object.entity).chain(
+                store
+                    .characters
+                    .values()
+                    .filter(|character| !character.deleted)
+                    .flat_map(|character| character.inventory.items().map(|item| item.definition)),
+            ),
+        )?
+    } else {
+        crate::examination::Names::default()
+    };
     let primary = UdpSocket::bind(config.bind)?;
     let mut secondary_addr = config.bind;
     secondary_addr.set_port(config.bind.port() + 1);
@@ -634,6 +716,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                 combat: false,
                                 last_chat_ms: None,
                                 last_inventory_ms: None,
+                                last_examine_ms: None,
                                 unhandled_scripts: BTreeSet::new(),
                                 scene_outbox: VecDeque::new(),
                                 scene_bytes: 0,
@@ -798,6 +881,42 @@ pub fn run(config: Config) -> io::Result<()> {
                                         }
                                     };
                                     match request {
+                                        script::Request::Examine(target) => {
+                                            if !config.initialize_ui {
+                                                return Err(invalid(
+                                                    "examination requires initialized player UI",
+                                                ));
+                                            }
+                                            if peer.last_examine_ms.is_some_and(|last| {
+                                                now_ms.saturating_sub(last) < 100
+                                            }) {
+                                                return Err(invalid(
+                                                    "examination request cooldown",
+                                                ));
+                                            }
+                                            peer.last_examine_ms = Some(now_ms);
+                                            match examine_target(
+                                                character,
+                                                target,
+                                                &store,
+                                                &scene,
+                                                &examination_names,
+                                            ) {
+                                                Ok(packet) => {
+                                                    deliveries.push(crate::scene::Delivery {
+                                                        recipient: character,
+                                                        data: packet.into(),
+                                                    })
+                                                }
+                                                Err(error) => replies.extend(
+                                                    peer.send_event(
+                                                        &script::chat(&error.to_string(), 1)
+                                                            .map_err(other)?,
+                                                        now,
+                                                    )?,
+                                                ),
+                                            }
+                                        }
                                         script::Request::UseItem(request) => {
                                             if peer.last_inventory_ms.is_some_and(|last| {
                                                 now_ms.saturating_sub(last) < 100
@@ -1752,6 +1871,7 @@ mod tests {
             combat: false,
             last_chat_ms: None,
             last_inventory_ms: None,
+            last_examine_ms: None,
             unhandled_scripts: BTreeSet::new(),
             scene_outbox: VecDeque::new(),
             scene_bytes: 0,

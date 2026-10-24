@@ -180,11 +180,15 @@ impl Scene {
         equipped: bool,
     ) -> Result<Vec<Delivery>, WorldError> {
         let instance = self.next_item_instance(owner, item)?;
-        if spawn.len() < 36
+        if spawn.len() != if equipped { 72 } else { 56 }
             || spawn[..4] != world::CREATE_OBJECT.to_le_bytes()
             || spawn[4..12] != item.to_le_bytes()
             || spawn[24..26] != instance.to_le_bytes()
+            || spawn[20..24] != (if equipped { 0x20u32 } else { 0 }).to_le_bytes()
         {
+            return Err(WorldError::InvalidValue);
+        }
+        if equipped && spawn[28..36] != owner.to_le_bytes() {
             return Err(WorldError::InvalidValue);
         }
         let body = self.bodies.get_mut(&owner).unwrap();
@@ -267,6 +271,26 @@ impl Scene {
             .object(id)
             .filter(|_| self.content.cell(id).is_some())
             .map(|object| object.placement)
+    }
+    pub fn examination_content(
+        &self,
+        observer: u64,
+        target: u64,
+    ) -> Option<&crate::content::Object> {
+        self.can_observe(observer, target)
+            .then(|| self.content.object(target))
+            .flatten()
+    }
+    pub fn visible_hand_definition(&self, observer: u64, target: u64) -> Option<u32> {
+        for body in self.bodies.values() {
+            if self.can_observe(observer, body.id) {
+                if let Some(spawn) = body.hands.get(&target) {
+                    // Cached native hand-object subset has a fixed 72-byte shape.
+                    return Some(u32::from_le_bytes(spawn[56..60].try_into().unwrap()));
+                }
+            }
+        }
+        None
     }
     pub fn content_stat(
         &mut self,

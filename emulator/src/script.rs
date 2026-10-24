@@ -17,6 +17,7 @@ pub enum Request {
     Resurrect,
     InventoryMove(crate::inventory_request::MoveRequest),
     UseItem(crate::equipment::UseRequest),
+    Examine(u64),
     Combat(bool),
     Attack(Option<u64>),
     UiSettings(crate::preferences::UiSettings),
@@ -88,6 +89,11 @@ pub fn decode(function: u32, bytes: &[u8]) -> Result<Request, WorldError> {
     let mut r = Reader { bytes, pos: 0 };
     let request = match function {
         RESURRECT => Request::Resurrect,
+        crate::examination::REQUEST => {
+            let target = crate::examination::decode(bytes)?;
+            r.pos = bytes.len();
+            Request::Examine(target)
+        }
         crate::equipment::USE => {
             let request = crate::equipment::UseRequest::decode(bytes)?;
             r.pos = bytes.len();
