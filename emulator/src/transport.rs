@@ -13,6 +13,7 @@ const WINDOW: u32 = 512;
 const MAX_MESSAGE: usize = 64 * 1024;
 const FRAGMENT_DATA: usize = 448;
 const MAX_PENDING: usize = 256;
+const RECOVERY_LIFETIME: Duration = Duration::from_secs(30);
 
 #[derive(Debug)]
 pub enum TransportError {
@@ -66,6 +67,11 @@ struct Pending {
     retries: u8,
 }
 #[derive(Clone)]
+struct Retired {
+    packet: Pending,
+    acknowledged: Instant,
+}
+#[derive(Clone)]
 pub struct Transport {
     incoming: Isaac,
     outgoing: Isaac,
@@ -77,6 +83,9 @@ pub struct Transport {
     keys: BTreeMap<u32, u32>,
     next_outgoing: u32,
     pending: BTreeMap<u32, Pending>,
+    // Highest-observed ACKs can precede a separate NAK for an earlier hole.
+    // Keep immutable bytes briefly without occupying the active send window.
+    retired: BTreeMap<u32, Retired>,
     assemblies: BTreeMap<u64, Assembly>,
     completed: VecDeque<u64>,
     next_ordered: u32,
@@ -87,12 +96,13 @@ impl Transport {
     /// Bounded counters for rejection diagnostics; never exposes cipher keys.
     pub fn diagnostic(&self) -> String {
         format!(
-            "received_through={} generated_through={} next_send={} next_ordered={} pending={} assemblies={} ordered={}",
+            "received_through={} generated_through={} next_send={} next_ordered={} pending={} recovery={} assemblies={} ordered={}",
             self.contiguous,
             self.generated,
             self.next_outgoing,
             self.next_ordered,
             self.pending.len(),
+            self.retired.len(),
             self.assemblies.len(),
             self.ordered.len()
         )
@@ -109,6 +119,7 @@ impl Transport {
             keys: BTreeMap::new(),
             next_outgoing: 2,
             pending: BTreeMap::new(),
+            retired: BTreeMap::new(),
             assemblies: BTreeMap::new(),
             completed: VecDeque::new(),
             next_ordered: 1,
@@ -377,15 +388,31 @@ impl Transport {
         Ok(output)
     }
     pub fn acknowledge(&mut self, sequence: u32) -> Result<(), TransportError> {
+        self.acknowledge_at(sequence, Instant::now())
+    }
+    fn acknowledge_at(&mut self, sequence: u32, now: Instant) -> Result<(), TransportError> {
         if sequence >= self.next_outgoing {
             return Err(TransportError::Sequence);
         }
+        self.retired.retain(|_, retired| {
+            now.saturating_duration_since(retired.acknowledged) < RECOVERY_LIFETIME
+        });
         while self
             .pending
             .first_key_value()
             .is_some_and(|(&seq, _)| seq <= sequence)
         {
-            self.pending.pop_first();
+            let (seq, packet) = self.pending.pop_first().unwrap();
+            self.retired.insert(
+                seq,
+                Retired {
+                    packet,
+                    acknowledged: now,
+                },
+            );
+            if self.retired.len() > MAX_PENDING {
+                self.retired.pop_first();
+            }
         }
         Ok(())
     }
@@ -408,7 +435,7 @@ impl Transport {
         // All fallible validation above precedes mutation on the control path.
         // The encrypted path additionally runs on a transactional candidate.
         if let Some(ack) = ack {
-            self.acknowledge(ack)?;
+            self.acknowledge_at(ack, now)?;
         }
         Ok(retransmissions)
     }
@@ -430,14 +457,24 @@ impl Transport {
         }
         let mut staged = Vec::new();
         for seq in sequences.iter().copied().collect::<BTreeSet<_>>() {
-            if let Some(p) = self.pending.get(&seq) {
+            let packet = self.pending.get(&seq).or_else(|| {
+                self.retired
+                    .get(&seq)
+                    .filter(|retired| {
+                        now.saturating_duration_since(retired.acknowledged) < RECOVERY_LIFETIME
+                    })
+                    .map(|retired| &retired.packet)
+            });
+            if let Some(p) = packet {
                 if p.retries >= 8 {
                     return Err(TransportError::RetryLimit);
                 }
                 // Retiring a requested packet must not defeat its NAK merely
                 // because it was sent recently. It can be staged only once:
-                // the accompanying ACK removes it immediately afterward.
-                if retiring_through.is_some_and(|ack| seq <= ack)
+                // the accompanying ACK removes it from the active window.
+                // Cached retries always retain the normal rate limit.
+                if (self.pending.contains_key(&seq)
+                    && retiring_through.is_some_and(|ack| seq <= ack))
                     || now.saturating_duration_since(p.sent) >= Duration::from_millis(100)
                 {
                     staged.push((seq, p.bytes.to_vec()));
@@ -447,7 +484,10 @@ impl Transport {
         // Preflight every requested packet before changing any retry counters.
         let mut result = Vec::with_capacity(staged.len());
         for (seq, bytes) in staged {
-            let pending = self.pending.get_mut(&seq).unwrap();
+            let pending = match self.pending.get_mut(&seq) {
+                Some(pending) => pending,
+                None => &mut self.retired.get_mut(&seq).unwrap().packet,
+            };
             pending.retries += 1;
             pending.sent = now;
             result.push(bytes);

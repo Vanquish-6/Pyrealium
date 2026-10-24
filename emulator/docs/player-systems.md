@@ -675,3 +675,18 @@ No late-NAK history cache is introduced by this repair.
 These are source-grounded repairs, not proof of the reported session's full cause.
 No test suites or automated native-client runs were performed; fresh player
 unequip and interaction acceptance remains required after deployment.
+
+### Delayed missing-packet requests
+
+The subsequent recovery repair also handles a missing-packet request arriving
+after a separate highest-observed acknowledgment. Up to 256 acknowledged packets
+remain eligible for explicit retransmission for 30 seconds after acknowledgment.
+They do not occupy the active send window or receive automatic timed retries.
+Exact encrypted bytes are reused without advancing ISAAC or message identities.
+The existing 100 ms requested-retry rate limit and eight-retry budget still apply;
+repeated acknowledgments do not renew the retention deadline. Storage is bounded
+and shared across transactional transport clones. These cache limits are emulator
+policy, not a claim about the original server's retention policy.
+
+This closes a source-visible recovery gap; there has not yet been a new native
+client session establishing whether it explains the player's interaction report.
