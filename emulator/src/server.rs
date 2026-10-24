@@ -569,6 +569,13 @@ pub fn run(config: Config) -> io::Result<()> {
                                                 settings,
                                             )?;
                                         }
+                                        script::Request::Hotbar(update) => {
+                                            store.update_hotbar(
+                                                &peer.session.account,
+                                                character,
+                                                update,
+                                            )?;
+                                        }
                                         script::Request::Target(target) => {
                                             if target.is_some_and(|target| {
                                                 !scene.can_observe(character, target)
@@ -933,16 +940,20 @@ pub fn run(config: Config) -> io::Result<()> {
                                         matches!(peer.session.phase, Phase::Entering { .. });
                                     if first {
                                         if let Some(packet) = initial_ui.as_deref() {
-                                            let settings = match peer.session.phase {
-                                                Phase::Entering { character } => store
-                                                    .characters
-                                                    .get(&character)
-                                                    .and_then(|c| c.ui.as_ref()),
+                                            let saved = match peer.session.phase {
+                                                Phase::Entering { character } => {
+                                                    store.characters.get(&character).filter(|c| {
+                                                        c.ui.is_some() || !c.hotbar.is_empty()
+                                                    })
+                                                }
                                                 _ => None,
                                             };
-                                            if let Some(settings) = settings {
-                                                let restored = crate::ui::player(Some(settings))
-                                                    .map_err(other)?;
+                                            if let Some(saved) = saved {
+                                                let restored = crate::ui::player(
+                                                    saved.ui.as_ref(),
+                                                    Some(&saved.hotbar),
+                                                )
+                                                .map_err(other)?;
                                                 replies.extend(peer.send_event(&restored, now)?);
                                             } else {
                                                 replies.extend(peer.send_event(packet, now)?);

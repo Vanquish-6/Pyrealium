@@ -32,6 +32,9 @@ implementation or acceptance. A MusicLoader error can require Continue.
   promptly. This has synthetic UDP coverage; native acceptance is pending.
 - Initial health, vigor and level properties for a local level-one test profile.
   Values of 100 for vitals are development defaults, not recovered game balance.
+- Durable per-character window placement, opacity and hotbar bindings, restored
+  by the opt-in HUD initializer. These changes are compile checked only; native
+  acceptance remains pending. Bindings do not grant skills or items.
 - Bounded read-only DAT and extracted terrain readers. The supplied corpus of
   **65,025 terrain records** passed full validation with no missing/empty linked
   info records. Terrain decoding is not yet server physics.
@@ -116,7 +119,7 @@ including one real-UDP test. Three additional opt-in UDP tests cover the convert
 of incompatible installed assets, and two-player movement/look/logout/re-entry,
 deletion and connection-logoff behavior. They passed on the supplied assets.
 These peers are synthetic; they do not establish native gameplay acceptance.
-The subsequent UI placement/opacity persistence change was compile checked only;
+The subsequent window-preference and hotbar persistence changes were compile checked only;
 automated tests were skipped at the user's request.
 
 ```powershell
@@ -166,7 +169,8 @@ An opt-in empty-player HUD experiment is available with
 `serve --initialize-ui true --game-data PATH` alongside the normal bind/account/data
 options. It requires the converted 7148 assets, emits UI_Load once after scene
 completion, and uses typed empty story, quest, skill, effect and inventory graphs.
-It grants no items, skills, gold or progress. This profile is not enabled by
+It restores saved window settings and hotbar bindings when present, and grants
+no items, skills, gold or progress. This profile is not enabled by
 default: native UI acceptance and backing gameplay systems remain unfinished.
 
 Complete the native UI/script bootstrap, appearance

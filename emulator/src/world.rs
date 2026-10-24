@@ -158,6 +158,18 @@ impl<'a> Reader<'a> {
     }
 }
 
+pub(crate) fn read_ui_text(bytes: &[u8]) -> Result<(String, usize), WorldError> {
+    let mut reader = Reader { bytes, pos: 0 };
+    let text = reader.wide_string()?;
+    Ok((text, reader.pos))
+}
+pub(crate) fn ui_text(text: &str) -> Result<Vec<u8>, WorldError> {
+    let mut bytes = Vec::new();
+    let units: Vec<u16> = text.encode_utf16().collect();
+    let data: Vec<u8> = units.iter().flat_map(|unit| unit.to_le_bytes()).collect();
+    pack_string(&mut bytes, &data, units.len())?;
+    Ok(bytes)
+}
 pub fn decode_client_event(bytes: &[u8]) -> Result<ClientEvent, WorldError> {
     let mut reader = Reader { bytes, pos: 0 };
     let event = match reader.u32()? {

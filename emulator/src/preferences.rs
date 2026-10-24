@@ -3,6 +3,7 @@ use crate::world::WorldError;
 use std::collections::BTreeMap;
 
 pub const WINDOW_UPDATE: u32 = 0x82120031;
+pub const HOTBAR_UPDATE: u32 = 0x82120018;
 pub const MAX_BYTES: usize = 16384;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -176,11 +177,132 @@ impl UiSettings {
     }
     /// GameplayOptionsProfile mask: saved locations, bit field/version, opacity.
     /// StreamPack 006000b0 orders these fields by explicit mask tests.
-    pub fn options_words(&self) -> Vec<u32> {
-        let mut words = vec![0x890, 0];
-        self.layout_words(&mut words);
+    fn append_options(&self, words: &mut Vec<u32>) {
+        self.layout_words(words);
         words.extend([0x80000000, 4]);
-        self.opacity_words(&mut words);
-        words
+        self.opacity_words(words);
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum Shortcut {
+    Empty,
+    Skill(u32),
+    Item(u64),
+    Text(String),
+    Enumeration(u32),
+    Craft(u32),
+}
+impl Shortcut {
+    fn words(&self) -> Result<Vec<u32>, WorldError> {
+        Ok(match self {
+            Self::Empty => vec![0],
+            Self::Skill(id) => vec![0x40000001, *id],
+            Self::Item(id) => vec![0x40000002, *id as u32, (*id >> 32) as u32],
+            Self::Text(text) => {
+                let mut words = vec![0x40000003];
+                words.extend(
+                    crate::world::ui_text(text)?
+                        .chunks_exact(4)
+                        .map(|b| u32::from_le_bytes(b.try_into().unwrap())),
+                );
+                words
+            }
+            Self::Enumeration(id) => vec![0x40000004, *id],
+            Self::Craft(id) => vec![0x40000006, *id],
+        })
+    }
+}
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HotbarUpdate {
+    slot: u32,
+    shortcut: Shortcut,
+}
+impl HotbarUpdate {
+    pub fn decode(bytes: &[u8]) -> Result<Self, WorldError> {
+        if bytes.len() > 2048 {
+            return Err(WorldError::LimitExceeded);
+        }
+        let mut r = Reader { bytes, pos: 0 };
+        r.graph(0xac)?; // gmCNativeFactory 00466c10 -> ShortcutInfo.
+        let shortcut = match r.word()? {
+            0 => Shortcut::Empty,
+            0x40000001 => Shortcut::Skill(r.word()?),
+            0x40000002 => Shortcut::Item(u64::from(r.word()?) | (u64::from(r.word()?) << 32)),
+            0x40000003 => {
+                let (text, size) = crate::world::read_ui_text(&bytes[r.pos..])?;
+                r.pos += size;
+                if text.is_empty()
+                    || text.chars().count() > 256
+                    || text.chars().any(char::is_control)
+                {
+                    return Err(WorldError::InvalidValue);
+                }
+                Shortcut::Text(text)
+            }
+            0x40000004 => Shortcut::Enumeration(r.word()?),
+            0x40000006 => Shortcut::Craft(r.word()?),
+            _ => return Err(WorldError::InvalidValue),
+        };
+        r.expect(0)?;
+        r.expect(1)?;
+        let slot = r.word()?;
+        if slot >= 100 {
+            return Err(WorldError::LimitExceeded);
+        }
+        if r.pos != bytes.len() {
+            return Err(WorldError::TrailingBytes);
+        }
+        Ok(Self { slot, shortcut })
+    }
+    pub fn encode(&self) -> Result<Vec<u8>, WorldError> {
+        let mut words = vec![5, 1, 1, 0x44000100, 0, 0xffff00ac];
+        words.extend(self.shortcut.words()?);
+        words.extend([0, 1, self.slot]);
+        Ok(words.into_iter().flat_map(u32::to_le_bytes).collect())
+    }
+}
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Hotbar {
+    slots: BTreeMap<u32, Shortcut>,
+}
+impl Hotbar {
+    pub fn is_empty(&self) -> bool {
+        self.slots.is_empty()
+    }
+    pub fn apply(&self, update: &HotbarUpdate) -> Result<Self, WorldError> {
+        let mut next = self.clone();
+        if update.shortcut == Shortcut::Empty {
+            next.slots.remove(&update.slot);
+        } else {
+            next.slots.insert(update.slot, update.shortcut.clone());
+        }
+        if next.words()?.len() * 4 > MAX_BYTES {
+            return Err(WorldError::LimitExceeded);
+        }
+        Ok(next)
+    }
+    fn words(&self) -> Result<Vec<u32>, WorldError> {
+        let mut words = vec![100];
+        for slot in 0..100 {
+            words.extend(self.slots.get(&slot).unwrap_or(&Shortcut::Empty).words()?);
+        }
+        Ok(words)
+    }
+}
+pub fn options_words(
+    settings: Option<&UiSettings>,
+    hotbar: Option<&Hotbar>,
+) -> Result<Vec<u32>, WorldError> {
+    let mut words = vec![
+        (if settings.is_some() { 0x890 } else { 0 }) | (if hotbar.is_some() { 2 } else { 0 }),
+        0,
+    ];
+    if let Some(hotbar) = hotbar {
+        words.extend(hotbar.words()?);
+    }
+    if let Some(settings) = settings {
+        settings.append_options(&mut words);
+    }
+    Ok(words)
 }

@@ -734,7 +734,31 @@ saved locations and opacities through GameplayOptionsProfile's `0x890` mask,
 bit-field marker and version 4, in the order specified by `006000b0`. Every hash
 is re-encoded in bucket-contiguous order with the native 11-bucket size index.
 This reuses semantic values, not client-provided pointers or arbitrary serialized
-script state. Other options (hotbars, aliases, channel fonts) remain unfinished.
+script state. Aliases and channel fonts remain unfinished; hotbars are covered below.
 
 Per the user's instruction, no automated tests were added or run for this
 change. Compilation succeeded; native persistence/restoration remains unverified.
+
+## Durable hotbar edits (2026-10-24)
+
+`0x82120018` now decodes one standalone native ShortcutInfo graph (native kind
+`0xac`, factory `00466c10`), followed by an integer slot. ShortcutInfo packing
+`00608150` specifies empty, skill, item instance, text, enum and craft-DID forms;
+PSmartArray packing `00436a00` supplies the restored array. The decoder bounds
+slots to 0..99 and text to 256 non-control characters, rejects unknown kinds,
+additional graph objects/fields and trailing data, and preserves UTF-16 text
+through the existing recovered string codec. Local aggregate hotbar data is
+limited to 16 KiB.
+
+Only the ready character owned by the sending session can edit its hotbar.
+Changes append flushed, checksummed `h1` journal events; identical edits avoid
+another write. Replay validates each edit and cumulative size before publishing
+it. Empty shortcuts remove the slot, and other slots are preserved. Tombstones
+and restoration retain the bindings. Journals containing `h1` require this newer
+reader. The opt-in HUD initializer combines shortcut-array mask bit 2 with saved
+window settings, following native GameplayOptionsProfile's field order.
+
+Bindings are UI preferences: referencing a skill/item does not train, grant,
+equip or authorize its use. Those gameplay handlers are separate unfinished
+work. No automated tests were added or run, per the user's request. Compilation
+succeeded; native hotbar editing and restoration have not been verified.

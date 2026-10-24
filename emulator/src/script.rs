@@ -16,6 +16,7 @@ pub enum Request {
     Combat(bool),
     Attack(Option<u64>),
     UiSettings(crate::preferences::UiSettings),
+    Hotbar(crate::preferences::HotbarUpdate),
     Target(Option<u64>),
     Say(String),
     Tell { recipient: String, text: String },
@@ -75,6 +76,11 @@ pub fn decode(function: u32, bytes: &[u8]) -> Result<Request, WorldError> {
     }
     let mut r = Reader { bytes, pos: 0 };
     let request = match function {
+        crate::preferences::HOTBAR_UPDATE => {
+            let update = crate::preferences::HotbarUpdate::decode(bytes)?;
+            r.pos = bytes.len();
+            Request::Hotbar(update)
+        }
         crate::preferences::WINDOW_UPDATE => {
             let settings = crate::preferences::UiSettings::decode(bytes)?;
             r.pos = bytes.len();
