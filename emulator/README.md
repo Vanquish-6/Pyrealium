@@ -10,10 +10,18 @@ separately in the evidence notes.
 The real 7148 client has connected, rendered character selection, entered the
 authored human starting area and sent scene-complete and position messages. Native
 walking and saved cross-cell placement were observed in the matching client.
-The complete HUD, two-client rendering, combat and populated gameplay still need
-implementation or acceptance. A MusicLoader error can require Continue.
+The newer HUD, inventory, combat, quest, consumable and travel handlers are
+implemented in Rust but still need fresh matching-client acceptance as one loop.
+Two-client appearance/visibility and general-player readiness are unverified.
+A MusicLoader error can require Continue.
 
-## Implemented
+**Status updated 2026-10-24.** Recent runtime changes passed library/server
+compilation and an optimized build. No new test suites or game-client runs were
+performed for them, and the running server was not restarted or deployed.
+The training profile's combat values, quest, item rewards and instant travel
+are authored development policies; they do not establish original AC2 parity.
+
+## Implemented in the server
 
 - Native login framing, connection handshake and two-port UDP transport, with a
   loopback-only developer account allowlist.
@@ -30,8 +38,9 @@ implementation or acceptance. A MusicLoader error can require Continue.
   unfinished.
 - Validated native connection logoff releases player ownership and scene presence
   promptly. This has synthetic UDP coverage; native acceptance is pending.
-- Initial health, vigor and level properties for a local level-one test profile.
-  Values of 100 for vitals are development defaults, not recovered game balance.
+- Persistent earned/available XP, gold, health, vigor and level progression using
+  the imported development level profile. Initial vitals of 100 are development
+  defaults; original race/class formulas and equipment effects are unfinished.
 - Durable per-character window placement, opacity and hotbar bindings, restored
   by the opt-in HUD initializer. These changes are compile checked only; native
   acceptance remains pending. Bindings do not grant skills or items.
@@ -211,7 +220,7 @@ Exact addresses, identities, policies, test boundaries and open work:
 - [Checksum generation and reliability](docs/crypto-evidence.md)
 - [World entry, movement, persistence and native observations](docs/world-evidence.md)
 
-## Remaining gameplay work
+## Development gameplay profile
 
 `serve-training --game-data PATH` selects the bundled starter encounter, initialized
 HUD, once-per-character development hand item and an authored nearby lifestone.
@@ -223,6 +232,15 @@ and data options as needed. The rules and placement are embedded, so this preset
 does not depend on launching from the emulator directory. It is an authored
 development slice; full original progression and native acceptance remain open.
 
+When its target encounters are present, this preset also accepts Training Grounds
+into the native quest journal. Three qualifying kills unlock `@quest claim` for
+a once-only 120 XP / 10 gold reward. `@quest` reports status. Training encounters
+can grant unstacked health potions; use restores up to 25 health and consumes the
+item atomically. The learned human Ease Suffering skill (`55`) provides the
+separate 30-health / 10-vigor development heal with an eight-second cooldown.
+Original quest/loot definitions and the full native skill-effect system are not
+implemented by these authored profiles.
+
 An explicit development encounter loop is available with `--content training
 --initialize-ui true --encounters content/development-encounters.tsv` alongside
 the normal game-data/account/bind/data options. It connects native attack targets
@@ -233,7 +251,8 @@ flag, death notice and UI locking, including reconnect while dead. Resurrection
 restores the character in place unless development lifestones are enabled and
 the character has a saved binding, in which case it returns to that bind point.
 The rules and starter placement are development content; original combat formulas,
-skills, animations, collision, item looting and native acceptance are unfinished.
+most skill effects, combat animations, collision, corpse/general loot and native
+acceptance are unfinished.
 See [player systems integration](docs/player-systems.md).
 
 The opt-in HUD path also restores a persistent skill book and handles captured
@@ -241,8 +260,8 @@ native training/untraining requests with imported level/species/credit/dependenc
 rules for the supported human profile. The catalog contains 1,952 definitions;
 192 unresolved definitions are recorded separately. Raise requests now use 30
 imported cumulative XP tables and atomically persist investment with the available
-XP debit. Active skill effects, adjusted-level bonuses and native advancement
-acceptance remain unfinished.
+XP debit. Beyond the development basic attack and self-heal, most active skill
+effects, adjusted-level bonuses and native advancement acceptance remain unfinished.
 
 Game-data mode (`serve --game-data PATH`) now loads the bundled stationary world
 pack automatically. Use `--content content/world.tsv` for an editable external
@@ -270,9 +289,10 @@ See [content format and provenance](content/README.md).
 An additional snapshot is available with `--content observed`: it adds 30
 capture-observed stationary actors to the 247-object pack, including Banderlings,
 Idol/Surrogate Spawns, a named NPC, eggs and chests. It retains observed positions,
-rotations and scale overrides. This snapshot does not implement AI, merchants,
-combat, loot, quest interactions or respawn schedules; original capture build
-identity and native appearance remain unverified.
+rotations and scale overrides. The snapshot supplies placements; selected
+encounter profiles provide their separate development gameplay. It does not
+supply original NPC AI, merchants, loot tables, quest interactions or respawn
+rules. Original capture build identity and native appearance remain unverified.
 
 Offline inventory management is available through the `inventory-*` commands in
 `--help`; use the normal `--account`, `--character-id` and `--data` arguments.
@@ -289,14 +309,33 @@ An opt-in player HUD profile is available with
 `serve --initialize-ui true --game-data PATH` alongside the normal bind/account/data
 options. It requires the converted 7148 assets, emits UI_Load once after scene
 completion, and restores saved progression, skills, owned inventory, window
-settings and hotbar bindings. Story, quest and active-effect graphs remain empty.
-Without the explicit training-kit option it grants no items, skills, gold or
-progress. This profile is not enabled by
-default: native UI acceptance and backing gameplay systems remain unfinished.
+settings and hotbar bindings. Saved training quests restore through the native
+journal; story and active-effect graphs remain empty.
+HUD initialization itself grants no items, skills, gold or progress. Separate
+training, encounter and binding profiles enable their authored grants and
+gameplay actions. The initializer is not enabled by default: native UI acceptance
+and backing gameplay systems remain unfinished.
 
-Complete the native UI/script bootstrap, appearance
-customization, world-content loading, collision and authoritative movement,
-inventory/equipment, skills, combat, NPC behavior, progression and gameplay-state
-persistence. Public authentication and remote hosting also remain unfinished.
-Each native milestone needs a fresh matching-client run; passing packet tests
-alone does not close it.
+## Still missing before general players
+
+- Fresh matching-client acceptance of the integrated HUD, equipment, combat,
+  quest, potion, death/return and travel loop, plus native two-client visibility.
+- Most active abilities, buffs/debuffs, effect persistence, cast/cooldown UI,
+  projectiles and original combat formulas/animations.
+- Full appearance customization, armor composition, equipment bonuses and
+  broader inventory/stacking/ground-item behavior.
+- Corpse containers, ownership/loot-sharing rules and original loot tables.
+- Original quests, NPC conversations, branching, abandonment and repeat rules.
+- Merchants, crafting and a complete economy.
+- Groups/fellowships and broader social systems beyond local chat/tells/emotes.
+- NPC movement/pathfinding, authoritative movement speed, collision and line of
+  sight, and visibility beyond the current same-cell development policy.
+- Original portal/binding eligibility and presentation, death penalties and
+  broader supported races/classes.
+- Public account/password authentication, remote hosting readiness, production
+  operations and demonstrated multiplayer stability/capacity.
+
+The content editor's 3D rendering is a separate authoring feature. Its latest
+paint-callback crash repair still needs a fresh GUI load; renderer progress does
+not establish completion of any missing gameplay system. Each native milestone
+needs fresh client evidence; compilation or packet checks alone do not close it.

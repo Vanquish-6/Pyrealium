@@ -4,7 +4,7 @@
 
 Most people write an MMO emulator because they miss their childhood. I started this one without having legitimately played Asheron's Call 2. Apparently nostalgia is optional when you have Rust and an unreasonable opinion of your own chances.
 
-**The plan: build a better AC2 emulator. The current achievement: a real client logs in, selects a character, and stands in the actual world.**
+**The plan: build a better AC2 emulator. The current achievement: native login, character selection, world entry and walking have been observed locally; the Rust player systems are growing, and a complete playable server is still unfinished.**
 
 Not a mockup. Not a loading screen with aspirations. An actual character, on actual grass, contemplating the alarming amount of server code still missing.
 
@@ -12,30 +12,50 @@ Pyrealium contains a Rust emulator and a Windows player launcher. The server use
 
 ## Confidence is unlimited. Features are itemized.
 
+**Status updated 2026-10-24. Experimental local development server; not ready for general players.**
+
+- **Observed with the native 7148 client:** local login, character selection, world/terrain rendering, walking and saved cross-cell placement.
+- **Implemented in Rust, with fresh client acceptance still pending:** the initialized HUD, supported inventory/equipment, skill training and advancement, development combat/healing, death/resurrection, binding/Recall, portal travel, a training quest, potion rewards and native emote messages.
+- **Still missing:** most original ability/effect behavior, armor bonuses, corpse/general loot, original quest content and dialogue, merchants, crafting, groups, authoritative collision/pathfinding and public authentication/hosting.
+
+A compiled packet handler is not a verified player experience. Recent runtime additions passed library/server compilation and an optimized build; no new game-client runs or deployments were performed for those additions. Training rewards, combat values and instant travel are explicit development policies.
+
+
 | Feature | Current state |
 | --- | --- |
 | Login | Native build 7148 login and connection handshake verified locally |
 | Authentication | Local developer account allowlist; no passwords or public account service |
 | Transport | Checksums, bounded reliable delivery, retries, fragmentation and session expiry |
 | Character selection | Real client displays the saved test character and selection scene |
-| Character storage | Checksummed journal, exclusive writer lock, flush before acknowledgement |
-| Native character creation | Experimental human request handling; saving through the game's UI remains unverified |
+| Character storage | Durable character, inventory, progression, skills, quest and preference state; exclusive writer lock, atomic transactions and checked compaction |
+| Native character creation | Human request fields and appearance choices are retained; default human bodies supported; broader creation/appearance acceptance pending |
 | World entry | **Verified with 7148 and converted test assets:** player and terrain render; client reports scene completion |
 | Player launcher | Windows forms for account, host, port, game folder and client executable |
 | Movement | Validated native reports drive saved placement and observer replication; authoritative collision remains unfinished |
-| Examination UI | Targeted asset compatibility repair included; user reports the revised getter/setter repair cleared the tested crash; full examination data remains unfinished |
+| Examination UI | Compatibility repair cleared a previously reported crash; server descriptions cover visible players, owned items and content; fresh data/UI acceptance pending |
 | Logout/re-entry | Session transition and message ordering fixed; repeated entry tested over UDP, native round trip still unverified |
 | Other player objects | Scene-ready, cell-indexed spawn/move/look/remove replication; two-peer UDP tested, native two-client display unverified |
 | Character recovery | Flushed deletion tombstones, reserved identities and offline restoration |
-| Script actions | Native envelopes route local chat, tells, visible-target selection and combat-mode requests; native UI acceptance pending |
-| Vitals, combat, content | Local vital defaults exist; damage, skills, inventory and populated content remain unfinished. Grass is not an MMO. |
+| Script actions | Local chat, tells, targeting, combat mode, supported object/skill use and eight emotes are routed; broader social systems and native acceptance remain open |
+| HUD and preferences | Opt-in UI initialization restores progression, skills, inventory, quest journal, window settings and hotbar bindings; fresh client acceptance pending |
+| Inventory and equipment | Transactional bags, sorting and supported hand equip/unequip; native item acquisition/removal codecs; armor composition and equipment bonuses missing |
+| Skills | Catalog-based human training/untraining and XP advancement; development basic attack and learned self-heal; most original active effects/cast behavior missing |
+| Combat and progression | Development creature damage/retaliation, vigor costs, XP/gold, levels, regeneration and timed respawns; original formulas, projectiles and pathfinding missing |
+| Death and return | Saved vitals/Dead state, death UI, Resurrect, lifestone binding and Recall implemented; original cast presentation and death penalties missing |
+| Quest journal | One authored Training Grounds quest: three kills, persistent progress, once-only 120 XP / 10 gold via `@quest claim`; original quests/dialogue missing |
+| Item rewards and potions | Training encounters grant a single health potion into a supported bag; consuming it atomically restores up to 25 health; corpse/general loot and native acceptance pending |
+| Portals | Validated development destinations: 156 imported routes plus the training gateway when loaded; original travel presentation/access rules unfinished |
+| World content | 247 base placements, an optional 30-actor observed snapshot and authored training objects; limited stationary encounter behavior; full world population missing |
+| Content placement editor | DAT-backed mesh/texture/animation/interior/outdoor preview implemented; latest native paint/Tk crash patch awaits a fresh GUI load |
+| Merchants and crafting | Not implemented as complete player systems |
+| Groups and broader social play | Not implemented; local chat, tells and selected emotes are the current supported slice |
 | Multiplayer hosting | Not enabled; the server binds to IPv4 loopback only |
 
 This is an early emulator, **not a complete or production-ready AC2 server**. The ambition is enormous. The status table is under oath.
 
 Movement reports now update durable placement and replicate to ready observers in the same cell. Re-entry restores position and correct native heading. The server checks timestamps, instance stamps, finite coordinates and available cells; authoritative collision and speed enforcement remain unfinished. We have receipts for where the client said it went. Cross-examining gravity remains on the docket.
 
-The server tracks player presence through a cell index and publishes avatars after scene completion. One character cannot enter through two sessions at once. Movement, head look, cell transitions, logout and validated connection logoff use that same presence state. Same-cell visibility is an initial development policy; equipment appearance, NPC populations and recovered distance/occlusion rules remain unfinished.
+The server tracks player presence through a cell index and publishes avatars after scene completion. One character cannot enter through two sessions at once. Movement, head look, cell transitions, logout and validated connection logoff use that same presence state. Supported hand attachments and stationary content use that scene lifecycle. Same-cell visibility is an initial development policy; full armor appearance, broad NPC behavior and recovered distance/occlusion rules remain unfinished.
 
 ## One runtime, fewer excuses
 
@@ -44,11 +64,14 @@ terrain and native script-action systems, alongside the existing launcher and DA
 compatibility tools. See the [runtime guide](emulator/README.md) for current
 commands, tests, recovery rules and measured performance.
 
-The latest native entry test found a PlayerDesc crash caused by numeric ordering
-of hash-table entries. The serializer now groups entries by the client's hash
-buckets. An original-x86 verification reproduces the bad layout's eight reachable
-entries and the corrected layout's twelve. The repaired release still needs fresh
-native acceptance; a passing packet test does not get to impersonate a player.
+The Rust runtime now has an authored training loop: receive a hand item and basic
+attack skill, fight a stationary creature, earn XP/gold and potion rewards,
+advance a three-kill quest, and claim its reward through the native journal path.
+A learned human healing skill, potion use, death/resurrection, binding/Recall and
+validated portal destinations are integrated. Use `serve-training --game-data PATH`
+with the supported converted assets; see the runtime guide for account/data options.
+The underlying persistence and codecs compile, but this complete loop has not
+received fresh matching-client acceptance. No public-player readiness is implied.
 
 ## What's in the box
 
@@ -117,7 +140,7 @@ The converter copies `portal.dat` and modifies two settings records whose source
 
 Keep the recovered client alongside its supporting DLLs. Game files are not downloaded or supplied by this project. The installed 7230 executable has not been verified with the emulator.
 
-A music-loading error occurred during the accepted native test; choosing **Continue** allowed the world to render. Audio compatibility remains unfinished. An empty health bar is also not a minimalist design statement: vitals still need implementation.
+A music-loading error occurred during the accepted native test; choosing **Continue** allowed the world to render. Audio compatibility remains unfinished. Server vitals and an opt-in HUD initializer are now implemented; a blank or incorrect health bar still requires native-client investigation.
 
 Close the game and stop the previous test before repeating it:
 
@@ -156,8 +179,15 @@ Packet tests establish protocol behavior. The native client established world re
 
 ## The next boss fight
 
-Fresh native world/HUD/walking acceptance, appearance choices, inventory, skills,
-combat damage, content and broader multiplayer visibility remain work. Combat-mode
-messages are integrated; this does not magically teach a sword arithmetic.
+The next acceptance milestone is a fresh matching-client run through the integrated
+HUD, inventory, combat, quest, potion, death and travel loop, followed by two-client
+visibility. Native walking was already observed; the newer gameplay additions have
+not had that same acceptance.
+
+The remaining implementation work includes most active abilities/effects and their
+animations, armor/bonuses, original loot and quest content, NPC conversations,
+merchants, crafting, groups, movement/collision/line-of-sight enforcement, NPC
+pathfinding and public account/hosting support. The current authored training slice
+is useful development progress, not a finished AC2 game.
 
 **No nostalgia. Suspicious confidence. Somehow, already a world.**
