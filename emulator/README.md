@@ -43,8 +43,11 @@ implementation or acceptance. A MusicLoader error can require Continue.
   now toggles supported hand equipment, persists bag/equipment state, and creates
   attached hand objects for the owner and nearby players. Armor composition,
   equipment bonuses, general item use and native acceptance remain unfinished.
-  An explicit development training-kit option supplies one hand item once per
-  human character; normal serving does not infer original starter grants.
+  An explicit development training-kit option supplies one hand item and the
+  basic attack skill `b0` once per human character. Native skill-list/hotbar use
+  queues one development strike against an eligible nearby creature, requiring
+  a main-hand item and sharing encounter cooldown, vigor and reward rules.
+  Normal serving does not infer original starter grants or combat balance.
 - Native object examination for visible players, owned inventory, visible hand
   equipment and active same-cell content. Names use supported DAT localization
   references; live health and the owner's private progression come from server

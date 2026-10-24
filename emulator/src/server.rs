@@ -1105,7 +1105,64 @@ pub fn run(config: Config) -> io::Result<()> {
                                         }
                                     };
                                     match request {
-                                        script::Request::UseSkill { skill, target: _ } => {
+                                        script::Request::UseSkill { skill, target } => {
+                                            if config.initialize_ui
+                                                && config.training_kit
+                                                && skill == crate::skills::TRAINING_ATTACK
+                                            {
+                                                let saved = &store.characters[&character];
+                                                let attack = (|| -> io::Result<()> {
+                                                    if saved.skills.get(skill).is_none() {
+                                                        return Err(invalid(
+                                                            "The development training attack is not learned.",
+                                                        ));
+                                                    }
+                                                    if !saved.inventory.items().any(|item| {
+                                                        matches!(
+                                                            item.location,
+                                                            crate::inventory::Location::Equipped(
+                                                                0x40
+                                                            )
+                                                        )
+                                                    }) {
+                                                        return Err(invalid(
+                                                            "Equip a main-hand item before using the training attack.",
+                                                        ));
+                                                    }
+                                                    let events = vec![
+                                                        crate::ui::skill_update(
+                                                            skill,
+                                                            saved.skills.get(skill).unwrap(),
+                                                        )
+                                                        .map_err(other)?,
+                                                        script::private_call(
+                                                            script::COMBAT_STATE,
+                                                            &script::integer(1),
+                                                        )
+                                                        .map_err(other)?,
+                                                    ];
+                                                    peer.validate_scene_batch(&events)?;
+                                                    encounters
+                                                        .as_mut()
+                                                        .ok_or_else(|| invalid("Combat rules are not enabled on this server."))?
+                                                        .once(character, target, now_ms, &scene, &store)?;
+                                                    peer.queue_ordered_batch(events)?;
+                                                    peer.combat = true;
+                                                    peer.target = Some(target);
+                                                    Ok(())
+                                                })(
+                                                );
+                                                if let Err(error) = attack {
+                                                    replies.extend(
+                                                        peer.send_event(
+                                                            &script::chat(&error.to_string(), 1)
+                                                                .map_err(other)?,
+                                                            now,
+                                                        )?,
+                                                    );
+                                                }
+                                                return Ok(replies);
+                                            }
                                             if !config.initialize_ui
                                                 || !config.lifestones
                                                 || skill != crate::skills::LIFESTONE_RECALL
@@ -1977,8 +2034,18 @@ pub fn run(config: Config) -> io::Result<()> {
                                                 }
                                                 if config.training_kit {
                                                     let saved = &store.characters[&character_id];
-                                                    if saved.training_kit
-                                                        || saved.inventory.free_slot().is_some()
+                                                    let can_grant = saved.progression.alive()
+                                                        && (saved.skills.entries().count() < 128
+                                                            || saved
+                                                                .skills
+                                                                .get(crate::skills::TRAINING_ATTACK)
+                                                                .is_some());
+                                                    if can_grant
+                                                        && (saved.training_kit
+                                                            || saved
+                                                                .inventory
+                                                                .free_slot()
+                                                                .is_some())
                                                     {
                                                         if store.grant_training_kit(
                                                             &peer.session.account,
@@ -1988,9 +2055,13 @@ pub fn run(config: Config) -> io::Result<()> {
                                                                 "Development training kit saved for character {character_id}"
                                                             );
                                                         }
+                                                        store.ensure_training_attack(
+                                                            &peer.session.account,
+                                                            character_id,
+                                                        )?;
                                                     } else {
                                                         eprintln!(
-                                                            "Development training kit deferred for character {character_id}: bag full"
+                                                            "Development training kit deferred for character {character_id}: dead, bag full or skill capacity"
                                                         );
                                                     }
                                                 }

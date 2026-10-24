@@ -1,5 +1,31 @@
 # Build 7148 character and world event evidence
 
+## Development training attack integration (2026-10-24)
+
+The explicit training profile grants skill `b0` with locked rank 1 and zero
+invested XP. Its pinned DAT catalog definition is human, minimum level 1,
+zero credits, cap 1, kind `44`, without prerequisites or exclusions. This is
+an authored development entitlement, not proof of original starter grants.
+New `t2` transactions save the hand item, skill and once-per-character marker
+together; `t1` retains its historical item-only replay semantics. A separate
+`k4` transaction upgrades previously granted training characters. Dead players
+and full skill books defer grants without blocking world entry.
+
+The bounded native `8204000b` request now routes this learned skill to one
+queued encounter strike. It requires initialized UI, training-kit and encounter
+profiles, a main-hand item, and an eligible visible creature within the encounter
+range. It shares existing cooldown and transactional vigor/reward handling.
+Repeated requests replace one pending strike instead of accumulating attacks;
+canceling or changing targets does not reset a paid strike's cooldown. A strike
+does not enable automatic repetition. The existing Attack request still does.
+Skill data and combat-state updates are admitted before scheduling the strike.
+The creature can retaliate after a surviving strike.
+
+Original attack damage, weapon bonuses, cast animations, projectiles, collision,
+line of sight and full skill-use completion presentation remain unresolved.
+Only formatting, source inspection and compilation were performed. No tests or
+native client checks were run, and no running server was replaced or restarted.
+
 All addresses below refer to canonical recovered files under
 `../../recovery/exports/ac2client.exe/functions/<address>.c`. These are recovered
 pseudocode plus checked executable instructions, not live packet captures. Code

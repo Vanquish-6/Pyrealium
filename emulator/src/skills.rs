@@ -8,6 +8,7 @@ pub const UNTRAIN: u32 = 0x82140007;
 pub const RAISE: u32 = 0x8214000c;
 pub const USE: u32 = 0x8204000b;
 pub const LIFESTONE_RECALL: u32 = 0x343;
+pub const TRAINING_ATTACK: u32 = 0xb0;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Action {
     Train,
@@ -207,15 +208,28 @@ impl Book {
         state: &Progression,
         race: u32,
     ) -> Result<Self, SkillError> {
+        self.with_development_skill(LIFESTONE_RECALL, 0, state, race)
+    }
+    /// Authored training entitlement, not a recovered original starter rule.
+    pub fn with_training_attack(&self, state: &Progression, race: u32) -> Result<Self, SkillError> {
+        self.with_development_skill(TRAINING_ATTACK, 1, state, race)
+    }
+    fn with_development_skill(
+        &self,
+        skill: u32,
+        species: u32,
+        state: &Progression,
+        race: u32,
+    ) -> Result<Self, SkillError> {
         if !state.alive() {
             return Err(SkillError::Dead);
         }
         let definition = catalog()?
             .definitions
-            .get(&LIFESTONE_RECALL)
+            .get(&skill)
             .ok_or(SkillError::Unknown)?;
         if race != 1
-            || definition.race != 0
+            || definition.race != species
             || definition.level != 1
             || definition.cap != 1
             || definition.credits != 0
@@ -225,7 +239,7 @@ impl Book {
         {
             return Err(SkillError::UnsupportedProfile);
         }
-        if let Some(entry) = self.entries.get(&LIFESTONE_RECALL) {
+        if let Some(entry) = self.entries.get(&skill) {
             if !entry.locked || entry.credits != 0 || entry.xp != 0 || entry.rank != 1 {
                 return Err(SkillError::Catalog);
             }
@@ -236,7 +250,7 @@ impl Book {
         }
         let mut next = self.clone();
         next.entries.insert(
-            LIFESTONE_RECALL,
+            skill,
             Trained {
                 rank: 1,
                 credits: 0,

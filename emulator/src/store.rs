@@ -164,11 +164,47 @@ impl Store {
                 crate::training_kit::item(item, slot),
             ))
             .map_err(|_| invalid("invalid training kit grant"))?;
-        // One fsync publishes both ownership and the once-per-character marker.
-        self.append_record(&format!("t1\t{id}\t{item}"))?;
+        let skills = character
+            .skills
+            .with_training_attack(
+                &character.progression,
+                character.creation.as_ref().unwrap().race,
+            )
+            .map_err(io::Error::other)?;
+        // One fsync publishes the item, basic attack and once-per-character marker.
+        // t1 retains its original item-only meaning when replaying older stores.
+        self.append_record(&format!("t2\t{id}\t{item}"))?;
         let character = self.characters.get_mut(&id).unwrap();
         character.inventory = next;
+        character.skills = skills;
         character.training_kit = true;
+        Ok(true)
+    }
+    pub fn ensure_training_attack(&mut self, account: &str, id: u64) -> io::Result<bool> {
+        let character = self
+            .characters
+            .get(&id)
+            .filter(|c| c.account == account && !c.deleted && c.training_kit)
+            .ok_or_else(|| invalid("training attack requires an owned training character"))?;
+        if character
+            .skills
+            .get(crate::skills::TRAINING_ATTACK)
+            .is_some()
+        {
+            return Ok(false);
+        }
+        let skills = character
+            .skills
+            .with_training_attack(
+                &character.progression,
+                character
+                    .creation
+                    .as_ref()
+                    .map_or(1, |request| request.race),
+            )
+            .map_err(io::Error::other)?;
+        self.append_record(&format!("k4\t{id}"))?;
+        self.characters.get_mut(&id).unwrap().skills = skills;
         Ok(true)
     }
     pub fn bind_lifestone(
@@ -956,6 +992,30 @@ fn decode_journal_collect(
             }
             continue;
         }
+        if fields.len() == 2 && fields[0] == "k4" {
+            let id = fields[1]
+                .parse::<u64>()
+                .map_err(|_| invalid("invalid training attack character"))?;
+            let character = records
+                .get_mut(&id)
+                .filter(|c| {
+                    !c.deleted
+                        && c.training_kit
+                        && c.skills.get(crate::skills::TRAINING_ATTACK).is_none()
+                })
+                .ok_or_else(|| invalid("unavailable training attack character"))?;
+            character.skills = character
+                .skills
+                .with_training_attack(
+                    &character.progression,
+                    character
+                        .creation
+                        .as_ref()
+                        .map_or(1, |request| request.race),
+                )
+                .map_err(|_| invalid("invalid training attack grant"))?;
+            continue;
+        }
         if fields.len() == 2 && fields[0] == "k3" {
             let id = fields[1]
                 .parse::<u64>()
@@ -1059,7 +1119,7 @@ fn decode_journal_collect(
             }
             continue;
         }
-        if fields.len() == 3 && fields[0] == "t1" {
+        if fields.len() == 3 && matches!(fields[0], "t1" | "t2") {
             let id = fields[1]
                 .parse::<u64>()
                 .map_err(|_| invalid("invalid training kit owner"))?;
@@ -1093,6 +1153,15 @@ fn decode_journal_collect(
                     crate::training_kit::item(item, slot),
                 ))
                 .map_err(|_| invalid("invalid training kit inventory transition"))?;
+            if fields[0] == "t2" {
+                character.skills = character
+                    .skills
+                    .with_training_attack(
+                        &character.progression,
+                        character.creation.as_ref().unwrap().race,
+                    )
+                    .map_err(|_| invalid("invalid training kit skill transition"))?;
+            }
             character.training_kit = true;
             continue;
         }

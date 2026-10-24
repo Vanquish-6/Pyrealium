@@ -37,6 +37,7 @@ struct Actor {
 struct Attack {
     target: u64,
     next: u64,
+    repeat: bool,
 }
 pub enum Event {
     Health { actor: u64, health: u32 },
@@ -256,7 +257,27 @@ impl Encounters {
             return Err(invalid("attack cooldown capacity"));
         }
         let next = self.cooldowns.get(&player).copied().unwrap_or(now);
-        self.attacks.insert(player, Attack { target, next });
+        self.attacks.insert(
+            player,
+            Attack {
+                target,
+                next,
+                repeat: true,
+            },
+        );
+        Ok(())
+    }
+    /// One queued strike shares the normal cooldown, payment and target checks.
+    pub fn once(
+        &mut self,
+        player: u64,
+        target: u64,
+        now: u64,
+        scene: &Scene,
+        store: &Store,
+    ) -> io::Result<()> {
+        self.start(player, target, now, scene, store)?;
+        self.attacks.get_mut(&player).unwrap().repeat = false;
         Ok(())
     }
     fn stopped(&mut self, player: u64, events: &mut Vec<Event>) {
@@ -370,6 +391,9 @@ impl Encounters {
             } else if actor.target.is_none() {
                 actor.target = Some(player);
                 actor.next_attack = now.saturating_add(actor.rule.interval);
+            }
+            if !attack.repeat {
+                self.attacks.remove(&player);
             }
         }
         for (&id, actor) in &mut self.actors {
