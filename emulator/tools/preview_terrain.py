@@ -184,7 +184,9 @@ def region_references(data):
         raise TerrainFormatError("Unsupported region descriptor")
     reader.string()
     map_id, map_scale, auto_map, auto_size, land_defs, length, width = reader.take("IfIIIII")
-    result = dict(land_defs=land_defs)
+    result = dict(land_defs=land_defs, map_surface=map_id, map_scale=map_scale,
+                  auto_map_surface=auto_map, auto_map_size=auto_size,
+                  map_width=length, map_height=width)
     names = ("sound", "scene", "terrain", "surface", "encounters", "detailmap", "sky", "water", "fog", "properties", "worldmap")
     for name in names:
         count = reader.count(256)

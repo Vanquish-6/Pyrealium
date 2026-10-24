@@ -7,6 +7,13 @@ pub struct Level {
     pub health: u32,
     pub vigor: u32,
     pub credits: u16,
+    /// ArmorRating, ShieldRating, Focus, MaxHerosCredits and TotalXpMax from
+    /// Pyreal_DB_Insert_PlayerLevelData.sql. Combat does not yet apply them.
+    pub armor: u32,
+    pub shield: u32,
+    pub focus: u16,
+    pub hero_credits: u32,
+    pub xp_cap: u64,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Progression {
@@ -55,6 +62,29 @@ impl std::fmt::Display for ProgressionError {
     }
 }
 impl std::error::Error for ProgressionError {}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn player_levels_keep_the_pyreal_vitals_and_add_the_ratings() {
+        let first = &levels::LEVELS[0];
+        let last = levels::LEVELS.last().unwrap();
+        assert_eq!(
+            (first.number, first.xp, first.health, first.vigor, first.credits),
+            (1, 0, 100, 100, 0)
+        );
+        assert_eq!((first.armor, first.shield, first.focus, first.hero_credits), (3, 3, 0, 0));
+        assert_eq!(first.xp_cap, 39);
+        assert_eq!(
+            (last.number, last.xp, last.health, last.vigor, last.credits),
+            (150, 146234963497218, 4000, 2600, 49)
+        );
+        assert_eq!(last.armor, 1904);
+        assert_eq!(last.hero_credits, 19750);
+    }
+}
+
 impl Progression {
     pub fn level(&self) -> &'static Level {
         &levels::LEVELS[levels::LEVELS

@@ -5,6 +5,7 @@ Matching native layout evidence: MaterialInstance 005badf0, MaterialModifier
 005b1c40, and categorized DBObj header 006d7830. This supports texture slot
 3000 overrides; it does not evaluate complete material shaders or modifiers.
 """
+import math
 import struct
 
 
@@ -48,8 +49,8 @@ def _properties(reader):
         if fields > 256:
             raise MaterialFormatError("too many material property fields")
         # Two BIT32 values, field type, and texture-coordinate index (005daf10).
-        reader.take(fields * 16)
-        properties.append(dict(name=name, kind=kind, value=value, fields=fields))
+        bindings = [struct.unpack("<4I", reader.take(16)) for unused in range(fields)]
+        properties.append(dict(name=name, kind=kind, value=value, fields=fields, bindings=bindings))
     return properties
 
 
@@ -117,8 +118,22 @@ def first_layer_state(data, did):
     if count > 4:
         raise MaterialFormatError("native stage capacity")
     stages = [struct.unpack("<14I",reader.take(56)) for unused in range(count)]
-    if reader.u32() != 0:
-        raise MaterialFormatError("animated UV modifiers need separate layer-state evaluation")
+    modifier_count = reader.u32()
+    if modifier_count > 64:
+        raise MaterialFormatError("native layer modifier capacity")
+    for unused in range(modifier_count):
+        kind, coordinate = reader.u32(), reader.u32()
+        # LM_UVTranslate/Scale::StreamPack005d68c0: type, coordinate,
+        # two sizeof(Waveform)=44 payloads. UVRotate005d6990 has one.
+        # UV motion is not evaluated here; it must not hide the alpha/depth
+        # state that follows the bounded modifier array in MaterialLayer.
+        if kind not in (4, 5, 6) or coordinate > 7:
+            raise MaterialFormatError("unsupported native layer modifier")
+        for wave in range(1 if kind == 5 else 2):
+            waveform = reader.u32()
+            values = struct.unpack("<10f", reader.take(40))
+            if not 1 <= waveform <= 32 or not all(math.isfinite(value) for value in values):
+                raise MaterialFormatError("invalid UV modifier waveform")
     source,destination,depth,write,cull,alpha_test = (reader.u32() for unused in range(6))
     if source not in range(1,12) or destination not in range(1,12) or depth not in range(1,9) or write not in (0,1) or alpha_test not in (0,1):
         raise MaterialFormatError("unsupported native layer render state")
@@ -131,6 +146,7 @@ def first_layer_state(data, did):
         if not 0 <= reference <= 1:
             raise MaterialFormatError("invalid alpha-test reference")
     uses_texture = False
+    alpha_sources = {"diffuse"}
     for stage in stages:
         operation,first,second = stage[4:7]
         def depends(argument):
@@ -144,9 +160,27 @@ def first_layer_state(data, did):
             uses_texture = depends(second)
         else:
             uses_texture = depends(first) or depends(second)
+        def sources(argument):
+            kind = argument & 15
+            return ({"diffuse"} if kind == 0 else alpha_sources if kind == 1 else
+                    {"texture"} if kind == 2 else {"unknown"})
+        # Complement/alpha-replicate and shader operations beyond basic select
+        # cannot establish that an alpha-zero diffuse is an invisible surface.
+        if first & ~15 or second & ~15:
+            alpha_sources = {"unknown"}
+        elif operation == 2:
+            alpha_sources = sources(first)
+        elif operation == 3:
+            alpha_sources = sources(second)
+        elif operation == 4:  # Native TEXOP_MODULATE.
+            alpha_sources = sources(first) | sources(second)
+        else:
+            alpha_sources = {"unknown"}
     return dict(source_blend=source,destination_blend=destination,depth_test=depth,
                 depth_write=bool(write),alpha_test=bool(alpha_test),alpha_reference=reference,
-                texture_alpha=uses_texture,layer_flags=flags,layers=layers)
+                texture_alpha=uses_texture,diffuse_alpha_only=alpha_sources == {"diffuse"},
+                alpha_sources=sorted(alpha_sources),uv_modifiers=modifier_count,
+                layer_flags=flags,layers=layers)
 
 
 def texture_levels(data):
@@ -299,7 +333,7 @@ def material_info(portal, did, surfaces=None, max_size=256, include_image=True):
     for prop in properties:
         if prop["kind"] == 3000 and len(prop["value"]) == 4:
             texture = struct.unpack("<I", prop["value"])[0]
-            if texture >> 24 == 0x40:
+            if texture == 0 or texture >> 24 == 0x40:
                 textures[prop["name"]] = texture
     for modifier in modifiers:
         values = modifier_properties(portal.read(modifier))
@@ -307,7 +341,7 @@ def material_info(portal, did, surfaces=None, max_size=256, include_image=True):
         for prop in values:
             if prop["kind"] == 3000 and len(prop["value"]) == 4:
                 texture = struct.unpack("<I", prop["value"])[0]
-                if texture >> 24 == 0x40:
+                if texture == 0 or texture >> 24 == 0x40:
                     textures[prop["name"]] = texture
     result = dict(did=did, base=base, material_type=material_type,
                   modifiers=modifiers, textures=textures,
@@ -320,13 +354,26 @@ def material_info(portal, did, surfaces=None, max_size=256, include_image=True):
         prop["name"]: list(struct.unpack("<4f", prop["value"]))
         for prop in properties if prop["kind"] == 2000 and len(prop["value"]) == 16
     }
+    # MaterialProperty::Apply (005da830) copies RGBA including alpha and applies
+    # null texture overrides. Ignoring either exposes the base debug texture on
+    # intentionally transparent dungeon helper surfaces (3100034f/30000519).
+    diffuse = result["color_properties"].get(2000, [1., 1., 1., 1.])
+    if not all(math.isfinite(value) for value in diffuse):
+        raise MaterialFormatError("non-finite material diffuse color")
+    result["diffuse"] = diffuse
+    state = result.get("render_state", {})
+    result["visible"] = not (diffuse[3] <= 0 and state.get("diffuse_alpha_only") and
+                              (state.get("source_blend"), state.get("destination_blend")) == (5, 6))
+    result["average"] = [round(max(0, min(1, value))*255) for value in diffuse[:3]]
     base_texture = textures.get(3000)
-    if base_texture is None:
+    if 3000 not in textures:
         base_texture = base_stage_texture(base_data, base)
         if base_texture:
             textures[3000] = base_texture
             result["texture_source"] = "base first-layer stage"
-    if base_texture is None:
+    if base_texture == 0:
+        result["texture_source"] = "explicit null texture override"
+    elif base_texture is None:
         result["image_error"] = "No supported base or instance texture-slot3000 property"
     elif include_image:
         try:

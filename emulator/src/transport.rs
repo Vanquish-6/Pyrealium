@@ -584,11 +584,10 @@ mod tests {
         assert_eq!(result.ack, 4);
         assert_eq!(result.messages[0].data, data);
         a.acknowledge(4).unwrap();
-        assert!(
-            a.retransmit_due(now + Duration::from_secs(1))
-                .unwrap()
-                .is_empty()
-        );
+        assert!(a
+            .retransmit_due(now + Duration::from_secs(1))
+            .unwrap()
+            .is_empty());
     }
     #[test]
     fn bad_checksum_does_not_advance_crypto() {
@@ -609,33 +608,25 @@ mod tests {
         bad[..4].copy_from_slice(&u32::MAX.to_le_bytes());
         assert!(b.receive(&bad, now).is_err());
         assert_eq!(b.generated, 1);
-        assert!(
-            b.add_fragment(
-                Fragment {
-                    blob_id: 2,
-                    count: 2,
-                    index: 0,
-                    queue: 2,
-                    data: b"a"
-                },
-                now
-            )
+        assert!(b
+            .add_fragment(Fragment {
+                blob_id: 2,
+                count: 2,
+                index: 0,
+                queue: 2,
+                data: b"a"
+            })
             .unwrap()
-            .is_none()
-        );
-        assert!(
-            b.add_fragment(
-                Fragment {
-                    blob_id: 2,
-                    count: 2,
-                    index: 0,
-                    queue: 2,
-                    data: b"b"
-                },
-                now
-            )
-            .is_err()
-        );
+            .is_none());
+        assert!(b
+            .add_fragment(Fragment {
+                blob_id: 2,
+                count: 2,
+                index: 0,
+                queue: 2,
+                data: b"b"
+            })
+            .is_err());
     }
     #[test]
     fn retransmission_reuses_exact_bytes_and_stops() {

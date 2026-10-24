@@ -87,7 +87,7 @@ impl Peer {
             matches!(
                 u32::from_le_bytes(opcode.try_into().unwrap()),
                 0x10058 | 0x100c2 | 0x10069
-                    ..=0x10076 | 0x100d4 | 0x100d5 | 0x10066 | crate::emotes::EVENT
+                    ..=0x10076 | 0x100d4 | 0x100d5 | 0x10066 | 0x100a8 | crate::emotes::EVENT
             )
         })
     }
@@ -657,6 +657,34 @@ fn training_combat_visual(
     Ok(deliveries)
 }
 
+fn publish_health_story(
+    peer: &mut Peer,
+    scene: &mut crate::scene::Scene,
+    owner: u64,
+    instance: u16,
+    attacker: u64,
+    health_change: i32,
+) -> Vec<crate::scene::Delivery> {
+    let Ok((next, stamp)) = peer.emotes.next_visual(instance) else {
+        return Vec::new();
+    };
+    let Ok(wire) =
+        crate::combat_visual::damage_story(owner, instance, stamp, attacker, health_change)
+    else {
+        return Vec::new();
+    };
+    match scene.broadcast(owner, wire) {
+        Ok(deliveries) => {
+            if scene.save_visual_stamp(owner, stamp).is_err() {
+                return Vec::new();
+            }
+            peer.emotes = next;
+            deliveries
+        }
+        Err(_) => Vec::new(),
+    }
+}
+
 fn use_training_potion(
     peer: &mut Peer,
     character: u64,
@@ -713,6 +741,12 @@ fn use_training_potion(
         .progression
         .apply(&changes[0])
         .map_err(io::Error::other)?;
+    let physics = saved.instance;
+    let recovered_health = if vigor {
+        0
+    } else {
+        next.health.saturating_sub(saved.progression.health)
+    };
     let mut events = vec![
         crate::item_services::removed(item).map_err(other)?,
         world::destroy_inventory_item(item, instance),
@@ -737,7 +771,14 @@ fn use_training_potion(
     store.player_transaction(&peer.session.account, character, &[command], &changes)?;
     scene.inventory_removed(character, item).map_err(other)?;
     peer.last_world_use_ms = Some(now);
-    let updates = scene.player_stats(character, &next);
+    let mut updates = scene.player_stats(character, &next);
+    if let Ok(recovered) = i32::try_from(recovered_health) {
+        if recovered > 0 {
+            updates.extend(publish_health_story(
+                peer, scene, character, physics, character, recovered,
+            ));
+        }
+    }
     peer.queue_ordered_batch(events)?;
     Ok(updates)
 }
@@ -1380,9 +1421,19 @@ fn craft_item(
         "vigor"
     };
     items.push(crate::inventory::Command::Grant(output));
+    let curve = crate::crafting::rank(crate::crafting::CRAFT_SKILL_DID, 0).ok_or_else(|| {
+        invalid("The imported quest-recipe crafting curve is missing.")
+    })?;
     let events = vec![
         crate::crafting::completed(request.recipe, true).map_err(other)?,
-        script::chat(&format!("Crafted one {name} potion. Training recipe: one mushroom and 100 Tallow; no crafting XP or chance roll."), 1).map_err(other)?,
+        script::chat(
+            &format!(
+                "Crafted one {name} potion. Imported quest-recipe curve: rank {} grants {} crafting XP.",
+                curve.level, curve.cxp
+            ),
+            1,
+        )
+        .map_err(other)?,
     ];
     let updates =
         item_service_transaction(peer, character, &items, &[], events, store, scene, metadata)?;
@@ -1521,7 +1572,7 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                 .ok_or_else(|| invalid("--content training requires --game-data"))?;
             let content = crate::content::Content::training(directory)?;
             println!(
-                "Loaded {} world objects: base placements, retained actors and authored training objects.",
+                "Loaded {} placed world objects.",
                 content.len()
             );
             content
@@ -1573,8 +1624,11 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
         }
     }
     let portal_routes = if config.portals {
-        let routes =
-            crate::portals::Routes::bundled(&content, config.game_data.as_deref().unwrap())?;
+        let routes = crate::portals::Routes::for_content(
+            &content,
+            config.game_data.as_deref().unwrap(),
+            config.content.as_deref(),
+        )?;
         println!(
             "Loaded {} development portal routes for the selected content pack.",
             routes.len()
@@ -2241,7 +2295,7 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                                 "Speak to a nearby quartermaster to open a shop."
                                             };
                                             peer.queue_ordered_batch(vec![
-                                                script::chat(text, 1).map_err(other)?,
+                                                script::chat(text, 1).map_err(other)?
                                             ])?;
                                             return Ok(replies);
                                         }
@@ -2391,12 +2445,24 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                                             .map_err(other)?,
                                                     );
                                                     peer.validate_scene_batch(&events)?;
+                                                    let instance = saved.instance;
+                                                    let healed = cast.healed();
                                                     store.progression_batch(
                                                         &peer.session.account,
                                                         character,
                                                         cast.commands(),
                                                     )?;
                                                     cast.commit();
+                                                    if healed > 0 {
+                                                        if let Ok(healed) = i32::try_from(healed) {
+                                                            deliveries.extend(
+                                                                publish_health_story(
+                                                                    peer, &mut scene, character,
+                                                                    instance, character, healed,
+                                                                ),
+                                                            );
+                                                        }
+                                                    }
                                                     deliveries.extend(
                                                         scene.player_stats(character, &next),
                                                     );
@@ -2847,13 +2913,13 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                                 );
                                             match result {
                                                 Ok(updates) => deliveries.extend(updates),
-                                                Err(error) => peer.queue_ordered_batch(vec![
-                                                    script::chat(
+                                                Err(error) => {
+                                                    peer.queue_ordered_batch(vec![script::chat(
                                                         &format!("Equip rejected: {error}"),
                                                         1,
                                                     )
-                                                    .map_err(other)?,
-                                                ])?,
+                                                    .map_err(other)?])?
+                                                }
                                             }
                                             return Ok(replies);
                                         }
@@ -3117,6 +3183,31 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                             };
                                             peer.queue_ordered_batch(vec![packet])?;
                                             peer.target = target;
+                                            if peer.combat {
+                                                if let Some(target) = target.filter(|target| {
+                                                    encounters
+                                                        .as_ref()
+                                                        .is_some_and(|runtime| runtime.is_creature(*target))
+                                                }) {
+                                                    if let Err(error) = encounters.as_mut().unwrap().start(
+                                                        character,
+                                                        target,
+                                                        now_ms,
+                                                        &scene,
+                                                        &store,
+                                                    ) {
+                                                        replies.extend(peer.send_event(
+                                                            &script::chat(&error.to_string(), 1)
+                                                                .map_err(other)?,
+                                                            now,
+                                                        )?);
+                                                    }
+                                                } else if target.is_none() {
+                                                    if let Some(runtime) = encounters.as_mut() {
+                                                        runtime.stop(character);
+                                                    }
+                                                }
+                                            }
                                         }
                                         request @ (script::Request::Combat(_)
                                         | script::Request::Attack(_)
@@ -3169,6 +3260,29 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                                         if let Some(runtime) = &mut encounters {
                                                             runtime.stop(character);
                                                         }
+                                                    } else if let Some(target) = peer.target.filter(|target| {
+                                                        encounters.as_ref().is_some_and(|runtime| {
+                                                            runtime.is_creature(*target)
+                                                        })
+                                                    }) {
+                                                        if let Err(error) = encounters.as_mut().unwrap().start(
+                                                            character, target, now_ms, &scene, &store,
+                                                        ) {
+                                                            replies.extend(peer.send_event(
+                                                                &script::chat(&error.to_string(), 1)
+                                                                    .map_err(other)?,
+                                                                now,
+                                                            )?);
+                                                        }
+                                                    } else if encounters.is_some() {
+                                                        replies.extend(peer.send_event(
+                                                            &script::chat(
+                                                                "Click an Idol Spawn, stand within three metres, then enter combat.",
+                                                                1,
+                                                            )
+                                                            .map_err(other)?,
+                                                            now,
+                                                        )?);
                                                     }
                                                     enabled
                                                 }
@@ -3701,13 +3815,23 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                             }
                                         }
                                     } else {
-                                        eprintln!(
-                                            "unsupported creation profile: entity={:#x} race={} sex={:#x} start={:#x}",
-                                            request.entity_did,
-                                            request.race,
-                                            request.sex,
-                                            request.start_area
-                                        );
+                                        if bootstrap.is_none() {
+                                            eprintln!(
+                                                "character creation refused: server has no game data. Start with --game-data. Requested entity={:#x} race={} sex={:#x} start={:#x}",
+                                                request.entity_did,
+                                                request.race,
+                                                request.sex,
+                                                request.start_area
+                                            );
+                                        } else {
+                                            eprintln!(
+                                                "unsupported creation profile: entity={:#x} race={} sex={:#x} start={:#x}",
+                                                request.entity_did,
+                                                request.race,
+                                                request.sex,
+                                                request.start_area
+                                            );
+                                        }
                                         world::reject_character_creation(
                                             world::CreationRejection::Undefined,
                                         )
@@ -3961,9 +4085,18 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                                 _ => None,
                                             };
                                             if let Some(saved) = saved {
+                                                let training_bar =
+                                                    crate::preferences::Hotbar::training_attack();
+                                                let hotbar = if config.training_kit
+                                                    && saved.hotbar.is_empty()
+                                                {
+                                                    &training_bar
+                                                } else {
+                                                    &saved.hotbar
+                                                };
                                                 let restored = crate::ui::player_all_quests(
                                                     saved.ui.as_ref(),
-                                                    Some(&saved.hotbar),
+                                                    Some(hotbar),
                                                     Some(&saved.inventory),
                                                     Some(&saved.progression),
                                                     Some(&saved.skills),
@@ -4016,7 +4149,7 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                         }
                                         if first && config.training_kit {
                                             deliveries.push(crate::scene::Delivery { recipient: character, data: script::chat(
-                                                "Training: use your bag weapon to equip it, select an Idol Spawn and start attacking within three metres. Speak to Pectar for the three-kill reward. Tebor opens the shop. A once-only supply pack provides two health potions, one vigor potion, 1 Mucor Mushroom and 100 Tallow. Use Crafting to make another potion. Lifestones bind your return; portals lead outside and back. Training uses authored rules.", 1).map_err(other)?.into() });
+                                                "Training: equip the sword in your bag. Click an Idol Spawn, stand within three metres, and enter combat. Your attacks repeat until you leave combat. The first hotbar button swings once with the training attack skill. Speak to Pectar for the three-kill reward. Tebor opens the shop. A once-only supply pack provides two health potions, one vigor potion, 1 Mucor Mushroom and 100 Tallow. Use Crafting to make another potion. Lifestones bind your return; portals lead outside and back.", 1).map_err(other)?.into() });
                                         }
                                         eprintln!(
                                             "Scene ready for character {character}: cell={:08x}, visible content={}",
@@ -4107,7 +4240,7 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                         {
                             if peer
                                 .queue_ordered_batch(vec![
-                                    script::chat(&error.to_string(), 1).map_err(other)?,
+                                    script::chat(&error.to_string(), 1).map_err(other)?
                                 ])
                                 .is_err()
                             {
@@ -4145,6 +4278,39 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                     && diagnosed_application_errors.insert(reason.clone())
                                 {
                                     eprintln!("{reason}");
+                                }
+                            }
+                        }
+                    }
+                    crate::encounters::Event::Hit {
+                        victim,
+                        attacker,
+                        health_change,
+                    } => {
+                        if store.characters.contains_key(&victim) {
+                            if let Some(peer) = active_characters
+                                .get(&victim)
+                                .and_then(|addr| peers.get_mut(addr))
+                            {
+                                updates.extend(publish_health_story(
+                                    peer,
+                                    &mut scene,
+                                    victim,
+                                    store.characters[&victim].instance,
+                                    attacker,
+                                    health_change,
+                                ));
+                            }
+                        } else {
+                            match scene.content_damage_story(victim, attacker, health_change) {
+                                Ok(deliveries) => updates.extend(deliveries),
+                                Err(error) => {
+                                    let reason = format!("Damage story {victim:#x}: {error}");
+                                    if diagnosed_application_errors.len() < 32
+                                        && diagnosed_application_errors.insert(reason.clone())
+                                    {
+                                        eprintln!("{reason}");
+                                    }
                                 }
                             }
                         }
@@ -4349,9 +4515,9 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                     let merchant = peer.native_shop.take().unwrap().merchant();
                     peer.merchant_open_ms = None;
                     if peer
-                        .queue_ordered_batch(vec![
-                            crate::merchants::close(merchant).map_err(other)?,
-                        ])
+                        .queue_ordered_batch(
+                            vec![crate::merchants::close(merchant).map_err(other)?],
+                        )
                         .is_err()
                     {
                         remove.insert(*addr);

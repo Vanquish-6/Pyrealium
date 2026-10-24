@@ -104,7 +104,7 @@ def decode_mesh(data):
     if mesh_type != 2:
         raise MeshFormatError(f"unsupported native mesh type {mesh_type}")
     material_count = reader.u32()
-    if not 0 < material_count <= 4096:
+    if not 0 <= material_count <= 4096:
         raise MeshFormatError("invalid native mesh material count")
     materials = [reader.u32() for _ in range(material_count)]
     if any(material >> 24 != 0x31 for material in materials):
@@ -147,7 +147,7 @@ def decode_mesh(data):
     if any(bbox[i] > bbox[i + 3] for i in range(3)) or sphere[3] < 0:
         raise MeshFormatError("invalid native mesh bounds")
     degrade_count = reader.u32()
-    if not 0 < degrade_count <= 64:
+    if not 0 <= degrade_count <= 64 or not degrade_count and material_count:
         raise MeshFormatError("native mesh has no supported render degrade")
     indices, groups, degrades = [], [], []
     total_indices = 0
@@ -171,7 +171,7 @@ def decode_mesh(data):
                 indices.extend(values)
                 groups.append(dict(start=start, count=count, material=material_index))
         degrades.append(dict(mode=mode, detail_levels=detail_levels, indices=count_for_degrade))
-    if not indices:
+    if not indices and material_count:
         raise MeshFormatError("native mesh has no render triangles in its first degrade")
     return dict(did=did, mesh_type=mesh_type, format=format_word,
                 vertices=vertices, indices=indices, normals=normals, uvs=uvs,

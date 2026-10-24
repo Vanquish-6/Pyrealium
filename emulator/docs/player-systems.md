@@ -846,7 +846,18 @@ resets presentation with a fresh lifetime and standing mode. A defeated training
 Idol remains visible for an authored 1.5-second presentation grace (bounded by
 its respawn interval), while health, reward and attack authority are already
 settled. It is not a lootable corpse. Other creature visuals are not assigned
-unverified Idol animations. Native movement/pathfinding, original combat timing,
+unverified Idol animations.
+
+A hit or health recovery also sends DoStory `100a8` on the victim. The story
+bitfield is 2: attacker identity, no skill, behavior or basic-attack bit. Its
+one hook is damage type 1 (`0x981`) with the victim, captured result
+`40000008` and a signed health change. Negative is damage and positive is
+recovery, matching `ac2_zulange_kampflog.elog` and the self-heal in
+`kampf_onyx_pynthos_wasp.elog`. StoryManager::DoStoryHook (`00514ff0`) presents
+that hook. Authoritative health remains the existing vital-quality update.
+Vigor changes, misses, crits and original damage formulas are not represented.
+
+Native movement/pathfinding, original combat timing,
 general corpse/loot behavior and fresh player acceptance remain incomplete.
 
 ### Human initialization and observer snapshots

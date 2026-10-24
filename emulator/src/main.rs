@@ -82,10 +82,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut landblocks = None;
     let mut record_id = None;
     let mut character_id = None;
-    let mut initialize_ui = false;
-    let mut training_kit = false;
-    let mut lifestones = false;
-    let mut portals = false;
+    let mut initialize_ui = None;
+    let mut training_kit = None;
+    let mut lifestones = None;
+    let mut portals = None;
     let mut item_id = None;
     let mut slot = None;
     let mut source_slot = None;
@@ -118,10 +118,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             "--landblocks" => landblocks = Some(PathBuf::from(value)),
             "--id" => record_id = Some(u32::from_str_radix(value.trim_start_matches("0x"), 16)?),
             "--character-id" => character_id = Some(value.parse::<u64>()?),
-            "--initialize-ui" => initialize_ui = value.parse::<bool>()?,
-            "--training-kit" => training_kit = value.parse::<bool>()?,
-            "--lifestones" => lifestones = value.parse::<bool>()?,
-            "--portals" => portals = value.parse::<bool>()?,
+            "--initialize-ui" => initialize_ui = Some(value.parse::<bool>()?),
+            "--training-kit" => training_kit = Some(value.parse::<bool>()?),
+            "--lifestones" => lifestones = Some(value.parse::<bool>()?),
+            "--portals" => portals = Some(value.parse::<bool>()?),
             "--item-id" => {
                 item_id = Some(if let Some(hex) = value.strip_prefix("0x") {
                     u64::from_str_radix(hex, 16)?
@@ -363,14 +363,20 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             println!("Account created. No password was written to command-line arguments or logs.");
         }
         "serve" | "serve-training" => {
-            if command == "serve-training" {
-                initialize_ui = true;
-                training_kit = true;
-                lifestones = true;
-                portals = true;
+            // Game data means the normal world: HUD, equipment, travel, and combat.
+            // A bare serve without game data remains character selection only.
+            let world = game_data.is_some() || command == "serve-training";
+            if command == "serve-training" && game_data.is_none() {
+                return Err("--game-data is required".into());
+            }
+            if world {
                 content.get_or_insert_with(|| PathBuf::from("training"));
                 encounters.get_or_insert_with(|| PathBuf::from("training"));
             }
+            let initialize_ui = initialize_ui.unwrap_or(world);
+            let training_kit = training_kit.unwrap_or(world);
+            let lifestones = lifestones.unwrap_or(world);
+            let portals = portals.unwrap_or(world);
             server::run_with_auth(
                 Config {
                     bind,

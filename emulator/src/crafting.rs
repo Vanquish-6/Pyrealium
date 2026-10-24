@@ -618,5 +618,80 @@ pub fn validate_assets(portal: &mut Dat) -> io::Result<()> {
     if fingerprint(&portal.read(CRAFT_SKILL_DID)?) != 0xc5454bfe119ba394 {
         return Err(invalid());
     }
+    let _ = crafting_levels();
     Ok(())
+}
+
+/// One rank from Pyreal_DB_Insert_CraftingData.sql.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct CraftRank {
+    pub level: u16,
+    pub curve: u32,
+    pub learning_limit: u32,
+    pub cxp: u32,
+}
+
+fn crafting_levels() -> &'static BTreeMap<u32, Vec<CraftRank>> {
+    use std::sync::OnceLock;
+    static LEVELS: OnceLock<BTreeMap<u32, Vec<CraftRank>>> = OnceLock::new();
+    LEVELS.get_or_init(|| {
+        let mut rows: BTreeMap<u32, Vec<CraftRank>> = BTreeMap::new();
+        for line in include_str!("../content/crafting-levels.tsv").lines() {
+            if line.is_empty() || line.starts_with('#') || line.starts_with("pyrealium-") {
+                continue;
+            }
+            let mut fields = line.split('\t');
+            let skill = u32::from_str_radix(fields.next().unwrap(), 16).unwrap();
+            let level = fields.next().unwrap().parse().unwrap();
+            let curve = fields.next().unwrap().parse().unwrap();
+            let learning_limit = fields.next().unwrap().parse().unwrap();
+            let cxp = fields.next().unwrap().parse().unwrap();
+            rows.entry(skill).or_default().push(CraftRank {
+                level,
+                curve,
+                learning_limit,
+                cxp,
+            });
+        }
+        for ranks in rows.values() {
+            assert!(ranks.iter().enumerate().all(|(index, rank)| {
+                rank.level == (index + 1) as u16
+                    && (index == 0 || rank.curve >= ranks[index - 1].curve)
+            }));
+        }
+        assert_eq!(rows.values().map(Vec::len).sum::<usize>(), 1750);
+        rows
+    })
+}
+
+/// Rank reached by `crafting_xp` on one imported crafting skill.
+pub fn rank(skill: u32, crafting_xp: u64) -> Option<CraftRank> {
+    let ranks = crafting_levels().get(&skill)?;
+    let index = ranks.partition_point(|rank| u64::from(rank.curve) <= crafting_xp);
+    ranks.get(index.saturating_sub(1)).copied()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn imported_crafting_curves_match_the_pyreal_dump() {
+        let butchery = rank(0x6f002560, 0).unwrap();
+        assert_eq!(
+            butchery,
+            CraftRank {
+                level: 1,
+                curve: 0,
+                learning_limit: 120,
+                cxp: 2
+            }
+        );
+        let recipes = rank(CRAFT_SKILL_DID, 0).unwrap();
+        assert_eq!(recipes.level, 1);
+        assert_eq!(recipes.cxp, 0);
+        assert_eq!(rank(CRAFT_SKILL_DID, 10).unwrap().level, 2);
+        assert_eq!(rank(0x6f005276, 0).unwrap().level, 1);
+        assert!(rank(1, 0).is_none());
+    }
 }

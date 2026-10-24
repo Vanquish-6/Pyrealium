@@ -1,0 +1,3731 @@
+{
+  "captures": 516,
+  "accepted_before_dedupe": 547,
+  "added": 28,
+  "skipped": {
+    "already-placed": 519
+  },
+  "sources": [
+    {
+      "file": "encountering.group.mobs.looting.no.ep.sharing.elog",
+      "sha256": "8f1a2c56d5e7af6edd9858149f8bcd68f34f82f3740ffab6beba7246e3354424",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "encountering.group.mobs.round.robin.loot.elog",
+      "sha256": "893f71f0be43c8c97459fe07a1be38127e1bb8ed751ea6b99d561b8961d261c6",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_ghost_mob.elog",
+      "sha256": "1d3bc672f6a87b511efd4d841e6f530b7b47676c938d5fdd63794523fcbcbf0b",
+      "accepted": 1,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 2
+      }
+    },
+    {
+      "file": "ac2_mob_add_to_world.elog",
+      "sha256": "4dd6a5dd5827e30fdc18986ccf737aa701afd035c126443845180e8abf70918c",
+      "accepted": 1,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "ac2_mob_remove_from_world.elog",
+      "sha256": "7516582d29eaec1fe9449dc209fa861cd977a0d2212ed11f7a79879104fbb430",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_mob_world_remove.elog",
+      "sha256": "d76504eddc41ffd24b5ca681ce9a41028168e36a8cc4f2e879035b15eae6feed",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_mobspawn_player_figth_und_move.elog",
+      "sha256": "6431a55321ac65a012839b1c5264f4a2b34433ab17b1b738f41f4d18fea74cd1",
+      "accepted": 4,
+      "rejected": {
+        "unsupported-or-contained-description": 3,
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "mob_die.elog",
+      "sha256": "b40397f3858b75775c7e644ba8c06376bea4ec2799faefdd0b332dec2a95a62a",
+      "accepted": 1,
+      "rejected": {
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "mob_remove_from_world.elog",
+      "sha256": "dff37451ef68c5c9bc177503f3a942817efb8f68b1898827c8631469deaf4665",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "mounted.movement.enemy.mobs.elog",
+      "sha256": "afa9055cd4a186d8647be56d91711969f902b10004f52523635758a48851e9f5",
+      "accepted": 8,
+      "rejected": {
+        "non-world-namespace": 1,
+        "unsupported-or-unplaced-physics": 5
+      }
+    },
+    {
+      "file": "browsing.through.items.and.lootall.elog",
+      "sha256": "bcf58d6dfe3f04838e222dec208580cee7c4ece2f6a5950de0f2b132c6a78527",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "dropping.item.into.chest.elog",
+      "sha256": "f40f58c69475490b638c9e7765be2392f062f9ba155e5a350fe86e6da875ad6a",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "opening.closing.chest.elog",
+      "sha256": "c6fd579b9a0cfac2ba8378d71e97e015263d3904f544602fa7b014c99790ceb8",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 52,
+        "unsupported-visual-description": 108
+      }
+    },
+    {
+      "file": "opening.closing.chest2.elog",
+      "sha256": "9ab2845fb6a69c1fbbc7bd29434c3345732ffcc3c24ca783d5e0edbfcacdac14",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 8,
+        "unsupported-visual-description": 32
+      }
+    },
+    {
+      "file": "opening.closing.chest3.elog",
+      "sha256": "a1e392e494b44ca6f4215d2ea634084e64804a331f86d75e145ca048dff07b85",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 18,
+        "unsupported-visual-description": 22
+      }
+    },
+    {
+      "file": "linvak.tukal.heroes.dungeon.2.opening.door.not.locked.elog",
+      "sha256": "b7cd2d2a9bd857355cbd186d324d653c85a65e594671c74067263d45d7509b51",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "objects.players.npcs.come.in.range.elog",
+      "sha256": "75e3f12170185735dd1140f3e5f8b8f066ee5dbbace669ea734def31bb7b5110",
+      "accepted": 23,
+      "rejected": {
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 3,
+        "unsupported-or-unplaced-physics": 1,
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "opening.closeing.door.elog",
+      "sha256": "432a28adc10d13b32306c08b51456abaaa4c0313bf0fad5480b9fdf14ffa1fe6",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "opening.closing.door.not.locked.elog",
+      "sha256": "46d9710967d6b6dfc0fc1f2b41137dba74355dc688325eec96515516f280d878",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "info.pillars.elog",
+      "sha256": "9ede366f201dd5193cd0dc938bd4cf652a609d272d1d67d99073c5bf99266027",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "invisible.bridge.elog",
+      "sha256": "dcb18f0beb215685c20936610d8e19b06ce028bb06459d7a62cd685e01a17ce3",
+      "accepted": 1,
+      "rejected": {}
+    },
+    {
+      "file": "binding.to.lifestone.1.elog",
+      "sha256": "b1c42258aaf5c3ce674f6bb9dbbf03a54855143467f13173fd42f7de6cd73417",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "binding.to.lifestone.2.elog",
+      "sha256": "ac66831ce07d31ac86e3f6e1532393737fab28b053a84dd5868bf8660d3863ef",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "recalling.to.lifestone.elog",
+      "sha256": "e68d7dd8997e790b41cd26ba74f080a4bcaddd16a8b28eb9b241177c8f24543a",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "login.at.night.rain.elog",
+      "sha256": "e6e2bc2124902a58622f2509b1e4d74eff862233886ff1fc01b4c30559d91278",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "msgbox.yes.no.elog",
+      "sha256": "76a538bce799fd67ec2a6abf7000a2329aeda053eacf18fa8c6ee577400eba92",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "diving.board.elog",
+      "sha256": "fc7bddf4bc2703e594147b06d09ec17e2a4ba5c5445485c54e58693143e1c147",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "interacting.with.grave.elog",
+      "sha256": "ba8f2b99da02d55693d946faeb9aeff58bc824b2abf71d4741cbe9fc10d53abc",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "world.item.reading.book.elog",
+      "sha256": "49c1917ec5162889eaefb9d7233cbbc9ca1bfabb83cac25a55c67871065215bd",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "transition.inside.outside.compass.elog",
+      "sha256": "258696ee57a4e3dacf6c8526c69a5a6d1b921c974d7a37337ba03168904b853c",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "unlocking.door.1.elog",
+      "sha256": "10314ea1d986e3bdbe79aa2c3d8423dab1847b9fdc1c219cfaf32832ef6bb2bf",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "unlocking.door.11.elog",
+      "sha256": "73ba4db486f4e45214df7c0a5e0e15d29d1aae1a2724ffc5711138bccebff24e",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "unlocking.door.12.elog",
+      "sha256": "317994707e8507e4852efb70473d61f1b14b2e15d919b0be59bd096906236a77",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "unlocking.door.13.elog",
+      "sha256": "63ab18df2441dc6936189281d7c8d76fdc8e2ec588e4bcdf97e8925a5a99b8e2",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "unlocking.door.2.elog",
+      "sha256": "f4009b16b2a92b34b15ecd936c2e58d3a2e2826144656e6fbdc0ecc397d2a5a0",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "unlocking.door.3.elog",
+      "sha256": "9fa9c0014a487bb25f05b383e2ddbe73bcf9fdbb56b3c9981d239a3607080a9c",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "unlocking.door.4.elog",
+      "sha256": "47d819ff6dad76adacd1cf7e9652ebbd690a9472f73292386509c326549cb44b",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "unlocking.door.5.elog",
+      "sha256": "717cd379d1fa33f24191e114907572f47e2c30c01f8a67e66e85949d76251b93",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "using.world.object.initiates.automovement.to.object.elog",
+      "sha256": "2713b4554f024e0dd6d1325990a78ff2e5372f22181b119000cc3c3789590978",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "wall.blocks.my.way.elog",
+      "sha256": "c3a62b22796fa6dedfd2196443c76020e2a92f8d379de46360d58047ec9fd060",
+      "accepted": 3,
+      "rejected": {}
+    },
+    {
+      "file": "magic.workshop.elog",
+      "sha256": "c903657e7e678d9b44818438f9ef1de5a7834cc96ae6fb0033d1d1a15dea00c3",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "refining.workshop.elog",
+      "sha256": "2a7142ed9a9719d590dd956c2e3ad1fc7d343ab8aa9112e528fa6ec19c108cab",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "workshop.elog",
+      "sha256": "07afe579e3a60dcf93538b4a9ed22d6fbf6ac0398057d164a74355c347993b50",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "world.object.blocks.my.way.elog",
+      "sha256": "6639dc0534bd755f4787a7572ed038c43de9fc6fa8d2665a82bc1775d63deceb",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "heroes.dungeon.1.portal.1.elog",
+      "sha256": "857fe1090ac1885bfe2cfcbf52efc47e062cb726c736d7a986595cb22c756106",
+      "accepted": 4,
+      "rejected": {
+        "non-world-namespace": 8
+      }
+    },
+    {
+      "file": "heroes.dungeon.1.portal.2.elog",
+      "sha256": "773f6b559f47c4ef156752e8ed973121914a93bb9569d0f3cabb0c356ab0ed3d",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 4,
+        "non-world-namespace": 8
+      }
+    },
+    {
+      "file": "rustwater.redute.elog",
+      "sha256": "95dea59b25197e197abcaf2842964bb0c0afc5682a4bb335d6a46a06bc84b260",
+      "accepted": 4,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "rustwater.redute.portal.at.gate.of.madness.elog",
+      "sha256": "504925759265522a13870633ca54b141dae141a5a0c474f0bbe44cb352dac697",
+      "accepted": 7,
+      "rejected": {
+        "non-world-namespace": 4
+      }
+    },
+    {
+      "file": "rustwater.redute.portal.back.to.rustwater.elog",
+      "sha256": "467c5ec4535d0499cb3635dd95aecdeba487d5f43dd7fe4c5bac73aa6e1930e1",
+      "accepted": 4,
+      "rejected": {}
+    },
+    {
+      "file": "steam.caverns.elog",
+      "sha256": "903e8b229159d0bb7234be1af79c41a6b107c08d326a4944a9d0130cbb144cad",
+      "accepted": 10,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "clamp.empyrian.ruins.entrance.portal.elog",
+      "sha256": "e0761ce2a8c755959744da1c01ccc527f1d7b5c5ef3b11e67356824ff5acebab",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "darkenfowl.entry.portal.elog",
+      "sha256": "8ad0a211b18b23af7fde25df76ccdee5f5b812bf6a67ba9f47a2b240d80278a2",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "deep.darkenfowl.entrance.portal.elog",
+      "sha256": "1308dc25385fef892a26a22f7a99df7d2d19bc8790113799313c766751905c02",
+      "accepted": 6,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "kydi.inner.darkness.entrance.portal.elog",
+      "sha256": "6bc48fe762087642ebd0a05027d36842cfa3d184b2d47781e77362c1d8bc9bb6",
+      "accepted": 23,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "kydi.water.temple.entrance.portal.elog",
+      "sha256": "23e33e5eace966424f5d50c13e00dd228313f0a1074906de9cf6abe0aa33279c",
+      "accepted": 4,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "lumari.ghost.mines.closing.door.elog",
+      "sha256": "77baeb665178571f91d492482bfd43fdf31a7f2c6a0e487cc947f16bb11a3754",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "lumari.ghost.mines.entrance.portal.elog",
+      "sha256": "70d291cb1752edc53176bdb40ce65c5dfabe9cdde21e5115b36e2e52e96daa44",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "lumari.ghost.mines.nonlocked.doors.opening.elog",
+      "sha256": "1718643327618edcc9b34ec2ffcce6671be4d28789f1b01acf03085855dabd00",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "mucor.mushroom.grotto.entrance.portal.elog",
+      "sha256": "fa6613252c368357278dbc8f694f72dad406d6e3cc2a03c8041feaa2ea7aac6e",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tou.tou.entering.tunnel.of.deepdank.elog",
+      "sha256": "1a1b413809ae9d5090f917783fe0aead849859cbde81b58b6d55cd472f470bb7",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "vesayan.entering.toad.nest.elog",
+      "sha256": "8864b27c656f63bd7543828e22f5b9407045796a0b95d2ca96fe88c17fd1f30b",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "arkanum.vault.at.heroes.shrine.elog",
+      "sha256": "",
+      "accepted": 0,
+      "rejected": {
+        "unreadable-capture": "capture reassembly limit"
+      }
+    },
+    {
+      "file": "arkanus.tomb.heroes.shrine.entrance.portal.elog",
+      "sha256": "9183c1ff1b5344753b32832ab17cad765e7b4a516e496b881410e238e3c4a6a5",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 3,
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "cragstone.excavation.elog",
+      "sha256": "5e0307a60c5a71665c61c12de661da4ece5575d7eacc6ff7ab381a20d371e169",
+      "accepted": 1,
+      "rejected": {}
+    },
+    {
+      "file": "cragstone.excavation.library.exit.elog",
+      "sha256": "eece7a26b3a7ff3d4ffc9df42b18e5e9b1e5cf5b9c0187b6fe8a090cdb7760b9",
+      "accepted": 1,
+      "rejected": {}
+    },
+    {
+      "file": "cragstone.excavation.library.portal.elog",
+      "sha256": "f7e2aa44eeacbed27e48cab377b4e9c91128ea1395b1a69bf1e23992ae4acd69",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "crone.laboratories.elog",
+      "sha256": "57251846685b3b180af67f974221c3d4fd1c692ead5af8b8f67c9661a4ff42d8",
+      "accepted": 5,
+      "rejected": {
+        "non-world-namespace": 6
+      }
+    },
+    {
+      "file": "dungeon.of.the.ancients_in.lake_lower.catacombs.elog",
+      "sha256": "32ba76566221557d02afc870d40f49dab716cfed55d2c5b310ab272aea736d4c",
+      "accepted": 3,
+      "rejected": {
+        "non-world-namespace": 3
+      }
+    },
+    {
+      "file": "dungeon.of.the.ancients_in.lake_outer.catacombs.elog",
+      "sha256": "93582f53b9d0d90f9eee0fb2a00cea6ed2cd1e4a8a5e3a6f1e07f963fb51069a",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "dungeon.of.the.ancients_in.lake_upper.catacombs.elog",
+      "sha256": "49f5e46e56165e8076e307c59e3d71abacc6f6a49dfdfa31040c68bf76a0b78e",
+      "accepted": 2,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "final.filinus.nexus.entrance.portal.elog",
+      "sha256": "5422b4ff0120a0f5903044490f1b43b39e35fbc99620a4d6b0d9cfc6115ce9da",
+      "accepted": 17,
+      "rejected": {
+        "non-world-namespace": 3
+      }
+    },
+    {
+      "file": "fire.crypta.entrance.elog",
+      "sha256": "",
+      "accepted": 0,
+      "rejected": {
+        "unreadable-capture": "invalid fragment bounds"
+      }
+    },
+    {
+      "file": "gauntlet.arena.elog",
+      "sha256": "97e6bc92afd69c139b0849d7899a34a66ed127f0b2f9e02d605d3a1c8c84c0e2",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "hidden.drudge.city.near.prosper.vault.elog",
+      "sha256": "7bb561817dfe0e27890ede0fd525c4446fef1ad42184f1ccd7f7bdd7310f264b",
+      "accepted": 22,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "illuminated.drugdes.elog",
+      "sha256": "",
+      "accepted": 0,
+      "rejected": {
+        "unreadable-capture": "capture reassembly limit"
+      }
+    },
+    {
+      "file": "isle.of.tears.elog",
+      "sha256": "2a58ba93326e3f3410baf4280727aa811c4dfd8ee77a053209942b1dd6d166e6",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ruby.mines.of.ulkas.2.elog",
+      "sha256": "238346553a2602e342e28627f86b2c74f2028b9732a38ef7215f58a58de7e982",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ruby.mines.of.ulkas.elog",
+      "sha256": "224dcc06984feccd005a458899a88d2005a363a7d94584f054e94608d6f82ce5",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "tertiar.filnusvenkta.vindication.nexus.entrance.portal.elog",
+      "sha256": "a784cf63d40b985acb7f8ea6bfdcf78369c0ddf6c1591f7c43e29e532c363288",
+      "accepted": 17,
+      "rejected": {
+        "non-world-namespace": 4
+      }
+    },
+    {
+      "file": "warden.hideout.elog",
+      "sha256": "6aa0d3a0abe4160581fde82cc2423895f353a70bf846e37bca8fbb014c4cd497",
+      "accepted": 2,
+      "rejected": {}
+    },
+    {
+      "file": "warden.hideout.treasure.chamber.elog",
+      "sha256": "0cffb5da9eee46ba7a5faf2b68833e94eadf6c9520a34dba6b63c7fe2a8f7b9c",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "human.porting.from.beginner.area.with.glyph.to.shardroom.elog",
+      "sha256": "27805e3cdbf5107d8258433eb79c5abe54f84b725e6fa5f708462a2354a995c3",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "human.porting.from.shardroom.to.lost.wish.elog",
+      "sha256": "e444793051c37ec1dc33ede61ab25939b7d193aa49aa2830b85ee6b46c92baf7",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "lugian.porting.from.beginner.area.with.glyph.to.shardroom.elog",
+      "sha256": "d6914859581eed7ac7854fba9d5eefe924fcc9ca8cb07a8375878551c6a01000",
+      "accepted": 0,
+      "rejected": {
+        "missing-dat-asset-or-cell": 1,
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "lugian.porting.from.shardroom.to.esper.elog",
+      "sha256": "1a3d543d95d67bdc60a9a0293edf94634514b6a372ded1f63a75169abf95f112",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 5
+      }
+    },
+    {
+      "file": "tumerok.porting.from.beginner.area.with.glyph.to.shardroom.elog",
+      "sha256": "6c5d8fcd1cff8f7e5cfaa57b454196eec027e129b8e2a3002d38f2f699886907",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "tumerok.porting.from.shardroom.to.lost.wish.elog",
+      "sha256": "d6f4d8d78919f4d8b7edaf77f26296451c0d5f21034ad67b12923cb9f9b07497",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "clicking.cragstone.nexus.to.be.rewarded.with.recall.elog",
+      "sha256": "c41c66c081d3064f3789080a8760a4fc2e0b5616d6e9489873c8c1f997e4f429",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2.linvak.gevoth.shardroom.portal.elog",
+      "sha256": "4ea28c9eb58fba7323498b10629147774f1bf9d35c93f2608c09a4b4896dee16",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_linvak_gevoth_entrance.portal.elog",
+      "sha256": "db53542d9b73bd151d7a1d624cb649a0f3cc5824684d04049c1f85cef7f54152",
+      "accepted": 18,
+      "rejected": {
+        "non-world-namespace": 22
+      }
+    },
+    {
+      "file": "ac2_linvak_gevoth_shardroom_exitportal.elog",
+      "sha256": "8dab5bb9d4a195c8209be30ee964e3f96fb5835c95090cd5f4935a3d4176f92f",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 3
+      }
+    },
+    {
+      "file": "ac2_linvak_gevoth_vault_vestibul_port.elog",
+      "sha256": "4f3bac3ee5ec582e1bc4ee8be4476016382da7d31c35034bd0f6a44ec7522573",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 5
+      }
+    },
+    {
+      "file": "ac2_linvak_malthabbor_entrance.portal.elog",
+      "sha256": "7c6129b9e2fc07545e3b672bf524a47f2bbf09368acc9c0e2799a1419cb4e2d4",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "ac2_linvak_malthabbor_shardroom_exitportal.elog",
+      "sha256": "906c151ec2cf1d091b144d3c0ade20d0afc3d7b55f05af009aee0bda278515b7",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_linvak_malthabbor_shardroom_porting_out.elog",
+      "sha256": "a0a8c89f24938137f0ed974008358c3eed67413e20064e8014c8cb28d8db9954",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_linvak_malthabbor_vault_vestibul_port.elog",
+      "sha256": "66b0c1f2b2b8c10f7850a08fc3b5d6b744471693e76d8f5ba92e6ad6c03793bf",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_linvak_nepeth_entrance.portal.elog",
+      "sha256": "f7321f52b8694f1f04978e35556b99ca46ed2e7690da1f15ef9a6ffc0fa48076",
+      "accepted": 16,
+      "rejected": {
+        "non-world-namespace": 24
+      }
+    },
+    {
+      "file": "ac2_linvak_nepeth_portal_to_second_island.elog",
+      "sha256": "7a709989ccd1889aa69d813d918474166815cbb8879eb354a07c1ff878f67c3d",
+      "accepted": 13,
+      "rejected": {
+        "non-world-namespace": 27
+      }
+    },
+    {
+      "file": "ac2_linvak_nepeth_portal_to_upper_island.elog",
+      "sha256": "8a92afbc9580fad38779371d7e8ec42365ad89858d974adcec7a2fef3942ac44",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_linvak_nepeth_shardroom_exitport.elog",
+      "sha256": "86dc1e9d74917bf12929e112ee46cdc7a7b56514c5c7e7aea91e524868c399f6",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "ac2_linvak_nepeth_shardroom_port.out.elog",
+      "sha256": "1f295512907cea141aa55fa362f3ade618e209e258237cb860242ad94a1d648a",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_linvak_nepeth_vault_vestibul_port.elog",
+      "sha256": "a96951e8f554c21e0f888f8a181a50867218d49ae88f14da6846cf631c6548b1",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 8
+      }
+    },
+    {
+      "file": "ac2_Linvak_oradi_boss.platform1_portal.elog",
+      "sha256": "eadd4ab55198a5a71e5df1d47baf4f920a216e1f4b943bb51ccfd58beed766a9",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 10
+      }
+    },
+    {
+      "file": "ac2_Linvak_oradi_distant.platform.portal.elog",
+      "sha256": "330564cc3bad1a435f71a3762e67b27b0a5f67a72be1c894ae27ec1b8b275a24",
+      "accepted": 20,
+      "rejected": {
+        "non-world-namespace": 21
+      }
+    },
+    {
+      "file": "ac2_Linvak_oradi_entrance.portal.elog",
+      "sha256": "5f377b851d5ced6792c3dc935a13d3fd2bd2aef2ed8769af538c192eb2841723",
+      "accepted": 17,
+      "rejected": {
+        "non-world-namespace": 19
+      }
+    },
+    {
+      "file": "ac2_Linvak_oradi_shardroom.exit.portal.elog",
+      "sha256": "110dd95cea13420afd4fdac54198b5fc7d0c9d7df4c9dbe3fcc824be19f5586e",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "ac2_Linvak_oradi_shardroom.porting.elog",
+      "sha256": "41d5dcd7d524df44ea2c9be5cf4d059894f33d4d98dfdfc96bf84b64dfd8f478",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_Linvak_stoneshadow_entrance.portal.elog",
+      "sha256": "308d6edff2a0a64c149b8044dac939e4ea248195986653fb47962709e90cb181",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_Linvak_stoneshadow_shardroom.exit.portal.elog",
+      "sha256": "5149e1420323569915b5b46a338a873859d5ffac68c9318e49090849eddaf2e8",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_Linvak_stoneshadow_shardroom.porting.elog",
+      "sha256": "4df15d8655719aca0d32908a2cee4ae8394646e9ccf18a248f86315b993c338f",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_Linvak_stoneshadow_vault_Vestibul_boss.room_portal.elog",
+      "sha256": "aa0b507356982cc52804a389be2fc53dc3d55f36e8ad42d6046a90b05cb4cc02",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "ac2_Linvak_thusik_entrance.portal.elog",
+      "sha256": "468e02c20175a999c768fc3afeb224910cdfa4e1718220984f3644bbc2668500",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_Linvak_thusik_shardroom.exit.portal.elog",
+      "sha256": "b582ffb3997077984267cdd1a2d6ab2a5d914ea73a9da0b1b563888a915fb34c",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_Linvak_thusik_shardroom.porting.elog",
+      "sha256": "f42302338664e4c2fa6e8a307d682f9de399ea849a8b2f0761033763c41b8614",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_Linvak_thusik_vault_Vestibul.bossroom.portal.elog",
+      "sha256": "7c1b2ea9e9c522bf4c4ec898a5a6b0bb07b9b9e2919a7feee077deea2f155400",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "ac2_linvak_winterhollows_entrance.portal.elog",
+      "sha256": "0016fc248fbe0e74b92f61309e19bba623ee7fc3bb9499763e127c7439b87d38",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 3
+      }
+    },
+    {
+      "file": "ac2_linvak_winterhollows_shardroom.exit.portal.elog",
+      "sha256": "3e9a8b70938548a3a97f5df9f77733c9613e7f769b8827bd0029499085bf8d31",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_linvak_winterhollows_shardroom.porting.elog",
+      "sha256": "c77a04f0ba4fa023c86d7bb1375500842be8285c4e72b156e973f03e94c67221",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_linvak_winterhollows_vault_vestibul_portal.elog",
+      "sha256": "56d4b42e0662267590c1dd1eb7778ae89eac5546bfdcb627dfb9c55a54e9b2d1",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_omishan_ariaki_entrance.portal.elog",
+      "sha256": "76beadfb8c4bdd29d444565f1f52cd3046ee0957eb8284986362463a334a1ab3",
+      "accepted": 13,
+      "rejected": {
+        "non-world-namespace": 12
+      }
+    },
+    {
+      "file": "ac2_omishan_ariaki_porting.out.elog",
+      "sha256": "7748d2d32f3c0448a297946d88daa47dad1943faf6163252487bf847f41ac3d9",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_omishan_ariaki_shardroom.portal.elog",
+      "sha256": "a1ce5a6dd889b98abc443cfcef65f2a17da6d28455f4754ee231d5053b2b0b22",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_omishan_ariaki_vault_vestibul_portal.elog",
+      "sha256": "cb378d5f6ec8b584a056b13a0d1e22ed31c1c28905e43aa6bd8a63494c1dcfba",
+      "accepted": 3,
+      "rejected": {
+        "non-world-namespace": 3
+      }
+    },
+    {
+      "file": "ac2_omishan_farali_entrance.portal.elog",
+      "sha256": "c4428e055067a8d3e38081113458ad970f46060e24892310ee7fc80bb071d2e1",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_omishan_farali_porting.out.elog",
+      "sha256": "a35b574912175cd3906c932e03f5c832d5436f6b8dc2df6155e14620d962dd29",
+      "accepted": 5,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_omishan_farali_shardroom.portal.elog",
+      "sha256": "2adefd26bc80261af0b6e9795e7d5e6da733069c76c0347133d535989d12e3a4",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_omishan_farali_vault_vestibul_portal.elog",
+      "sha256": "3de3736bfeb84381cecaefa2fff9af3360f41342f6deeab7fde9159536947ab8",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_omishan_kydi_entrance.portal.elog",
+      "sha256": "4cc01efb6b5a49993bb181ae0bbe7c67c9fd4a8e6bb886ef176ba4ac6db718df",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_omishan_kydi_porting.out.elog",
+      "sha256": "c0b80a0ae2a28281332644d28e61e105bd7155c28661c7eb71839aff74940a07",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_omishan_kydi_shardroom.portal.elog",
+      "sha256": "5f911f2f6974c05005693736fa575361fd1d27bfa670dc24aea1b4c9610d597a",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_omishan_kydi_vault_vestibul_portal.elog",
+      "sha256": "219f64cd681ecc598d585a0094cd4b8f03173543add831a9abb005372c699259",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 2,
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "ac2_omishan_lumari_porting.in.elog",
+      "sha256": "0625b3b2b105f96563ec1e4c55e372d01f66c7cf9946fd53980c3e56a94e7cbc",
+      "accepted": 1,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_omishan_lumari_porting.out.elog",
+      "sha256": "50cc4d77d90fc5d953cab845f80015e6196281bf018d24e324529d947766c3eb",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_omishan_lumari_shardroom.portal.elog",
+      "sha256": "85633ef207da231bd9836f9381d36b0be3e87bbf006d1752a7aebcabb136c1b7",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_omishan_lumari_vault_vestibul_portal.elog",
+      "sha256": "681ae92462f82abbf1b99fb7eca6afc701bb3fc703645bd60c9bfc16f99db901",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_omishan_naderu_porting.in.elog",
+      "sha256": "e7dd89d029c2df2a369eb0f43a5cbc1dedbd72ef8c35c926ed581137f90c70f2",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_omishan_naderu_porting.out.elog",
+      "sha256": "fe1f802a50e2f26f6e27e86ed6cc12c0ac8672dfa7a18863b3f741521c786edb",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "ac2_omishan_naderu_shardroom.portal.elog",
+      "sha256": "6ce5273b5dc4c4e4aced0ee5053d3b3213401f10b0b64201804efa0789e59701",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_omishan_naderu_vault_vestibul_portal.elog",
+      "sha256": "d4dc922727f757febdb0bf9a169752feeeb3e50fd75973ec768fd0577a124c11",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "ac2_omishan_tou-tou_porting.in.elog",
+      "sha256": "2c697ec51692c481f50e9d9cb7eef261688cc5f2e5d62d764e7ffdf480c0d81f",
+      "accepted": 17,
+      "rejected": {
+        "non-world-namespace": 15
+      }
+    },
+    {
+      "file": "ac2_omishan_tou-tou_porting.out.elog",
+      "sha256": "e488d81de05e34bf586beb106df6d60aab76e016aa85eac5c3c517495799e147",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "ac2_omishan_tou-tou_shardroom.portal.elog",
+      "sha256": "75dd716e30d396e9332dad49bcc293c49dd1fd42fd9929df0e15186aeae2cabe",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_omishan_tou-tou_vault_vestibul_portal.elog",
+      "sha256": "9cd93896ad74acdb9310b617589e39112c185c6862b9422ba617c6abec7c7cb3",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 5
+      }
+    },
+    {
+      "file": "ac2_omishan_vesayan_porting.in.elog",
+      "sha256": "d550bc4762b3d162e98ae582362fd648e8061e5a9148c3a5bb3ac7c12ffbe7f8",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_omishan_vesayan_porting.out.elog",
+      "sha256": "229a58d93518a7611dcad8f0e0054a6000ab9fcf0a2b0a20b78765a41cd846fb",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_omishan_vesayan_shardroom.portal.elog",
+      "sha256": "3b5e23357e17e6b1f9103a2804ca8e4c45a8d69c856288eeb291fdbef0767e43",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_omishan_vesayan_vault_vestibul_portal.elog",
+      "sha256": "afb22c72575e037e70d338071bf62ccd3be8206b02f6a0bbe8d77889a1c67371",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "arwic.vault.bossroom.portal.elog",
+      "sha256": "e96ccb8fddef7bacb30c497feeb79d597573944a31f2fe42862e5ccbdb83bd0c",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "arwic.vault.exit.portal.elog",
+      "sha256": "f7a330634d31b5b751872194d7e94d26d467590b4152c5d394ee42f3a7766f2a",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "arwic.vault.shardroom.elog",
+      "sha256": "2fdcc5ba78ccccf441ab973436a97926e5aaaf45688890b927752742936b5a15",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "awic.vault.entry.portal.elog",
+      "sha256": "2d71088885fdd49723415d019fd13c14bf957e221e9ee444da65884af35a3604",
+      "accepted": 3,
+      "rejected": {}
+    },
+    {
+      "file": "cobalt.vault.bossroom.portal.elog",
+      "sha256": "b14e28ab3dd8dcb458efe15f8a70a1e18cc0ccac7c186d31f898f9fc91497570",
+      "accepted": 4,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "cobalt.vault.entry.portal.elog",
+      "sha256": "89d1af886037e3d0222862134ab72aef47ba911e59a6191137501b330e6e8aef",
+      "accepted": 1,
+      "rejected": {}
+    },
+    {
+      "file": "cobalt.vault.exit.portal.elog",
+      "sha256": "9c2d23960f85c9c2fad5b4cbf71399b08ec1c209dc88ce2d2ea4a803d7a19264",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "cobalt.vault.inner.door.opened.elog",
+      "sha256": "4b061a27263c7639a59161f36719b49011ca23236b074f638e1b343229847dde",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "cobalt.vault.shardroom.portal.elog",
+      "sha256": "236aaa84a5aaacf58092b3d1e06e8bc1512456526a72e9723a36820101c6bf92",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_arwic_vault.shardroom.portal.elog",
+      "sha256": "58473493a87762b2390fa579e05c46688a883398b568104c6cb1bd46a6059b67",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_arwic_vault_entry.portal.elog",
+      "sha256": "506dd2591d36e9bd8bb998880a237d35c9db1544ff1067057fbc16c04d0f3796",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 3
+      }
+    },
+    {
+      "file": "ac2_arwic_vault_exit.port.elog",
+      "sha256": "9a1e06aae54cd8f8fdafb0c2e435aedf3963afe2e068bc0d7bf1eec7a5a4711d",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "ac2_arwic_vault_vestibul.bossroom.portal.elog",
+      "sha256": "9dd1fc6aa21b989653894aace26dc236b73d2becefb805baed582ab0e43f52d5",
+      "accepted": 1,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 1,
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "ac2_create.saddle.elog",
+      "sha256": "96f76be188ecfedc996d3975f91265f69515c0551a289c0f917b902a7e6b2b0a",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 4
+      }
+    },
+    {
+      "file": "ac2_esper_vault.1st.door.opened.closed.elog",
+      "sha256": "c43810074b1e16a50e0098253f3f4b2adae73060c83fb8e677e7b20c85069d68",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_esper_vault.2nd.door.opened.closed.elog",
+      "sha256": "b7862726a8f5a6c97ba4cedd7f6714ff6d4b44984f43684cb237ca1676609161",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_esper_vault.3rd.door.opened.closed.elog",
+      "sha256": "8bc6960ebc809e81e2aa57cef12e7ee6ebcaf6e1d10b91a336e1896b2fab4d20",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_esper_vault.entry.portal.elog",
+      "sha256": "06ca931eed63f5a9309796c563dcb3d563fa65f39255b0b168dea1a4484a515c",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_esper_vault.exit.portal.elog",
+      "sha256": "c25ac5f15faa8527a70e12cda5832e51f60f2da87f958d47f9bb967d82b4a738",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "ac2_esper_vault.shardroom.portal.elog",
+      "sha256": "5989e42c0e7d3499a57c23e3c9811a9b6124d6c614e654b983ba8fd2d847e2bb",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_esper_vault.vestibul.bossroom.portal.elog",
+      "sha256": "8889735d0b981460c62ecf1e1370a9666dea5c5968d6752ff57f46611c5f5d12",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "drudge.citadel.bossroom.portal.elog",
+      "sha256": "5563836b06090d8ca64c0aa00df73f06c97b6347bfd3cd5ef0a07a4d6ef28f6a",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "drudge.citadel.entry.portal.elog",
+      "sha256": "bcd0af96bd74432279199c212aee97570da9cf27d044814e95a8bcde9b8d3081",
+      "accepted": 2,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "drudge.citadel.exit.portal.elog",
+      "sha256": "685989ab047889ec4e171949234a225a0a819b07d5c66465f3cb6352d2985b73",
+      "accepted": 7,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "drudge.citadel.inner.door.opened.elog",
+      "sha256": "dc76a7b851595173d75292b4547277a8f0f06ef6e96870d1c1428ef3ee2860e4",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "drudge.citadel.shardroom.portal.elog",
+      "sha256": "ba8ea4fbb74ff53287bbc8866c82b887c5775ea934f299300c28ddb22a12b6cd",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "esper.vault.bossroom.portal.elog",
+      "sha256": "c27bbb4c45417469b8fdd8dbbdfa2fefcf917e5fc4f683009bb45a18525b729f",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "esper.vault.entry.portal.elog",
+      "sha256": "0efd7be964be51dce80a1b401cf06abfc7b170486e7bb7e0ea490f5790373d66",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "esper.vault.exit.portal.elog",
+      "sha256": "740e6f5e85de90073dfefab46162ccb187f208b9d934d9f6e8bdf6ab90445477",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "esper.vault.shardroom.portal.elog",
+      "sha256": "640f9607b691d0e6a749b458fb5c9e4a9a1a7cd72094345edc0807084119ab0f",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "lost.wish.vault.bossroom.portal.elog",
+      "sha256": "3a2b6a14d972271d315717d38f51144c6e60f469ccf9dccb0b0a8b4e1275d2a8",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 5
+      }
+    },
+    {
+      "file": "lost.wish.vault.entry.portal.elog",
+      "sha256": "20eb9ad72357621c586b364a90259ddd9e51b7d86764f67fcbb0169cd426cb59",
+      "accepted": 19,
+      "rejected": {
+        "non-world-namespace": 28
+      }
+    },
+    {
+      "file": "lost.wish.vault.exit.portal.elog",
+      "sha256": "7fa1f8a5bcb33dde779e085f6fed749a3b04f532bc0a26f601bf7c5badfd1838",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 3
+      }
+    },
+    {
+      "file": "lost.wish.vault.shardroom.portal.elog",
+      "sha256": "85408b45f30263ae1d64bf6e912035cdfb8d0bf9a3607f25041d0aae6a063e6c",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "mad.crone.bossroom.portal.elog",
+      "sha256": "b8567e9c43d011313e9ba0870995895d40be9df0894d30e80c3b83604e49615c",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "mad.crone.entry.portal.elog",
+      "sha256": "59ed653d62c83779e1c0ce80283c9ee2749de8684d24a286cf02804d8c99dc59",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "mad.crone.exit.portal.elog",
+      "sha256": "ecd99162a1eabb394cb40612ee95d9cf939956ab81caaebc40c84abe1f4fd31f",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "mad.crone.shardroom.portal.elog",
+      "sha256": "049241f889f7da503437be8e9f9900e994399f4c49683fbaef689ec3f16b96fc",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "prosper.vault.bossroom.portal.elog",
+      "sha256": "55e518a7ea5ba51defdce96b42a6ba62b8aaeac1d67d5e965377464c3681d954",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 5
+      }
+    },
+    {
+      "file": "prosper.vault.entry.portal.elog",
+      "sha256": "dc4a3cd1dad3bf862a1e73de1935d5195b2f41a8c01343f5002df1acc796e89c",
+      "accepted": 15,
+      "rejected": {
+        "non-world-namespace": 19
+      }
+    },
+    {
+      "file": "prosper.vault.exit.portal.elog",
+      "sha256": "aaba2c34d650cbca497adae4f7d08c9953059c9bf60321550aedd49f74b2012c",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "prosper.vault.shardroom.portal.elog",
+      "sha256": "1c20971590087dc3d2d552463abc85731943030a772d99fe4dd40a87614cb9bc",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_npc_target.elog",
+      "sha256": "893cc5c2fadd93d2341c6c585e522f50707ca1a113d70d7c8977c55422ab9e8d",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_player_target_npc_pets_objects_buff_pets.elog",
+      "sha256": "c4ac04f73f0819b2bed31fec3b7a09b9f404e7dc9cdad11903f52c4a92dcb7ad",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "linvak.armorshop.npc.in.target.elog",
+      "sha256": "ffa5018e84cc34963e56ad71bc6bc2069e7e3f7fd7ad66ddbf7cb592904c7bca",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 7
+      }
+    },
+    {
+      "file": "give.item.to.npc_quest.done_new.quest.received.elog",
+      "sha256": "4b2bd8beb317009cc86363b53d9c7fba5ef291a6433c3deefebe217909960de6",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 2
+      }
+    },
+    {
+      "file": "guild.treasurerer.buying.receipt.elog",
+      "sha256": "4cdb5270dca8a96de278b0cf0093786125041b457bd2625f1bebab50684a5039",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "ikeras.curiosity.vendor.buying.batik.elog",
+      "sha256": "c19876670dddcfb10a89763c5811b0a52f176d0cd727dc3888720975b0da8733",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "ikeras.curiosity.vendor.selling.batik.elog",
+      "sha256": "e6835fb9cc0b79f6acdefa9b049b8a4f81025d2aea9cd3d7fde18ee4f8ec77a3",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ikeras.weapons.vendor.buying.weapon.elog",
+      "sha256": "71eed8fe823803ac6c8a63a1317b20cf986fb3c4a7b8a83c0c6d106401cbe27d",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "ikeras.weapons.vendor.selling.weaopn.elog",
+      "sha256": "bb0009c2883dd159366cae9269186af0e0acbfb1f558390dbcad4e6ffe46c40b",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "interaction.with.merchant.he.says.hello.elog",
+      "sha256": "f38ec23cf2bb97e2e3e3398511123bdff330c1e902df76c5f404b800dc715679",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "shopping.elog",
+      "sha256": "beb27fc2f0ba2aed8e10e787b2bf7bec22c10168e51f910cdbff1ba616bc5633",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 4
+      }
+    },
+    {
+      "file": "weapons.merchant.elog",
+      "sha256": "a3f48f8ff5b54efb4f26b9c44caaa46391e5c5f87dd2f9da623d43f1ac50505e",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "weapons.merchant.on.off.elog",
+      "sha256": "d8b31c6c7ce099e4c4023283d963aff6e61ef234f25675f7ac91ec8ae5706beb",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_quest_stepp_itemgive_to_npc_with_lvlup.elog",
+      "sha256": "3057005b8ba74909913bd2a069c692d57c4055dcb75b7cbaef3e0aa65a8f7a76",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 3
+      }
+    },
+    {
+      "file": "omishan.armorshop.elog",
+      "sha256": "a427a9e193173034ce8fd3228102be3eab7a3728a456255f36df99dce4cbeed0",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 7
+      }
+    },
+    {
+      "file": "entering.store.elog",
+      "sha256": "151e597f929ab760414d102a20b3cd79ae6f8b082e15d789ff503e6e5257c376",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 6
+      }
+    },
+    {
+      "file": "leaving.store.elog",
+      "sha256": "cd42f2bc0c71c13fdb32e8844bdb12b27add1c2dde9498a78dbcccce55a58900",
+      "accepted": 10,
+      "rejected": {
+        "non-world-namespace": 2,
+        "unsupported-or-contained-description": 4
+      }
+    },
+    {
+      "file": "omishan_ikeras_entering.armor.shop.elog",
+      "sha256": "be09eae7d5498096db7adaef8c4a5cfae1a9ab43ce0cf203ab84afff9d32f16b",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 7
+      }
+    },
+    {
+      "file": "omishan_ikeras_entering.curiosity.shop.elog",
+      "sha256": "2a5c6e0850a93829015d392a0e4b23ee2836890b39c426b227c53064b1fb996d",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "omishan_ikeras_entering.skills.shop.elog",
+      "sha256": "f016d12d5501488398097db9a955db1c777aafc4e8cc5248172358a1d1e42fe1",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 5
+      }
+    },
+    {
+      "file": "omishan_ikeras_entering.tools.and.totem.shop.elog",
+      "sha256": "8d61a351b4ad4e4119333659167864ff8a072f6651a65e3108a4ca73fbd01730",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "omishan_ikeras_entering.weapons.shop.elog",
+      "sha256": "3c55406f403f770978679ac41ccb3735b8b58d63cc2084f6f63a793ce30e6835",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "cavendo.entering.armor.shop.1.elog",
+      "sha256": "49026e1591d1b4d3f6b3453e6022b14a3a1153277057d5d5886fbd905c6ee2ea",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 7
+      }
+    },
+    {
+      "file": "cavendo.entering.armor.shop.2.elog",
+      "sha256": "8f36fcb5f3255639f8321ca7c8f7432cda69ea1f48b134e8c1f0e0cce5a90d87",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 6
+      }
+    },
+    {
+      "file": "cavendo.exiting.armo.shop.1.elog",
+      "sha256": "8b3b40e2d9cf2dcc256bb339b3ce983153d88665a09987aea1653fcbaffbaa88",
+      "accepted": 1,
+      "rejected": {
+        "unsupported-or-contained-description": 1
+      }
+    },
+    {
+      "file": "cavendo.exiting.armo.shop.2.elog",
+      "sha256": "f746296cbaa5efd64ea44dbfd88566abbf7a34d4a1700f69f217307413c3b3ef",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 1,
+        "unsupported-or-contained-description": 1
+      }
+    },
+    {
+      "file": "vendor.guild.treasurevendo.at.heroes.shrine.osteth.elog",
+      "sha256": "fa1af66d0c77b8aa4d62ea3222ae436c3380717e159441102e9414ac301092de",
+      "accepted": 8,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_pet_combat.elog",
+      "sha256": "7adf00ad2fe7a6452ecf421c056d9a67f1ae1950426272fa362d7dc2e2927a76",
+      "accepted": 1,
+      "rejected": {
+        "unsupported-or-contained-description": 1
+      }
+    },
+    {
+      "file": "brief.fight.1.elog",
+      "sha256": "efada595b65c9da3e9263603cab946e169913ca1506231d25fb86a1edfc55e7e",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-contained-description": 1
+      }
+    },
+    {
+      "file": "brief.fight.2.elog",
+      "sha256": "9e9da886df7f0dcb1c1a3f24e7fb3d0c76ef2a3bd70d1d4c99c32ae90da550f4",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-contained-description": 1
+      }
+    },
+    {
+      "file": "brief.fight.3.elog",
+      "sha256": "7fe899716a5da8755809c90b193a560c1a2cf2f0ffda058a2795f664585300de",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-contained-description": 1
+      }
+    },
+    {
+      "file": "brief.fight.with.straw.drudge.elog",
+      "sha256": "6b6ae3a4bfd9f52f29b620776635d5780a0ea437b80da3c4df9b82b5d94f5d05",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "brieft.fight.and.loot.elog",
+      "sha256": "6841d043e83a71354cb9875ea05792458753a2e3e400210ea2307cbaaf13392e",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "combat.log.elog",
+      "sha256": "6f8c41f5a54108983d8100916d24587f5d04b2da231e23cf5116e06933f061dc",
+      "accepted": 1,
+      "rejected": {
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 2
+      }
+    },
+    {
+      "file": "combat.log.entering.combat.and.mob.out.of.range.elog",
+      "sha256": "d9797cd4f07bdff4058dfba07f1cd8e8a4050c70f79847a3163b870929d6640b",
+      "accepted": 3,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 1,
+        "non-world-namespace": 2,
+        "unsupported-or-contained-description": 5
+      }
+    },
+    {
+      "file": "combat.log.without.entering.combat.elog",
+      "sha256": "bc84e0a41e92ba47110161f5187215c30dd634a1be0b0e6bd2aaf07c3475d48a",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "combat.onyx.phyntos.wasp.using.skills._leiden-lindern_innere-ruhe_vergiften_natur-hilfe_tollwut_haut-verstaerken_steppengalopp_robuster-machen_zaehigkeit.elog",
+      "sha256": "684cd6b3c9e3974d84704c5f03f58c721bfb965a14cd02114cb61399c0cb8ac9",
+      "accepted": 1,
+      "rejected": {
+        "unsupported-or-contained-description": 1
+      }
+    },
+    {
+      "file": "fight.nest.werfer.elog",
+      "sha256": "adfdae26ddfc4d55975f9fa9a8a97618b429d5cc46ea4755cf82c3ad51448639",
+      "accepted": 2,
+      "rejected": {
+        "duplicate-placement": 4,
+        "unsupported-or-contained-description": 1
+      }
+    },
+    {
+      "file": "large.combat.elog",
+      "sha256": "715bb8c4bb7bbbbd1d54d26694e8973927305ce2632450c87487b188675dccee",
+      "accepted": 14,
+      "rejected": {
+        "repeated-observation": 3,
+        "unsupported-or-contained-description": 10,
+        "unsupported-or-unplaced-physics": 8,
+        "unsupported-visual-description": 6
+      }
+    },
+    {
+      "file": "group.combat.2.elog",
+      "sha256": "b0d611692026193f68a27d3895c3b2d76fd72d144dd5617f3f629cf12dc121f0",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "group.combat.buffing.wiping.running.elog",
+      "sha256": "c9af73e6e7cf7bf0a04408e1212cfd147cec9345353072a16d666afc9b58fb4c",
+      "accepted": 3,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 3,
+        "non-world-namespace": 3,
+        "unsupported-or-contained-description": 2,
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "group.combat.elog",
+      "sha256": "156481615a6d7819f1da479014b48b763d3391d059132ebaf06fc996e6657b9f",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-contained-description": 2
+      }
+    },
+    {
+      "file": "mob.combat.one.of.them.begins.to.glitter.elog",
+      "sha256": "e17af4fdc57d3ad7b0f3a77db908710b87550d7d0655df245de6fcf638ba973e",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "Browerk patrol combat Mentalist..pcapng",
+      "sha256": "",
+      "accepted": 0,
+      "rejected": {
+        "unreadable-capture": "expected little-endian classic Ethernet PCAP"
+      }
+    },
+    {
+      "file": "player.huge.combat.log.elog",
+      "sha256": "cad884e6eda670259255e076b19fb15f33b8cb2403ec0f6b4d3c7e6e36cabcc5",
+      "accepted": 7,
+      "rejected": {
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 4,
+        "unsupported-visual-description": 3
+      }
+    },
+    {
+      "file": "player.combat.2.elog",
+      "sha256": "2f6b59fed92c047f43dffbe4f89a2f32f7fa5e87439a6a9da0136846098a47e3",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-contained-description": 6
+      }
+    },
+    {
+      "file": "player.combat.elog",
+      "sha256": "bd351118ac29fb90acb8329bc3f311c09c32ddbcd583fc711fc435b2d682f1d4",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-contained-description": 1
+      }
+    },
+    {
+      "file": "creating.group.looting.no.ep.sharing.elog",
+      "sha256": "7bf66d16c5b58614b0936cdc15c488f368c50d49c9d8e04b52474344f3cffa6f",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "loot.chest.all.money.elog",
+      "sha256": "1601323f1515c35422e9ab274d3c740697bf0d888f5f4b52ffb08d3a61e396fa",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 250
+      }
+    },
+    {
+      "file": "ac2_loot_all-loot_all-money.elog",
+      "sha256": "c53d0ca32fc435e888236e54583bbc22a7f0497b42d73106dad2fcfcdc6a7bb0",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_loot_allmoney_btn.elog",
+      "sha256": "d0a37a254bff3365165706aba01a4667098819fcbb44c38b9fc5f4411014da27",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_mob_die.elog",
+      "sha256": "61469039ac780103f6056ceac2d232a053f7199d6cf9fcd19d6174e7751a0565",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-contained-description": 1
+      }
+    },
+    {
+      "file": "ac_loot_all_money_btn.elog",
+      "sha256": "b5f5e05ab424316b580539c41f4e144d5af153e97fca9ed0c3124594fdb44ee6",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 46,
+        "unsupported-visual-description": 74
+      }
+    },
+    {
+      "file": "loot.elog",
+      "sha256": "d0e44349a4729bc824c7734e7f804f97a6b9de67c16741550b15eb43f2c1052e",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-visual-description": 2
+      }
+    },
+    {
+      "file": "quest.step.begin.brief.fight.item.loot.msgbox.elog",
+      "sha256": "a1eeb9fe071bd4d2f1a1a88e699f4ca11445f95cb2701af1136ff637a8321799",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "Exo_singlesession_20091226.pcap",
+      "sha256": "f335008aec80a10d3c61b33ff1b1bde2c2cdad55a912cdc009dccc958c3d217f",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "wireshark_capture.trc",
+      "sha256": "",
+      "accepted": 0,
+      "rejected": {
+        "unreadable-capture": "capture reassembly limit"
+      }
+    },
+    {
+      "file": "__Packviewer_Test_File.elog",
+      "sha256": "61c7aae4fb651263a00606b8e01ddb6675d1ef70264d2b6f3034093813f0e9a6",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 4,
+        "unsupported-or-unplaced-physics": 47,
+        "unsupported-visual-description": 16
+      }
+    },
+    {
+      "file": "ac2_login_from_charoverview.elog",
+      "sha256": "61c7aae4fb651263a00606b8e01ddb6675d1ef70264d2b6f3034093813f0e9a6",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 4,
+        "unsupported-or-unplaced-physics": 47,
+        "unsupported-visual-description": 16
+      }
+    },
+    {
+      "file": "ac2_omishan_allyhall.elog",
+      "sha256": "70675daf2671196af4017ef1b41907cf5a4dcd55f3f4a461a3fc0fbe10a73993",
+      "accepted": 0,
+      "rejected": {
+        "missing-dat-asset-or-cell": 3,
+        "non-world-namespace": 4
+      }
+    },
+    {
+      "file": "ac2_omishan_allyhall2.elog",
+      "sha256": "22c63ceacbac14b9c2c1a03bbbb68963509897652ff53396e4470800cd674616",
+      "accepted": 3,
+      "rejected": {
+        "non-world-namespace": 4
+      }
+    },
+    {
+      "file": "ac2_pet_attack_+_return_command.elog",
+      "sha256": "e56abe3d2053975439d6f34aeb4306f1c06687b76f928961ac8a73e52a72e828",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "ac2_pet_attack_+_return_command2.elog",
+      "sha256": "370cb803fcfdbd003717e14b032f976221f94c8fe51682d47d2b08a0b280ef52",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-contained-description": 1
+      }
+    },
+    {
+      "file": "ac2_pet_changing.pet.modes.1.elog",
+      "sha256": "ed0df309f6ec44fff0f75a9b849571dbb567cb79deb817d2d2b360d6b7e6beba",
+      "accepted": 2,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 3,
+        "unsupported-visual-description": 2
+      }
+    },
+    {
+      "file": "ac2_pet_changing.pet.modes.2.elog",
+      "sha256": "3088bec44b3f4f93320c1c6921db3f31d4ea84ebade1663da9b3bc5e40c0a5fb",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_pet_changing.pet.modes.3.elog",
+      "sha256": "d6777e21e2c5cae75c988f9cfbb90550648b73af652be2671b97912b6cc8cdb9",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_pet_create_und_healing.buffing.elog",
+      "sha256": "cfd1727314892e14b3c27ed41cffde4edf8911287abe4412b12017d6a31aa40d",
+      "accepted": 3,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_pet_playing.around.elog",
+      "sha256": "9c9f2ffe434296f091f91674f999b3a7fb487029eeafcb4352362014423f8cdd",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 1
+      }
+    },
+    {
+      "file": "ac2_pet_rename.elog",
+      "sha256": "28fce99711c9e9809e176a33410a590f4cda2842d73e7cd8b3a7346a0800a48d",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_pet_rename_name_invalid.characters.elog",
+      "sha256": "9a657b5f9f88be761954c08461020dbb387e61a1533b5d17f0ff3a5005032ab4",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_pet_rename_name_too.long.elog",
+      "sha256": "f240fb1f31163262ddcd2a7818eb5cc9d62283201815d0e090b929b296d5c7f7",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_pet_return.elog",
+      "sha256": "2cde1d6bd2655af0d0c45341df495c91bed9aeaaf471ede18a583b3f7a48e457",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-contained-description": 1
+      }
+    },
+    {
+      "file": "ac2_pet_too.far.away.from.target.elog",
+      "sha256": "795bc63e8fe5a9f49e25eece9e14fbf4a44afce683698d0c02a3cade9b49a31e",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_pet_too.many.pets.elog",
+      "sha256": "181d5eeb5ffe29be7199a919c94644f4fa5acdac9325b253c6b78b5af4885fa4",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_pets_calling.back.pet.elog",
+      "sha256": "09d18066a8f99cd4e1d190405f3cfbd593bf6368855839eab5c51bdb2d7070b4",
+      "accepted": 5,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 3,
+        "unsupported-visual-description": 2
+      }
+    },
+    {
+      "file": "ac2_player_attack.not.working.too.far.away.elog",
+      "sha256": "baab3d1b83096ae04b852632a478bb6dc4a97845f451dd42014b281e86656564",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_player_die.elog",
+      "sha256": "8ba384cff244547611e19b968da802dd1ec88c98e076653906e6e654731fb4b6",
+      "accepted": 1,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 2,
+        "non-world-namespace": 6,
+        "unsupported-or-contained-description": 1,
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "ac2_player_lv_up.elog",
+      "sha256": "2695d11932f80c9659126e63103e85b5c0d391737aa7129a1f2eedc18c058102",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_player_move_forward.backwards.quick.slow.elog",
+      "sha256": "d5cfc72d2f76ada783ed628eee1a8ba3250eea14c8cb5af7f7b0fae5788a7ec3",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-contained-description": 4
+      }
+    },
+    {
+      "file": "ac2_player_move_sideways.elog",
+      "sha256": "026dfb4c49e13b320fa9b9e8958053a75f10c9ec2bb080e94345e18ea4dbddcb",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "ac2_player_move_turning.elog",
+      "sha256": "887c823ddadcfe43f646074e0b95c3007c73137a383fc9b46b7bf6c62a0b3e9e",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_quest_start.elog",
+      "sha256": "ad589d2540a77c6fb948307f56a7cc16cdf5c9f9658a78998dd83a180f3c98fb",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_unkown_command.elog",
+      "sha256": "361de1d44ca650ffceea6b7f9067392a8d21687bfdb176c9803cb1793a220551",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ace_ally_motd.elog",
+      "sha256": "253084de0b99165179c7d67a2dbeb923e17f46338dca2a7032d772209763a43a",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "adding.to.friendslist.elog",
+      "sha256": "498b2c038ac52800c105ed26c8ee8a97133fce8ad9dcbd92cd4ac02c630d2fd8",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "afk.elog",
+      "sha256": "937cb25b9c82101973f0c16b5f40fe1ad9e99b1a3d0739fbdc41f6738d976174",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "linvak_tukal_accessing_portal_allegiance_hall.elog",
+      "sha256": "3d6ad2bf6b1404532a068ce8f404b8833ef3ce7edf08be87272c6908ec300f4e",
+      "accepted": 3,
+      "rejected": {
+        "non-world-namespace": 4
+      }
+    },
+    {
+      "file": "omishan_ikeras_accessing_portal_allegiance_hall.elog",
+      "sha256": "487af5800dc4aaadfd7c801351c207682739e68b7615d5cc596e90227dcbf1eb",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 3,
+        "non-world-namespace": 4
+      }
+    },
+    {
+      "file": "osteth_cragstone_accessing_portal_allegiance_hall.elog",
+      "sha256": "363f5a20c14c0e9841eaef2c67dcfd53a72732a5cbc0a56308d8f686162e79b6",
+      "accepted": 3,
+      "rejected": {
+        "non-world-namespace": 4
+      }
+    },
+    {
+      "file": "osteth_port_into_guild_hall.elog",
+      "sha256": "39496ddb961d249b8d675fd3a6f7216787b2e79e04f3b7aa8aa200a8b7021632",
+      "accepted": 3,
+      "rejected": {
+        "non-world-namespace": 4
+      }
+    },
+    {
+      "file": "osteth_port_into_guild_hall_2.elog",
+      "sha256": "9aee0def445149defa39546985b8d243d08bbdd392c91e88a557e8593383bbb7",
+      "accepted": 3,
+      "rejected": {
+        "non-world-namespace": 4
+      }
+    },
+    {
+      "file": "browsing.allegiance.tree.elog",
+      "sha256": "dd0ee3eb5129f1aad9d0fbae47cce5b0e8187f9d219f59c1c981caf6f3cc26f0",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "buffing.group.elog",
+      "sha256": "c4a15fec14a8a06e9a9dfcc8f49aa905ba9180d779f4c4a104bf66c34891d039",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "AC2_CG_Chat.elog",
+      "sha256": "ac753db88d15b0538d884551946a31ba2bae0b59c6f5aee5d42f25be6ba963ce",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "AC2_cg_chat_in_out.elog",
+      "sha256": "b582e9206f71575f109afc004c9a28f9731aa70ed47e5675d712bc59f67d6f81",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_chat_say.elog",
+      "sha256": "467644a71f81b1749013beaafc4904d5512f67db51c5673f23a13342ea1d7162",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "AC2_Chating_Cg_Cr_Group(not active)_allegiance(not active).elog",
+      "sha256": "1fb938c5c4ce901c96abcddfbc8636784ac9ce7cd6f4d003daa619d4544508c9",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "AC2_fellow_player_says_something_and_plays_music.elog",
+      "sha256": "61aed7339b87eea783a3a440aa277e6e58794fef64b6638ef34c61a4cd701aae",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "ac2_tell.elog",
+      "sha256": "d48a59bb25ccfd3cf08e8c9d051373d039b7f531f7631ef7c49917ba8fd02374",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1,
+        "unsupported-or-unplaced-physics": 2
+      }
+    },
+    {
+      "file": "choosing.server.char.overview.elog",
+      "sha256": "d4b010324172020ee35b224068749ea78269b0e31d8fcab30d55ffc14f8195a5",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "client.start.until.char.overview.elog",
+      "sha256": "d4f6686611b930548fe0e19a1f7123d0141a6d151e0d8cd46ff782571b5f06b4",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "AC2_Client_Start_To_Char_Overview(with Addon).elog",
+      "sha256": "768a31756b644a655663be0dc58adbdc1aa30f7421360ef09eb698d348c83cfe",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "Ac2_ClientLogin_To_charOverView.elog",
+      "sha256": "12d653da11d4bddd31a780ff810efb546e0c60455bf57c41166e4b14f7d3d366",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "AC2_complete_client_start_until_login.elog",
+      "sha256": "d2182e7666c27e5a5fd2252fdad732ca9021a72c2e2ed5c05aa8a7a274badcf8",
+      "accepted": 2,
+      "rejected": {
+        "non-world-namespace": 2,
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 50,
+        "unsupported-visual-description": 15
+      }
+    },
+    {
+      "file": "ac2_Login_to_Char_Overview_El-Barto(Wiht addon).elog",
+      "sha256": "a1f049f067ab01e3ea33b965a9509067a1e27f0b46e01ae4b9573f39c048f2e2",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_Login_to_Char_Overview_El-Barto(Wiht addon)2.elog",
+      "sha256": "2d0003df2c8f8d67e845208c2c6b7cddaa2ea73ee38d7f56b6d46316f3dd4cd4",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_Login_to_Char_Overview_El-Barto.elog",
+      "sha256": "a1f049f067ab01e3ea33b965a9509067a1e27f0b46e01ae4b9573f39c048f2e2",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "crafting.elog",
+      "sha256": "ad40293572e9cc77fce5a535225305307cf303d6b6d8e41f2dfc3f0044e91a15",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "crafting.item.2.elog",
+      "sha256": "56d349b035e25f45a8e337207cabd28a927896e297b184eac3735b56ad57efd4",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "ac2.craft.dyeing.elog",
+      "sha256": "97a8452ba2939f6d3701d648510e6ebf26792566069f4b7443ab3ad0d65a8e16",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 5
+      }
+    },
+    {
+      "file": "ac2.craft.practice.recipe.exotic.tumerok.weapons.levelup.20.to.21.elog",
+      "sha256": "194a8519218c597300f230eb37d25517fb24fb00d62b6bbd333dbd1f0a721fa6",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 7
+      }
+    },
+    {
+      "file": "ac2.craft.practice.recipe.lugian.armor.levelup.20.to.21.elog",
+      "sha256": "71c2895f8cccdadca3ffd826dfd014a8a9c4ca87e5a5979ba0e0f391653d617e",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 3
+      }
+    },
+    {
+      "file": "ac2.craft.practice.recipe.martial.human.weapons.levelup.20.to.21.elog",
+      "sha256": "2bd7b4a0d105684f166b7f005755381b21f75e7ccef327a7c368eaf8a817fa64",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 8
+      }
+    },
+    {
+      "file": "ac2.create.saddle.elog",
+      "sha256": "96f76be188ecfedc996d3975f91265f69515c0551a289c0f917b902a7e6b2b0a",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 4
+      }
+    },
+    {
+      "file": "ac2_craft_assembling_multiple_items_into_one.elog",
+      "sha256": "b57ec3b163b3ef1148ccc238c6e2877bf2bb1e0661f852c1614bbcac88e35fd4",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "ac2_craft_browsing_skills.elog",
+      "sha256": "e795f0201b4b0cbcac83d9c814bce67fd0ec0201e00874004bbfd7fcd0ba2628",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_craft_get_craft_xp.elog",
+      "sha256": "2fc2dbead4edb42c477215997872186c65a3a8b84a911ab24d1d55d2888fc62f",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_craft_get_craft_xp2.elog",
+      "sha256": "12c35481723882a035a1bfda615f3fc5b2294596e2f32c654a7b89e2ccc1c38d",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_craft_get_xp.elog",
+      "sha256": "865172bec55f31a26e31bf1945c4ebd23985b24dc478da90e8f97f32cd773de5",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_craft_skill.elog",
+      "sha256": "a7a3606f8df326aa41a46e5a29a86f6c4ce47bedc48f24075d2105764326f8a2",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_craft_skill2.elog",
+      "sha256": "f13469c06b790a514bc6c6597fa4fe18adccdb4d0fd946f895c175893df07a73",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_craft_skillen.elog",
+      "sha256": "d85acdb47cb6b253e14f07a6771510a7cc51ea12807764c742cd8b657d6acc51",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "creating.empyrian.starter.dungeon.elog",
+      "sha256": "",
+      "accepted": 0,
+      "rejected": {
+        "unreadable-capture": "capture reassembly limit"
+      }
+    },
+    {
+      "file": "creating.group.and.inviting.another.member.1.elog",
+      "sha256": "cf8da229e2e558bf21bb534c5a22ac08ce0bb56e91560e19b16e8b74f6d4d95f",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "creating.group.and.inviting.another.member.2.elog",
+      "sha256": "1ad9b313a30c970114f4e1c82644acd51b463da25ccc12d487806ea1b98db1c0",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "dancing.elog",
+      "sha256": "89ce4e8feb690e2c551798d49a0ef708c53cd0cf25b67c9d20d17218bae986d0",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "deleting.nicks.in.friendslist.elog",
+      "sha256": "ed1747482ee96ae2a6e2bb5eb47cf4bb6943733a615b8ebe38191d10cdb5b62e",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "dismissing.group.member.and.disband.group.elog",
+      "sha256": "bcf2fb6a8072cd997fa0387c0900c5e969cb84077fa7378c65636cdcda0b3425",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "diving.board.swimming.elog",
+      "sha256": "042728e07529f8966caa83535543bf503807217d8a7d9430ee81ebbac14fbcdf",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "dont.satisfy.quest.requirements.elog",
+      "sha256": "2b0d72bed507e12ae86dd5376171d95de55e0c6e8684671d4e8c8b3025b40f5e",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "dropping.item.elog",
+      "sha256": "4acf9145393d9e7957fd422d4996fcd9abd29e101c7f2f20b81a39768fde6320",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "empyrian.starter.dungeon.first.portal.elog",
+      "sha256": "a04fe67ddf93e5bc7193ae3b24a78550ae33df452d30a470a03f9cd014a4b3a8",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "friend.add.elog",
+      "sha256": "71a571cd0e1923d364b7dfca12cb6056560484e86cf06d3ce1ff427fefd18887",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "opening.friendsliste.and.browsing.allegiance.list.elog",
+      "sha256": "cfdced7c00ddf9a0092aa9b037481750ef4ae532a32d67177436228ce781c92f",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "getting.invitation.to.group.1.elog",
+      "sha256": "804ef6455aa316d3ef9f582545ec4d5f68335e1ccf2b19ad3eb2e4f0a3988fad",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "getting.invitation.to.group.2.elog",
+      "sha256": "cde053665b128cf17c899ae2fd99c8d517d2b6dbaffd2bd46de61869de25ebda",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "golden.age.reliquiarium.elog",
+      "sha256": "5580b11030e42fd2930fd8825664e9ef1c75caea3146494776828a51b4417ce5",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "golden.age.reliquiarium.inner.sanktum.elog",
+      "sha256": "f09ee0704e29419c571a34043e3318e5f9534f1876758a4bb78ee053d241fb08",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "group.chat.2.elog",
+      "sha256": "02eb1b98fbd7fc06bac0800c3bbb1a070445c84476cd63e1621aec12f7d4b7af",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "group.chat.elog",
+      "sha256": "b2be300b49d2c55f45cb76bd903137e59858f7c2f960b6bd587c0e037e7d170c",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "group.disbanding.1.elog",
+      "sha256": "490c0b5a1967556ab410910ef2b8d83b60bfe52c6ef1ce7f1db305bad466226d",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "group.disbanding.2.elog",
+      "sha256": "e60c042ad70ebc9dc53c6d8be67fc095d9e5d523fd23a7ef32f536402292e8d7",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "group.invite.elog",
+      "sha256": "c45ca63cf181c2dfb2a685381518d49c3a62f55c0eaeb6aa9ced6a7768535a6b",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "group.inviting.new.member.elog",
+      "sha256": "e824af8704d90be7a5a12cad076cba9aa8936d93cd5549db1b5844749a0e589b",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "group.member.leaves.group.1.elog",
+      "sha256": "ab9767f4de66d2bd20bc69c4245289d47613930fe045f4809614d2e6a168a1b0",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "group.member.leaves.group.2.elog",
+      "sha256": "18c925859a1b7ef8cdd7c9eb558b56186db1d849ada30af6445cdb29531c00f6",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "group.member.level.elog",
+      "sha256": "def1f0fc43988897364031a74a7e9215d7d90b127dd188835427ce9054f28bf1",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 2,
+        "unsupported-or-unplaced-physics": 3
+      }
+    },
+    {
+      "file": "group.member.levels.elog",
+      "sha256": "da2d187935061509e467314dce925b1ee36a2eee85a2bceb4086f835e1d4fdd7",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "group.member.levels.plus.chat.elog",
+      "sha256": "fd8095dd0aad2bf735c75b8e8eda24aeacd210c8434064d8e866da8d14be4c44",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 2
+      }
+    },
+    {
+      "file": "grouping.character.elog",
+      "sha256": "9f20ffb70d02088f3da9442f6ad24f63a101785ccc701d5bf2d44a48d572ba37",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 4
+      }
+    },
+    {
+      "file": "groups.elog",
+      "sha256": "46a8a325e17984cec70d124f44b7b367aa3c82117f9de72de2da25fc7a7005f2",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "heroes.dungeon.linvak.tukal.elog",
+      "sha256": "054e8d362c9da63d68b25d320b161d212d22a6bc32c1af4c776308542be3347b",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 12
+      }
+    },
+    {
+      "file": "icefire.elog",
+      "sha256": "a3cb356f2d3fedd74f20f42475304b61ea155686aacfb29c8b13795b4595731c",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "assmble.one.item.from.multipel.elog",
+      "sha256": "62a0d4bbc69a8b02a7baa69276da3f3e201ed5800d199bb4c12da091a249495a",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 3
+      }
+    },
+    {
+      "file": "drop.item.into.chest.and.pick.it.up.again.elog",
+      "sha256": "884e5cde27ac5c4cfea50ecc0ea8e01ed9e89feeac451bc135823edfe500d151",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1,
+        "unsupported-or-unplaced-physics": 3
+      }
+    },
+    {
+      "file": "dropping.item.elog",
+      "sha256": "f0e6dc4da4f06813a964333802e8f89b11adc11f6c4bc24c137f9d6b1bc56ddc",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "dropping.item.on.floor.picking.it.up.again.elog",
+      "sha256": "7c691944a5c9c1dec1509c2c54b2b042412ac26ba8f707fed347b5bb249bcb9d",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "fellow.drops.items.and.chats.elog",
+      "sha256": "1b782bcd37bd40b7fad3e6705ac69a12e842c38c21884e14d496aaef8d93237e",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-contained-description": 2
+      }
+    },
+    {
+      "file": "loading.inventory.elog",
+      "sha256": "58089bbec3fe483e05bff0283870f1f3e59403e66385db1d02fa2931ce6bb8c2",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 2,
+        "non-world-namespace": 2,
+        "unsupported-or-contained-description": 5,
+        "unsupported-or-unplaced-physics": 61,
+        "unsupported-visual-description": 16
+      }
+    },
+    {
+      "file": "picking.up.item.elog",
+      "sha256": "3913581876d23f5e5529c55cc61f797945e93aedcacd3f01e44fc93ea2033812",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "reading.a.book.elog",
+      "sha256": "b25e827fa1586f9daaf9b55a390bbb254b62e596110a423a9112dd91adab2064",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "selling.item.elog",
+      "sha256": "360be8e88429b6068f838dd6525b6f724526f5a621f1b5893a9167c28d71880d",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "sorting.items.elog",
+      "sha256": "17f1593014477b0ea08347d1c4cbe1decc2905f59df464d7ba99dfbdd9166173",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "splitting.a.stack.elog",
+      "sha256": "add0a43f409092e1c23d2ef980bfda9b3690fa359af229e3b1f46591351b978c",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 7
+      }
+    },
+    {
+      "file": "stacking.items.elog",
+      "sha256": "68396d4a56789e18b17ac6b1f3e1cf3cc5a8ad012e4d03806e52d2446623b73d",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "unequip.weapons.and.equip.elog",
+      "sha256": "1485a7f6eb8eddf01c903dc880c783cd6a6142b40dfec1ff25b6abb51649f0fc",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "inviting.group.member.elog",
+      "sha256": "983bb4a869e18539b8b9dccac882da21d529bfedda503a53fc9451ac3462b558",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "it.begins.with.rain.elog",
+      "sha256": "37fcc6f9e3814c3e21e22d0bfccfad7a6410dcdf084c5a2778ede2343444ba5e",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "item.spawn.remove.from.world.elog",
+      "sha256": "d7a3491bd8dce341a95ce951681353fe4270e469064c97ab5990f9e2e6df1d75",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 83
+      }
+    },
+    {
+      "file": "launcher.login.until.char.overview.2.elog",
+      "sha256": "",
+      "accepted": 0,
+      "rejected": {
+        "unreadable-capture": "invalid fragment bounds"
+      }
+    },
+    {
+      "file": "launcher.login.until.char.overview.elog",
+      "sha256": "",
+      "accepted": 0,
+      "rejected": {
+        "unreadable-capture": "invalid fragment bounds"
+      }
+    },
+    {
+      "file": "linkdead.elog",
+      "sha256": "ffbcd16e350df370c6fd52248c7e1efb59c2982e63894e338bd55c5dc095a599",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "linvak.armor.shop.elog",
+      "sha256": "0bcda5050a3aa307b2d60a466a176cff4d048bd4ddb49eb38d9121803291387b",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 7
+      }
+    },
+    {
+      "file": "linvak.weapons.shop.elog",
+      "sha256": "fd264c65035a3416cc6d6aad69585f520099aad1aa841b84e1b2105b7d95e594",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 4
+      }
+    },
+    {
+      "file": "AC2_Char_Login_From_Char_Overview.elog",
+      "sha256": "380fe43a78ef775820574c4672da71615ac3a77716fcd86b475db71e4a49753d",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 4,
+        "unsupported-or-unplaced-physics": 14,
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "AC2_Char_Login_From_Char_Overview2.elog",
+      "sha256": "cde96ac5d5f34c609544b673265335a73324db899464b0919b322ce2853077f2",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 23,
+        "non-world-namespace": 2,
+        "unsupported-or-contained-description": 3,
+        "unsupported-or-unplaced-physics": 58,
+        "unsupported-visual-description": 15
+      }
+    },
+    {
+      "file": "AC2_Char_Login_From_Char_Overview3.elog",
+      "sha256": "de156e3336c1d509155f842e7f0e0430e70ab75e3f45ed8f2d18677e015c43f2",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1,
+        "unsupported-or-unplaced-physics": 57,
+        "unsupported-visual-description": 14
+      }
+    },
+    {
+      "file": "Ac2_Logout_to_Char_Overview.elog",
+      "sha256": "eb30b4067ecab3a347af7569a62b5332bfe59ee80927e1dfbc23fdc1b2a6537a",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "Ac2_Logout_to_Char_Overview2.elog",
+      "sha256": "662359dbc7836e7e53049d59fed88729862fc6c3be1a2eef0843c595afa02081",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "Ac2_Logout_to_Char_Overview3.elog",
+      "sha256": "5d25bb4801ca649c08dc9a4616ed10ddcb957d78ee286aa313ce7da2c5c9ab0a",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "login.from.char.overview.screen.elog",
+      "sha256": "7f0d175d9ed5f972da5573a9203dc445495fcbff41afac9b610397e86a05ec70",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 23,
+        "non-world-namespace": 2,
+        "unsupported-or-contained-description": 3,
+        "unsupported-or-unplaced-physics": 18,
+        "unsupported-visual-description": 3
+      }
+    },
+    {
+      "file": "logout.completely.elog",
+      "sha256": "1ae8a35122f856e2231e476edf1b6a633b864ce32ed315a83b6a0da754a278a1",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "login.not.completely.elog",
+      "sha256": "13e3d02ab36b65da6d6f399575d214a85e021075f919c455cdcbadf38888bbc0",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 3,
+        "non-world-namespace": 2,
+        "unsupported-or-contained-description": 2,
+        "unsupported-or-unplaced-physics": 41,
+        "unsupported-visual-description": 20
+      }
+    },
+    {
+      "file": "member.of.allegiance.comes.into.range.is.in.target.elog",
+      "sha256": "11e28af9d0b7fefd2c51b979d596b9f2d2107ab5220add3894dfb0e477414990",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 6
+      }
+    },
+    {
+      "file": "message.about.too.many.pet.commands.elog",
+      "sha256": "18e090c93fa692a41c9b7fbc326981db551647da86b7ac8160c916acbe253dfc",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "mob.spawn.elog",
+      "sha256": "2f9efecdd3e3897fc05c260af9731e3fb28d9cfa934a524fac731069b9fb0c34",
+      "accepted": 3,
+      "rejected": {}
+    },
+    {
+      "file": "mounting.dismounting.elog",
+      "sha256": "b9f2a9f8d59d9862a9c7c56bce710622a39272894ec986e978037055a6f62471",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "mount.dismount.using.item.during.riding.elog",
+      "sha256": "b531f830ca45d8bdcf433fa9c73ff6d5cf58ea90b204230832866566f8d56a08",
+      "accepted": 1,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "move.player.riding.senseless.elog",
+      "sha256": "fea2d38f5ad3585c32576a5d10445a5d356c595509b00fcc7c0dbe1071f82071",
+      "accepted": 9,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "riding.around.1.elog",
+      "sha256": "6e0e753c4a83268f402cb6a4042c37471e3f3fb5c7d522746d861ca80f891333",
+      "accepted": 17,
+      "rejected": {}
+    },
+    {
+      "file": "riding.around.2.elog",
+      "sha256": "9029a51ea30085aefdf39bd6a23e27ff53a65b05ee40b98c0950f1d4273d7c70",
+      "accepted": 7,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "riding.around.3.elog",
+      "sha256": "b694f90c51e1e39960620d3c9c4303d991cb5c6603b7d96cf381de28951cc364",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "riding.around.4.elog",
+      "sha256": "f37b0bb24a285443daa9c1f6773f396ed932fd61b640b4910905a744fd50eb2b",
+      "accepted": 11,
+      "rejected": {
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 4
+      }
+    },
+    {
+      "file": "moving.around.elog",
+      "sha256": "d796cd7e7371a2519c5f78d6760c79f2f1dc19d2de59a3b70526f82e2ec075d8",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "Beta Patch 1.pcapng",
+      "sha256": "",
+      "accepted": 0,
+      "rejected": {
+        "unreadable-capture": "expected little-endian classic Ethernet PCAP"
+      }
+    },
+    {
+      "file": "buffs and a summon.pcapng",
+      "sha256": "",
+      "accepted": 0,
+      "rejected": {
+        "unreadable-capture": "expected little-endian classic Ethernet PCAP"
+      }
+    },
+    {
+      "file": "equip -unquip weapons - Chisel.pcapng",
+      "sha256": "",
+      "accepted": 0,
+      "rejected": {
+        "unreadable-capture": "expected little-endian classic Ethernet PCAP"
+      }
+    },
+    {
+      "file": "Lasher Pet summon.pcapng",
+      "sha256": "",
+      "accepted": 0,
+      "rejected": {
+        "unreadable-capture": "expected little-endian classic Ethernet PCAP"
+      }
+    },
+    {
+      "file": "New Client log in.pcapng",
+      "sha256": "",
+      "accepted": 0,
+      "rejected": {
+        "unreadable-capture": "expected little-endian classic Ethernet PCAP"
+      }
+    },
+    {
+      "file": "quest bestow.pcapng",
+      "sha256": "",
+      "accepted": 0,
+      "rejected": {
+        "unreadable-capture": "expected little-endian classic Ethernet PCAP"
+      }
+    },
+    {
+      "file": "umounting.pcapng",
+      "sha256": "",
+      "accepted": 0,
+      "rejected": {
+        "unreadable-capture": "expected little-endian classic Ethernet PCAP"
+      }
+    },
+    {
+      "file": "uneqip - Mount.pcapng",
+      "sha256": "",
+      "accepted": 0,
+      "rejected": {
+        "unreadable-capture": "expected little-endian classic Ethernet PCAP"
+      }
+    },
+    {
+      "file": "non.droppable.items.elog",
+      "sha256": "68350d8047f12eb21154dbf8ff1105fa60617b1bcd0677b74b9650077440afe3",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "object.blocks.my.way.2.elog",
+      "sha256": "8f4b33db3ebb4d6f32d04ed61317d9c43c443525499fe769c237c222a1e4b3f5",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "object.blocks.my.way.elog",
+      "sha256": "61bb9687c7a098f0499a1dc5f1b4765c2abfa9b10c413695e3266590a957058d",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "omishan.curiosity.shop.elog",
+      "sha256": "a38dd1de44dce6ab9fc95b57abae66e578fda7a8e6304b3c6d28a1686b8afca6",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 3
+      }
+    },
+    {
+      "file": "omishan.weapons.shop.elog",
+      "sha256": "6dad6af98219ff5084ce836fcca13347e1a34cd4935d5900023fddc544fb60c2",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 4
+      }
+    },
+    {
+      "file": "pet.rename.moving.around.elog",
+      "sha256": "4b7d77bdbce357c6d1fd13e66b3d293226ebb5f2d0611528550b14af07951c29",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "pet.commands.window.elog",
+      "sha256": "71d6ef43c49ebdd472848360a7ab795b172ef062cad3eed86d59e0b6039af357",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "pet.commands.window.opening.closeing.elog",
+      "sha256": "5c6b378aacba977c1e464c8814352c234f52fa32bff75e329193f72617619bd5",
+      "accepted": 3,
+      "rejected": {
+        "unsupported-or-contained-description": 2
+      }
+    },
+    {
+      "file": "picking.up.item.elog",
+      "sha256": "4f6f8fd2e823f48be7c830bc4d3e2e3ada5b7f382fbd6464bde79601538f3b67",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_player_skilling.elog",
+      "sha256": "c3e05d4f1935fb5d6180ed08c8edb3100b97457fee1d58a7365065d2cff0a5d5",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "browsing.skill.tree.1.elog",
+      "sha256": "ca32b13459d36b83d20f61123df53545f8f4eccb073cb25eb3a37405da714339",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "browsing.skill.tree.2.elog",
+      "sha256": "82061ddfbcc542ab3605ef2df128d04a25a7d4ad4c9ea1ec4e77e72fc28aa733",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "browsing.skill.tree.tumerok.elog",
+      "sha256": "d2a032d9db0dec5e8f297f07495613a79f2cb55ae013897e9a56c5dd3f2d6c9d",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "player.buffs.himself.elog",
+      "sha256": "54900880f22b1dd3b8efbe728d99457d8dbdbc19cecdfd6dea35634e18509220",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "AC2_CahrCreateBtnClick_bis_LoginNoobZone_human_female.elog",
+      "sha256": "2375f89f624ca179841467b0f7a639e4ea78929a1bd292d4ac6f6899b132d1f8",
+      "accepted": 5,
+      "rejected": {
+        "non-world-namespace": 10,
+        "unsupported-or-unplaced-physics": 4,
+        "unsupported-visual-description": 3
+      }
+    },
+    {
+      "file": "AC2_Char_Create_btn_click.elog",
+      "sha256": "80eaf776aef1fc200780ceb394d48630723a0dc56a961bb3369d638ce5a1d438",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "AC2_Char_Create_human_and_login_to_noobe.zone.elog",
+      "sha256": "b2b60db61362767a581cab8882518dbd75c58b4e8a7ec265f79f1ad4587e85a7",
+      "accepted": 5,
+      "rejected": {
+        "non-world-namespace": 10,
+        "unsupported-or-unplaced-physics": 4,
+        "unsupported-visual-description": 3
+      }
+    },
+    {
+      "file": "AC2_Char_create_human_M_Char_Click.elog",
+      "sha256": "8bbd637611f14fbdedfc97b6e39dee76acfd9704fc522b9855d6569be182071e",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "AC2_Char_create_human_W_Char_Click.elog",
+      "sha256": "d90edff2e2c96cf9efa233d6e3b24699038dec6f1ec167d6748b02539d9e92a5",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "AC2_Char_Create_Lugi_and_login_to_noobe.zone.elog",
+      "sha256": "b6d30560da01dacbbd428715f566b54a1fb84c712636ab011b68084b0ac1e534",
+      "accepted": 0,
+      "rejected": {
+        "missing-dat-asset-or-cell": 3,
+        "non-world-namespace": 9,
+        "unsupported-or-unplaced-physics": 4,
+        "unsupported-visual-description": 3
+      }
+    },
+    {
+      "file": "AC2_Char_create_Lugi_M_Char_Click.elog",
+      "sha256": "5b108f0036c60130c3190f30356770ccc46aea7da6f00c0c830a79c987550801",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "AC2_Char_create_Lugi_W_Char_Click.elog",
+      "sha256": "85b8957e48776a4e385281e4476b994d1874783f9334316ea5bb17ef6bd46dd9",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "AC2_Char_Create_Tummy_and_login_to_noobe.zone.elog",
+      "sha256": "",
+      "accepted": 0,
+      "rejected": {
+        "unreadable-capture": "capture reassembly limit"
+      }
+    },
+    {
+      "file": "AC2_Char_create_Tummy_M_Char_Click.elog",
+      "sha256": "ef5043076c34bfe4418bd77d2fc1974b6b51832cf2f9fa45a970f9fe5ae3e1a8",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "AC2_Char_create_Tummy_W_Char_Click.elog",
+      "sha256": "837a09b8aa2cc5ec938542bdde2acf7d029d55bf6acdaad8a294e1b3e9ae27ff",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_name_in_use.elog",
+      "sha256": "969cd3567936f7ec9ca977bd9c73d085942494be2ffda085725ca3ec26865853",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "create.new.char.appear.in.start.area.elog",
+      "sha256": "2375f89f624ca179841467b0f7a639e4ea78929a1bd292d4ac6f6899b132d1f8",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 5,
+        "non-world-namespace": 10,
+        "unsupported-or-unplaced-physics": 4,
+        "unsupported-visual-description": 3
+      }
+    },
+    {
+      "file": "ac2_char_delete.elog",
+      "sha256": "1e6cb04a883d6c2e0192cac7dca6cfcf65460bce81c1075d54860399ab575202",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_char_Delete2.elog",
+      "sha256": "6380f5beb583ca32ce86ec111d56483a6f5846a393f35789c4439111bd83b453",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_char_Delete3.elog",
+      "sha256": "c06035a2254118caa4366f0c9d44fb63d81d6fe2b3de64f6cd1e48b2c58719e6",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "getting.killed.elog",
+      "sha256": "fa0a0e51f4d9d1d775a43e92d8aa77740553dbe6649ae286d7da2cb0f5d1fa8a",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 3,
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "ac2_emote.elog",
+      "sha256": "48c155e761a7710bffda1441d60818d0406144125222cea037d20d36ea48e583",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_emotes.elog",
+      "sha256": "cfc3a234656c9c82600cfd9534e7570119f4a3fa99e26a8cc5076a18786e1180",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "guitar.music.elog",
+      "sha256": "812527f92149ba4b64a4a8042f6058cd84f0a3d44f6997bc7d117edba6ba7033",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "sit.elog",
+      "sha256": "d24b04a8d0b72653f6fc46dafe9d18478b3929cb55da72dfb93ca96e2bd73883",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "equip.item.elog",
+      "sha256": "79b66820404440c4a6921b077079e6155f80044f43a6c6ed73a1ef73678d475d",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "equip.unequip.item.elog",
+      "sha256": "e08b702dc927dcd9432500899b7f10735128ef661446e0047a1eba27a3d7dfa7",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "unequip.item.elog",
+      "sha256": "c526f3bbbbe24e47397cf827d96d6d8a60b122f1fea39df431af9daa8d2a3ce2",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_hp_mana_heldenpunkte_regeneration.elog",
+      "sha256": "a66ab01239f43cb9541926e565085c91981d913b2c0d43acb48575150b2d2d5d",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "osteth_pvp_cragstone.charging.kingdom.points.elog",
+      "sha256": "4cf98416108d8baa0ba495bb9baba839da6fe3db1888be6f676b4b01ab6923f1",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "KvK.elog",
+      "sha256": "f4c5a516d2f92217c0bcb21c23a1b619f0758c86c083e6225b3506d1c6910d2c",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_lv_up.elog",
+      "sha256": "e97d1768dc6b146e449c04808acfbac2d54c99b2c1caabad70f5ffc65bc95e59",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "mob.blocking.running.elog",
+      "sha256": "335723a0e7e165c4063ea76ff203fed67bd0467d660ae2cce2a54f526f7dc70e",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "char.movement.1.elog",
+      "sha256": "e5690652399a91d20d140cfc0b2d24dc195a6703a818353e2cbc1d5993cdf21a",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "char.movement.2.elog",
+      "sha256": "8e862550861387227376d08f8dc8c24d0c648ef648ff2e8934e010e7096c8391",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 5,
+        "repeated-observation": 5,
+        "unsupported-or-contained-description": 14
+      }
+    },
+    {
+      "file": "char.movement.3.elog",
+      "sha256": "1d7cef1f8f25614f2620f8f2073d2f10059590f21f55beb3d0020ea290064552",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 4,
+        "unsupported-or-contained-description": 1
+      }
+    },
+    {
+      "file": "running.around.without.motivation.elog",
+      "sha256": "0ec0bdab63e23555b132c4322423b9a6f0398b6024a6c14ed538c09f9c3540c9",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 2,
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 1
+      }
+    },
+    {
+      "file": "running.through.wall.elog",
+      "sha256": "40aa6a4cc156fcea6fdac87f6216ae63cdfc1a3b60807bd236774ea475a929b3",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "player.falling.down.long.way.elog",
+      "sha256": "e8f4f1eb8cae2dc4678bf772ce861a1549026c2182b8d0b499b49e12b9606a68",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 3
+      }
+    },
+    {
+      "file": "pvp.zone.elog",
+      "sha256": "e469a153e4d3b3701c8c05be80a41681521a36317744aaf9e0f23d6e71452c53",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "swimming.dying.elog",
+      "sha256": "736cc6742d936855e2e0863d31f10558fb39d3031986be855d54abe398a02553",
+      "accepted": 1,
+      "rejected": {}
+    },
+    {
+      "file": "swimming.elog",
+      "sha256": "2e58ef66955b99eb14a398df0d8d5d423d13599e5208713331eeb566a487e1ff",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "swimming.falling.down.hitting.a.lake.elog",
+      "sha256": "4bfaac55cc32fc67f775d02000690ebf7abf9126e08e8234c0c6be1197b4c6de",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_skilling.elog",
+      "sha256": "10029f813c995c89c1ce2cd5aae5454e353593f63c92c522aed5de0d4024c45c",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "ac2_using_skillpoint_and_using_xperience_pointes.elog",
+      "sha256": "766ac50a2743e480a7262aac678374ef99e84172cc649a20be3d765f2bf97111",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_acuteness_raising_it_to_50.elog",
+      "sha256": "cf34d5a6e724d5db785a53fabd2392a9b5e5218d11ddc41f04e37f1d8bbe37c9",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_antidote_raising_it_to_50.elog",
+      "sha256": "0b7eadd19c1fab4c8e110e4753e2be59b1abff9c058dc209db807d8739e38987",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_bracing_zone_raising_it_to_150.elog",
+      "sha256": "079fa9417ae1fa92417aac18a126e7e82195df7d620a33bfc503003e0cbc3d25",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_calming_vita_raising_it_to_50.elog",
+      "sha256": "70a895f1d53fbf30642124c723742bc1c6db21ba40c5f5cb279ba3f85c378777",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_do_the_outmost_raising_it_to_50.elog",
+      "sha256": "e9d8a3171c34a7944a7ea0d387310be065f434a0d636db2ac902ab903058f27c",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_energy_flood_raising_it_to_50.elog",
+      "sha256": "812ce632091bcaced8228a625052d0fb2e685784a180312ef6a1239bbdca6fa8",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_energy_flush_raising_it_to_50.elog",
+      "sha256": "b3045b15fa7fa588b281a9d5296a4700c51ea39e7f88eaf8ecf87159391316f0",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_energy_increase_raising_it_to_50.elog",
+      "sha256": "8c006c099110d1d569640ae4f4225f0c2bc4a5aa4ea14868877b4b178dddf55d",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_energy_torrent_raising_it_to_50.elog",
+      "sha256": "b331f6dde562240e1098517b644b456505f01402f9c4c41994697515a54f2d0f",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_esprit_raising_it_to_50.elog",
+      "sha256": "22f4eec040a05cd87c84f224a26dce7b1565a3c6e62ebe48bcc5049ee0d0223e",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_fouling_core_raising_it_to_40.elog",
+      "sha256": "2a2803c67c41aa5e36efabf259a33256faa3a2ec6b7da1379c0861186e356be3",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_grace_of_life_raising_it_to_150.elog",
+      "sha256": "385ac0b9a701ba63f3d03c4e91795b49b030d10c5d04976d996abe6c1a1b37fd",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_guard_the_flock_raising_it_to_50.elog",
+      "sha256": "2ff63ca705acd685837f5339d6e671bc4e3250e515af61781a029392e79c8ff5",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_healing_balsam_raising_it_to_150.elog",
+      "sha256": "683666d00bc40d1b43211b78640e6d8dc3a5f33bcbdd65e197ba9defbc0e82f1",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_healing_raising_it_to_50.elog",
+      "sha256": "9066c395ddd17596763665c31f8247ffef46847d852b9c0c2e30744046cfde81",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_inoculation_raising_it_to_50.elog",
+      "sha256": "976d70623d9635b2dccd980ce498891e2a709bb4239c5391e97b68e6766a8ca8",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_isolation_raising_it_to_50.elog",
+      "sha256": "0871a17ffece9e625cc90f892a63e1d0d9debc00b5f49b4df207e2885c4803cb",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_mind_focus_raising_it_to_50.elog",
+      "sha256": "3df228c672c01459c9dc9cb25132b021d6e657b424bcd4bcfd4982b780048c79",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_mysterious_knowledge_raising_it_to_412.elog",
+      "sha256": "81ccc6ccd121fcd33cb6678b6d237a8a11512e8ef03d929ba3780fd1cdf15ac6",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_quick_feet_raising_it_to_50.elog",
+      "sha256": "6ae722423722585ce7074adc65c36c1c7c274d5cc10d65431a1a5539459a22bb",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_quickwind_raising_it_to_50.elog",
+      "sha256": "58928a6e094f05c5a633bc36f94f9680bf24f0a360eafd385b1b81f72ce73d52",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_revitalize_raising_it_to_50.elog",
+      "sha256": "34070941e8729d308186e22d88efaa8108a627961ae501d4ee7e9678e3b68adb",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_strength_increment_raising_it_to_1000.elog",
+      "sha256": "e18f2d34c27a98c00d76dd5bcb6e63e520231e908fa2e3077e13319821f8eea0",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_thornskin_raising_it_to_40.elog",
+      "sha256": "ebf748bcb908ff803d6550d912425ead181e8e39e9efaa0d6f40d793e18c14ca",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_trainiing.elog",
+      "sha256": "f38a749e7498dbf07ac434cee5b21c7d1e1fdd0848f73053baae200b7d682837",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_untrain.elog",
+      "sha256": "04fe9cf9b25be528468fb1fc07fc78f7420fd0f4ded4c1f1d54bf3cd1c8e2ef1",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "tumerok_healerbranch_skills_wound_distort_raising_it_to_40.elog",
+      "sha256": "4092f0db1c3f730349e4fd93fc80bbc38de95d56a0b1c8844e2d30b99947083b",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "AC2_Target_pet_Self_Portal_infopillar.elog",
+      "sha256": "0fe8d046f0d0295974591dd0bccc0abc5dc5c77612b561a5f38c4cd377886ca3",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "AC2_Char_NexusPort_Cragstone.elog",
+      "sha256": "42b9a01d8ae46ffae075ff80eb3ce20d29a918bfc33e76b5d099edb2090c8357",
+      "accepted": 8,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 1,
+        "non-world-namespace": 3,
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "ac2_portalen.elog",
+      "sha256": "f7e2d860a8a83bbfd76f2f7eaa88bbe96509e94091c7a9f61fa4cbc783e7ff3e",
+      "accepted": 2,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "portal.cavendo.to.knorr.elog",
+      "sha256": "31a020aa904473390c42cf45672cd5298e82a88e69707be082009c4ad25b2e0e",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "portal.comes.into.range.elog",
+      "sha256": "c7f2f78ec08d427fe9a50d45be72b8c54196a30f78aa487d534e997bc196e1c3",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1
+      }
+    },
+    {
+      "file": "porting.to.arramora.elog",
+      "sha256": "f06e8e1c9ad67441acb2d1b078736d3d31c9d5849fb5d2697660f020d50c664c",
+      "accepted": 3,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "porting.to.cragnex.elog",
+      "sha256": "0a51cb8b8f1745dc08178c0586b7a4d25cb720f9bc6fe7934cd4a63ee3b03f68",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 7,
+        "non-world-namespace": 6,
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 2,
+        "unsupported-visual-description": 2
+      }
+    },
+    {
+      "file": "running.through.portal.because.access.denied.elog",
+      "sha256": "f4446dc933b98a01c4d64ab0773a6467089e9f3c6aaca7751ddfde0229cc1d6f",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "trying.to.use.portal.but.denied.because.not.all.requirements.elog",
+      "sha256": "810d5fab191486f9e75ba7adaf5bf7ade37cff77a05eb03c3c413940f6e4cc98",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "using.a.world.object.portal.elog",
+      "sha256": "315480326f5f3d19497d5b7f6eb31e1728f455922d6ba64b2f659b305327cece",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 3
+      }
+    },
+    {
+      "file": "porting.into.allegiance.hall.elog",
+      "sha256": "3fd0853cf40dbfa49c6cc123294ab8d4e3e14e8d3e204eb78ca96ec884d3ef00",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 3,
+        "non-world-namespace": 4,
+        "unsupported-or-contained-description": 3
+      }
+    },
+    {
+      "file": "porting.into.linvak.weapons.chamber.elog",
+      "sha256": "e6e8e13d0be6067c2b0326fbd76cbe9426811fe88256dc425972886f183907da",
+      "accepted": 8,
+      "rejected": {
+        "non-world-namespace": 3
+      }
+    },
+    {
+      "file": "quest.completed.1.elog",
+      "sha256": "6927ea5f7579f2b1420591fe2b3c1534be7cfd2d47c910569a4947f56b6bf149",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "quest.completed.2.elog",
+      "sha256": "ccd61854cb8f7f8a2579f390c6e32e1fca2f769f7cb1c390e9927dd9dfd9e78d",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "quest.completed.3.elog",
+      "sha256": "d46617b76fe7f7d80813f2973567cf39293cd5ecf324931134cd71fbb0186883",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "omishan.kydi.watertemple.entering.combination.accessing.entry.portal.elog",
+      "sha256": "173759f496bb6ee8a887eb56e6b7e996c9c825f395d8f2da17f327435e21679e",
+      "accepted": 1,
+      "rejected": {
+        "non-world-namespace": 5
+      }
+    },
+    {
+      "file": "planging.batiks.but.not harvesting.elog",
+      "sha256": "73170f63870254440b330ca1687f2549808b31407f4d8d440947b7be1958d78c",
+      "accepted": 1,
+      "rejected": {}
+    },
+    {
+      "file": "planting.batiks.and.harvesting.them.elog",
+      "sha256": "798d227e7019cb0ea57bbda310ac54807480d237b2a4e375a2e608a41ea9b720",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 1,
+        "unsupported-or-unplaced-physics": 2
+      }
+    },
+    {
+      "file": "quest.advanced.knorr.shieldwall.elog",
+      "sha256": "",
+      "accepted": 0,
+      "rejected": {
+        "unreadable-capture": "invalid fragment bounds"
+      }
+    },
+    {
+      "file": "quest.completed.and.restart.elog",
+      "sha256": "2d2c9f51fc9fa9be01d32a435a7792827573fb7a4aa104bb9c4383481ed2f01a",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "quest.received.elog",
+      "sha256": "14f595793291b3624e389b6832c4bd1a73c94cec28590f5d3097a9405b3e3d6c",
+      "accepted": 1,
+      "rejected": {}
+    },
+    {
+      "file": "quest.start.elog",
+      "sha256": "ecdc1e8e15f7fac3489acf9866baa19cd6d54741676d870c2ec7c01203d6c45a",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "quest.step.01.elog",
+      "sha256": "b06694b05783ced6a1f4d3783d5eaab06de14fb2f5bce03c7f424c6c357a19aa",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "quest.step.02.elog",
+      "sha256": "a4fdd8980bd1fb73642099e51e83c13434bd21d2ccd9bcfb4df9ecbeee7e1ea4",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "quest.step.levelup.elog",
+      "sha256": "6d160c3f7514aa68669eb82a749206a60c12a2111b69c10110dbe65c4adabc21",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "quest_die_kabale_des_sclavus_hierophanten_boss_talisman_delivery_quest_complete.elog",
+      "sha256": "7c7792190ca9ab2d8d5279d89e10b1b08268f64b093dfb11ceb5ef82500d447b",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "quest_die_kabale_des_sclavus_hierophanten_fort1_talisman_aufheben_quest_advance.elog",
+      "sha256": "7b25b3e6afd06421d0cf6676b23a3128986db5a984ce2319f68b7ddeb40f7989",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "quest_die_kabale_des_sclavus_hierophanten_fort2_talisman_aufheben_quest_advance.elog",
+      "sha256": "bcf9bcc977ad58d7af3949521a11c3403e868d59dba812cfe6f46eb8dc89d807",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "quest_die_kabale_des_sclavus_hierophanten_fort3_talisman_aufheben_quest_advance.elog",
+      "sha256": "6917023c2df99756fde459bc7d1e760ed67ea34d08930193626a6e7f0544d9c6",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 1,
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "quest_die_kabale_des_sclavus_hierophanten_fort4_talisman_aufheben_quest_advance.elog",
+      "sha256": "3495366e091e0ba0c65674bad5af3e058577513d79b180ca78c455ab8c1ac4ab",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 1,
+        "unsupported-visual-description": 2
+      }
+    },
+    {
+      "file": "quest_die_kabale_des_sclavus_hierophanten_received.elog",
+      "sha256": "bd9a875d3b82135551bb5c7a2d9f4f9c65995400c5865e72674727aee0c4a24c",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "quest_die_kabale_des_sclavus_hierophanten_sclavus_hierophanten_tempel_boss_talisman_pingingup_quest_advance.elog",
+      "sha256": "17d2679e31664768812513bbc495c636e3c0d86e0f66e0270fb6ca7ecc297ef0",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 1,
+        "unsupported-visual-description": 3
+      }
+    },
+    {
+      "file": "quest_die_kabale_des_sclavus_hierophanten_sclavus_hierophanten_tempel_locked.door1.opening.elog",
+      "sha256": "4778100c7aff2f653a3efeb740cec1cc3527e5cf8628b9165624de21b937f8be",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "quest_die_kabale_des_sclavus_hierophanten_sclavus_hierophanten_tempel_locked.door2.opening.elog",
+      "sha256": "c761b3e2815ff56bfbccf33286a4521241443af85cb5795db97b8b7982522c81",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "quest_die_kabale_des_sclavus_hierophanten_sclavus_hierophanten_tempel_locked.door3.opening.elog",
+      "sha256": "32a93b17baa47a0cac37b409004378ab5f89b3c2276c76b7eec5efe0ddd5b77c",
+      "accepted": 3,
+      "rejected": {}
+    },
+    {
+      "file": "quest_die_kabale_des_sclavus_hierophanten_sclavus_hierophanten_tempel_locked.door4.opening.elog",
+      "sha256": "488adf652a01e1cce9251ec127bc896cc5302b9519c928b858808fcc2cebbb6a",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "quest_die_kabale_des_sclavus_hierophanten_sclavus_hierophanten_tempel_portal_betreten.elog",
+      "sha256": "00fdae4238d750dce9b55ffbbb0c4b13ce3a2cf577be2559ce80378b804a0fe5",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 2
+      }
+    },
+    {
+      "file": "selling.items.in.inventory.elog",
+      "sha256": "6ab642f1bbb3a48278989041837b63c5b48fbe76ccc1cb5d956a896b09bb1e46",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "shortcut.definition.elog",
+      "sha256": "c45b54227106e37d4f973a632d04c1ed7c9dd922fa24a73c3ed9447902018245",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "unable.to.use.item.because.still.weilding.weapon.elog",
+      "sha256": "1463a154283a274685f9f51b70d1a36a88655d0fc6507471ad8b2e598354acd4",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "vendors.elog",
+      "sha256": "ba9a6aa90c7c12f0e7c4ebab41bed124595895c2b8d598a868756d15bb6a720a",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "vita.heal.elog",
+      "sha256": "cf8612681a08079ec5535404f94258c1c467da872b1608d31573a7d379068222",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "world.item.nothing.happens.elog",
+      "sha256": "e460acc53a31e4f28b038dcda87d61e083c6397889ec5fd7fc5e161c0ba26584",
+      "accepted": 0,
+      "rejected": {}
+    }
+  ]
+}

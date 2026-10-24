@@ -90,6 +90,29 @@ def setup_meshes(data, did):
     return meshes
 
 
+def entity_visual(data, did):
+    """Read EntityDesc's explicit data-file reference (00617370).
+
+    Static room entities often have no workbook catalog entry, but their native
+    definition explicitly names the visual DID. Only the bounded known prefix
+    is consumed; trailing property metadata is irrelevant to that reference.
+    """
+    reader = Reader(data)
+    flags = reader.take("I")
+    if flags & ~0x1ff or not flags & 1 or reader.take("I") != did or did >> 24 != 0x47:
+        raise ValueError("Unsupported static entity definition")
+    if flags & 2:
+        reader.take("I")
+    if flags & 4:
+        reader.take("Q")
+    if not flags & 8:
+        raise ValueError("Static definition has no explicit visual reference")
+    visual = reader.take("I")
+    if visual >> 24 != 0x1f:
+        raise ValueError("Static definition does not reference a visual description")
+    return visual
+
+
 class Assets:
     """Owned by one loader thread; bounded decoded geometry cache."""
     def __init__(self, folder):
@@ -103,6 +126,7 @@ class Assets:
         self.cache = OrderedDict()
         self.materials = OrderedDict()
         self.animations = OrderedDict()
+        self.definitions = OrderedDict()
         self.material_warnings = set()
         try:
             self.surfaces = Dat(self.folder / "highres.dat") if (self.folder / "highres.dat").exists() else None
@@ -116,6 +140,18 @@ class Assets:
         self.cells.close()
         if self.surfaces:
             self.surfaces.close()
+
+    def definition_visual(self, did, catalog):
+        if did >> 24 == 0x1f:
+            return did
+        if did in catalog:
+            return catalog[did]
+        if did not in self.definitions:
+            self.definitions[did] = entity_visual(self.portal.read(did), did)
+            if len(self.definitions) > 256:
+                self.definitions.popitem(last=False)
+        self.definitions.move_to_end(did)
+        return self.definitions[did]
 
     def mesh(self, did):
         from preview_mesh import decode_mesh
@@ -133,6 +169,10 @@ class Assets:
         from preview_material import material_info
         colors = [(130, 145, 155)] * (len(mesh["indices"]) // 3)
         mesh["material_images"] = {}
+        mesh["material_colors"] = {}
+        mesh["material_diffuse"] = {}
+        mesh["material_states"] = {}
+        hidden_materials = set()
         for group in mesh["groups"]:
             material = mesh["materials"][group["material"]]
             if material not in self.materials:
@@ -144,6 +184,12 @@ class Assets:
                     self.materials.popitem(last=False)
             info = self.materials[material]
             self.materials.move_to_end(material)
+            mesh["material_colors"][group["material"]] = info.get("average", [130, 145, 155])
+            mesh["material_diffuse"][group["material"]] = info.get("diffuse", [1.,1.,1.,1.])
+            mesh["material_states"][group["material"]] = info.get("render_state", {})
+            if not info.get("visible", True):
+                hidden_materials.add(group["material"])
+                continue
             image = info.get("image")
             if image:
                 mesh["material_images"][group["material"]] = image
@@ -161,6 +207,19 @@ class Assets:
                     color = tuple(image["rgb"][pixel:pixel+3])
                 colors[offset//3] = color
         mesh["triangle_colors"] = colors
+        if hidden_materials:
+            # Keep render and CPU picking geometry identical. These are native
+            # alpha-zero helper surfaces, not missing textures or usable floors.
+            indices, groups, visible_colors = [], [], []
+            for group in mesh["groups"]:
+                if group["material"] in hidden_materials:
+                    continue
+                start, count = group["start"], group["count"]
+                groups.append(dict(group, start=len(indices)))
+                indices.extend(mesh["indices"][start:start+count])
+                visible_colors.extend(colors[start//3:(start+count)//3])
+            mesh["indices"], mesh["groups"] = indices, groups
+            mesh["triangle_colors"] = visible_colors
 
     def visual(self, did, trail=()):
         if did in trail or len(trail) >= 16 or did >> 24 != 0x1f:
@@ -203,6 +262,7 @@ class Assets:
     def scene(self, cell, visual, position, heading, scale, placements, catalog):
         from preview_cell import decode_cell
         warnings, instances = [], []
+        self.material_warnings.clear()
         triangle_count = 0
 
         def add(mesh, origin, quaternion, sizes, role):
@@ -216,23 +276,24 @@ class Assets:
 
         # Reserve the selected model first so background limits never omit it.
         rotation = (math.cos(heading * math.pi / 255), 0, 0, -math.sin(heading * math.pi / 255))
-        try:
-            for mesh, native_scale in self.creature(visual):
-                add(mesh, position, rotation, [v * (scale or 1) for v in native_scale], "preview")
-        except (OSError, ValueError, KeyError) as error:
-            warnings.append(f"Selected visual {visual:08x}: {error}")
-        try:
-            animation = self.animation(visual)
-            for instance in instances:
-                if instance["role"] == "preview":
-                    try:
-                        animation.prepare_mesh(instance["mesh"])
-                        instance["animation_set"] = animation
-                    except ValueError as error:
-                        warnings.append(f"Animation mesh {instance['mesh']['did']:08x}: {error}")
-            warnings.extend(animation.warnings)
-        except (OSError, ValueError, KeyError) as error:
-            warnings.append(f"Animation: {error}")
+        if visual:
+            try:
+                for mesh, native_scale in self.creature(visual):
+                    add(mesh, position, rotation, [v * (scale or 1) for v in native_scale], "preview")
+            except (OSError, ValueError, KeyError) as error:
+                warnings.append(f"Selected visual {visual:08x}: {error}")
+            try:
+                animation = self.animation(visual)
+                for instance in instances:
+                    if instance["role"] == "preview":
+                        try:
+                            animation.prepare_mesh(instance["mesh"])
+                            instance["animation_set"] = animation
+                        except ValueError as error:
+                            warnings.append(f"Animation mesh {instance['mesh']['did']:08x}: {error}")
+                warnings.extend(animation.warnings)
+            except (OSError, ValueError, KeyError) as error:
+                warnings.append(f"Animation: {error}")
         loaded = set()
         static = []
         outdoor = 1 <= (cell & 65535) <= 64
@@ -264,10 +325,17 @@ class Assets:
                     room = current if identity == cell else decode_cell(self.cells.read(identity))
                     if room["cell"] != identity:
                         raise ValueError("Neighbor identity mismatch")
-                    add(self.mesh(room["mesh"]), room["position"], room["quaternion"], (1, 1, 1), "world")
-                    instances[-1]["cell"] = identity
+                    mesh = self.mesh(room["mesh"])
+                    if mesh["indices"]:
+                        add(mesh, room["position"], room["quaternion"], (1, 1, 1), "world")
+                        instances[-1]["cell"] = identity
                     loaded.add(identity)
-                    static.extend(room["placements"])
+                    static.extend(dict(row, cell=identity) for row in room["placements"])
+                    for note in room["warnings"]:
+                        note = (note if note == "Cell property metadata is omitted from the geometry preview"
+                                else f"Room {identity:08x}: {note}")
+                        if note not in warnings:
+                            warnings.append(note)
                 except (OSError, ValueError, KeyError) as error:
                     warnings.append(f"Room {identity:08x}: {error}")
             if len(neighbors) > 32:
@@ -283,13 +351,11 @@ class Assets:
             if key in seen:
                 continue
             seen.add(key)
-            target = catalog.get(row["definition"])
-            if target is None:
-                missing += 1
-                continue
             try:
+                target = self.definition_visual(row["definition"], catalog)
                 for mesh, sizes in self.creature(target):
                     add(mesh, row["position"], row["quaternion"], [a*b for a,b in zip(sizes,row["scale"])], "world")
+                    instances[-1]["cell"] = row.get("cell")
             except (OSError, ValueError, KeyError):
                 missing += 1
         if missing:
@@ -307,6 +373,8 @@ class Assets:
                         origin[1] += (((identity>>16)&255)-((cell>>16)&255))*block_side
                     add(mesh, origin, [float(v) for v in row[7:11]],
                         [v * factor for v in sizes], "saved")
+                    instances[-1]["cell"] = int(row[3], 16)
+                    instances[-1]["object_id"] = int(row[0], 16)
             except (OSError, ValueError, KeyError) as error:
                 warnings.append(f"Saved object {row[0]}: {error}")
         warnings.extend(sorted(self.material_warnings)[:8])

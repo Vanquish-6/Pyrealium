@@ -270,6 +270,12 @@ impl Hotbar {
     pub fn is_empty(&self) -> bool {
         self.slots.is_empty()
     }
+    /// First slot is the authored training attack. Shown only while the saved bar is empty.
+    pub fn training_attack() -> Self {
+        let mut slots = BTreeMap::new();
+        slots.insert(0, Shortcut::Skill(crate::skills::TRAINING_ATTACK));
+        Self { slots }
+    }
     pub fn apply(&self, update: &HotbarUpdate) -> Result<Self, WorldError> {
         let mut next = self.clone();
         if update.shortcut == Shortcut::Empty {

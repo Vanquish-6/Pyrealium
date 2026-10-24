@@ -85,6 +85,13 @@ impl Content {
             combined.push_str(line);
             combined.push('\n');
         }
+        for line in include_str!("../content/capture-spawns.tsv")
+            .lines()
+            .skip(1)
+        {
+            combined.push_str(line);
+            combined.push('\n');
+        }
         Self::parse(&combined, game_data)
     }
     pub fn len(&self) -> usize {
@@ -156,6 +163,36 @@ impl Content {
         spawn[28..32].copy_from_slice(&mode.to_le_bytes());
         object.visual_stamp = stamp;
         Ok(events.into_iter().map(Arc::from).collect())
+    }
+    /// Next visual stamp on the victim. The story is presentation only.
+    pub fn damage_story(
+        &mut self,
+        victim: u64,
+        attacker: u64,
+        health_change: i32,
+    ) -> io::Result<Arc<[u8]>> {
+        let object = self
+            .objects
+            .get_mut(&victim)
+            .filter(|object| object.active)
+            .ok_or_else(|| invalid("inactive creature damage story"))?;
+        let stamp = object
+            .visual_stamp
+            .checked_add(1)
+            .ok_or_else(|| invalid("creature visual stamp exhausted"))?;
+        let wire = crate::combat_visual::damage_story(
+            victim,
+            object.instance,
+            stamp,
+            attacker,
+            health_change,
+        )
+        .map_err(|error| invalid(format!("creature damage story: {error}")))?;
+        if object.spawn.len() >= 28 {
+            Arc::make_mut(&mut object.spawn)[26..28].copy_from_slice(&stamp.to_le_bytes());
+        }
+        object.visual_stamp = stamp;
+        Ok(wire.into())
     }
     pub fn respawn(&mut self, id: u64) -> io::Result<()> {
         let object = self

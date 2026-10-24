@@ -5,7 +5,10 @@ if (-not (Test-Path -LiteralPath $compiler)) { throw 'Install .NET Framework 4.x
 $output = Join-Path $PSScriptRoot 'dist'
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 $executable = Join-Path $output 'PyrealiumLauncher.exe'
-& $compiler /nologo /target:winexe /platform:anycpu /optimize+ /reference:System.Windows.Forms.dll /reference:System.Drawing.dll "/out:$executable" (Join-Path $PSScriptRoot 'Launcher.cs')
+$resources = @('legions-portal.png', 'dereth.png', 'legions-cover.png') | ForEach-Object {
+    '/resource:' + (Join-Path $PSScriptRoot "assets/$_") + ',Pyrealium.' + $_
+}
+& $compiler /nologo /target:winexe /platform:anycpu /optimize+ /reference:System.Windows.Forms.dll /reference:System.Drawing.dll "/out:$executable" @resources (Join-Path $PSScriptRoot 'Launcher.cs') (Join-Path $PSScriptRoot 'LauncherWindow.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Launcher compilation failed.' }
 $report = Join-Path $output 'self-test.txt'
 $process = Start-Process -FilePath $executable -ArgumentList @('--self-test', ('"' + $report + '"')) -PassThru -Wait -WindowStyle Hidden

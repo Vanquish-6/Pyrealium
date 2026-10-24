@@ -44,6 +44,12 @@ struct Attack {
 pub enum Event {
     IdolVisual(u64, crate::combat_visual::IdolAction),
     Swing(u64),
+    /// Signed health on the victim. Negative is damage. The vital update is separate.
+    Hit {
+        victim: u64,
+        attacker: u64,
+        health_change: i32,
+    },
     Item {
         player: u64,
         item: crate::inventory::Item,
@@ -202,6 +208,24 @@ impl Encounters {
         {
             return Err(invalid("player or regeneration profile bounds"));
         }
+        // Placed creatures from the catalog and captures use the starter fight
+        // profile unless the encounter file already gave that entity its own row.
+        let starter = Rule {
+            health: 60,
+            damage: 6,
+            interval: 1500,
+            range: 3.0,
+            respawn: 30_000,
+            xp: 40,
+            gold: 2,
+        };
+        for line in include_str!("../content/creature-entities.txt").lines() {
+            if line.is_empty() || line.starts_with('#') || line.starts_with("pyrealium-") {
+                continue;
+            }
+            let entity = u32::from_str_radix(line, 16).map_err(|_| invalid("creature entity"))?;
+            rules.entry(entity).or_insert(starter);
+        }
         let actors = content
             .objects()
             .filter_map(|object| {
@@ -221,8 +245,8 @@ impl Encounters {
                 })
             })
             .collect::<BTreeMap<_, _>>();
-        if actors.is_empty() || actors.len() > 512 {
-            return Err(invalid("encounters require 1..512 matching placed actors"));
+        if actors.is_empty() || actors.len() > 4096 {
+            return Err(invalid("encounters require 1..4096 matching placed actors"));
         }
         Ok(Self {
             actors,
@@ -250,6 +274,9 @@ impl Encounters {
     }
     pub fn attacking_target(&self, player: u64) -> Option<u64> {
         self.attacks.get(&player).map(|attack| attack.target)
+    }
+    pub fn is_creature(&self, id: u64) -> bool {
+        self.actors.contains_key(&id)
     }
     pub fn includes_entity(&self, entity: u32) -> bool {
         self.actors.values().any(|actor| actor.entity == entity)
@@ -445,6 +472,13 @@ impl Encounters {
             let actor = self.actors.get_mut(&attack.target).unwrap();
             actor.health -= dealt;
             events.push(Event::Swing(player));
+            if let Ok(dealt) = i32::try_from(dealt) {
+                events.push(Event::Hit {
+                    victim: attack.target,
+                    attacker: player,
+                    health_change: -dealt,
+                });
+            }
             events.push(Event::Health {
                 actor: attack.target,
                 health: actor.health,
@@ -561,16 +595,27 @@ impl Encounters {
             }
             let account = store.characters[&target].account.clone();
             let previous = store.characters[&target].progression.clone();
-            store.progression_command(&account, target, Command::Damage(actor.rule.damage))?;
+            // ArmorRating from Pyreal_DB_Insert_PlayerLevelData.sql. At least 1
+            // damage remains so a hit is still a hit.
+            let armor = previous.level().armor;
+            let dealt = actor.rule.damage.saturating_sub(armor).max(1);
+            store.progression_command(&account, target, Command::Damage(dealt))?;
             actor.next_attack = now.saturating_add(actor.rule.interval);
             events.push(Event::IdolVisual(
                 id,
                 crate::combat_visual::IdolAction::Swing,
             ));
+            if let Ok(damage) = i32::try_from(dealt) {
+                events.push(Event::Hit {
+                    victim: target,
+                    attacker: id,
+                    health_change: -damage,
+                });
+            }
             let state = store.characters[&target].progression.clone();
             events.push(Event::Note {
                 player: target,
-                text: format!("Creature hits you for {} damage.", actor.rule.damage),
+                text: format!("Creature hits you for {dealt} damage."),
             });
             if !state.alive() {
                 self.attacks.remove(&target);

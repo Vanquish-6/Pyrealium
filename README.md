@@ -10,6 +10,8 @@ Not a mockup. Not a loading screen with aspirations. An actual character, on act
 
 Pyrealium contains a Rust emulator and a Windows player launcher. The server uses the standard library and **zero third-party Rust dependencies**. The dependency tree is a tasteful stump.
 
+**Help keep the portals open:** [Support Pyrealium on Patreon](https://www.patreon.com/Vanquish90/). If rebuilding a game I never played sounds like a questionable financial decision, imagine being the person writing it. Support is optional and appreciated; it does not promise a release date or finished gameplay.
+
 ## Confidence is unlimited. Features are itemized.
 
 **Status updated 2026-10-24. Experimental local development server; not ready for general players.**
@@ -30,7 +32,7 @@ A compiled packet handler is not a verified player experience. Recent runtime ad
 | Character storage | Durable character, inventory, progression, skills, quest and preference state; exclusive writer lock, atomic transactions and checked compaction |
 | Native character creation | Human request fields and appearance choices are retained; default human bodies supported; broader creation/appearance acceptance pending |
 | World entry | **Verified with 7148 and converted test assets:** player and terrain render; client reports scene completion |
-| Player launcher | Windows forms for account, host, port, game folder and client executable |
+| Player launcher | Portal-themed Windows launcher with game artwork, Play and Settings views, saved connection details and a Patreon link |
 | Movement | Validated native reports drive saved placement and observer replication; authoritative collision remains unfinished |
 | Examination UI | Compatibility repair cleared a previously reported crash; server descriptions cover visible players, owned items and content; fresh data/UI acceptance pending |
 | Logout/re-entry | Session transition and message ordering fixed; repeated entry tested over UDP, native round trip still unverified |

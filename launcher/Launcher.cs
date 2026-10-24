@@ -67,6 +67,18 @@ internal static class Launcher {
         if (args.Length > 0 && args[0] == "--self-test") return SelfTest(args.Length > 1 ? args[1] : null);
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
+        if (args.Length > 1 && args[0] == "--preview") {
+            using (var window = new LauncherWindow()) {
+                if (args.Length > 2 && args[2] == "settings") window.ShowSettings(true);
+                window.Show(); Application.DoEvents();
+                using (var bitmap = new Bitmap(window.Width, window.Height)) {
+                    window.DrawToBitmap(bitmap, new Rectangle(Point.Empty, window.Size));
+                    bitmap.Save(Path.GetFullPath(args[1]), System.Drawing.Imaging.ImageFormat.Png);
+                }
+                window.Close();
+            }
+            return 0;
+        }
         Application.Run(new LauncherWindow());
         return 0;
     }
@@ -88,62 +100,5 @@ internal static class Launcher {
             if (report != null) File.WriteAllText(report, checks + " launcher checks passed. No game process was started.\r\n");
             return 0;
         } catch (Exception ex) { if (report != null) File.WriteAllText(report, ex.ToString()); return 1; }
-    }
-}
-
-internal sealed class LauncherWindow : Form {
-    private readonly TextBox account = new TextBox(), host = new TextBox(), game = new TextBox(), client = new TextBox();
-    private readonly NumericUpDown port = new NumericUpDown();
-    private readonly Label status = new Label();
-    private readonly Button connect = new Button();
-    private readonly Color muted = Color.FromArgb(162, 176, 193);
-    public LauncherWindow() {
-        Text = "Pyrealium • AC2 Launcher"; ClientSize = new Size(790, 700); MinimumSize = new Size(806, 739);
-        StartPosition = FormStartPosition.CenterScreen; BackColor = Color.FromArgb(17, 23, 33); ForeColor = Color.White;
-        Font = new Font("Segoe UI", 10); AutoScaleMode = AutoScaleMode.Dpi;
-        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(30, 24, 30, 22), ColumnCount = 1, RowCount = 11 };
-        int[] heights = { 48, 35, 53, 30, 62, 30, 62, 48, 59, 57 };
-        foreach (int height in heights) layout.RowStyles.Add(new RowStyle(SizeType.Absolute, height));
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); Controls.Add(layout);
-        layout.Controls.Add(new Label { Text = "PYREALIUM", Dock = DockStyle.Fill, Font = new Font("Segoe UI", 27, FontStyle.Bold), ForeColor = Color.FromArgb(105, 226, 194) });
-        layout.Controls.Add(new Label { Text = "Never played it. Already improving the commute.", Dock = DockStyle.Fill, ForeColor = muted });
-        var connection = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 2 };
-        connection.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35)); connection.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45)); connection.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20));
-        connection.RowStyles.Add(new RowStyle(SizeType.Absolute, 23)); connection.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        connection.Controls.Add(Caption("Account"), 0, 0); connection.Controls.Add(Caption("Server address"), 1, 0); connection.Controls.Add(Caption("UDP port"), 2, 0);
-        account.Dock = host.Dock = port.Dock = DockStyle.Fill; account.MaxLength = 32; host.MaxLength = 253; port.Minimum = 1024; port.Maximum = 65534;
-        connection.Controls.Add(account, 0, 1); connection.Controls.Add(host, 1, 1); connection.Controls.Add(port, 2, 1); layout.Controls.Add(connection);
-        layout.Controls.Add(Caption("Game assets folder")); layout.Controls.Add(PathRow(game, true));
-        layout.Controls.Add(Caption("Recovered client executable • build 7148")); layout.Controls.Add(PathRow(client, false));
-        layout.Controls.Add(new Label { Text = "Select compatible game assets and the recovered 7148 executable separately. For world testing, use the prepared compat-7148 folder. Build 7230 is not supported yet.", Dock = DockStyle.Fill, ForeColor = muted });
-        connect.Text = "Connect to Pyrealium  →"; connect.Dock = DockStyle.Fill; connect.BackColor = Color.FromArgb(105, 226, 194); connect.ForeColor = Color.FromArgb(17, 23, 33); connect.FlatStyle = FlatStyle.Flat; connect.Font = new Font("Segoe UI", 12, FontStyle.Bold); connect.Cursor = Cursors.Hand; connect.Click += Connect; layout.Controls.Add(connect);
-        status.Text = "Ready. Use the account and address supplied by your server operator."; status.Dock = DockStyle.Fill; status.Padding = new Padding(0, 10, 0, 0); status.ForeColor = muted; layout.Controls.Add(status);
-        layout.Controls.Add(new Label { Text = "EARLY DEVELOPMENT • Local developer authentication only.\nNo password authentication or playable-world guarantee. The launcher starts the client; it cannot confirm connection.", Dock = DockStyle.Fill, ForeColor = muted, Font = new Font("Segoe UI", 9) });
-        var s = Launcher.Load(); account.Text = s.Account; host.Text = s.Host; port.Value = Math.Max(1024, Math.Min(65534, s.Port)); game.Text = s.GameDirectory; client.Text = s.ClientExecutable;
-        AcceptButton = connect;
-    }
-    private Label Caption(string text) { return new Label { Text = text, Dock = DockStyle.Fill, TextAlign = ContentAlignment.BottomLeft, Padding = new Padding(0, 0, 0, 4), ForeColor = muted }; }
-    private Control PathRow(TextBox box, bool directory) {
-        var row = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 2 };
-        row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100)); row.RowStyles.Add(new RowStyle(SizeType.Absolute, 31)); row.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        box.Dock = DockStyle.Fill; var browse = new Button { Text = "Browse…", Dock = DockStyle.Fill, BackColor = Color.FromArgb(43, 55, 72), FlatStyle = FlatStyle.Flat };
-        browse.Click += delegate { if (directory) { using (var dialog = new FolderBrowserDialog { Description = "Select the AC2 folder containing portal.dat and ijl15.dll", SelectedPath = box.Text, ShowNewFolderButton = false }) if (dialog.ShowDialog(this) == DialogResult.OK) box.Text = dialog.SelectedPath; } else { using (var dialog = new OpenFileDialog { Title = "Select the recovered build 7148 client", Filter = "AC2 client executable (*.exe)|*.exe", CheckFileExists = true }) if (dialog.ShowDialog(this) == DialogResult.OK) box.Text = dialog.FileName; } };
-        row.Controls.Add(box, 0, 0); row.Controls.Add(browse, 1, 0);
-        var hint = new Label { Text = directory ? "Your existing installation; no game files are downloaded or changed." : "This is usually ac2client.exe in the recovery folder.", Dock = DockStyle.Fill, ForeColor = muted, Font = new Font("Segoe UI", 8) }; row.Controls.Add(hint, 0, 1); row.SetColumnSpan(hint, 2); return row;
-    }
-    private void Connect(object sender, EventArgs args) {
-        connect.Enabled = false;
-        try {
-            var s = new Settings { Account = account.Text.Trim(), Host = host.Text.Trim(), Port = (int)port.Value, GameDirectory = game.Text.Trim(), ClientExecutable = client.Text.Trim() };
-            string error = Launcher.ValidateConnection(s) ?? Launcher.ValidateFiles(s);
-            if (error != null) { status.Text = error; MessageBox.Show(this, error, "Check your connection details", MessageBoxButtons.OK, MessageBoxIcon.Information); return; }
-            if (Process.GetProcessesByName(Path.GetFileNameWithoutExtension(s.ClientExecutable)).Length > 0) { status.Text = "Close your existing AC2 client before launching another."; return; }
-            string saveWarning = "";
-            try { Launcher.Save(s); } catch (Exception) { saveWarning = " Settings could not be saved."; }
-            using (Process process = Process.Start(Launcher.StartInfo(s))) { }
-            status.Text = "Client started. Check the game window for connection progress." + saveWarning;
-        } catch (System.ComponentModel.Win32Exception ex) { status.Text = ex.NativeErrorCode == 1223 ? "Launch cancelled. You can try again when ready." : "Could not start the client: " + ex.Message; }
-        catch (Exception ex) { status.Text = "Could not start the client: " + ex.Message; }
-        finally { connect.Enabled = true; }
     }
 }

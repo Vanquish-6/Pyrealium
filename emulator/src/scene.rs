@@ -232,6 +232,19 @@ impl Scene {
         }
         Ok(())
     }
+    /// Advance the CreateObject ordering stamp without changing combat mode.
+    pub fn save_visual_stamp(&mut self, owner: u64, stamp: u16) -> Result<(), WorldError> {
+        let body = self
+            .bodies
+            .get_mut(&owner)
+            .filter(|body| body.ready)
+            .ok_or(WorldError::InvalidValue)?;
+        if stamp == 0 || body.spawn.len() < 28 {
+            return Err(WorldError::InvalidValue);
+        }
+        body.spawn[26..28].copy_from_slice(&stamp.to_le_bytes());
+        Ok(())
+    }
     pub fn inventory_instance(&self, owner: u64, item: u64) -> Result<u16, WorldError> {
         let body = self
             .bodies
@@ -452,6 +465,25 @@ impl Scene {
             .cell(id)
             .ok_or_else(|| std::io::Error::other("content object inactive"))?;
         let data = self.content.despawn(id)?;
+        Ok(self
+            .neighbor_ids(cell, 0)
+            .map(|recipient| Delivery {
+                recipient,
+                data: data.clone(),
+            })
+            .collect())
+    }
+    pub fn content_damage_story(
+        &mut self,
+        victim: u64,
+        attacker: u64,
+        health_change: i32,
+    ) -> std::io::Result<Vec<Delivery>> {
+        let cell = self
+            .content
+            .cell(victim)
+            .ok_or_else(|| std::io::Error::other("creature damage story inactive"))?;
+        let data = self.content.damage_story(victim, attacker, health_change)?;
         Ok(self
             .neighbor_ids(cell, 0)
             .map(|recipient| Delivery {
@@ -944,22 +976,20 @@ mod tests {
             stamps: [1, 0, 0, 0],
             jump_velocity: None,
         };
-        assert!(
-            scene
-                .update(
-                    2,
-                    1,
-                    &ClientPosition {
-                        placement: Placement {
-                            cell: 2,
-                            ..update.placement
-                        },
-                        ..update
-                    }
-                )
-                .unwrap()
-                .is_empty()
-        );
+        assert!(scene
+            .update(
+                2,
+                1,
+                &ClientPosition {
+                    placement: Placement {
+                        cell: 2,
+                        ..update.placement
+                    },
+                    ..update
+                }
+            )
+            .unwrap()
+            .is_empty());
         assert!(scene.enter(body(3, 2)).unwrap().is_empty());
         assert!(!scene.can_observe(3, 2));
         assert!(scene.update(2, 1, &update).unwrap().is_empty());

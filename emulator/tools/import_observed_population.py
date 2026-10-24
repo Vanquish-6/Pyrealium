@@ -175,7 +175,7 @@ def messages(raw):
             yield b"".join(parts[i] for i in range(key[-1]))
 
 
-def convert(paths, base, game_data):
+def convert(paths, base, game_data, skip_broken=False):
     with base.open("rb") as file:
         base_bytes = file.read(4*1024*1024+1)
     if len(base_bytes)>4*1024*1024:
@@ -203,14 +203,21 @@ def convert(paths, base, game_data):
     with Dat(game_data/'portal.dat') as portal, Dat(game_data/'cell_1.dat') as cells:
         assets, cell_index = portal.index(), cells.index()
         for path in paths:
-            with path.open("rb") as file:
-                raw = file.read(64*1024*1024+1)
-            if len(raw)>64*1024*1024:
-                raise ValueError("capture exceeds 64 MiB")
+            try:
+                with path.open("rb") as file:
+                    raw = file.read(64*1024*1024+1)
+                if len(raw)>64*1024*1024:
+                    raise ValueError("capture exceeds 64 MiB")
+                blobs = list(messages(raw))
+            except ValueError as error:
+                if not skip_broken:
+                    raise
+                sources.append({"file":path.name,"sha256":"","accepted":0,"rejected":{"unreadable-capture":str(error)}})
+                continue
             source_hash = hashlib.sha256(raw).hexdigest()
             source = {"file":path.name,"sha256":source_hash,"accepted":0,"rejected":Counter()}
             seen, source_cells = set(), set()
-            for data in messages(raw):
+            for data in blobs:
                 if data[:4]!=b"\x58\x00\x01\x00":
                     continue
                 try:

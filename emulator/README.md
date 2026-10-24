@@ -273,11 +273,16 @@ portal locations remain in the unresolved report because their terrain is missin
 A 7,583-entry entity/visual catalog and offline placement tool support explicit
 NPC/object authoring. Double-click `OpenContentEditor.cmd` for the graphical
 catalog browser, native creature/interior/outdoor 3D preview and position map (Python with Tk required), or run
-`python tools/content_editor.py --game-data PATH`. The GUI is syntax checked;
-actual DAT geometry/material extraction is verified, while interactive acceptance
-remains pending. The Windows renderer now supports actual UV textures and depth
+`python tools/content_editor.py --game-data PATH`. The editing workflow has
+automated Tk coverage, and a fresh desktop native-scene load is verified; full
+interactive/rendering acceptance remains pending. The Windows renderer now supports actual UV textures and depth
 buffering, with a software fallback; native shader parity remains unfinished.
 Native clip playback supports play/pause, clip selection and playback speed.
+The editor supports updating saved objects without changing their IDs, duplicating,
+deleting, session undo/redo, name/ID placement search, and a current-cell filter.
+It remembers paths/window size, reuses the launcher's DAT folder on first use,
+keeps a rolling `.bak` file, and rejects saves if the content file changed externally.
+See the [editor workflow and recovery guide](docs/content-editor.md).
 Outdoor height blocks use DAT terrain textures, native vertex colors and a
 neighbor ring; road/corner blending, water and procedural scenery remain open.
 `--lifestones true` enables development binding/recall;
@@ -374,9 +379,9 @@ and persistent groups are not implemented. Fresh two-client UI acceptance is pen
 - Public deployment/native ticket-login acceptance, account recovery and email
   verification, production operations and demonstrated multiplayer capacity.
 
-The content editor's 3D rendering is a separate authoring feature. Its latest
-paint-callback crash repair still needs a fresh GUI load; renderer progress does
-not establish completion of any missing gameplay system. Each native milestone
+The content editor's 3D rendering is a separate authoring feature. A fresh
+OpenGL scene load completed after the paint-callback repair; renderer progress
+does not establish completion of any missing gameplay system. Each native milestone
 needs fresh client evidence; compilation or packet checks alone do not close it.
 
 ## Online account registration

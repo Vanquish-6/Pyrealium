@@ -6,9 +6,13 @@ use crate::world::WorldError;
 
 pub const DO_MODE: u32 = 0x10082;
 pub const DO_BEHAVIOR: u32 = 0x1007f;
+/// PhysicsStory on the victim. StreamPack 006ae550; hook pack 006ad9f0.
+pub const DO_STORY: u32 = 0x100a8;
 pub const PEACE: u32 = 0x40000001;
 pub const ONE_HAND: u32 = 0x4100000a;
 pub const MELEE_AUTO: u32 = 0x41000089;
+/// Captured result paired with a nonzero health hook. Not a reconstructed crit table.
+pub const HEALTH_RESULT: u32 = 0x40000008;
 
 #[derive(Clone, Copy)]
 pub enum IdolAction {
@@ -79,4 +83,57 @@ pub fn swing(owner: u64, instance: u16, stamp: u16) -> Result<Vec<u8>, WorldErro
     wire.extend(1u32.to_le_bytes()); // Only mBehaviorID; native defaults for all other fields.
     wire.extend(MELEE_AUTO.to_le_bytes());
     Ok(wire)
+}
+
+/// Victim-owned health story. Bitfield 2 carries the attacker and omits skill,
+/// behavior and the basic-attack bit. The single hook is type 1 (SetTypeToDamage,
+/// 006ad840) with target, result and signed health. StoryManager::DoStoryHook
+/// 00514ff0 presents type 1; it does not replace the separate vital-quality update.
+/// Negative health is damage. Positive health is recovery. Zero is not packed.
+pub fn damage_story(
+    victim: u64,
+    instance: u16,
+    stamp: u16,
+    attacker: u64,
+    health_change: i32,
+) -> Result<Vec<u8>, WorldError> {
+    if [0, u64::MAX].contains(&attacker) || health_change == 0 {
+        return Err(WorldError::InvalidValue);
+    }
+    let mut wire = prefix(DO_STORY, victim, instance, stamp)?;
+    wire.extend(2u32.to_le_bytes());
+    wire.extend(attacker.to_le_bytes());
+    wire.extend(1u32.to_le_bytes());
+    wire.extend(0x981u32.to_le_bytes());
+    wire.extend(victim.to_le_bytes());
+    wire.extend(HEALTH_RESULT.to_le_bytes());
+    wire.extend(health_change.to_le_bytes());
+    Ok(wire)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn damage_story_matches_the_captured_victim_hook() {
+        let wire = damage_story(0x11, 2, 9, 0x22, -20).unwrap();
+        assert_eq!(wire.len(), 52);
+        assert_eq!(&wire[..4], &DO_STORY.to_le_bytes());
+        assert_eq!(&wire[4..12], &0x11u64.to_le_bytes());
+        assert_eq!(&wire[12..14], &2u16.to_le_bytes());
+        assert_eq!(&wire[14..16], &9u16.to_le_bytes());
+        assert_eq!(&wire[16..20], &2u32.to_le_bytes());
+        assert_eq!(&wire[20..28], &0x22u64.to_le_bytes());
+        assert_eq!(&wire[28..32], &1u32.to_le_bytes());
+        assert_eq!(&wire[32..36], &0x981u32.to_le_bytes());
+        assert_eq!(&wire[36..44], &0x11u64.to_le_bytes());
+        assert_eq!(&wire[44..48], &HEALTH_RESULT.to_le_bytes());
+        assert_eq!(&wire[48..52], &(-20i32).to_le_bytes());
+        let heal = damage_story(0x11, 2, 10, 0x11, 25).unwrap();
+        assert_eq!(&heal[48..52], &25i32.to_le_bytes());
+        assert!(damage_story(0x11, 2, 10, 0x22, 0).is_err());
+        assert!(damage_story(0, 2, 10, 0x22, -1).is_err());
+        assert!(damage_story(0x11, 2, 10, 0, -1).is_err());
+    }
 }

@@ -28,6 +28,7 @@ examination-wlib-before-repair*.bin
 *.jpg
 *.jpeg
 *.png
+!launcher/assets/*.png
 *.jsonl
 recovery/
 decompile/
