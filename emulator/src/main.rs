@@ -6,6 +6,9 @@ use std::{env, net::SocketAddr, path::PathBuf, process::ExitCode};
 
 fn usage() {
     println!(
+        "  player-state --character-id N [--event COMMAND] --data PATH\n    Offline progression inspection/edit: x,XP g,GOLD s,GOLD d,DAMAGE h,HEAL v,COST r,RECOVERY z(resurrect)."
+    );
+    println!(
         "  serve --game-data PATH [--content PATH|observed|none]\n    Game-data mode loads the bundled world pack. observed adds captured stationary actors. Use a file for external content or none to disable it."
     );
     println!(
@@ -45,6 +48,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut slot = None;
     let mut source_slot = None;
     let mut inventory_request = None;
+    let mut progression_event = None;
     let mut quantity = 1u16;
     let mut stack_limit = 1u16;
     let mut equipment_mask = 0u16;
@@ -77,6 +81,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             "--slot" => slot = Some(value.parse::<u16>()?),
             "--source-slot" => source_slot = Some(value.parse::<u16>()?),
             "--request" => inventory_request = Some(PathBuf::from(value)),
+            "--event" => progression_event = Some(value),
             "--quantity" => quantity = value.parse()?,
             "--stack-limit" => stack_limit = value.parse()?,
             "--equipment-mask" => {
@@ -86,6 +91,28 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     match command.as_str() {
+        "player-state" => {
+            let mut store = Store::open(&data)?;
+            let id = character_id.ok_or("--character-id is required")?;
+            if let Some(event) = progression_event {
+                store.progression_command(
+                    &account,
+                    id,
+                    pyrealium::progression::Command::decode(&event)?,
+                )?;
+            }
+            let character = store
+                .characters
+                .get(&id)
+                .filter(|c| c.account == account && !c.deleted)
+                .ok_or("active character not owned")?;
+            println!(
+                "{} level={} state={:?}",
+                character.name,
+                character.progression.level().number,
+                character.progression
+            );
+        }
         "inventory-list" | "inventory-grant" | "inventory-move" | "inventory-equip"
         | "inventory-unequip" | "inventory-split" | "inventory-consume" | "inventory-reorder" => {
             use pyrealium::inventory::{Command, Item, Location};

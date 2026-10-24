@@ -156,7 +156,15 @@ pub fn player_inventory(
     hotbar: Option<&crate::preferences::Hotbar>,
     inventory: Option<&crate::inventory::Inventory>,
 ) -> Result<Vec<u8>, WorldError> {
-    let mut args = script::integer(0); // Gold.
+    player_state(settings, hotbar, inventory, None)
+}
+pub fn player_state(
+    settings: Option<&crate::preferences::UiSettings>,
+    hotbar: Option<&crate::preferences::Hotbar>,
+    inventory: Option<&crate::inventory::Inventory>,
+    progression: Option<&crate::progression::Progression>,
+) -> Result<Vec<u8>, WorldError> {
+    let mut args = script::integer(progression.map_or(0, |state| state.gold));
     graph(
         &mut args,
         &[
@@ -175,7 +183,10 @@ pub fn player_inventory(
             Object::interpreted(
                 0x233,
                 &[
-                    (0, INT),
+                    (
+                        progression.map_or(0, |state| u32::from(state.level().credits)),
+                        INT,
+                    ),
                     (0, 0x82),
                     (0, 0xcd),
                     (0, INT),

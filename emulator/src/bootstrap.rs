@@ -138,6 +138,22 @@ impl Bootstrap {
         placement: crate::movement::Placement,
         instance_stamp: u16,
     ) -> Result<[Vec<u8>; 3], world::WorldError> {
+        self.events_at_state(
+            id,
+            request,
+            placement,
+            instance_stamp,
+            &crate::progression::Progression::default(),
+        )
+    }
+    pub fn events_at_state(
+        &self,
+        id: u64,
+        request: &CharacterCreationRequest,
+        placement: crate::movement::Placement,
+        instance_stamp: u16,
+        progression: &crate::progression::Progression,
+    ) -> Result<[Vec<u8>; 3], world::WorldError> {
         if !self.supports(request) {
             return Err(world::WorldError::InvalidValue);
         }
@@ -158,7 +174,9 @@ impl Bootstrap {
         let description = self.weenie_description(&request.name)?;
         object.extend_from_slice(&description);
         let mut player = world::PLAYER_DESC.to_le_bytes().to_vec();
-        player.extend_from_slice(&self.qualities[..8]);
+        let header = u32::from_le_bytes(self.qualities[..4].try_into().unwrap()) | 0x800;
+        player.extend(header.to_le_bytes()); // Native long-int quality table present.
+        player.extend_from_slice(&self.qualities[4..8]);
         player.extend(description);
         // CBaseQualities::UnPack 005192f0: int table follows the description.
         // Preserve authored base entries, then initialize the local level-one
@@ -170,10 +188,9 @@ impl Bootstrap {
                 u32::from_le_bytes(entry[4..].try_into().unwrap()),
             );
         }
-        for key in [0x100u32, 0x101, 0x102, 0x103, 0x107, 0x108] {
-            ints.insert(key, 100);
+        for (key, value) in progression.int_stats() {
+            ints.insert(key, value);
         }
-        ints.insert(0x12e, 1); // Level. These are explicit local test defaults.
         player.extend((ints.len() as u32).to_le_bytes());
         // PHashTable::StreamPack 00517fd0 encodes the bucket-size index in
         // the high byte (zero here => 11 buckets, client table 00a7b140).
@@ -195,6 +212,14 @@ impl Bootstrap {
             })
             .to_le_bytes(),
         );
+        player.extend(2u32.to_le_bytes());
+        for (key, value) in [
+            (0x12cu32, progression.xp),
+            (0x12d, progression.available_xp),
+        ] {
+            player.extend(key.to_le_bytes());
+            player.extend(value.to_le_bytes());
+        }
         Ok([world::create_player(id, REGION), object, player])
     }
 }

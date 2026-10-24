@@ -25,6 +25,7 @@ pub struct Character {
     pub ui: Option<crate::preferences::UiSettings>,
     pub hotbar: crate::preferences::Hotbar,
     pub inventory: crate::inventory::Inventory,
+    pub progression: crate::progression::Progression,
 }
 
 pub struct Store {
@@ -113,6 +114,28 @@ impl Store {
             .checked_add(1)
             .filter(|id| id >> 48 == crate::inventory::ITEM_NAMESPACE >> 48)
             .ok_or_else(|| invalid("item identity exhausted"))
+    }
+    pub fn progression_command(
+        &mut self,
+        account: &str,
+        id: u64,
+        command: crate::progression::Command,
+    ) -> io::Result<()> {
+        let character = self
+            .characters
+            .get(&id)
+            .filter(|c| c.account == account && !c.deleted)
+            .ok_or_else(|| invalid("progression character not owned"))?;
+        let next = character
+            .progression
+            .apply(&command)
+            .map_err(|error| invalid(&error.to_string()))?;
+        if next == character.progression {
+            return Ok(());
+        }
+        self.append_record(&format!("g1\t{id}\t{}", command.encode()))?;
+        self.characters.get_mut(&id).unwrap().progression = next;
+        Ok(())
     }
     pub fn inventory_command(
         &mut self,
@@ -312,6 +335,7 @@ impl Store {
             ui: None,
             hotbar: crate::preferences::Hotbar::default(),
             inventory: crate::inventory::Inventory::default(),
+            progression: crate::progression::Progression::default(),
         };
         let line = match creation {
             None => format!("v1\t{}\t{}\t{}", c.id, c.account, c.name),
@@ -460,6 +484,22 @@ pub fn decode_journal(bytes: &[u8]) -> io::Result<BTreeMap<u64, Character>> {
             return Err(invalid("character journal checksum mismatch"));
         }
         let fields: Vec<_> = data.split('\t').collect();
+        if fields.len() == 3 && fields[0] == "g1" {
+            let id = fields[1]
+                .parse::<u64>()
+                .map_err(|_| invalid("invalid progression character ID"))?;
+            let command = crate::progression::Command::decode(fields[2])
+                .map_err(|_| invalid("invalid progression event"))?;
+            let character = records
+                .get_mut(&id)
+                .filter(|c| !c.deleted)
+                .ok_or_else(|| invalid("progression event references unavailable character"))?;
+            character.progression = character
+                .progression
+                .apply(&command)
+                .map_err(|_| invalid("invalid progression transition"))?;
+            continue;
+        }
         if fields.len() == 3 && fields[0] == "i1" {
             let id = fields[1]
                 .parse::<u64>()
@@ -606,6 +646,7 @@ pub fn decode_journal(bytes: &[u8]) -> io::Result<BTreeMap<u64, Character>> {
                 ui: None,
                 hotbar: crate::preferences::Hotbar::default(),
                 inventory: crate::inventory::Inventory::default(),
+                progression: crate::progression::Progression::default(),
             },
         );
     }

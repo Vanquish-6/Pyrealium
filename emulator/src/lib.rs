@@ -9,6 +9,7 @@ pub mod inventory_request;
 pub mod legacy;
 pub mod movement;
 pub mod preferences;
+pub mod progression;
 pub mod scene;
 pub mod script;
 pub mod server;

@@ -931,11 +931,13 @@ pub fn run(config: Config) -> io::Result<()> {
                                                     character_id,
                                                 )?;
                                                 let events = profile
-                                                    .events_at(
+                                                    .events_at_state(
                                                         character_id,
                                                         &request,
                                                         placement,
                                                         instance,
+                                                        &store.characters[&character_id]
+                                                            .progression,
                                                     )
                                                     .map_err(other)?;
                                                 peer.session
@@ -1015,15 +1017,17 @@ pub fn run(config: Config) -> io::Result<()> {
                                                         c.ui.is_some()
                                                             || !c.hotbar.is_empty()
                                                             || c.inventory.items().next().is_some()
+                                                            || c.progression != crate::progression::Progression::default()
                                                     })
                                                 }
                                                 _ => None,
                                             };
                                             if let Some(saved) = saved {
-                                                let restored = crate::ui::player_inventory(
+                                                let restored = crate::ui::player_state(
                                                     saved.ui.as_ref(),
                                                     Some(&saved.hotbar),
                                                     Some(&saved.inventory),
+                                                    Some(&saved.progression),
                                                 )
                                                 .map_err(other)?;
                                                 let instance=peer.motion.as_ref().ok_or_else(||invalid("inventory bootstrap without avatar lifetime"))?.instance;
