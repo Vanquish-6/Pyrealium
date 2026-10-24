@@ -115,21 +115,26 @@ impl Peer {
         }
         Ok(())
     }
-    /// Queue a dependent reply group completely or preserve the prior transport.
-    /// Nothing has reached the socket while these packets are being assembled.
-    fn send_event_batch(&mut self, events: &[Vec<u8>], now: Instant) -> io::Result<Vec<Vec<u8>>> {
-        let before = (self.transport.clone(), self.blob, self.ordered_stamp);
-        let mut packets = Vec::new();
-        for event in events {
-            match self.send_event(event, now) {
-                Ok(next) => packets.extend(next),
-                Err(error) => {
-                    (self.transport, self.blob, self.ordered_stamp) = before;
-                    return Err(error);
-                }
-            }
+    /// Admit a dependent group completely before changing the outgoing queue.
+    /// Fragment-window pressure is handled by flush_scene, without cloning
+    /// transport/ISAAC history or requiring every event to fit in one send window.
+    fn queue_event_batch(&mut self, events: Vec<Vec<u8>>) -> io::Result<()> {
+        let mut total = self.scene_bytes;
+        if self.scene_outbox.len().saturating_add(events.len()) > 1024 {
+            return Err(invalid("scene batch event limit"));
         }
-        Ok(packets)
+        for event in &events {
+            if !(4..=65536).contains(&event.len()) {
+                return Err(invalid("scene batch message limit"));
+            }
+            total = total
+                .checked_add(event.len())
+                .filter(|size| *size <= 1024 * 1024)
+                .ok_or_else(|| invalid("scene batch byte limit"))?;
+        }
+        self.scene_outbox.extend(events.into_iter().map(Arc::from));
+        self.scene_bytes = total;
+        Ok(())
     }
     fn send_world_event(
         &mut self,
@@ -1509,10 +1514,9 @@ pub fn run(config: Config) -> io::Result<()> {
                                                     })
                                                     .collect::<io::Result<Vec<_>>>()?;
                                                 events.push(restored);
-                                                replies
-                                                    .extend(peer.send_event_batch(&events, now)?);
+                                                peer.queue_event_batch(events)?;
                                             } else {
-                                                replies.extend(peer.send_event(packet, now)?);
+                                                peer.queue_scene(Arc::from(packet))?;
                                             }
                                         }
                                     }

@@ -52,6 +52,15 @@ delivery; ordinary movement retains its existing delivery policy. Queued scene
 state is cleared on avatar exit and before another avatar lifetime starts.
 This is compiled only; populated native multiplayer acceptance remains open.
 
+Inventory-object and HUD restoration now enter the same bounded queue as one
+prevalidated group. Admission checks every message and the combined event/byte
+limits before publishing any part of the group; flushing waits for transport
+capacity. Inventory objects precede UI_Load, which precedes scene activation
+deliveries. Restoring an inventory therefore does not require the complete group
+to fit in the currently free fragment window. The previous temporary transport
+clone/rollback is removed. Initial empty HUD restoration follows the same queue.
+These changes are compile checked only, without native login acceptance.
+
 ## Explicit development encounter loop
 
 `--encounters content/development-encounters.tsv` enables bounded, deterministic
