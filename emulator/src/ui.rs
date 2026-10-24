@@ -110,7 +110,7 @@ pub fn validate_inventory_wlib(bytes: &[u8]) -> Result<(), WorldError> {
 pub fn validate_skills_wlib(bytes: &[u8]) -> Result<(), WorldError> {
     validate_layouts(bytes, &[(0x231, 15)])
 }
-fn validate_layouts(bytes: &[u8], layouts: &[(usize, u32)]) -> Result<(), WorldError> {
+pub(crate) fn validate_layouts(bytes: &[u8], layouts: &[(usize, u32)]) -> Result<(), WorldError> {
     struct Reader<'a> {
         bytes: &'a [u8],
         pos: usize,

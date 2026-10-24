@@ -15,10 +15,10 @@ Pyrealium contains a Rust emulator and a Windows player launcher. The server use
 **Status updated 2026-10-24. Experimental local development server; not ready for general players.**
 
 - **Observed with the native 7148 client:** local login, character selection, world/terrain rendering, walking and saved cross-cell placement.
-- **Implemented in Rust, with fresh client acceptance still pending:** the initialized HUD, supported inventory/equipment, skill training and advancement, development combat/healing, death/resurrection, binding/Recall, portal travel, a training quest, potion rewards and native emote messages.
-- **Still missing:** most original ability/effect behavior, armor bonuses, corpse/general loot, original quest content and dialogue, merchants, crafting, groups, authoritative collision/pathfinding and public authentication/hosting.
+- **Implemented in Rust, with fresh client acceptance still pending:** the initialized HUD, supported inventory/equipment, skill training and advancement, development combat/healing, death/resurrection, binding/Recall, portal travel, a training quest, potions/emotes, command-based trading/crafting and session groups.
+- **Still missing:** most original ability/effect behavior, armor bonuses, corpse/general loot, original quest content and dialogue, full merchant/crafting UI and economy, group reward sharing, authoritative collision/pathfinding and public authentication/hosting.
 
-A compiled packet handler is not a verified player experience. Recent runtime additions passed library/server compilation and an optimized build; no new game-client runs or deployments were performed for those additions. Training rewards, combat values and instant travel are explicit development policies.
+A compiled packet handler is not a verified player experience. Recent runtime additions passed library/server compilation and an optimized build; the local training server has been rebuilt and restarted; fresh client acceptance of the latest additions remains pending. Training rewards, combat values and instant travel are explicit development policies.
 
 
 | Feature | Current state |
@@ -44,11 +44,11 @@ A compiled packet handler is not a verified player experience. Recent runtime ad
 | Death and return | Saved vitals/Dead state, death UI, Resurrect, lifestone binding and Recall implemented; original cast presentation and death penalties missing |
 | Quest journal | One authored Training Grounds quest: three kills, persistent progress, once-only 120 XP / 10 gold via `@quest claim`; original quests/dialogue missing |
 | Item rewards and potions | Training encounters grant a single health potion into a supported bag; consuming it atomically restores up to 25 health; corpse/general loot and native acceptance pending |
-| Portals | Validated development destinations: 156 imported routes plus the training gateway when loaded; original travel presentation/access rules unfinished |
-| World content | 247 base placements, an optional 30-actor observed snapshot and authored training objects; limited stationary encounter behavior; full world population missing |
+| Portals | 156 imported routes plus three authored training/return gateways; captured portal visual mode/slider restored; original travel presentation/access rules unfinished |
+| World content | Training preset retains 247 base placements, 30 observed actors and eight authored objects; native interior visibility and a development outdoor view range; full world population missing |
 | Content placement editor | DAT-backed mesh/texture/animation/interior/outdoor preview implemented; latest native paint/Tk crash patch awaits a fresh GUI load |
-| Merchants and crafting | Not implemented as complete player systems |
-| Groups and broader social play | Not implemented; local chat, tells and selected emotes are the current supported slice |
+| Merchants and crafting | Four-item training shop via @shop/@buy/@sell, native single-item sale handling, and two potion recipes via @craft/native requests; atomic item/gold changes; full native catalog/recipe discovery and original economy missing |
+| Groups and broader social play | Session groups up to eight: create/invite/accept/decline/leave/dismiss/disband, native member snapshots, vitals/cell refresh and @g chat; XP/loot remain individual; fresh two-client acceptance pending |
 | Multiplayer hosting | Not enabled; the server binds to IPv4 loopback only |
 
 This is an early emulator, **not a complete or production-ready AC2 server**. The ambition is enormous. The status table is under oath.
@@ -186,7 +186,7 @@ not had that same acceptance.
 
 The remaining implementation work includes most active abilities/effects and their
 animations, armor/bonuses, original loot and quest content, NPC conversations,
-merchants, crafting, groups, movement/collision/line-of-sight enforcement, NPC
+full merchant/crafting UI and economy, group XP/loot sharing, movement/collision/line-of-sight enforcement, NPC
 pathfinding and public account/hosting support. The current authored training slice
 is useful development progress, not a finished AC2 game.
 

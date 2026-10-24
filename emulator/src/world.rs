@@ -511,9 +511,27 @@ pub fn create_stationary_object_with_scale(
     bytes.extend(object.character_id.to_le_bytes());
     bytes.extend(2_u32.to_le_bytes());
     bytes.extend(object.parent_visual_did.to_le_bytes());
-    bytes.extend(0x8000_u32.to_le_bytes()); // PhysicsDesc: position present
+    // This portal's retained CreateObjects carry a mode and scalar slider;
+    // its DAT visual supplies the mesh and startup effects. Exact native order:
+    // PhysicsDesc::StreamPack 00641530; ac2_omishan_allyhall.elog offsets 20..48.
+    let portal_appearance = object.parent_visual_did == 0x1f00031e;
+    bytes.extend(
+        if portal_appearance {
+            0x8082_u32
+        } else {
+            0x8000_u32
+        }
+        .to_le_bytes(),
+    );
     bytes.extend(object.instance_stamp.to_le_bytes());
     bytes.extend(object.visual_ordering_stamp.to_le_bytes());
+    if portal_appearance {
+        bytes.extend(0x40000001_u32.to_le_bytes()); // m_mode_id
+        bytes.extend(1_u32.to_le_bytes()); // m_sliders count
+        bytes.extend(0x4000000a_u32.to_le_bytes());
+        bytes.extend(1.0_f32.to_le_bytes());
+        bytes.extend(0.0_f32.to_le_bytes());
+    }
     bytes.extend(object.cell_id.to_le_bytes());
     for value in object.position.iter().chain(object.orientation.iter()) {
         bytes.extend(value.to_le_bytes());

@@ -157,6 +157,8 @@ impl MoveRequest {
 
 #[derive(Clone, Copy, Debug)]
 pub struct Metadata {
+    /// Legacy field name: DID quality 103 / inventory AppearanceFile, not the
+    /// UI descriptor's texture icon. Zero denotes an absent appearance profile.
     pub icon: u32,
     pub physical: u32,
     pub equipment: Option<Equipment>,

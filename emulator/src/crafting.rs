@@ -1,0 +1,471 @@
+//! Bounded native crafting requests and a two-recipe runtime profile.
+//!
+//! Captures: crafting.item.2.elog and crafting/ac2_craft_assembling_multiple_
+//! items_into_one.elog. Native ingredient hashing is corroborated by 00460040
+//! and PHashTable<unsigned_long,InstanceID>::StreamPack 004431d0. Completion
+//! reaches the 7148 ingredient UI (004696a0 / 00418780). Capture build identity
+//! is unknown; full crafting entitlement, cost, XP and chance rules are not
+//! inferred. The caller supplies explicit server-owned development authorization.
+use crate::{
+    dat::Dat,
+    inventory::{BAG_SLOTS, Inventory, Item, Location},
+    inventory_request::Metadata,
+    world::WorldError,
+};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    io,
+};
+
+pub const VALIDATE: u32 = 0x82060006;
+pub const EXECUTE: u32 = 0x82060012;
+pub const VALIDATION_REPLY: u32 = 0x82060016;
+pub const COMPLETION: u32 = 0x8206001c;
+pub const HEALTH_RECIPE: u32 = 0x6f001f17;
+pub const VIGOR_RECIPE: u32 = 0x6f001f18;
+pub const CRAFT_SKILL_DID: u32 = 0x6f0028d7;
+pub const MUCOR: u32 = 0x47001744;
+pub const CATALYST: u32 = 0x470027a7;
+/// English StringInfo 2500797e / a8607cec identifies this ingredient as Tallow.
+pub const TALLOW: u32 = CATALYST;
+pub const HEALTH_OUTPUT: u32 = 0x47001745;
+pub const VIGOR_OUTPUT: u32 = 0x47001746;
+pub const MAX_INGREDIENTS: usize = 16;
+pub const COOLDOWN_MS: u64 = 1000; // Explicit development policy.
+
+/// Asset identity is original DAT data. Quantity one and stack limit one are
+/// deliberately bounded development policy, including for Tallow: the recipe
+/// graph contains a 100 scalar whose full original quantity semantics are not
+/// recovered here. Texture icons and appearance animations are distinct assets.
+#[derive(Clone, Copy, Debug)]
+pub struct ItemProfile {
+    pub definition: u32,
+    pub visual: u32,
+    pub physical: u32,
+    pub appearance: u32,
+    pub texture: u32,
+}
+
+pub fn profile(definition: u32) -> Option<ItemProfile> {
+    let (visual, physical, appearance, texture) = match definition {
+        MUCOR => (0x1f000e37, 0x4700176b, 0x20000021, 0x4100034b),
+        TALLOW => (0x1f000234, 0x47000260, 0, 0x410082d6),
+        HEALTH_OUTPUT => (0x1f000e3f, 0x47001773, 0x20000268, 0x41006f81),
+        VIGOR_OUTPUT => (0x1f000e40, 0x47001774, 0x20000268, 0x41006f82),
+        _ => return None,
+    };
+    Some(ItemProfile {
+        definition,
+        visual,
+        physical,
+        appearance,
+        texture,
+    })
+}
+
+pub fn item(definition: u32, id: u64, slot: u16) -> Result<Item, WorldError> {
+    let profile = profile(definition).ok_or(WorldError::InvalidValue)?;
+    if [0, u64::MAX].contains(&id) || slot >= BAG_SLOTS {
+        return Err(WorldError::InvalidValue);
+    }
+    Ok(Item {
+        id,
+        definition,
+        visual: profile.visual,
+        quantity: 1,
+        stack_limit: 1,
+        equipment_mask: 0,
+        location: Location::Bag(slot),
+    })
+}
+
+fn fingerprint(bytes: &[u8]) -> u64 {
+    bytes.iter().fold(0xcbf29ce484222325u64, |hash, byte| {
+        (hash ^ u64::from(*byte)).wrapping_mul(0x100000001b3)
+    })
+}
+
+/// Exact asset profiles, without broadening the generic qualities parser.
+/// Metadata's historical `icon` member is acquisition appearance field 6,
+/// not gmWeenieDesc::_icon. Tallow has no quality 103: its appearance is zero.
+/// This alone does not prove acquisition ACKs accept a zero appearance.
+pub fn metadata(portal: &mut Dat, definition: u32) -> io::Result<Metadata> {
+    let invalid = || io::Error::other("unsupported native crafting item profile");
+    let profile = profile(definition).ok_or_else(invalid)?;
+    if definition == MUCOR {
+        return crate::merchants::validate_mucor(portal);
+    }
+    if definition == HEALTH_OUTPUT {
+        return crate::item_services::validate_potion(portal);
+    }
+    let (length, hash, physical_hash) = match definition {
+        TALLOW => (192, 0x29beb90770d61b34, 0x673c3de26bf871af),
+        VIGOR_OUTPUT => (288, 0x11b0b9d6a9196bba, 0x1e0b933e6b4054f0),
+        _ => return Err(invalid()),
+    };
+    let descriptor = portal.read(0x81000000 | (definition & 0xffffff))?;
+    let physical = portal.read(profile.physical)?;
+    if descriptor.len() != length
+        || fingerprint(&descriptor) != hash
+        || physical.len() != 16
+        || fingerprint(&physical) != physical_hash
+    {
+        return Err(invalid());
+    }
+    portal.read(definition)?;
+    portal.read(profile.visual)?;
+    let texture = portal.read(profile.texture)?;
+    let (texture_length, texture_hash) = if definition == TALLOW {
+        (3096, 0x0b09d7fb11b16f48)
+    } else {
+        (4120, 0x43b152d0c9a82103)
+    };
+    if texture.len() != texture_length || fingerprint(&texture) != texture_hash {
+        return Err(invalid());
+    }
+    if profile.appearance != 0 {
+        portal.read(profile.appearance)?;
+    }
+    Ok(Metadata {
+        icon: profile.appearance,
+        physical: profile.physical,
+        equipment: None,
+    })
+}
+
+pub fn validate_tallow(portal: &mut Dat) -> io::Result<Metadata> {
+    metadata(portal, TALLOW)
+}
+
+pub fn validate_vigor(portal: &mut Dat) -> io::Result<Metadata> {
+    metadata(portal, VIGOR_OUTPUT)
+}
+
+pub fn tallow(id: u64, slot: u16) -> Item {
+    Item {
+        id,
+        definition: TALLOW,
+        visual: 0x1f000234,
+        quantity: 1,
+        stack_limit: 1,
+        equipment_mask: 0,
+        location: Location::Bag(slot),
+    }
+}
+
+pub fn output(recipe_id: u32, id: u64, slot: u16) -> Option<Item> {
+    item(recipe(recipe_id)?.output, id, slot).ok()
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Recipe {
+    pub id: u32,
+    pub craft_skill: u32,
+    pub inputs: [u32; 2],
+    pub output: u32,
+}
+pub fn recipe(id: u32) -> Option<Recipe> {
+    let output = match id {
+        HEALTH_RECIPE => HEALTH_OUTPUT,
+        VIGOR_RECIPE => VIGOR_OUTPUT,
+        _ => return None,
+    };
+    Some(Recipe {
+        id,
+        craft_skill: CRAFT_SKILL_DID,
+        inputs: [MUCOR, CATALYST],
+        output,
+    })
+}
+
+struct Reader<'a> {
+    data: &'a [u8],
+    position: usize,
+}
+impl Reader<'_> {
+    fn word(&mut self) -> Result<u32, WorldError> {
+        let value = self
+            .data
+            .get(self.position..self.position + 4)
+            .ok_or(WorldError::Truncated)?;
+        self.position += 4;
+        Ok(u32::from_le_bytes(value.try_into().unwrap()))
+    }
+    fn expect(&mut self, value: u32) -> Result<(), WorldError> {
+        if self.word()? != value {
+            return Err(WorldError::InvalidValue);
+        }
+        Ok(())
+    }
+    fn integer(&mut self) -> Result<u32, WorldError> {
+        self.expect(1)?;
+        self.word()
+    }
+    fn iid_raw(&mut self) -> Result<u64, WorldError> {
+        let value = u64::from(self.word()?) | (u64::from(self.word()?) << 32);
+        if [0, u64::MAX].contains(&value) {
+            return Err(WorldError::InvalidValue);
+        }
+        Ok(value)
+    }
+    fn iid(&mut self) -> Result<u64, WorldError> {
+        self.expect(2)?;
+        self.iid_raw()
+    }
+    fn finish(&self) -> Result<(), WorldError> {
+        if self.position != self.data.len() {
+            Err(WorldError::TrailingBytes)
+        } else {
+            Ok(())
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ValidateRequest {
+    pub item: u64,
+    pub ordinal: u32,
+    pub recipe: u32,
+}
+impl ValidateRequest {
+    pub fn decode(arguments: &[u8]) -> Result<Self, WorldError> {
+        if arguments.len() > 36 {
+            return Err(WorldError::TrailingBytes);
+        }
+        let mut r = Reader {
+            data: arguments,
+            position: 0,
+        };
+        if r.integer()? != 0 {
+            return Err(WorldError::InvalidValue);
+        }
+        let value = Self {
+            item: r.iid()?,
+            ordinal: r.integer()?,
+            recipe: r.integer()?,
+        };
+        r.finish()?;
+        if !(1..=MAX_INGREDIENTS as u32).contains(&value.ordinal) || value.recipe >> 24 != 0x6f {
+            return Err(WorldError::InvalidValue);
+        }
+        Ok(value)
+    }
+    pub fn allowed(&self, inventory: &Inventory, authorized: bool) -> bool {
+        let Some(recipe) = recipe(self.recipe) else {
+            return false;
+        };
+        let Some(expected) = self
+            .ordinal
+            .checked_sub(1)
+            .and_then(|i| recipe.inputs.get(i as usize))
+        else {
+            return false;
+        };
+        authorized
+            && inventory.dense_bags()
+            && inventory.items().any(|item| {
+                item.id == self.item
+                    && item.definition == *expected
+                    && item.quantity == 1
+                    && item.stack_limit == 1
+                    && matches!(item.location, Location::Bag(_))
+            })
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ExecuteRequest {
+    pub primary: u64,
+    pub ingredients: BTreeMap<u32, u64>,
+    pub spinner: u32,
+    pub recipe: u32,
+}
+impl ExecuteRequest {
+    pub fn decode(arguments: &[u8]) -> Result<Self, WorldError> {
+        if arguments.len() > 60 + 12 * MAX_INGREDIENTS {
+            return Err(WorldError::LimitExceeded);
+        }
+        let mut r = Reader {
+            data: arguments,
+            position: 0,
+        };
+        let primary = r.iid()?;
+        r.expect(5)?;
+        r.expect(1)?;
+        if [0, u32::MAX].contains(&r.word()?) {
+            return Err(WorldError::InvalidValue);
+        }
+        r.expect(0x44000100)?;
+        r.expect(0)?;
+        r.expect(0xffff0008)?;
+        let header = r.word()?;
+        let count = (header & 0xffffff) as usize;
+        if header >> 24 > 22 || count == 0 || count > MAX_INGREDIENTS {
+            return Err(WorldError::LimitExceeded);
+        }
+        let mut ingredients = BTreeMap::new();
+        let mut identities = BTreeSet::new();
+        for _ in 0..count {
+            let ordinal = r.word()?;
+            let item = r.iid_raw()?;
+            if !(1..=MAX_INGREDIENTS as u32).contains(&ordinal)
+                || ingredients.insert(ordinal, item).is_some()
+                || !identities.insert(item)
+            {
+                return Err(WorldError::InvalidValue);
+            }
+        }
+        r.expect(0)?; // Native ALHash has no interpreted HeapObject fields.
+        let spinner = r.integer()?;
+        let recipe = r.integer()?;
+        r.finish()?;
+        if spinner > 1000 || recipe >> 24 != 0x6f || !identities.contains(&primary) {
+            return Err(WorldError::InvalidValue);
+        }
+        Ok(Self {
+            primary,
+            ingredients,
+            spinner,
+            recipe,
+        })
+    }
+    /// Supported single-unit subset. One item per actual ingredient identity is
+    /// an explicit development quantity policy, not full native recipe evaluation.
+    pub fn require_inputs(
+        &self,
+        inventory: &Inventory,
+        authorized: bool,
+    ) -> Result<[u64; 2], WorldError> {
+        let definition = recipe(self.recipe).ok_or(WorldError::InvalidValue)?;
+        if !authorized
+            || self.spinner != 0
+            || self.ingredients.len() != 2
+            || !inventory.dense_bags()
+        {
+            return Err(WorldError::InvalidValue);
+        }
+        let mut result = [0; 2];
+        for (index, expected) in definition.inputs.iter().enumerate() {
+            let id = *self
+                .ingredients
+                .get(&(index as u32 + 1))
+                .ok_or(WorldError::InvalidValue)?;
+            if !inventory.items().any(|item| {
+                item.id == id
+                    && item.definition == *expected
+                    && item.quantity == 1
+                    && item.stack_limit == 1
+                    && matches!(item.location, Location::Bag(_))
+            }) {
+                return Err(WorldError::InvalidValue);
+            }
+            result[index] = id;
+        }
+        if result[0] == result[1] || !result.contains(&self.primary) {
+            return Err(WorldError::InvalidValue);
+        }
+        Ok(result)
+    }
+}
+
+pub fn select_inventory(
+    id: u32,
+    inventory: &Inventory,
+    authorized: bool,
+) -> Result<ExecuteRequest, WorldError> {
+    let definition = recipe(id).ok_or(WorldError::InvalidValue)?;
+    let mut ingredients = BTreeMap::new();
+    for (index, expected) in definition.inputs.iter().enumerate() {
+        let item = inventory
+            .items()
+            .find(|item| {
+                item.definition == *expected
+                    && item.quantity == 1
+                    && item.stack_limit == 1
+                    && matches!(item.location, Location::Bag(_))
+            })
+            .ok_or(WorldError::InvalidValue)?;
+        ingredients.insert(index as u32 + 1, item.id);
+    }
+    let request = ExecuteRequest {
+        primary: ingredients[&1],
+        ingredients,
+        spinner: 0,
+        recipe: id,
+    };
+    request.require_inputs(inventory, authorized)?;
+    Ok(request)
+}
+
+pub fn validation_reply(request: &ValidateRequest, accepted: bool) -> Result<Vec<u8>, WorldError> {
+    let mut args = crate::script::integer(if accepted { 0 } else { 40001 });
+    args.extend(crate::script::integer(0));
+    args.extend(crate::script::identity(request.item));
+    args.extend(crate::script::integer(request.ordinal));
+    args.extend(crate::script::integer(request.recipe));
+    crate::script::private_call(VALIDATION_REPLY, &args)
+}
+
+/// 40025 is observed in a failed craft completion; its precise localized error
+/// meaning is unresolved. Callers must provide their own truthful chat reason.
+pub fn completed(id: u32, success: bool) -> Result<Vec<u8>, WorldError> {
+    if id >> 24 != 0x6f {
+        return Err(WorldError::InvalidValue);
+    }
+    let mut args = crate::script::integer(1);
+    args.extend(crate::script::integer(if success { 0 } else { 40025 }));
+    args.extend(crate::script::integer(id));
+    crate::script::private_call(COMPLETION, &args)
+}
+
+/// Pinned schema checks for the recovered two-ingredient potion graphs. This
+/// establishes identities only; quantities, entitlement and costs stay explicit.
+pub fn validate_assets(portal: &mut Dat) -> io::Result<()> {
+    let invalid = || io::Error::other("unsupported native potion recipe graph");
+    for (id, output) in [(HEALTH_RECIPE, HEALTH_OUTPUT), (VIGOR_RECIPE, VIGOR_OUTPUT)] {
+        let data = portal.read(id)?;
+        let hash = if id == HEALTH_RECIPE {
+            0xfe785ca8fcbe9b88
+        } else {
+            0x93c3bd24e230ac1a
+        };
+        if data.len() != 1448 || fingerprint(&data) != hash {
+            return Err(invalid());
+        }
+        let w = |o| u32::from_le_bytes(data[o..o + 4].try_into().unwrap());
+        if w(0) != id
+            || w(4) != 1436
+            || w(8) != 32
+            || w(0x94) != 0x01d70000
+            || w(0x98) != 37
+            || w(0x238) != 5
+            || w(0x244) != output
+        {
+            return Err(invalid());
+        }
+        for (offset, definition) in [(0x3e4, MUCOR), (0x4d8, CATALYST)] {
+            if w(offset) != 0x44000100
+                || w(offset + 8) != 0xffff0001
+                || w(offset + 12) != 0x02000001
+                || w(offset + 16) != definition
+                || w(offset + 20) != definition
+                || w(offset + 24) != 0
+            {
+                return Err(invalid());
+            }
+        }
+    }
+    for id in [
+        MUCOR,
+        CATALYST,
+        HEALTH_OUTPUT,
+        VIGOR_OUTPUT,
+        CRAFT_SKILL_DID,
+    ] {
+        portal.read(id)?;
+    }
+    if fingerprint(&portal.read(CRAFT_SKILL_DID)?) != 0xc5454bfe119ba394 {
+        return Err(invalid());
+    }
+    Ok(())
+}

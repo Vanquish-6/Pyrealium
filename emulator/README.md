@@ -16,8 +16,9 @@ Two-client appearance/visibility and general-player readiness are unverified.
 A MusicLoader error can require Continue.
 
 **Status updated 2026-10-24.** Recent runtime changes passed library/server
-compilation and an optimized build. No new test suites or game-client runs were
-performed for them, and the running server was not restarted or deployed.
+compilation and an optimized build. The local training server has been rebuilt
+and restarted. No test suites were run; the latest player systems and content
+visibility fixes still need fresh matching-client acceptance.
 The training profile's combat values, quest, item rewards and instant travel
 are authored development policies; they do not establish original AC2 parity.
 
@@ -316,6 +317,38 @@ training, encounter and binding profiles enable their authored grants and
 gameplay actions. The initializer is not enabled by default: native UI acceptance
 and backing gameplay systems remain unfinished.
 
+## Training merchants, crafting and groups
+
+`serve-training` now keeps the 247 base placements and 30 captured actors, plus
+eight authored training objects. There are exits in the start and corridor rooms,
+an outdoor return gateway, quartermasters and a training creature. Interior
+visibility uses the DAT's native visible-room arrays. Outdoors, the surrounding
+3x3 landblocks are an explicit development view policy. These placements and
+view settings do not reconstruct the complete original population or progression.
+
+Near a quartermaster, use `@shop`, `@buy potion`, `@buy weapon`,
+`@buy mushroom`, `@buy tallow`, or `@sell SLOT` (1-based bag position).
+Prices and stock are authored. Purchases/sales commit ownership and gold together;
+native single-item sales require a fresh nearby shop context. The full native
+merchant catalog UI is still unresolved; command browsing is the current surface.
+
+`@craft health` and `@craft vigor` consume one unstacked Mucor Mushroom and one
+Tallow and grant one potion atomically. Native ingredient validation and execution
+requests use the same server-owned rules. This one-of-each quantity, unrestricted
+training entitlement, guaranteed success and lack of crafting XP are explicit
+development policy. Original recipe quantities/costs and recipe discovery UI
+remain incomplete. Health/vigor potions restore up to 25 of their vital and share
+a five-second use cooldown.
+
+Use `@group create NAME`, `@group invite PLAYER`, `@group accept PLAYER`,
+`@group decline PLAYER`, `@group dismiss PLAYER`, `@group leave`, and
+`@group disband`. Native requests, invitation dialogs and member snapshots are
+also wired. Groups have at most eight members and invitations expire in 30 seconds.
+Only individual XP/personal rewards are supported. The leader leaving or logging
+out disbands the session group. Member vitals/location refresh while online;
+`@g MESSAGE` sends group chat. Original native group-chat routing, shared rewards
+and persistent groups are not implemented. Fresh two-client UI acceptance is pending.
+
 ## Still missing before general players
 
 - Fresh matching-client acceptance of the integrated HUD, equipment, combat,
@@ -326,10 +359,11 @@ and backing gameplay systems remain unfinished.
   broader inventory/stacking/ground-item behavior.
 - Corpse containers, ownership/loot-sharing rules and original loot tables.
 - Original quests, NPC conversations, branching, abandonment and repeat rules.
-- Merchants, crafting and a complete economy.
-- Groups/fellowships and broader social systems beyond local chat/tells/emotes.
+- Full native merchant/recipe discovery interfaces, original crafting rules,
+  merchant inventories and a complete economy.
+- Group XP/loot sharing, native group chat and broader social systems.
 - NPC movement/pathfinding, authoritative movement speed, collision and line of
-  sight, and visibility beyond the current same-cell development policy.
+  sight, and complete native outdoor/interior boundary visibility behavior.
 - Original portal/binding eligibility and presentation, death penalties and
   broader supported races/classes.
 - Public account/password authentication, remote hosting readiness, production

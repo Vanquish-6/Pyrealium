@@ -92,7 +92,16 @@ pub fn acquired(owner: u64, item: &Item, metadata: Metadata) -> Result<Vec<u8>, 
         || slot >= BAG_SLOTS
         || item.definition >> 24 != 0x47
         || item.visual >> 24 != 0x1f
-        || metadata.icon >> 24 != 0x20
+        // Package 1f8 field 6 is the optional AppearanceFile DID, not the
+        // descriptor's texture icon. Tallow's pinned profile has no appearance
+        // animation; preserve its null DID rather than inventing an animation.
+        // The nested inventory/picking.up.item.elog retains this exact full
+        // acquisition shape with field 6 zero and DID tag 4 (item 470017f3).
+        || (metadata.icon >> 24 != 0x20
+            && !(item.definition == crate::crafting::CATALYST
+                && item.visual == 0x1f000234
+                && metadata.physical == 0x47000260
+                && metadata.icon == 0))
         || metadata.physical >> 24 != 0x47
     {
         return Err(WorldError::InvalidValue);

@@ -50,6 +50,7 @@ struct Peer {
     last_inventory_ms: Option<u64>,
     last_examine_ms: Option<u64>,
     last_world_use_ms: Option<u64>,
+    merchant_open_ms: Option<u64>,
     unhandled_scripts: BTreeSet<u32>,
     scene_outbox: VecDeque<(Arc<[u8]>, bool)>,
     scene_bytes: usize,
@@ -252,7 +253,7 @@ fn prepare_forced_move(
     peer: &Peer,
     character: u64,
     destination: Placement,
-    scene: &crate::scene::Scene,
+    scene: &mut crate::scene::Scene,
     bootstrap: &mut Option<crate::bootstrap::Bootstrap>,
 ) -> io::Result<ForcedMove> {
     if scene.player_placement(character).is_none()
@@ -262,6 +263,7 @@ fn prepare_forced_move(
     {
         return Err(invalid("Saved destination is not available in this world."));
     }
+    scene.prepare_cell(destination.cell)?;
     let (motion, update) = peer
         .motion
         .as_ref()
@@ -630,8 +632,9 @@ fn use_training_potion(
         .items()
         .find(|owned| owned.id == item)
         .filter(|owned| {
-            owned.definition == crate::item_services::POTION_DEFINITION
+            (owned.definition == crate::item_services::POTION_DEFINITION
                 && owned.visual == crate::item_services::POTION_VISUAL
+                || owned.definition == crate::crafting::VIGOR_OUTPUT && owned.visual == 0x1f000e40)
                 && owned.quantity == 1
                 && owned.stack_limit == 1
                 && owned.equipment_mask == 0
@@ -639,18 +642,25 @@ fn use_training_potion(
         .ok_or_else(|| {
             invalid("This training potion is not owned or has unsupported properties.")
         })?;
+    let vigor = owned.definition == crate::crafting::VIGOR_OUTPUT;
     if !matches!(owned.location, crate::inventory::Location::Bag(_))
-        || saved.progression.health == saved.progression.level().health
+        || if vigor {
+            saved.progression.vigor == saved.progression.level().vigor
+        } else {
+            saved.progression.health == saved.progression.level().health
+        }
     {
         return Err(invalid(
-            "The potion must be in your bag and your health must be below its maximum.",
+            "The potion must be in your bag and its vital must be below the maximum.",
         ));
     }
     let instance = scene.inventory_instance(character, item).map_err(other)?;
     let command = crate::inventory::Command::ConsumeDense { item };
-    let changes = [crate::progression::Command::Heal(
-        crate::item_services::POTION_HEALTH,
-    )];
+    let changes = [if vigor {
+        crate::progression::Command::RecoverVigor(25)
+    } else {
+        crate::progression::Command::Heal(crate::item_services::POTION_HEALTH)
+    }];
     let next = saved
         .progression
         .apply(&changes[0])
@@ -663,8 +673,13 @@ fn use_training_potion(
     events.push(
         script::chat(
             &format!(
-                "You recover {} health.",
-                next.health - saved.progression.health
+                "You recover {} {}.",
+                if vigor {
+                    next.vigor - saved.progression.vigor
+                } else {
+                    next.health - saved.progression.health
+                },
+                if vigor { "vigor" } else { "health" }
             ),
             1,
         )
@@ -745,6 +760,305 @@ fn quest_action(
     Ok(updates)
 }
 
+/// Admit the complete native item/vital update before committing a service's
+/// ownership and currency changes. Only the server's bounded grant/removal
+/// plans are supported here; no client object description enters this path.
+fn item_service_transaction(
+    peer: &mut Peer,
+    character: u64,
+    items: &[crate::inventory::Command],
+    changes: &[crate::progression::Command],
+    mut completion: Vec<Vec<u8>>,
+    store: &mut Store,
+    scene: &mut crate::scene::Scene,
+    metadata: &BTreeMap<u32, Option<crate::inventory_request::Metadata>>,
+) -> io::Result<Vec<crate::scene::Delivery>> {
+    let saved = &store.characters[&character];
+    if !scene.can_observe(character, character) || !saved.progression.alive() || peer.combat {
+        return Err(invalid(
+            "Item services require a ready living player out of combat.",
+        ));
+    }
+    if items
+        .iter()
+        .filter(|item| matches!(item, crate::inventory::Command::Grant(_)))
+        .count()
+        > 1
+    {
+        return Err(invalid("Item services support one output per transaction."));
+    }
+    let first = items
+        .iter()
+        .any(|item| item.allocated_id().is_some())
+        .then(|| store.next_item_id())
+        .transpose()?;
+    let (bag, state) = crate::player_transaction::candidate(
+        &saved.inventory,
+        &saved.progression,
+        items,
+        changes,
+        first,
+    )?;
+    let mut events = Vec::new();
+    let mut removed = Vec::new();
+    let mut granted = Vec::new();
+    for command in items {
+        match command {
+            crate::inventory::Command::ConsumeDense { item } => {
+                let owned = saved
+                    .inventory
+                    .items()
+                    .find(|owned| owned.id == *item)
+                    .ok_or_else(|| invalid("Service item is not owned."))?;
+                if !matches!(owned.location, crate::inventory::Location::Bag(_)) {
+                    return Err(invalid("Service items must be in your bag."));
+                }
+                let instance = scene.inventory_instance(character, *item).map_err(other)?;
+                events.push(crate::item_services::removed(*item).map_err(other)?);
+                events.push(world::destroy_inventory_item(*item, instance));
+                removed.push(*item);
+            }
+            crate::inventory::Command::Grant(item) => {
+                let item = bag
+                    .items()
+                    .find(|owned| owned.id == item.id)
+                    .ok_or_else(|| invalid("Service grant absent from final inventory."))?;
+                let info = metadata
+                    .get(&item.definition)
+                    .and_then(|info| *info)
+                    .ok_or_else(|| invalid("Service item metadata unavailable."))?;
+                let instance = scene
+                    .admit_inventory_grant(character, item.id)
+                    .map_err(other)?;
+                events
+                    .push(world::create_inventory_item(item, character, instance).map_err(other)?);
+                events.push(crate::item_services::acquired(character, item, info).map_err(other)?);
+                granted.push((item.id, instance));
+            }
+            _ => return Err(invalid("Unsupported item service transition.")),
+        }
+    }
+    events.extend(state.private_changes(&saved.progression));
+    events.append(&mut completion);
+    peer.validate_scene_batch(&events)?;
+    store.player_transaction(&peer.session.account, character, items, changes)?;
+    for item in removed {
+        scene.inventory_removed(character, item).map_err(other)?;
+    }
+    for (item, instance) in granted {
+        scene
+            .inventory_granted(character, item, instance)
+            .map_err(other)?;
+    }
+    let updates = scene.player_stats(character, &state);
+    peer.queue_ordered_batch(events)?;
+    Ok(updates)
+}
+
+fn group_online(
+    active: &BTreeMap<u64, SocketAddr>,
+    store: &Store,
+    scene: &crate::scene::Scene,
+) -> BTreeMap<u64, crate::groups::Member> {
+    active
+        .keys()
+        .filter_map(|id| {
+            let saved = store.characters.get(id).filter(|saved| !saved.deleted)?;
+            let point = scene.player_placement(*id)?;
+            let level = saved.progression.level();
+            Some((
+                *id,
+                crate::groups::Member {
+                    id: *id,
+                    name: saved.name.clone(),
+                    level: u32::from(level.number),
+                    health: saved.progression.health,
+                    max_health: level.health,
+                    vigor: saved.progression.vigor,
+                    max_vigor: level.vigor,
+                    cell: point.cell,
+                },
+            ))
+        })
+        .collect()
+}
+
+fn group_admit(
+    deliveries: &[crate::groups::Delivery],
+    active: &BTreeMap<u64, SocketAddr>,
+    peers: &BTreeMap<SocketAddr, Peer>,
+) -> io::Result<BTreeMap<SocketAddr, Vec<Vec<u8>>>> {
+    let mut packets: BTreeMap<SocketAddr, Vec<Vec<u8>>> = BTreeMap::new();
+    for delivery in deliveries {
+        // A disconnect plan also clears the departed player's UI. There is no
+        // transport to send that clear to, and reconnect starts with empty UI.
+        if let Some(addr) = active.get(&delivery.recipient) {
+            packets
+                .entry(*addr)
+                .or_default()
+                .push(delivery.data.clone());
+        }
+    }
+    for (addr, events) in &packets {
+        peers
+            .get(addr)
+            .ok_or_else(|| invalid("Group recipient disconnected."))?
+            .validate_scene_batch(events)?;
+    }
+    Ok(packets)
+}
+
+fn group_publish(
+    packets: BTreeMap<SocketAddr, Vec<Vec<u8>>>,
+    peers: &mut BTreeMap<SocketAddr, Peer>,
+) -> io::Result<()> {
+    for (addr, events) in packets {
+        peers
+            .get_mut(&addr)
+            .ok_or_else(|| invalid("Group recipient disconnected."))?
+            .queue_ordered_batch(events)?;
+    }
+    Ok(())
+}
+
+const TRAINING_MERCHANT: u64 = 0x8140000000030003;
+const TRAINING_MERCHANT_OUTDOOR: u64 = 0x8140000000030006;
+
+fn merchant_ready(character: u64, scene: &crate::scene::Scene) -> io::Result<()> {
+    let player = scene
+        .player_placement(character)
+        .ok_or_else(|| invalid("Player is not ready."))?;
+    let nearby = [TRAINING_MERCHANT, TRAINING_MERCHANT_OUTDOOR]
+        .into_iter()
+        .any(|id| {
+            let Some(merchant) = scene
+                .examination_content(character, id)
+                .filter(|object| object.entity == crate::merchants::MERCHANT_ENTITY)
+            else {
+                return false;
+            };
+            player.cell == merchant.placement.cell
+                && player
+                    .coordinates
+                    .iter()
+                    .zip(merchant.placement.coordinates)
+                    .map(|(a, b)| (a - b).powi(2))
+                    .sum::<f32>()
+                    <= 16.0
+        });
+    if !nearby {
+        return Err(invalid(
+            "Move within four metres of the training quartermaster.",
+        ));
+    }
+    Ok(())
+}
+
+fn merchant_action(
+    peer: &mut Peer,
+    character: u64,
+    action: crate::merchants::Action,
+    store: &mut Store,
+    scene: &mut crate::scene::Scene,
+    metadata: &BTreeMap<u32, Option<crate::inventory_request::Metadata>>,
+    now: u64,
+) -> io::Result<Vec<crate::scene::Delivery>> {
+    merchant_ready(character, scene)?;
+    let saved = &store.characters[&character];
+    if !saved.progression.alive() || peer.combat {
+        return Err(invalid("Trading requires a living player out of combat."));
+    }
+    if peer
+        .last_inventory_ms
+        .is_some_and(|last| now.saturating_sub(last) < 250)
+    {
+        return Err(invalid("Wait briefly before another inventory action."));
+    }
+    if action == crate::merchants::Action::List {
+        peer.queue_ordered_batch(vec![
+            script::chat(&crate::merchants::listing(), 1).map_err(other)?,
+        ])?;
+        peer.merchant_open_ms = Some(now);
+        peer.last_inventory_ms = Some(now);
+        return Ok(Vec::new());
+    }
+    let plan = match action {
+        crate::merchants::Action::Buy(stock) => crate::merchants::plan_buy(
+            stock,
+            &saved.inventory,
+            &saved.progression,
+            store.next_item_id()?,
+        ),
+        crate::merchants::Action::SellSlot(slot) => {
+            crate::merchants::plan_sell(slot, &saved.inventory, &saved.progression)
+        }
+        crate::merchants::Action::List => unreachable!(),
+    }
+    .map_err(io::Error::other)?;
+    let mut completion = plan.events;
+    completion.push(script::chat(&plan.message, 1).map_err(other)?);
+    let updates = item_service_transaction(
+        peer,
+        character,
+        &plan.items,
+        &plan.changes,
+        completion,
+        store,
+        scene,
+        metadata,
+    )?;
+    peer.merchant_open_ms = Some(now);
+    peer.last_inventory_ms = Some(now);
+    Ok(updates)
+}
+
+fn craft_item(
+    peer: &mut Peer,
+    character: u64,
+    request: &crate::crafting::ExecuteRequest,
+    store: &mut Store,
+    scene: &mut crate::scene::Scene,
+    metadata: &BTreeMap<u32, Option<crate::inventory_request::Metadata>>,
+    now: u64,
+) -> io::Result<Vec<crate::scene::Delivery>> {
+    if peer
+        .last_inventory_ms
+        .is_some_and(|last| now.saturating_sub(last) < crate::crafting::COOLDOWN_MS)
+    {
+        return Err(invalid("Wait one second before crafting again."));
+    }
+    let saved = &store.characters[&character];
+    let ingredients = request.require_inputs(&saved.inventory, true)
+        .map_err(|_| invalid("Crafting needs one unstacked Mucor Mushroom and one Tallow in your bag. Use @shop near the training quartermaster."))?;
+    let mut items: Vec<_> = ingredients
+        .into_iter()
+        .map(|item| crate::inventory::Command::ConsumeDense { item })
+        .collect();
+    let mut bag = saved.inventory.clone();
+    for item in &items {
+        bag = bag.apply(item).map_err(io::Error::other)?;
+    }
+    let slot = bag
+        .free_slot()
+        .ok_or_else(|| invalid("There is no bag space for the crafted item."))?;
+    let output = crate::crafting::output(request.recipe, store.next_item_id()?, slot)
+        .ok_or_else(|| invalid("That recipe is not enabled."))?;
+    let name = if request.recipe == crate::crafting::HEALTH_RECIPE {
+        "health"
+    } else {
+        "vigor"
+    };
+    items.push(crate::inventory::Command::Grant(output));
+    let events = vec![
+        crate::crafting::completed(request.recipe, true).map_err(other)?,
+        script::chat(&format!("Crafted one {name} potion. Training recipe: one mushroom and one Tallow; no crafting XP or chance roll."), 1).map_err(other)?,
+    ];
+    let updates =
+        item_service_transaction(peer, character, &items, &[], events, store, scene, metadata)?;
+    peer.last_inventory_ms = Some(now);
+    Ok(updates)
+}
+
 pub fn run(config: Config) -> io::Result<()> {
     if !config.bind.ip().is_loopback() || !config.bind.is_ipv4() {
         return Err(invalid(
@@ -795,6 +1109,7 @@ pub fn run(config: Config) -> io::Result<()> {
         crate::skills::validate_assets(&mut portal)?;
         crate::emotes::validate_assets(&mut portal)?;
         crate::quests::validate_assets(&mut portal)?;
+        crate::ui::validate_layouts(&wlib, &crate::groups::LAYOUTS).map_err(other)?;
         if config.training_kit
             || config.lifestones
             || config.portals
@@ -810,10 +1125,13 @@ pub fn run(config: Config) -> io::Result<()> {
                 locale.read(0x25000014)?;
             }
             if config.training_kit {
-                let metadata = crate::training_kit::validate(&mut portal)?;
-                inventory_metadata.insert(crate::training_kit::DEFINITION, Some(metadata));
-                let potion = crate::item_services::validate_potion(&mut portal)?;
-                inventory_metadata.insert(crate::item_services::POTION_DEFINITION, Some(potion));
+                let catalog = crate::merchants::Catalog::validate(&mut portal)?;
+                for (definition, metadata) in catalog.entries() {
+                    inventory_metadata.insert(definition, Some(metadata));
+                }
+                crate::crafting::validate_assets(&mut portal)?;
+                let vigor = crate::crafting::validate_vigor(&mut portal)?;
+                inventory_metadata.insert(crate::crafting::VIGOR_OUTPUT, Some(vigor));
             }
             for character in store.characters.values().filter(|c| !c.deleted) {
                 for item in character.inventory.items() {
@@ -850,7 +1168,12 @@ pub fn run(config: Config) -> io::Result<()> {
                 .game_data
                 .as_deref()
                 .ok_or_else(|| invalid("--content training requires --game-data"))?;
-            crate::content::Content::training(directory)?
+            let content = crate::content::Content::training(directory)?;
+            println!(
+                "Loaded {} world objects: base placements, retained actors and authored training objects.",
+                content.len()
+            );
+            content
         }
         Some(path) if path == std::path::Path::new("observed") => {
             let directory = config
@@ -918,11 +1241,7 @@ pub fn run(config: Config) -> io::Result<()> {
                     .values()
                     .filter(|character| !character.deleted)
                     .flat_map(|character| character.inventory.items().map(|item| item.definition))
-                    .chain(
-                        std::iter::once(crate::training_kit::DEFINITION)
-                            .chain(std::iter::once(crate::item_services::POTION_DEFINITION))
-                            .filter(|_| config.training_kit),
-                    ),
+                    .chain(inventory_metadata.keys().copied()),
             ),
         )?
     } else {
@@ -951,6 +1270,9 @@ pub fn run(config: Config) -> io::Result<()> {
     let mut peers: BTreeMap<SocketAddr, Peer> = BTreeMap::new();
     let mut active_characters = BTreeMap::new();
     let mut scene = crate::scene::Scene::with_content(content);
+    if let Some(directory) = config.game_data.as_deref() {
+        scene = scene.with_visibility(crate::visibility::Visibility::open(directory)?);
+    }
     if let Some(runtime) = &encounters {
         for (id, health) in runtime.initial_health() {
             scene.content_stat(id, 0x107, health)?;
@@ -970,6 +1292,9 @@ pub fn run(config: Config) -> io::Result<()> {
         None
     };
     let mut failed_peers = BTreeSet::new();
+    let mut groups = crate::groups::Runtime::default();
+    let mut group_cache = BTreeMap::new();
+    let mut next_group_refresh = 0u64;
     let random = RandomState::new();
     let mut generation = 0u64;
     let mut counters = Counters::default();
@@ -978,6 +1303,7 @@ pub fn run(config: Config) -> io::Result<()> {
     let mut next_stop_check = 0;
     let mut next_checkpoint = 5000;
     let mut diagnosed_events = BTreeSet::new();
+    let mut diagnosed_application_errors = BTreeSet::new();
     loop {
         let now = Instant::now();
         let now_ms = start.elapsed().as_millis() as u64;
@@ -1027,6 +1353,7 @@ pub fn run(config: Config) -> io::Result<()> {
                     continue;
                 }
                 let mut deliveries = Vec::new();
+                let mut group_requests = Vec::new();
                 let result = (|| -> io::Result<Vec<Vec<u8>>> {
                     if h.flags == wire::LOGON {
                         if port_index != 0 {
@@ -1103,6 +1430,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                 last_inventory_ms: None,
                                 last_examine_ms: None,
                                 last_world_use_ms: None,
+                                merchant_open_ms: None,
                                 unhandled_scripts: BTreeSet::new(),
                                 scene_outbox: VecDeque::new(),
                                 scene_bytes: 0,
@@ -1267,6 +1595,131 @@ pub fn run(config: Config) -> io::Result<()> {
                                         }
                                     };
                                     match request {
+                                        script::Request::Group(request) => {
+                                            if !config.initialize_ui
+                                                || !scene.can_observe(character, character)
+                                            {
+                                                return Err(invalid(
+                                                    "Groups require a ready player with the HUD enabled.",
+                                                ));
+                                            }
+                                            if group_requests.len() >= 4 {
+                                                return Err(invalid(
+                                                    "Too many group requests in one packet.",
+                                                ));
+                                            }
+                                            group_requests.push((character, request));
+                                            return Ok(replies);
+                                        }
+                                        script::Request::MerchantSell(request) => {
+                                            let result =
+                                                (|| -> io::Result<Vec<crate::scene::Delivery>> {
+                                                    if !config.training_kit
+                                                        || !peer.merchant_open_ms.is_some_and(
+                                                            |last| {
+                                                                now_ms.saturating_sub(last)
+                                                                    <= 30_000
+                                                            },
+                                                        )
+                                                    {
+                                                        return Err(invalid(
+                                                            "Open the nearby training quartermaster before selling.",
+                                                        ));
+                                                    }
+                                                    merchant_ready(character, &scene)?;
+                                                    if peer.last_inventory_ms.is_some_and(|last| {
+                                                        now_ms.saturating_sub(last) < 250
+                                                    }) {
+                                                        return Err(invalid(
+                                                            "Wait briefly before another inventory action.",
+                                                        ));
+                                                    }
+                                                    let saved = &store.characters[&character];
+                                                    let plan = crate::merchants::plan_native_sell(
+                                                        character,
+                                                        &request,
+                                                        &saved.inventory,
+                                                        &saved.progression,
+                                                    )
+                                                    .map_err(io::Error::other)?;
+                                                    let mut events = plan.events;
+                                                    events.push(
+                                                        script::chat(&plan.message, 1)
+                                                            .map_err(other)?,
+                                                    );
+                                                    let updates = item_service_transaction(
+                                                        peer,
+                                                        character,
+                                                        &plan.items,
+                                                        &plan.changes,
+                                                        events,
+                                                        &mut store,
+                                                        &mut scene,
+                                                        &inventory_metadata,
+                                                    )?;
+                                                    peer.last_inventory_ms = Some(now_ms);
+                                                    peer.merchant_open_ms = Some(now_ms);
+                                                    Ok(updates)
+                                                })(
+                                                );
+                                            match result {
+                                                Ok(updates) => deliveries.extend(updates),
+                                                Err(error) => replies.extend(
+                                                    peer.send_event(
+                                                        &script::chat(&error.to_string(), 1)
+                                                            .map_err(other)?,
+                                                        now,
+                                                    )?,
+                                                ),
+                                            }
+                                            return Ok(replies);
+                                        }
+                                        script::Request::CraftValidate(request) => {
+                                            let saved = &store.characters[&character];
+                                            let allowed = config.training_kit
+                                                && config.initialize_ui
+                                                && scene.can_observe(character, character)
+                                                && saved.progression.alive()
+                                                && !peer.combat
+                                                && request.allowed(&saved.inventory, true);
+                                            peer.queue_ordered_batch(vec![
+                                                crate::crafting::validation_reply(
+                                                    &request, allowed,
+                                                )
+                                                .map_err(other)?,
+                                            ])?;
+                                            return Ok(replies);
+                                        }
+                                        script::Request::CraftExecute(request) => {
+                                            let result = if config.training_kit
+                                                && config.initialize_ui
+                                            {
+                                                craft_item(
+                                                    peer,
+                                                    character,
+                                                    &request,
+                                                    &mut store,
+                                                    &mut scene,
+                                                    &inventory_metadata,
+                                                    now_ms,
+                                                )
+                                            } else {
+                                                Err(invalid("Training crafting is not enabled."))
+                                            };
+                                            match result {
+                                                Ok(updates) => deliveries.extend(updates),
+                                                Err(error) => peer.queue_ordered_batch(vec![
+                                                    crate::crafting::completed(
+                                                        request.recipe,
+                                                        false,
+                                                    )
+                                                    .map_err(other)?,
+                                                    script::chat(&error.to_string(), 1)
+                                                        .map_err(other)?,
+                                                ])?,
+                                            }
+                                            return Ok(replies);
+                                        }
                                         script::Request::Emote(token) => {
                                             let result = (|| -> io::Result<()> {
                                                 let saved = &store.characters[&character];
@@ -1503,13 +1956,70 @@ pub fn run(config: Config) -> io::Result<()> {
                                             }
                                         }
                                         script::Request::UseObject(request) => {
-                                            if store.characters[&character].inventory.items().any(|item|item.id==request.item && item.definition==crate::item_services::POTION_DEFINITION) {
-                                                if !config.initialize_ui || !config.training_kit || request.owner!=character {
-                                                    return Err(invalid("Training potion use is not enabled or not owned by this character."));
+                                            if matches!(
+                                                request.item,
+                                                TRAINING_MERCHANT | TRAINING_MERCHANT_OUTDOOR
+                                            ) && config.training_kit
+                                            {
+                                                if request.owner != character {
+                                                    return Err(invalid(
+                                                        "Merchant use owner mismatch.",
+                                                    ));
                                                 }
-                                                match use_training_potion(peer,character,request.item,&mut store,&mut scene,now_ms) {
-                                                    Ok(updates)=>deliveries.extend(updates),
-                                                    Err(error)=>replies.extend(peer.send_event(&script::chat(&error.to_string(),1).map_err(other)?,now)?),
+                                                match merchant_action(
+                                                    peer,
+                                                    character,
+                                                    crate::merchants::Action::List,
+                                                    &mut store,
+                                                    &mut scene,
+                                                    &inventory_metadata,
+                                                    now_ms,
+                                                ) {
+                                                    Ok(updates) => deliveries.extend(updates),
+                                                    Err(error) => replies.extend(
+                                                        peer.send_event(
+                                                            &script::chat(&error.to_string(), 1)
+                                                                .map_err(other)?,
+                                                            now,
+                                                        )?,
+                                                    ),
+                                                }
+                                                return Ok(replies);
+                                            }
+                                            if store.characters[&character].inventory.items().any(
+                                                |item| {
+                                                    item.id == request.item
+                                                        && matches!(
+                                                            item.definition,
+                                                            crate::item_services::POTION_DEFINITION
+                                                                | crate::crafting::VIGOR_OUTPUT
+                                                        )
+                                                },
+                                            ) {
+                                                if !config.initialize_ui
+                                                    || !config.training_kit
+                                                    || request.owner != character
+                                                {
+                                                    return Err(invalid(
+                                                        "Training potion use is not enabled or not owned by this character.",
+                                                    ));
+                                                }
+                                                match use_training_potion(
+                                                    peer,
+                                                    character,
+                                                    request.item,
+                                                    &mut store,
+                                                    &mut scene,
+                                                    now_ms,
+                                                ) {
+                                                    Ok(updates) => deliveries.extend(updates),
+                                                    Err(error) => replies.extend(
+                                                        peer.send_event(
+                                                            &script::chat(&error.to_string(), 1)
+                                                                .map_err(other)?,
+                                                            now,
+                                                        )?,
+                                                    ),
                                                 }
                                                 return Ok(replies);
                                             }
@@ -2005,8 +2515,162 @@ pub fn run(config: Config) -> io::Result<()> {
                                             let name = &store.characters[&character].name;
                                             match request {
                                                 script::Request::Say(text) => {
+                                                    if let Some(action) =
+                                                        crate::merchants::parse_command(&text)
+                                                    {
+                                                        peer.last_chat_ms = Some(now_ms);
+                                                        let result = action.map_err(io::Error::other).and_then(|action| {
+                                                            if !config.training_kit { return Err(invalid("The training quartermaster is not enabled.")); }
+                                                            merchant_action(peer, character, action, &mut store, &mut scene, &inventory_metadata, now_ms)
+                                                        });
+                                                        match result {
+                                                            Ok(updates) => {
+                                                                deliveries.extend(updates)
+                                                            }
+                                                            Err(error) => replies.extend(
+                                                                peer.send_event(
+                                                                    &script::chat(
+                                                                        &error.to_string(),
+                                                                        1,
+                                                                    )
+                                                                    .map_err(other)?,
+                                                                    now,
+                                                                )?,
+                                                            ),
+                                                        }
+                                                        return Ok(replies);
+                                                    }
                                                     let words =
                                                         text.split_whitespace().collect::<Vec<_>>();
+                                                    if words.first().is_some_and(|word| {
+                                                        word.eq_ignore_ascii_case("@craft")
+                                                    }) {
+                                                        peer.last_chat_ms = Some(now_ms);
+                                                        let result = (|| -> io::Result<Vec<crate::scene::Delivery>> {
+                                                            if !config.initialize_ui || !config.training_kit {
+                                                                return Err(invalid("Training crafting is not enabled."));
+                                                            }
+                                                            let recipe = match words.as_slice() {
+                                                                [_, name] if name.eq_ignore_ascii_case("health") => crate::crafting::HEALTH_RECIPE,
+                                                                [_, name] if name.eq_ignore_ascii_case("vigor") => crate::crafting::VIGOR_RECIPE,
+                                                                _ => return Err(invalid("Use @craft health or @craft vigor. Training recipes consume one Mucor Mushroom and one Tallow; no craft skill or chance roll is required.")),
+                                                            };
+                                                            let request = crate::crafting::select_inventory(recipe, &store.characters[&character].inventory, true)
+                                                                .map_err(|_| invalid("You need one unstacked Mucor Mushroom and one Tallow in your bag."))?;
+                                                            craft_item(peer, character, &request, &mut store, &mut scene, &inventory_metadata, now_ms)
+                                                        })();
+                                                        match result {
+                                                            Ok(updates) => {
+                                                                deliveries.extend(updates)
+                                                            }
+                                                            Err(error) => replies.extend(
+                                                                peer.send_event(
+                                                                    &script::chat(
+                                                                        &error.to_string(),
+                                                                        1,
+                                                                    )
+                                                                    .map_err(other)?,
+                                                                    now,
+                                                                )?,
+                                                            ),
+                                                        }
+                                                        return Ok(replies);
+                                                    }
+                                                    if words.first().is_some_and(|word| {
+                                                        word.eq_ignore_ascii_case("@group")
+                                                    }) && config.initialize_ui
+                                                    {
+                                                        peer.last_chat_ms = Some(now_ms);
+                                                        let online = group_online(
+                                                            &active_characters,
+                                                            &store,
+                                                            &scene,
+                                                        );
+                                                        let verb =
+                                                            words.get(1).copied().unwrap_or("");
+                                                        let name =
+                                                            words.get(2..).unwrap_or(&[]).join(" ");
+                                                        let target = online
+                                                            .values()
+                                                            .find(|member| {
+                                                                member
+                                                                    .name
+                                                                    .eq_ignore_ascii_case(&name)
+                                                            })
+                                                            .map(|member| member.id);
+                                                        let request = match verb
+                                                            .to_ascii_lowercase()
+                                                            .as_str()
+                                                        {
+                                                            "create" if !name.is_empty() => Some(
+                                                                crate::groups::Request::Create {
+                                                                    name,
+                                                                    looting: 2,
+                                                                    social: true,
+                                                                },
+                                                            ),
+                                                            "invite" => target.map(
+                                                                crate::groups::Request::Invite,
+                                                            ),
+                                                            "accept" => target.map(
+                                                                crate::groups::Request::Accept,
+                                                            ),
+                                                            "decline" => target.map(
+                                                                crate::groups::Request::Decline,
+                                                            ),
+                                                            "dismiss" => target.map(
+                                                                crate::groups::Request::Dismiss,
+                                                            ),
+                                                            "leave" if name.is_empty() => {
+                                                                Some(crate::groups::Request::Leave)
+                                                            }
+                                                            "disband" if name.is_empty() => Some(
+                                                                crate::groups::Request::Disband,
+                                                            ),
+                                                            _ => None,
+                                                        };
+                                                        if let Some(request) = request {
+                                                            if group_requests.len() >= 4 {
+                                                                return Err(invalid(
+                                                                    "Too many group requests in one packet.",
+                                                                ));
+                                                            }
+                                                            group_requests
+                                                                .push((character, request));
+                                                        } else {
+                                                            replies.extend(peer.send_event(&script::chat("Groups use individual XP and personal rewards. Commands: @group create NAME; invite/accept/decline/dismiss PLAYER; leave; disband. Use @g MESSAGE for group chat. Named players must be online.", 1).map_err(other)?, now)?);
+                                                        }
+                                                        return Ok(replies);
+                                                    }
+                                                    if words.first().is_some_and(|word| {
+                                                        word.eq_ignore_ascii_case("@g")
+                                                    }) && config.initialize_ui
+                                                    {
+                                                        peer.last_chat_ms = Some(now_ms);
+                                                        let members = groups.members(character);
+                                                        if members.is_empty() || words.len() < 2 {
+                                                            replies.extend(peer.send_event(&script::chat("Join a group and use @g MESSAGE.", 1).map_err(other)?, now)?);
+                                                        } else {
+                                                            let packet: Arc<[u8]> = script::chat(
+                                                                &format!(
+                                                                    "[Group] {name}: {}",
+                                                                    words[1..].join(" ")
+                                                                ),
+                                                                0x10,
+                                                            )
+                                                            .map_err(other)?
+                                                            .into();
+                                                            for recipient in members {
+                                                                deliveries.push(
+                                                                    crate::scene::Delivery {
+                                                                        recipient,
+                                                                        data: packet.clone(),
+                                                                    },
+                                                                );
+                                                            }
+                                                        }
+                                                        return Ok(replies);
+                                                    }
                                                     if words.first().is_some_and(|word| {
                                                         word.eq_ignore_ascii_case("@quest")
                                                     }) && config.initialize_ui
@@ -2201,6 +2865,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                             "movement references unavailable cell",
                                         ));
                                     }
+                                    scene.prepare_cell(update.placement.cell)?;
                                     motion.accept(update).map_err(other)?;
                                     store.set_placement(character, motion.placement)?;
                                     deliveries.extend(
@@ -2557,6 +3222,17 @@ pub fn run(config: Config) -> io::Result<()> {
                                     if let Phase::InWorld { character } = peer.session.phase {
                                         deliveries
                                             .extend(scene.activate(character).map_err(other)?);
+                                        if first && config.training_kit {
+                                            deliveries.push(crate::scene::Delivery { recipient: character, data: script::chat(
+                                                "Training world: portals lead outside and back. Near a quartermaster use @shop, @buy mushroom, @buy tallow, or @sell SLOT. Use @craft health or @craft vigor, @quest, and @group for player systems. Original world population and gameplay remain incomplete.", 1).map_err(other)?.into() });
+                                        }
+                                        eprintln!(
+                                            "Scene ready for character {character}: cell={:08x}, visible content={}",
+                                            scene
+                                                .player_placement(character)
+                                                .map_or(0, |point| point.cell),
+                                            scene.visible_content_count(character).unwrap_or(0)
+                                        );
                                         if first
                                             && !store.characters[&character].progression.alive()
                                         {
@@ -2583,7 +3259,10 @@ pub fn run(config: Config) -> io::Result<()> {
                             Ok(events) => replies.extend(events),
                             Err(error) => {
                                 counters.rejected += 1;
-                                if counters.rejected <= 12 {
+                                let reason: String = error.to_string().chars().take(512).collect();
+                                if diagnosed_application_errors.len() < 32
+                                    && diagnosed_application_errors.insert(reason)
+                                {
                                     eprintln!("application event rejected: {error}");
                                 }
                             }
@@ -2604,6 +3283,32 @@ pub fn run(config: Config) -> io::Result<()> {
                                 "packet rejected: flags={:#x} sequence={} bytes={} reason={error}",
                                 h.flags, h.sequence, len
                             );
+                        }
+                    }
+                }
+                for (character, request) in group_requests {
+                    let online = group_online(&active_characters, &store, &scene);
+                    let result = (|| -> io::Result<()> {
+                        let plan = groups
+                            .prepare(character, &request, now_ms, &online)
+                            .map_err(io::Error::other)?;
+                        let packets = group_admit(plan.deliveries(), &active_characters, &peers)?;
+                        groups.commit(plan).map_err(io::Error::other)?;
+                        group_publish(packets, &mut peers)
+                    })();
+                    if let Err(error) = result {
+                        if let Some(peer) = active_characters
+                            .get(&character)
+                            .and_then(|addr| peers.get_mut(addr))
+                        {
+                            if peer
+                                .queue_ordered_batch(vec![
+                                    script::chat(&error.to_string(), 1).map_err(other)?,
+                                ])
+                                .is_err()
+                            {
+                                failed_peers.insert(addr);
+                            }
                         }
                     }
                 }
@@ -2782,6 +3487,68 @@ pub fn run(config: Config) -> io::Result<()> {
                 }
             }
         }
+        let online = group_online(&active_characters, &store, &scene);
+        for player in groups
+            .participant_ids()
+            .into_iter()
+            .filter(|id| !online.contains_key(id))
+        {
+            let result = (|| -> io::Result<()> {
+                let plan = groups
+                    .prepare_disconnect(player, now_ms, &online)
+                    .map_err(io::Error::other)?;
+                let packets = group_admit(plan.deliveries(), &active_characters, &peers)?;
+                groups.commit(plan).map_err(io::Error::other)?;
+                group_publish(packets, &mut peers)
+            })();
+            if let Err(error) = result {
+                eprintln!("Group departure deferred: {error}");
+            }
+        }
+        if now_ms >= next_group_refresh {
+            let mut refreshed = BTreeSet::new();
+            for player in groups.member_ids() {
+                let Some(member) = online.get(&player) else {
+                    continue;
+                };
+                let stamp = (
+                    member.level,
+                    member.health,
+                    member.max_health,
+                    member.vigor,
+                    member.max_vigor,
+                    member.cell,
+                );
+                if group_cache.get(&player) == Some(&stamp) || refreshed.contains(&player) {
+                    continue;
+                }
+                let result = (|| -> io::Result<()> {
+                    let updates = groups.refresh(player, &online).map_err(io::Error::other)?;
+                    let packets = group_admit(&updates, &active_characters, &peers)?;
+                    group_publish(packets, &mut peers)
+                })();
+                if result.is_ok() {
+                    for id in groups.members(player) {
+                        refreshed.insert(id);
+                        if let Some(m) = online.get(&id) {
+                            group_cache.insert(
+                                id,
+                                (
+                                    m.level,
+                                    m.health,
+                                    m.max_health,
+                                    m.vigor,
+                                    m.max_vigor,
+                                    m.cell,
+                                ),
+                            );
+                        }
+                    }
+                }
+            }
+            group_cache.retain(|id, _| groups.contains(*id));
+            next_group_refresh = now_ms.saturating_add(1000);
+        }
         deliver_scene(
             departures,
             &active_characters,
@@ -2839,6 +3606,7 @@ mod tests {
             last_inventory_ms: None,
             last_examine_ms: None,
             last_world_use_ms: None,
+            merchant_open_ms: None,
             unhandled_scripts: BTreeSet::new(),
             scene_outbox: VecDeque::new(),
             scene_bytes: 0,

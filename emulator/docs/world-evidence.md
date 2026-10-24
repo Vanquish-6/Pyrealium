@@ -1191,3 +1191,41 @@ Live native move replies remain gated on authoritative icon/physical-definition
 metadata and matching-client verification; this change does not route sorting
 requests from a connected client or claim a complete inventory implementation.
 Formatted and compiled only; no tests or native game checks were run.
+
+## Missing tutorial content and visibility (2026-10-24)
+
+The user reported being unable to leave and seeing no portals or doors. The
+persisted position had moved from start cell `02990109` into `0299011d`, at
+approximately `[96.63357, 241.79227, -44.962006]`. The previous Scene implementation
+sent content only for an exact cell match. Actual native DAT visible-cell arrays
+include each of those rooms from the other; removing start-room objects on that
+transition contradicted their native visibility data.
+
+`visibility.rs` reads the bounded first visible-cell array of `CEnvCell`, following
+`00482da0`, `00481630`, `00486f10` and `00485800`. Shared cells and recursive portal
+reachability are not promoted to PVS. Scene publication now treats observer and
+target direction separately, sends only entered/left interest differences and
+retains overlapping visible objects across room changes. Outdoors, a 3x3
+landblock view is an explicit development policy; it is not a reconstructed
+landscape nearWidth setting or collision/line-of-sight authority.
+
+The stationary portal visual `1f00031e` also lacked a captured mode and slider.
+The exact retained portal profile uses flags `8082`, mode `40000001`, slider
+`4000000a` value 1, velocity 0, before cell/frame data. It occurs in
+`ac2_omishan_allyhall.elog` and four other captures; `00641530` confirms packing
+order. The visual itself supplies setup/mesh and startup effects. Other object
+visuals retain their existing packet layout.
+
+The training preset now retains the 30 observed actors in addition to the 247
+base placements. Eight authored objects include the start/corridor gateways,
+an outdoor return, quartermasters and training creatures. A bounded scan of 79
+tutorial cells found no geometry exit reachable from the starting component;
+this does not prove the absence of an original scripted exit. The authored
+gateways remain explicitly development travel, not original tutorial progression.
+
+The optimized runtime was rebuilt and restarted on loopback UDP 19370/19371;
+startup loaded 285 built-in objects and 159 routes. The operator's untracked
+local placement is preserved separately and can be combined in the runtime
+manifest without replacing the base content. No test suite or automated client
+run was performed. The source/data causes are established; actual portal display,
+travel and broader population still require fresh matching-client observation.

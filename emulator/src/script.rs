@@ -14,6 +14,10 @@ pub const RESURRECT: u32 = 0x8207000e;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Request {
+    Group(crate::groups::Request),
+    MerchantSell(crate::merchants::SellRequest),
+    CraftValidate(crate::crafting::ValidateRequest),
+    CraftExecute(crate::crafting::ExecuteRequest),
     Resurrect,
     Emote(u32),
     InventoryMove(crate::inventory_request::MoveRequest),
@@ -93,6 +97,26 @@ pub fn decode(function: u32, bytes: &[u8]) -> Result<Request, WorldError> {
     }
     let mut r = Reader { bytes, pos: 0 };
     let request = match function {
+        function if crate::groups::handles(function) => {
+            let request = crate::groups::decode(function, bytes)?;
+            r.pos = bytes.len();
+            Request::Group(request)
+        }
+        crate::merchants::SELL => {
+            let request = crate::merchants::SellRequest::decode(bytes)?;
+            r.pos = bytes.len();
+            Request::MerchantSell(request)
+        }
+        crate::crafting::VALIDATE => {
+            let request = crate::crafting::ValidateRequest::decode(bytes)?;
+            r.pos = bytes.len();
+            Request::CraftValidate(request)
+        }
+        crate::crafting::EXECUTE => {
+            let request = crate::crafting::ExecuteRequest::decode(bytes)?;
+            r.pos = bytes.len();
+            Request::CraftExecute(request)
+        }
         crate::emotes::REQUEST => {
             let token = crate::emotes::decode(bytes)?;
             r.pos = bytes.len();

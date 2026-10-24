@@ -501,3 +501,52 @@ its original build identity is unverified. Destination extraction used the
 original installed cell DAT after the earlier converted asset directory became
 unavailable. This is static data/code integration only; no tests, native game
 checks, existing-character travel or running-server replacement were performed.
+
+## Training item services and session groups (2026-10-24)
+
+The training profile now exposes four fixed-price stock items through `@shop`,
+`@buy potion|weapon|mushroom|tallow`, and `@sell SLOT` (1-based dense bag index).
+Quartermasters are authored placements using DAT entity `47003724`, visual
+`1f001941`. Every trade rechecks a ready living owner, out-of-combat state and a
+four-metre same-cell range. The captured native sale `820f0002` has no merchant
+identity or nonce, so it additionally requires a nearby shop context opened in
+the preceding 30 seconds. Client quantities other than one are rejected. Prices
+and item descriptions are never accepted from the request. Native catalog graphs
+are unresolved; no fabricated shop graph is sent.
+
+`crafting.rs` decodes the native ingredient check `82060006` and execution
+`82060012`, returning `82060016` / `8206001c`. Exact DAT recipe graphs
+`6f001f17` / `6f001f18` identify health/vigor potion outputs and Mucor Mushroom
+`47001744` plus Tallow `470027a7`. One item of each, guaranteed success, no skill
+requirement and no craft XP are explicitly authored training rules. Original
+ingredient field 12 differs (1 versus 100); its complete quantity semantics are
+not reconstructed. `@craft health|vigor` makes this supported profile usable
+without claiming recipe discovery UI is complete.
+
+Purchases, sales and crafting use the existing `a1` journal transaction, coupling
+all removals/grants with gold changes in one flush. The entire native replication
+batch is encoded and admitted before persistence. Removed items receive native
+inventory removal before DestroyObject, then grants use fresh globally allocated
+IIDs, CreateObject and acquisition. Native acquisition field 6 is AppearanceFile,
+not the texture icon; a null DID is capture-backed. Tallow's pinned descriptor has
+no AppearanceFile, while its actual texture icon is `410082d6`. No texture DID is
+substituted for the absent appearance animation.
+
+Health/vigor potion use removes one owned bag item and restores at most 25 of its
+vital atomically, with a shared five-second cooldown. Full vitals and rejected
+requests do not consume the item.
+
+`groups.rs` implements create, invite, accept, decline, dismiss, leave and disband
+using native `820c` requests and fresh member/invitation graphs. Package sizes
+`1f0=8`, `1ee=5`, `1ef=7` are validated against the WLib. Limits are eight members,
+32 groups, 64 invitations and a 30-second invitation expiry. Immutable plans are
+admitted for every connected recipient before publishing membership. Offline
+members/invitees are removed; leader departure disbands the session group.
+Native snapshots refresh changed vitals/levels/cells. `@group` provides command
+access and `@g MESSAGE` provides explicit group chat. Only the captured individual
+XP/personal-reward creation mode is enabled; shared XP, round-robin loot, original
+native group-chat routing and persistent membership are unfinished.
+
+Library/binary compilation and an optimized build succeeded. No test suites or
+automated native-client runs were performed. The local server was restarted with
+the training profile; complete native shop/crafting/group acceptance remains open.

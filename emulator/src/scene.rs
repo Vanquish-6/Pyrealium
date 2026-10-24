@@ -1,5 +1,6 @@
 //! Single-owner player presence. Cell-indexed recipients and shared immutable payloads.
-//! Same-cell interest is an explicit initial policy, not recovered visibility geometry.
+//! Interior interest uses native visible-cell sets; outdoor interest is a
+//! separately labeled development policy. Neither grants collision/LOS authority.
 use crate::{
     movement::{self, ClientPosition, Placement},
     world::{self, WorldError},
@@ -154,11 +155,48 @@ pub struct Delivery {
 
 #[derive(Default)]
 pub struct Scene {
+    visibility: Option<crate::visibility::Visibility>,
     bodies: BTreeMap<u64, Body>,
     cells: BTreeMap<u32, BTreeSet<u64>>,
     content: crate::content::Content,
 }
 impl Scene {
+    pub fn with_visibility(mut self, visibility: crate::visibility::Visibility) -> Self {
+        self.visibility = Some(visibility);
+        self
+    }
+    pub fn prepare_cell(&mut self, cell: u32) -> std::io::Result<()> {
+        if let Some(visibility) = &mut self.visibility {
+            visibility.prepare(cell)?;
+        }
+        Ok(())
+    }
+    fn sees_cell(&self, observer: u32, target: u32) -> bool {
+        self.visibility
+            .as_ref()
+            .map_or(observer == target, |visibility| {
+                visibility.visible(observer, target)
+            })
+    }
+    fn visible_bodies(&self, cell: u32, except: u64) -> BTreeSet<u64> {
+        self.bodies
+            .values()
+            .filter(|body| {
+                body.ready && body.id != except && self.sees_cell(cell, body.placement.cell)
+            })
+            .map(|body| body.id)
+            .collect()
+    }
+    fn visible_content(&self, cell: u32) -> BTreeSet<u64> {
+        let cells = self
+            .visibility
+            .as_ref()
+            .map_or_else(|| vec![cell], |visibility| visibility.cells(cell));
+        cells
+            .into_iter()
+            .flat_map(|cell| self.content.at(cell).map(|object| object.id))
+            .collect()
+    }
     pub fn inventory_instance(&self, owner: u64, item: u64) -> Result<u16, WorldError> {
         let body = self
             .bodies
@@ -408,12 +446,18 @@ impl Scene {
             return self
                 .bodies
                 .get(&observer)
-                .is_some_and(|body| body.ready && body.placement.cell == cell);
+                .is_some_and(|body| body.ready && self.sees_cell(body.placement.cell, cell));
         }
         self.bodies
             .get(&observer)
             .zip(self.bodies.get(&target))
-            .is_some_and(|(a, b)| a.ready && b.ready && a.placement.cell == b.placement.cell)
+            .is_some_and(|(a, b)| {
+                a.ready && b.ready && self.sees_cell(a.placement.cell, b.placement.cell)
+            })
+    }
+    pub fn visible_content_count(&self, observer: u64) -> Option<usize> {
+        self.player_placement(observer)
+            .map(|point| self.visible_content(point.cell).len())
     }
     pub fn broadcast(&self, source: u64, bytes: Vec<u8>) -> Result<Vec<Delivery>, WorldError> {
         let body = self.bodies.get(&source).ok_or(WorldError::InvalidValue)?;
@@ -424,21 +468,21 @@ impl Scene {
             return Err(WorldError::LimitExceeded);
         }
         let data: Arc<[u8]> = bytes.into();
-        Ok(self.cells[&body.placement.cell]
-            .iter()
-            .map(|&recipient| Delivery {
+        Ok(self
+            .neighbor_ids(body.placement.cell, 0)
+            .map(|recipient| Delivery {
                 recipient,
                 data: data.clone(),
             })
             .collect())
     }
     fn neighbor_ids(&self, cell: u32, except: u64) -> impl Iterator<Item = u64> + '_ {
-        self.cells
-            .get(&cell)
-            .into_iter()
-            .flatten()
-            .copied()
-            .filter(move |id| *id != except)
+        self.bodies
+            .values()
+            .filter(move |body| {
+                body.ready && body.id != except && self.sees_cell(body.placement.cell, cell)
+            })
+            .map(|body| body.id)
     }
     fn neighbors(&self, cell: u32, except: u64) -> BTreeSet<u64> {
         self.neighbor_ids(cell, except).collect()
@@ -455,6 +499,8 @@ impl Scene {
         {
             return Err(WorldError::LimitExceeded);
         }
+        self.prepare_cell(body.placement.cell)
+            .map_err(|_| WorldError::InvalidValue)?;
         self.bodies.insert(body.id, body);
         Ok(())
     }
@@ -470,7 +516,11 @@ impl Scene {
             .insert(id);
         let body = &self.bodies[&id];
         let mut deliveries = Vec::new();
-        for object in self.content.at(body.placement.cell) {
+        for object in self
+            .visible_content(body.placement.cell)
+            .into_iter()
+            .filter_map(|id| self.content.object(id))
+        {
             deliveries.push(Delivery {
                 recipient: body.id,
                 data: object.spawn.clone(),
@@ -495,6 +545,8 @@ impl Scene {
                     data: data.clone(),
                 });
             }
+        }
+        for id in self.visible_bodies(body.placement.cell, body.id) {
             deliveries.push(Delivery {
                 recipient: body.id,
                 data: self.bodies[&id].spawn.clone().into(),
@@ -543,6 +595,8 @@ impl Scene {
         update: &ClientPosition,
     ) -> Result<Vec<Delivery>, WorldError> {
         update.validate()?;
+        self.prepare_cell(update.placement.cell)
+            .map_err(|_| WorldError::InvalidValue)?;
         let body = self.bodies.get(&id).ok_or(WorldError::InvalidValue)?;
         if body.instance != update.stamps[0] {
             return Err(WorldError::InvalidValue);
@@ -569,17 +623,27 @@ impl Scene {
         }
         let previous = self.neighbors(old_cell, id);
         let current = self.neighbors(update.placement.cell, id);
+        let previous_seen = self.visible_bodies(old_cell, id);
+        let current_seen = self.visible_bodies(update.placement.cell, id);
+        let previous_content = self.visible_content(old_cell);
+        let current_content = self.visible_content(update.placement.cell);
         let destroy = body.destroy();
         let movement: Arc<[u8]> =
             movement::server_position(id, body.instance, stamp, update)?.into();
         let mut deliveries = Vec::new();
-        for object in self.content.at(old_cell) {
+        for object in previous_content
+            .difference(&current_content)
+            .filter_map(|id| self.content.object(*id))
+        {
             deliveries.push(Delivery {
                 recipient: id,
                 data: object.destroy.clone(),
             });
         }
-        for object in self.content.at(update.placement.cell) {
+        for object in current_content
+            .difference(&previous_content)
+            .filter_map(|id| self.content.object(*id))
+        {
             deliveries.push(Delivery {
                 recipient: id,
                 data: object.spawn.clone(),
@@ -597,6 +661,8 @@ impl Scene {
                 recipient: *other,
                 data: destroy.clone(),
             });
+        }
+        for other in previous_seen.difference(&current_seen) {
             self.bodies[other].hand_destroys(id, &mut deliveries);
             deliveries.push(Delivery {
                 recipient: id,
@@ -624,6 +690,8 @@ impl Scene {
                     data: data.clone(),
                 });
             }
+        }
+        for other in current_seen.difference(&previous_seen) {
             deliveries.push(Delivery {
                 recipient: id,
                 data: self.bodies[other].spawn.clone().into(),
