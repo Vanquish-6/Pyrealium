@@ -1264,6 +1264,59 @@ pub fn run(config: Config) -> io::Result<()> {
                                                 replies.extend(peer.send_event(&script::chat("Skills are not available in this session.",1).map_err(other)?,now)?);
                                                 return Ok(replies);
                                             }
+                                            if action == crate::skills::Action::Raise {
+                                                if peer.last_inventory_ms.is_some_and(|last| {
+                                                    now_ms.saturating_sub(last) < 100
+                                                }) {
+                                                    return Err(invalid(
+                                                        "skill advancement cooldown",
+                                                    ));
+                                                }
+                                                let saved = &store.characters[&character];
+                                                let race = saved
+                                                    .creation
+                                                    .as_ref()
+                                                    .map_or(1, |request| request.race);
+                                                match saved.skills.advance(
+                                                    skill,
+                                                    &saved.progression,
+                                                    race,
+                                                ) {
+                                                    Ok((skills, progression)) => {
+                                                        let mut events = progression
+                                                            .private_updates()
+                                                            .into_iter()
+                                                            .filter(|wire| {
+                                                                wire[..4]
+                                                                    == 0x100d4u32.to_le_bytes()
+                                                            })
+                                                            .collect::<Vec<_>>();
+                                                        events.push(
+                                                            crate::ui::skill_update(
+                                                                skill,
+                                                                skills.get(skill).unwrap(),
+                                                            )
+                                                            .map_err(other)?,
+                                                        );
+                                                        peer.validate_scene_batch(&events)?;
+                                                        store.raise_skill(
+                                                            &peer.session.account,
+                                                            character,
+                                                            skill,
+                                                        )?;
+                                                        peer.last_inventory_ms = Some(now_ms);
+                                                        peer.queue_ordered_batch(events)?;
+                                                    }
+                                                    Err(error) => replies.extend(
+                                                        peer.send_event(
+                                                            &script::chat(error.message(), 1)
+                                                                .map_err(other)?,
+                                                            now,
+                                                        )?,
+                                                    ),
+                                                }
+                                                return Ok(replies);
+                                            }
                                             let command = match action {
                                                 crate::skills::Action::Train => {
                                                     crate::skills::Command::Train(skill)
@@ -1272,8 +1325,9 @@ pub fn run(config: Config) -> io::Result<()> {
                                                     crate::skills::Command::Untrain(skill)
                                                 }
                                                 crate::skills::Action::Raise => {
-                                                    replies.extend(peer.send_event(&script::chat(crate::skills::SkillError::AdvancementUnavailable.message(),1).map_err(other)?,now)?);
-                                                    return Ok(replies);
+                                                    return Err(invalid(
+                                                        "advancement dispatch invariant",
+                                                    ));
                                                 }
                                             };
                                             let saved = &store.characters[&character];

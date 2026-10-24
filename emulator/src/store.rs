@@ -244,6 +244,32 @@ impl Store {
         self.characters.get_mut(&id).unwrap().progression = next;
         Ok(())
     }
+    pub fn raise_skill(&mut self, account: &str, id: u64, skill: u32) -> io::Result<()> {
+        let character = self
+            .characters
+            .get(&id)
+            .filter(|character| character.account == account && !character.deleted)
+            .ok_or_else(|| invalid("skill advancement character not owned"))?;
+        let race = character
+            .creation
+            .as_ref()
+            .map_or(1, |request| request.race);
+        let (skills, progression) = character
+            .skills
+            .advance(skill, &character.progression, race)
+            .map_err(io::Error::other)?;
+        let cost = character
+            .progression
+            .available_xp
+            .checked_sub(progression.available_xp)
+            .filter(|cost| *cost > 0)
+            .ok_or_else(|| invalid("invalid advancement cost"))?;
+        self.append_record(&format!("k2\t{id}\t{skill:x}\t{cost}"))?;
+        let character = self.characters.get_mut(&id).unwrap();
+        character.skills = skills;
+        character.progression = progression;
+        Ok(())
+    }
     pub fn skill_command(
         &mut self,
         account: &str,
@@ -719,6 +745,40 @@ fn decode_journal_state(bytes: &[u8]) -> io::Result<JournalState> {
             return Err(invalid("character journal checksum mismatch"));
         }
         let fields: Vec<_> = data.split('\t').collect();
+        if fields.len() == 4 && fields[0] == "k2" {
+            let id = fields[1]
+                .parse::<u64>()
+                .map_err(|_| invalid("invalid advancement character"))?;
+            let skill = u32::from_str_radix(fields[2], 16)
+                .map_err(|_| invalid("invalid advancement skill"))?;
+            let paid = fields[3]
+                .parse::<u64>()
+                .map_err(|_| invalid("invalid advancement payment"))?;
+            let character = records
+                .get_mut(&id)
+                .filter(|character| !character.deleted)
+                .ok_or_else(|| invalid("unavailable advancement character"))?;
+            let race = character
+                .creation
+                .as_ref()
+                .map_or(1, |request| request.race);
+            let (skills, progression) = character
+                .skills
+                .advance(skill, &character.progression, race)
+                .map_err(|_| invalid("invalid skill advancement transition"))?;
+            if character
+                .progression
+                .available_xp
+                .checked_sub(progression.available_xp)
+                != Some(paid)
+                || paid == 0
+            {
+                return Err(invalid("advancement payment differs from immutable curve"));
+            }
+            character.skills = skills;
+            character.progression = progression;
+            continue;
+        }
         if fields.len() == 3 && matches!(fields[0], "l1" | "p1" | "r2") {
             let id = fields[1]
                 .parse::<u64>()

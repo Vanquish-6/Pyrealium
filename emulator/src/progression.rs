@@ -30,6 +30,7 @@ impl Default for Progression {
 #[derive(Clone, Debug)]
 pub enum Command {
     AwardXp(u64),
+    SpendXp(u64),
     AwardGold(u32),
     SpendGold(u32),
     Damage(u32),
@@ -44,6 +45,7 @@ pub enum ProgressionError {
     Overflow,
     InsufficientFunds,
     InsufficientVigor,
+    InsufficientExperience,
     Dead,
     Alive,
 }
@@ -73,6 +75,18 @@ impl Progression {
         }
         let mut next = self.clone();
         match *command {
+            Command::SpendXp(amount) => {
+                if amount == 0 {
+                    return Err(ProgressionError::InvalidCommand);
+                }
+                if !self.alive() {
+                    return Err(ProgressionError::Dead);
+                }
+                next.available_xp = self
+                    .available_xp
+                    .checked_sub(amount)
+                    .ok_or(ProgressionError::InsufficientExperience)?;
+            }
             Command::AwardXp(amount) => {
                 if amount == 0 {
                     return Err(ProgressionError::InvalidCommand);
@@ -209,6 +223,7 @@ impl Command {
     pub fn encode(&self) -> String {
         match self {
             Self::AwardXp(v) => format!("x,{v}"),
+            Self::SpendXp(v) => format!("a,{v}"),
             Self::AwardGold(v) => format!("g,{v}"),
             Self::SpendGold(v) => format!("s,{v}"),
             Self::Damage(v) => format!("d,{v}"),
@@ -233,6 +248,9 @@ impl Command {
             .map_err(|_| ProgressionError::InvalidCommand)?;
         if kind == "x" {
             return Ok(Self::AwardXp(value));
+        }
+        if kind == "a" {
+            return Ok(Self::SpendXp(value));
         }
         let value = u32::try_from(value).map_err(|_| ProgressionError::InvalidCommand)?;
         Ok(match kind {

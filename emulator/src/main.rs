@@ -15,10 +15,10 @@ fn usage() {
         "  serve --initialize-ui true --training-kit true --game-data PATH\n    Explicit development kit: grants one DAT-backed hand item once per human character. Disabled by default."
     );
     println!(
-        "  skill-state --character-id N [--event t,SKILL_HEX|g,SKILL_HEX|u,SKILL_HEX] --data PATH\n    Offline skill inspection, training, explicit free grant, or untraining."
+        "  skill-state --character-id N [--event t,SKILL_HEX|g,SKILL_HEX|u,SKILL_HEX|r,SKILL_HEX] --data PATH\n    Offline skill inspection, training, explicit free grant, untraining, or table-backed advancement."
     );
     println!(
-        "  player-state --character-id N [--event COMMAND] --data PATH\n    Offline progression inspection/edit: x,XP g,GOLD s,GOLD d,DAMAGE h,HEAL v,COST r,RECOVERY z(resurrect)."
+        "  player-state --character-id N [--event COMMAND] --data PATH\n    Offline progression inspection/edit: x,XP a,SPEND_XP g,GOLD s,GOLD d,DAMAGE h,HEAL v,COST r,RECOVERY z(resurrect)."
     );
     println!(
         "  serve --game-data PATH [--content PATH|observed|training|none] [--encounters PATH]\n    Encounters use explicit development rules. training selects the authored starter encounter."
@@ -113,7 +113,15 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             let mut store = Store::open(&data)?;
             let id = character_id.ok_or("--character-id is required")?;
             if let Some(event) = progression_event {
-                store.skill_command(&account, id, pyrealium::skills::Command::decode(&event)?)?;
+                if let Some(skill) = event.strip_prefix("r,") {
+                    store.raise_skill(&account, id, u32::from_str_radix(skill, 16)?)?;
+                } else {
+                    store.skill_command(
+                        &account,
+                        id,
+                        pyrealium::skills::Command::decode(&event)?,
+                    )?;
+                }
             }
             let saved = store
                 .characters
@@ -127,8 +135,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             );
             for (id, entry) in saved.skills.entries() {
                 println!(
-                    "{id:#x}\trank={}\tcredits={}\tlocked={}",
-                    entry.rank, entry.credits, entry.locked
+                    "{id:#x}\trank={}\txp={}\tcredits={}\tlocked={}",
+                    entry.rank, entry.xp, entry.credits, entry.locked
                 );
             }
         }

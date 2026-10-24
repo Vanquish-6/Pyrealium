@@ -129,7 +129,8 @@ then reads bounded common fields and supported dependency objects from each
 definition. It exports 1,952 definitions; 192 unsupported common-field layouts
 remain in `content/unresolved-skills.json`. Species, level, credit cost, rank cap,
 advancement-record reference, prerequisites and incompatibilities are retained.
-This does not evaluate advancement curves or implement active skill effects.
+This metadata importer does not evaluate advancement tables or active effects;
+the separate table importer and advancement transaction are described below.
 SHA256 provenance and FNV compatibility fingerprints are recorded. The opt-in
 HUD startup validates the index and every exported definition against the supplied
 DAT before using the imported rules. Regenerating this catalog after `k1` journals
@@ -163,12 +164,10 @@ offline inspection, training, explicit zero-credit locked grants and untraining
 under the existing exclusive store lock. No starter skills are automatically
 inferred from the catalog. Native requests cannot invoke the operator grant path.
 
-Advancement requests currently return an unavailable message and do not spend XP.
-The supplied client advancement records are not the precomputed table shape
-expected by the older reference reader; using its assumptions would debit the
-wrong amounts. Active ability use, costs/cooldowns/effects, timed original
-untraining, hero/crafting/faction systems and full original training eligibility
-remain separate work. No automated tests or native client checks were run.
+Native advancement now uses the referenced cumulative XP tables described below.
+Active ability use, costs/cooldowns/effects, timed original untraining,
+hero/crafting/faction systems and full original training eligibility remain
+separate work. No automated tests or native client checks were run.
 
 ## Live bag sorting
 
@@ -356,3 +355,42 @@ packing follows `0069be20`; position reception is recovered at `004ed470`.
 The new gameplay/restore path is compile checked only. No automated tests, native
 client checks, existing player-data mutations or running-server replacement were
 performed.
+
+## Table-backed skill advancement
+
+The earlier investigation inspected low-ID `6f0000f*` records instead of the
+`6f001ef*` records actually referenced by the imported skill catalog. The former
+are unrelated graphs; that did not establish that XP tables were absent.
+`tools/import_skill_advancement.py` follows every catalog reference and extracts
+30 cumulative native `ffff0037` u64 vectors from package `1e5` roots. Reference
+tables, field tags, vector counts, level bounds, monotonic costs and heap/footer
+prefixes are validated; unsupported shapes stop conversion. SHA256 provenance
+and FNV compatibility fingerprints cover each complete source record.
+
+HUD startup verifies all 30 advancement fingerprints against the supplied DAT.
+The runtime performs bounded binary searches in the embedded integer tables.
+The next base level costs its cumulative threshold minus previously invested
+XP. Level-one zero thresholds do not produce an extra free Raise request. The
+skill's imported cap and table length bound advancement. Race/profile eligibility,
+trained state, life state, arithmetic and sufficient available XP are checked
+before mutation. Untraining an advanced skill remains unavailable; no invented
+refund or timed untraining is applied.
+
+One fsynced `k2` event stores the skill and payment and publishes the skill book
+and XP balance together. Replay recomputes the immutable table cost, repeats
+eligibility and verifies the recorded payment. Total earned XP and character
+level are unchanged; only available XP decreases. Native replies update long-int
+XP qualities and SkillData's invested-XP fields, including restoration on entry.
+The base rank is retained; equipment/descendant adjusted-level bonuses remain
+separate work. A 100 ms local advancement cooldown bounds repeated writes.
+
+`skill-state --event r,SKILL_HEX` offers the same offline transaction under the
+normal store lock. `player-state --event a,AMOUNT` is the explicit operator-only
+available-XP debit. Network requests cannot supply their own price or award XP.
+Existing `k1` books begin with zero investment. Changing advancement tables after
+`k2` records exist requires a migration.
+
+The retained skilling capture's cumulative values `8,19,35,57,89` match the
+referenced `6f001ef5` table prefix. That is static format/data evidence; native
+advancement UI and full original semantics remain unverified. No tests or native
+client checks were run, and no existing character XP was changed.

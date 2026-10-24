@@ -203,8 +203,10 @@ See [player systems integration](docs/player-systems.md).
 The opt-in HUD path also restores a persistent skill book and handles captured
 native training/untraining requests with imported level/species/credit/dependency
 rules for the supported human profile. The catalog contains 1,952 definitions;
-192 unresolved definitions are recorded separately. Advancement and active skill
-effects are unfinished; unsupported advancement does not spend player XP.
+192 unresolved definitions are recorded separately. Raise requests now use 30
+imported cumulative XP tables and atomically persist investment with the available
+XP debit. Active skill effects, adjusted-level bonuses and native advancement
+acceptance remain unfinished.
 
 Game-data mode (`serve --game-data PATH`) now loads the bundled stationary world
 pack automatically. Use `--content content/world.tsv` for an editable external

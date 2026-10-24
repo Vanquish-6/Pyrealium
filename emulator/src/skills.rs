@@ -2,6 +2,7 @@
 //! Advancement curves and active effects are not inferred from metadata alone.
 use crate::{dat::Dat, progression::Progression};
 use std::{collections::BTreeMap, sync::OnceLock};
+mod advancement;
 pub const TRAIN: u32 = 0x82140002;
 pub const UNTRAIN: u32 = 0x82140007;
 pub const RAISE: u32 = 0x8214000c;
@@ -16,6 +17,7 @@ pub struct Trained {
     pub rank: u16,
     pub credits: u16,
     pub locked: bool,
+    pub xp: u64,
 }
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Book {
@@ -42,6 +44,8 @@ pub enum SkillError {
     Capacity,
     Dead,
     AdvancementUnavailable,
+    InsufficientXp,
+    MaximumRank,
 }
 impl std::fmt::Display for SkillError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -61,6 +65,8 @@ impl SkillError {
             Self::Dependents => "Another trained skill depends on this skill.",
             Self::Dead => "You cannot change skills while dead.",
             Self::AdvancementUnavailable => "Skill advancement is not available yet.",
+            Self::InsufficientXp => "You do not have enough available experience.",
+            Self::MaximumRank => "This skill is at its supported maximum level.",
             Self::Capacity => "You cannot train another skill.",
             _ => "This skill is not available for this character.",
         }
@@ -74,6 +80,7 @@ struct Definition {
     credits: u16,
     cap: u16,
     kind: u32,
+    curve: u32,
     required: BTreeMap<u32, u16>,
     forbidden: BTreeMap<u32, u16>,
 }
@@ -147,6 +154,7 @@ impl Catalog {
                 credits: f[6].parse().map_err(|_| SkillError::Catalog)?,
                 cap: f[7].parse().map_err(|_| SkillError::Catalog)?,
                 kind: f[9].parse().map_err(|_| SkillError::Catalog)?,
+                curve: hex(8)?,
                 required: dependencies(f[10])?,
                 forbidden: dependencies(f[11])?,
             };
@@ -173,6 +181,7 @@ impl Catalog {
     }
 }
 pub fn validate_assets(portal: &mut Dat) -> std::io::Result<()> {
+    advancement::validate(portal)?;
     let catalog = catalog().map_err(std::io::Error::other)?;
     if fingerprint(&portal.read(0x700016e2)?) != catalog.index_fingerprint {
         return Err(std::io::Error::other(
@@ -190,6 +199,41 @@ pub fn validate_assets(portal: &mut Dat) -> std::io::Result<()> {
     Ok(())
 }
 impl Book {
+    pub fn advance(
+        &self,
+        id: u32,
+        state: &Progression,
+        race: u32,
+    ) -> Result<(Self, Progression), SkillError> {
+        if !state.alive() {
+            return Err(SkillError::Dead);
+        }
+        let known = self.entries.get(&id).ok_or(SkillError::NotTrained)?;
+        let definition = catalog()?.definitions.get(&id).ok_or(SkillError::Unknown)?;
+        if race != 1
+            || definition.race != 1
+            || definition.level > 50
+            || matches!(definition.kind, 4 | 0x44 | 0x45 | 0x51 | 0x71)
+        {
+            return Err(SkillError::UnsupportedProfile);
+        }
+        let (rank, total) = advancement::get(definition.curve)?.next(known.xp, definition.cap)?;
+        let cost = total
+            .checked_sub(known.xp)
+            .filter(|cost| *cost > 0)
+            .ok_or(SkillError::Catalog)?;
+        if cost > state.available_xp {
+            return Err(SkillError::InsufficientXp);
+        }
+        let progression = state
+            .apply(&crate::progression::Command::SpendXp(cost))
+            .map_err(|_| SkillError::Catalog)?;
+        let mut next = self.clone();
+        let entry = next.entries.get_mut(&id).unwrap();
+        entry.rank = rank;
+        entry.xp = total;
+        Ok((next, progression))
+    }
     pub fn get(&self, id: u32) -> Option<&Trained> {
         self.entries.get(&id)
     }
@@ -271,6 +315,7 @@ impl Book {
                         rank: 0,
                         credits: definition.credits,
                         locked: granting,
+                        xp: 0,
                     },
                 );
             }
