@@ -79,6 +79,12 @@ pub enum Command {
     ConsumeDense {
         item: u64,
     },
+    /// Remove a complete, explicitly expected stack and close its bag gap.
+    /// A distinct journal command preserves historical single-item semantics.
+    ConsumeStackDense {
+        item: u64,
+        quantity: u16,
+    },
 }
 #[derive(Debug)]
 pub enum InventoryError {
@@ -303,12 +309,16 @@ impl Inventory {
                 next.items.insert(*new_id, split);
                 next.high_water = *new_id;
             }
-            Command::ConsumeDense { item } => {
+            Command::ConsumeDense { item } | Command::ConsumeStackDense { item, .. } => {
                 let original = self.owned(*item)?;
                 let Location::Bag(source) = original.location else {
                     return Err(InventoryError::InvalidItem);
                 };
-                if !self.dense_bags() || original.quantity != 1 {
+                let expected = match command {
+                    Command::ConsumeStackDense { quantity, .. } => *quantity,
+                    _ => 1,
+                };
+                if !self.dense_bags() || expected == 0 || original.quantity != expected {
                     return Err(InventoryError::InvalidStack);
                 }
                 next.items.remove(item);
@@ -379,6 +389,7 @@ impl Command {
             } => format!("s,{item},{new_id},{quantity},{destination}"),
             Self::Consume { item, quantity } => format!("c,{item},{quantity}"),
             Self::ConsumeDense { item } => format!("d,{item}"),
+            Self::ConsumeStackDense { item, quantity } => format!("b,{item},{quantity}"),
         }
     }
     pub fn decode(text: &str) -> Result<Self, InventoryError> {
@@ -432,6 +443,10 @@ impl Command {
                 quantity: small(*quantity)?,
             },
             ("d", [item]) => Self::ConsumeDense { item: *item },
+            ("b", [item, quantity]) => Self::ConsumeStackDense {
+                item: *item,
+                quantity: small(*quantity)?,
+            },
             _ => return Err(InventoryError::InvalidItem),
         })
     }

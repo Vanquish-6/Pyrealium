@@ -101,6 +101,14 @@ impl Stock {
         [Self::Potion, Self::Weapon, Self::Mucor, Self::Tallow]
             .into_iter()
             .find(|stock| *item == stock.item(item.id, slot))
+            .or_else(|| {
+                (item.definition == crate::crafting::TALLOW
+                    && item.visual == 0x1f000234
+                    && item.quantity == 1
+                    && item.stack_limit == 1
+                    && item.equipment_mask == 0)
+                    .then_some(Self::Tallow)
+            })
     }
 }
 
@@ -226,7 +234,7 @@ pub fn parse_command(text: &str) -> Option<Result<Action, MerchantError>> {
 }
 
 pub fn listing() -> String {
-    "Training quartermaster: potion costs 5 gold (sell 1); weapon costs 12 gold (sell 3); mushroom costs 2 gold (sell 1); tallow costs 2 gold (sell 1). Use @buy potion|weapon|mushroom|tallow, or @sell SLOT (bag slots 1..78). Prices are authored development rules.".into()
+    "Training quartermaster: potion costs 5 gold (sell 1); weapon costs 12 gold (sell 3); mushroom costs 2 gold (sell 1); tallow bundle (100) costs 2 gold (sell 1). Use @buy potion|weapon|mushroom|tallow, or @sell SLOT (bag slots 1..78). Prices are authored development rules.".into()
 }
 
 pub fn mucor(id: u64, slot: u16) -> Item {
@@ -337,7 +345,14 @@ pub fn plan_sell(
         .find(|item| item.location == Location::Bag(slot))
         .ok_or(MerchantError::NotOwned)?;
     let stock = Stock::for_item(item).ok_or(MerchantError::NotForSale)?;
-    let items = vec![inventory::Command::ConsumeDense { item: item.id }];
+    let items = vec![if item.quantity > 1 {
+        inventory::Command::ConsumeStackDense {
+            item: item.id,
+            quantity: item.quantity,
+        }
+    } else {
+        inventory::Command::ConsumeDense { item: item.id }
+    }];
     let changes = vec![progression::Command::AwardGold(stock.sell_price())];
     let (next_inventory, next_progression) =
         crate::player_transaction::candidate(inventory, state, &items, &changes, None)
@@ -357,10 +372,12 @@ pub struct SellRequest {
     pub owner: u64,
     pub item: u64,
     pub ordinal: u16,
+    pub quantity: u16,
 }
 impl SellRequest {
-    /// Exact retained single-item profile: tagged owner, ordinal, quantity one,
-    /// tagged item. There are no client price, merchant, or session-nonce fields.
+    /// Tagged owner, ordinal, complete supported quantity and tagged item.
+    /// There are no client price, merchant, or session-nonce fields. A request
+    /// must match the whole owned stack; partial stack sales are unsupported.
     pub fn decode(arguments: &[u8]) -> Result<Self, WorldError> {
         if arguments.len() != 40 {
             return Err(WorldError::InvalidValue);
@@ -371,7 +388,7 @@ impl SellRequest {
         if word(0) != 2
             || word(12) != 1
             || word(20) != 1
-            || word(24) != 1
+            || ![1, u32::from(crate::crafting::TALLOW_QUANTITY)].contains(&word(24))
             || word(28) != 2
             || word(16) >= u32::from(BAG_SLOTS)
             || [0, u64::MAX].contains(&owner)
@@ -384,6 +401,7 @@ impl SellRequest {
             owner,
             item,
             ordinal: word(16) as u16,
+            quantity: word(24) as u16,
         })
     }
 }
@@ -395,9 +413,11 @@ pub fn plan_native_sell(
     state: &Progression,
 ) -> Result<Plan, MerchantError> {
     if request.owner != owner
-        || !inventory
-            .items()
-            .any(|item| item.id == request.item && item.location == Location::Bag(request.ordinal))
+        || !inventory.items().any(|item| {
+            item.id == request.item
+                && item.location == Location::Bag(request.ordinal)
+                && item.quantity == request.quantity
+        })
     {
         return Err(MerchantError::InvalidIdentity);
     }
@@ -472,6 +492,8 @@ impl Shop {
                     ((identity >> 32) as u32, 0xcd),
                     (texture, 4),
                     (4 + index as u32 * 2, 1),
+                    // Native SetCostQuantity 0046d9e0 copies this raw f32;
+                    // captured 382e prices use storage tag 4, not tag 3.
                     ((stock.buy_price() as f32).to_bits(), 4),
                     (GOLD_DEFINITION, 4),
                     (1, 4), // Advertise the supported single-item quantity.
@@ -485,7 +507,7 @@ impl Shop {
                     Stock::Potion => "Health Potion",
                     Stock::Weapon => "Training Weapon",
                     Stock::Mucor => "Mucor Mushroom",
-                    Stock::Tallow => "Tallow",
+                    Stock::Tallow => "Tallow Bundle (100)",
                 })?,
             ));
         }

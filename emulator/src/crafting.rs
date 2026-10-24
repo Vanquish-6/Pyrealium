@@ -30,6 +30,9 @@ pub const MUCOR: u32 = 0x47001744;
 pub const CATALYST: u32 = 0x470027a7;
 /// English StringInfo 2500797e / a8607cec identifies this ingredient as Tallow.
 pub const TALLOW: u32 = CATALYST;
+/// Recipe ingredient package 01d4 field 12; native 01d4000c at 0xc9558
+/// reads this requirement and 01d40006 compares it with item quantity 0106.
+pub const TALLOW_QUANTITY: u16 = 100;
 pub const HEALTH_OUTPUT: u32 = 0x47001745;
 pub const VIGOR_OUTPUT: u32 = 0x47001746;
 pub const MAX_INGREDIENTS: usize = 16;
@@ -134,7 +137,8 @@ fn panel_recipe(did: u32) -> PanelObject {
 /// is unknown. This fresh graph grants only the two development potion recipes;
 /// it does not replay the captured hundreds of recipes, XP or last-craft time.
 /// The root's XP modifier, count and time are zero: crafting XP is not awarded
-/// by this development profile. Original entitlement/quantity balance is absent.
+/// by this development profile. Original entitlement, cost and XP rules remain
+/// absent; the recovered one-Mucor/100-Tallow quantities are enforced separately.
 pub fn initialization(authorized: bool) -> Result<Vec<Vec<u8>>, WorldError> {
     let default_objects = if authorized {
         vec![PanelObject::native(0x65, &[1, 2]), panel_skill()]
@@ -173,10 +177,10 @@ pub fn initialization(authorized: bool) -> Result<Vec<Vec<u8>>, WorldError> {
     ])
 }
 
-/// Asset identity is original DAT data. Quantity one and stack limit one are
-/// deliberately bounded development policy, including for Tallow: the recipe
-/// graph contains a 100 scalar whose full original quantity semantics are not
-/// recovered here. Texture icons and appearance animations are distinct assets.
+/// Asset identity and ingredient quantities come from original DAT data.
+/// Tallow is provided only as an exact 100-unit bundle; the runtime stack limit
+/// of 100 is bounded development policy (the DAT maximum is 1,000,000).
+/// Texture icons and appearance animations are distinct assets.
 #[derive(Clone, Copy, Debug)]
 pub struct ItemProfile {
     pub definition: u32,
@@ -212,10 +216,29 @@ pub fn item(definition: u32, id: u64, slot: u16) -> Result<Item, WorldError> {
         id,
         definition,
         visual: profile.visual,
-        quantity: 1,
-        stack_limit: 1,
+        quantity: quantity(definition),
+        stack_limit: quantity(definition),
         equipment_mask: 0,
         location: Location::Bag(slot),
+    })
+}
+
+fn quantity(definition: u32) -> u16 {
+    if definition == TALLOW {
+        TALLOW_QUANTITY
+    } else {
+        1
+    }
+}
+
+fn canonical_ingredient(item: &Item, expected: u32) -> bool {
+    profile(expected).is_some_and(|profile| {
+        item.definition == expected
+            && item.visual == profile.visual
+            && item.quantity == quantity(expected)
+            && item.stack_limit == quantity(expected)
+            && item.equipment_mask == 0
+            && matches!(item.location, Location::Bag(_))
     })
 }
 
@@ -228,7 +251,7 @@ fn fingerprint(bytes: &[u8]) -> u64 {
 /// Exact asset profiles, without broadening the generic qualities parser.
 /// Metadata's historical `icon` member is acquisition appearance field 6,
 /// not gmWeenieDesc::_icon. Tallow has no quality 103: its appearance is zero.
-/// This alone does not prove acquisition ACKs accept a zero appearance.
+/// Retained stacked-Tallow acquisition messages also carry zero appearance.
 pub fn metadata(portal: &mut Dat, definition: u32) -> io::Result<Metadata> {
     let invalid = || io::Error::other("unsupported native crafting item profile");
     let profile = profile(definition).ok_or_else(invalid)?;
@@ -286,8 +309,8 @@ pub fn tallow(id: u64, slot: u16) -> Item {
         id,
         definition: TALLOW,
         visual: 0x1f000234,
-        quantity: 1,
-        stack_limit: 1,
+        quantity: TALLOW_QUANTITY,
+        stack_limit: TALLOW_QUANTITY,
         equipment_mask: 0,
         location: Location::Bag(slot),
     }
@@ -403,13 +426,9 @@ impl ValidateRequest {
         };
         authorized
             && inventory.dense_bags()
-            && inventory.items().any(|item| {
-                item.id == self.item
-                    && item.definition == *expected
-                    && item.quantity == 1
-                    && item.stack_limit == 1
-                    && matches!(item.location, Location::Bag(_))
-            })
+            && inventory
+                .items()
+                .any(|item| item.id == self.item && canonical_ingredient(item, *expected))
     }
 }
 
@@ -469,8 +488,8 @@ impl ExecuteRequest {
             recipe,
         })
     }
-    /// Supported single-unit subset. One item per actual ingredient identity is
-    /// an explicit development quantity policy, not full native recipe evaluation.
+    /// Exact whole-bundle subset: one Mucor and 100 Tallow, matching native
+    /// ingredient requirements. Partial-stack consumption remains unsupported.
     pub fn require_inputs(
         &self,
         inventory: &Inventory,
@@ -490,13 +509,10 @@ impl ExecuteRequest {
                 .ingredients
                 .get(&(index as u32 + 1))
                 .ok_or(WorldError::InvalidValue)?;
-            if !inventory.items().any(|item| {
-                item.id == id
-                    && item.definition == *expected
-                    && item.quantity == 1
-                    && item.stack_limit == 1
-                    && matches!(item.location, Location::Bag(_))
-            }) {
+            if !inventory
+                .items()
+                .any(|item| item.id == id && canonical_ingredient(item, *expected))
+            {
                 return Err(WorldError::InvalidValue);
             }
             result[index] = id;
@@ -518,12 +534,7 @@ pub fn select_inventory(
     for (index, expected) in definition.inputs.iter().enumerate() {
         let item = inventory
             .items()
-            .find(|item| {
-                item.definition == *expected
-                    && item.quantity == 1
-                    && item.stack_limit == 1
-                    && matches!(item.location, Location::Bag(_))
-            })
+            .find(|item| canonical_ingredient(item, *expected))
             .ok_or(WorldError::InvalidValue)?;
         ingredients.insert(index as u32 + 1, item.id);
     }

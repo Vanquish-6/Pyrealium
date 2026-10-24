@@ -831,7 +831,8 @@ fn item_service_transaction(
     let mut granted = Vec::new();
     for command in items {
         match command {
-            crate::inventory::Command::ConsumeDense { item } => {
+            crate::inventory::Command::ConsumeDense { item }
+            | crate::inventory::Command::ConsumeStackDense { item, .. } => {
                 let owned = saved
                     .inventory
                     .items()
@@ -1104,10 +1105,20 @@ fn craft_item(
     }
     let saved = &store.characters[&character];
     let ingredients = request.require_inputs(&saved.inventory, true)
-        .map_err(|_| invalid("Crafting needs one unstacked Mucor Mushroom and one Tallow in your bag. Use @shop near the training quartermaster."))?;
+        .map_err(|_| invalid("Crafting needs one Mucor Mushroom and a full 100-unit Tallow bundle in your bag. Use @shop near the training quartermaster."))?;
     let mut items: Vec<_> = ingredients
         .into_iter()
-        .map(|item| crate::inventory::Command::ConsumeDense { item })
+        .enumerate()
+        .map(|(index, item)| {
+            if index == 1 {
+                crate::inventory::Command::ConsumeStackDense {
+                    item,
+                    quantity: crate::crafting::TALLOW_QUANTITY,
+                }
+            } else {
+                crate::inventory::Command::ConsumeDense { item }
+            }
+        })
         .collect();
     let mut bag = saved.inventory.clone();
     for item in &items {
@@ -1126,7 +1137,7 @@ fn craft_item(
     items.push(crate::inventory::Command::Grant(output));
     let events = vec![
         crate::crafting::completed(request.recipe, true).map_err(other)?,
-        script::chat(&format!("Crafted one {name} potion. Training recipe: one mushroom and one Tallow; no crafting XP or chance roll."), 1).map_err(other)?,
+        script::chat(&format!("Crafted one {name} potion. Training recipe: one mushroom and 100 Tallow; no crafting XP or chance roll."), 1).map_err(other)?,
     ];
     let updates =
         item_service_transaction(peer, character, &items, &[], events, store, scene, metadata)?;
@@ -1822,6 +1833,23 @@ pub fn run(config: Config) -> io::Result<()> {
                                                     )?,
                                                 ),
                                             }
+                                            return Ok(replies);
+                                        }
+                                        script::Request::MerchantConsignment(merchant) => {
+                                            let text = if peer
+                                                .native_shop
+                                                .as_ref()
+                                                .is_some_and(|shop| shop.merchant() == merchant)
+                                                && merchant_ready(character, &scene).ok()
+                                                    == Some(merchant)
+                                            {
+                                                "Consignment listings are not available at this training shop. Use the inventory Sell action for fixed buyback. No items or fees were taken."
+                                            } else {
+                                                "Speak to a nearby quartermaster to open a shop."
+                                            };
+                                            peer.queue_ordered_batch(vec![
+                                                script::chat(text, 1).map_err(other)?,
+                                            ])?;
                                             return Ok(replies);
                                         }
                                         script::Request::ExamineClear => return Ok(replies),
@@ -2743,10 +2771,10 @@ pub fn run(config: Config) -> io::Result<()> {
                                                             let recipe = match words.as_slice() {
                                                                 [_, name] if name.eq_ignore_ascii_case("health") => crate::crafting::HEALTH_RECIPE,
                                                                 [_, name] if name.eq_ignore_ascii_case("vigor") => crate::crafting::VIGOR_RECIPE,
-                                                                _ => return Err(invalid("Use @craft health or @craft vigor. Training recipes consume one Mucor Mushroom and one Tallow; no craft skill or chance roll is required.")),
+                                                                _ => return Err(invalid("Use @craft health or @craft vigor. Training recipes consume one Mucor Mushroom and 100 Tallow; no craft skill or chance roll is required.")),
                                                             };
                                                             let request = crate::crafting::select_inventory(recipe, &store.characters[&character].inventory, true)
-                                                                .map_err(|_| invalid("You need one unstacked Mucor Mushroom and one Tallow in your bag."))?;
+                                                                .map_err(|_| invalid("You need one Mucor Mushroom and a full 100-unit Tallow bundle in your bag."))?;
                                                             craft_item(peer, character, &request, &mut store, &mut scene, &inventory_metadata, now_ms)
                                                         })();
                                                         match result {

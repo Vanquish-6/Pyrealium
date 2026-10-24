@@ -17,6 +17,7 @@ pub enum Request {
     Group(crate::groups::Request),
     MerchantSell(crate::merchants::SellRequest),
     MerchantBuy(crate::merchants::BuyRequest),
+    MerchantConsignment(u64),
     ExamineClear,
     CraftValidate(crate::crafting::ValidateRequest),
     CraftExecute(crate::crafting::ExecuteRequest),
@@ -113,6 +114,31 @@ pub fn decode(function: u32, bytes: &[u8]) -> Result<Request, WorldError> {
             let request = crate::merchants::BuyRequest::decode(bytes)?;
             r.pos = bytes.len();
             Request::MerchantBuy(request)
+        }
+        0xb83a0046 => {
+            let merchant = r.iid()?;
+            if [0, u64::MAX].contains(&merchant) {
+                return Err(WorldError::InvalidValue);
+            }
+            Request::MerchantConsignment(merchant)
+        }
+        0xb83a0043 => {
+            // This is a paid consignment listing, not fixed-price buyback.
+            // Validate its native shape, then let the server explain the
+            // unsupported feature without moving items or charging a fee.
+            r.int()?;
+            r.int()?;
+            let quantity = r.int()?;
+            let item = r.iid()?;
+            let merchant = r.iid()?;
+            if quantity == 0
+                || quantity > u32::from(u16::MAX)
+                || [0, u64::MAX].contains(&item)
+                || [0, u64::MAX, item].contains(&merchant)
+            {
+                return Err(WorldError::InvalidValue);
+            }
+            Request::MerchantConsignment(merchant)
         }
         crate::crafting::VALIDATE => {
             let request = crate::crafting::ValidateRequest::decode(bytes)?;

@@ -87,8 +87,10 @@ pub fn acquired(owner: u64, item: &Item, metadata: Metadata) -> Result<Vec<u8>, 
     if [0, u64::MAX].contains(&owner)
         || [0, u64::MAX].contains(&item.id)
         || owner == item.id
-        || item.quantity != 1
-        || item.stack_limit != 1
+        || ((item.quantity != 1 || item.stack_limit != 1)
+            && !(item.definition == crate::crafting::TALLOW
+                && item.visual == 0x1f000234 && item.equipment_mask == 0
+                && item.quantity == crate::crafting::TALLOW_QUANTITY && item.stack_limit == crate::crafting::TALLOW_QUANTITY))
         || slot >= BAG_SLOTS
         || item.definition >> 24 != 0x47
         || item.visual >> 24 != 0x1f
@@ -125,6 +127,11 @@ pub fn acquired(owner: u64, item: &Item, metadata: Metadata) -> Result<Vec<u8>, 
     fields[30] = u32::MAX;
     fields[38] = metadata.physical;
     fields[50] = u32::from(slot);
+    if item.definition == crate::crafting::TALLOW && item.quantity > 1 {
+        // Captured stacked Tallow pickups retain both moved and final counts.
+        fields[26] = u32::from(item.quantity);
+        fields[48] = u32::from(item.quantity);
+    }
     let mut tags = ACQUIRE_TAGS;
     // Retained pickup captures exercise slot zero only (tag 2). Nonzero bag
     // indices use the same package's uint fields as native move acknowledgments;
@@ -132,6 +139,9 @@ pub fn acquired(owner: u64, item: &Item, metadata: Metadata) -> Result<Vec<u8>, 
     if slot != 0 {
         tags[24] = 4;
         tags[50] = 4;
+    }
+    if fields[48] != 0 {
+        tags[48] = 4;
     }
     let mut args = Vec::with_capacity(284);
     for value in [5u32, 1, 1, 0x44000100, 0, 0x01f80000, 51] {

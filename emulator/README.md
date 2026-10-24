@@ -319,9 +319,10 @@ and backing gameplay systems remain unfinished.
 
 ## Training merchants, crafting and groups
 
-`serve-training` now keeps the 247 base placements and 30 captured actors, plus
-eight authored training objects. There are exits in the start and corridor rooms,
-an outdoor return gateway, quartermasters and a training creature. Interior
+`serve-training` now keeps the 247 base placements and 525 captured actors, plus
+13 authored training objects. There are exits in the start and corridor rooms,
+an outdoor return gateway, quartermasters, clickable training mentors and four
+training creatures. Interior
 visibility uses the DAT's native visible-room arrays. Outdoors, the surrounding
 3x3 landblocks are an explicit development view policy. These placements and
 view settings do not reconstruct the complete original population or progression.
@@ -329,15 +330,16 @@ view settings do not reconstruct the complete original population or progression
 Near a quartermaster, use `@shop`, `@buy potion`, `@buy weapon`,
 `@buy mushroom`, `@buy tallow`, or `@sell SLOT` (1-based bag position).
 Prices and stock are authored. Purchases/sales commit ownership and gold together;
-native single-item sales require a fresh nearby shop context. The full native
-merchant catalog UI is still unresolved; command browsing is the current surface.
+the native shop catalog and Buy button are wired, and inventory selling requires
+a fresh nearby shop context. Tallow is sold as a 100-unit bundle. Consignment
+listing/escrow remains unfinished and is explicitly rejected without charging a fee.
 
-`@craft health` and `@craft vigor` consume one unstacked Mucor Mushroom and one
-Tallow and grant one potion atomically. Native ingredient validation and execution
-requests use the same server-owned rules. This one-of-each quantity, unrestricted
-training entitlement, guaranteed success and lack of crafting XP are explicit
-development policy. Original recipe quantities/costs and recipe discovery UI
-remain incomplete. Health/vigor potions restore up to 25 of their vital and share
+The native crafting panel now receives the training skill and two potion recipes.
+Crafting consumes one Mucor Mushroom and a complete 100-unit Tallow bundle, matching
+the actual ingredient requirements, and grants one potion atomically. The
+`@craft health` / `@craft vigor` fallback uses those same rules. Unrestricted training
+entitlement, guaranteed success, prices and lack of crafting XP remain authored
+policy. Full original crafting rules and native client acceptance remain incomplete. Health/vigor potions restore up to 25 of their vital and share
 a five-second use cooldown.
 
 Use `@group create NAME`, `@group invite PLAYER`, `@group accept PLAYER`,
@@ -359,8 +361,8 @@ and persistent groups are not implemented. Fresh two-client UI acceptance is pen
   broader inventory/stacking/ground-item behavior.
 - Corpse containers, ownership/loot-sharing rules and original loot tables.
 - Original quests, NPC conversations, branching, abandonment and repeat rules.
-- Full native merchant/recipe discovery interfaces, original crafting rules,
-  merchant inventories and a complete economy.
+- Native acceptance of merchant/crafting interfaces, original crafting rules,
+  merchant inventories, consignment escrow/listings and a complete economy.
 - Group XP/loot sharing, native group chat and broader social systems.
 - NPC movement/pathfinding, authoritative movement speed, collision and line of
   sight, and complete native outdoor/interior boundary visibility behavior.

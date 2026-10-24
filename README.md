@@ -42,12 +42,12 @@ A compiled packet handler is not a verified player experience. Recent runtime ad
 | Skills | Catalog-based human training/untraining and XP advancement; development basic attack and learned self-heal; most original active effects/cast behavior missing |
 | Combat and progression | Development creature damage/retaliation, vigor costs, XP/gold, levels, regeneration and timed respawns; original formulas, projectiles and pathfinding missing |
 | Death and return | Saved vitals/Dead state, death UI, Resurrect, lifestone binding and Recall implemented; original cast presentation and death penalties missing |
-| Quest journal | One authored Training Grounds quest: three kills, persistent progress, once-only 120 XP / 10 gold via `@quest claim`; original quests/dialogue missing |
+| Quest journal | One authored Training Grounds quest: three kills, persistent progress, once-only 120 XP / 10 gold via a clickable training mentor or `@quest claim`; original quests/dialogue missing |
 | Item rewards and potions | Training encounters grant a single health potion into a supported bag; consuming it atomically restores up to 25 health; corpse/general loot and native acceptance pending |
 | Portals | 156 imported routes plus three authored training/return gateways; captured portal visual mode/slider restored; original travel presentation/access rules unfinished |
-| World content | Training preset retains 247 base placements, 30 observed actors and eight authored objects; native interior visibility and a development outdoor view range; full world population missing |
+| World content | Training preset retains 247 base placements, 525 observed actors and 13 authored training objects; native interior visibility and a development outdoor view range; full world population missing |
 | Content placement editor | DAT-backed mesh/texture/animation/interior/outdoor preview implemented; latest native paint/Tk crash patch awaits a fresh GUI load |
-| Merchants and crafting | Four-item training shop via @shop/@buy/@sell, native single-item sale handling, and two potion recipes via @craft/native requests; atomic item/gold changes; full native catalog/recipe discovery and original economy missing |
+| Merchants and crafting | Native four-item shop/catalog and Buy button, inventory buyback, crafting panel with two potion recipes and atomic item/gold changes; consignment and full original economy missing |
 | Groups and broader social play | Session groups up to eight: create/invite/accept/decline/leave/dismiss/disband, native member snapshots, vitals/cell refresh and @g chat; XP/loot remain individual; fresh two-client acceptance pending |
 | Multiplayer hosting | Not enabled; the server binds to IPv4 loopback only |
 

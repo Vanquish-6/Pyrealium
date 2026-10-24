@@ -584,3 +584,55 @@ requests are accepted as no-ops, following `00609530`/`00609660`.
 These interfaces compile; graph construction alone does not establish successful
 display or interaction in the original client. No test suites or automated game
 runs were performed for these changes.
+
+## Native ingredient quantities and safe stack removal (2026-10-24)
+
+Further bytecode tracing supersedes the earlier one-of-each training policy.
+Ingredient function `01d4000c` at `c9558` reads ingredient field 12, and
+`01d40006` compares it with quantity getter `01720010`, backed by native integer
+quality `0106` (`gmWeenieDesc::InqInt`, `006021b0`). The actual potion recipes
+therefore require one Mucor and 100 Tallow. Shop stock now grants an exact
+100-unit Tallow bundle, with a bounded runtime stack limit of 100; partial craft
+consumption remains unsupported. The client and server use the same quantities.
+
+Full-stack removal uses a distinct `b,IID,quantity` inventory journal command.
+It validates the complete expected quantity before removing the item and closing
+the dense bag gap; the older `d` command retains its quantity-one replay behavior.
+The existing atomic player transaction couples both ingredient removals and the
+fresh potion grant. Native acquisition fields 26 and 48 carry the Tallow count,
+and CreateObject supplies the contained object's quantity. Actual stacked-Tallow
+captures support those quantity fields; direct-grant native acceptance remains
+pending. Full-bundle sales verify the request quantity equals the owned stack;
+partial requests cannot destroy a larger stack.
+
+The newer store's Sell confirmation is a paid consignment listing, not immediate
+fixed buyback (`gmShopNewSaleUI::AddSale`, `0041ad40`). Those native requests now
+receive an explicit unsupported-feature message without inventory/gold changes.
+The supported inventory Sell route remains separate; no fictional fee/escrow
+transaction is acknowledged.
+
+Standing initialization is now explicit for the training actors. Idol Spawn
+and quartermaster captures supply mode `40000001` plus the scale slider
+`4000000a=1.0`. The mentor's visual points to behavior `44000018`, whose native
+initial mode is also `40000001`. PhysicsDesc defaults mode to zero, and
+ApplyPhysicsDesc/ModeTracker apply that zero rather than preserving the table's
+initial mode (`00641c70`, `004ec830`, `0068a9f0`, `0067d000`). The mentor therefore
+receives the DAT-derived initial mode. This repairs behavior initialization;
+parts assembly is separate, so it does not prove a visibility report fixed.
+
+The expanded manifest contains 772 base/observed placements, including 495 newly
+validated observations, and the training pack adds 13 authored objects. Combined
+with the operator's preserved local placement, the deployed manifest contains
+786 objects. The capture scan found no grounded actors in region `0299`, so the
+training placements remain authored rather than being described as recovered
+original spawns. New summoned-pet observations were excluded. Full source hashes
+are retained in the manifest; detailed extraction output is local build evidence.
+
+Native merchant affordability is aligned with the server's existing gold state.
+Sale field 6 stores raw float price bits with heap tag 4; native SetCostQuantity
+`0046d9e0` copies those bits into `m_fCostQuantity`. Store affordability `b8320005`
+resolves the gold currency through enum master `28000000` and table `2800001d`:
+key `41000009` maps to DID `47001108`. That currency selects function `821a0004`,
+which reads private integer quality `0c1c`, matching Progression's gold updates.
+No separate physical gold stack is required for this native catalog. This is
+static evidence, not an observed successful purchase in the client.
