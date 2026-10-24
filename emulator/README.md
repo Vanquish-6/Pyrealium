@@ -9,10 +9,9 @@ separately in the evidence notes.
 
 The real 7148 client has connected, rendered character selection, entered the
 authored human starting area and sent scene-complete and position messages. Native
-walking, the complete HUD, two-client rendering, combat and populated gameplay
-still need implementation or acceptance. A MusicLoader error currently requires
-Continue. The latest HUD experiment is waiting on the user's Windows launch
-warning.
+walking and saved cross-cell placement were observed in the matching client.
+The complete HUD, two-client rendering, combat and populated gameplay still need
+implementation or acceptance. A MusicLoader error can require Continue.
 
 ## Implemented
 
@@ -112,7 +111,7 @@ corruption rather than silently discarding progress.
 
 ## Validation and measured performance
 
-The current standard suite passes **53 unit tests and six integration checks**,
+The current standard suite passes **54 unit tests and seven integration checks**,
 including one real-UDP test. Three additional opt-in UDP tests cover the converted bootstrap, rejection
 of incompatible installed assets, and two-player movement/look/logout/re-entry,
 deletion and connection-logoff behavior. They passed on the supplied assets.
@@ -161,7 +160,7 @@ Exact addresses, identities, policies, test boundaries and open work:
 
 ## Remaining gameplay work
 
-Complete the native UI/script bootstrap and walking acceptance, appearance
+Complete the native UI/script bootstrap, appearance
 customization, world-content loading, collision and authoritative movement,
 inventory/equipment, skills, combat, NPC behavior, progression and gameplay-state
 persistence. Public authentication and remote hosting also remain unfinished.

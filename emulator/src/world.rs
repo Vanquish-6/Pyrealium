@@ -48,6 +48,9 @@ pub enum ClientEvent {
         yaw: f32,
         pitch: f32,
     },
+    LookAt {
+        target: u64,
+    },
     CreateCharacter {
         account: Vec<u8>,
         request: CharacterCreationRequest,
@@ -185,6 +188,10 @@ pub fn decode_client_event(bytes: &[u8]) -> Result<ClientEvent, WorldError> {
             }
             ClientEvent::Look { yaw, pitch }
         }
+        // ECM_Physics::SendEvt_CLookAt 00496980: opcode and one InstanceID.
+        0x100c7 => ClientEvent::LookAt {
+            target: reader.u64()?,
+        },
         CREATE_CHARACTER => {
             let account = reader.string()?;
             let mut request = CharacterCreationRequest {

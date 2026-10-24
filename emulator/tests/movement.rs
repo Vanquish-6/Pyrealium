@@ -75,6 +75,26 @@ fn malformed_position_is_rejected() {
 }
 
 #[test]
+fn native_target_look_has_one_exact_identity() {
+    let mut bytes = 0x100c7u32.to_le_bytes().to_vec();
+    bytes.extend(0x123456789abcdef0u64.to_le_bytes());
+    assert_eq!(
+        world::decode_client_event(&bytes),
+        Ok(ClientEvent::LookAt {
+            target: 0x123456789abcdef0
+        })
+    );
+    for length in 0..bytes.len() {
+        assert!(world::decode_client_event(&bytes[..length]).is_err());
+    }
+    bytes.push(0);
+    assert_eq!(
+        world::decode_client_event(&bytes),
+        Err(WorldError::TrailingBytes)
+    );
+}
+
+#[test]
 fn placement_replay_spawn_and_session_transitions() {
     let ClientEvent::Position(position) = world::decode_client_event(&packet(false)).unwrap()
     else {

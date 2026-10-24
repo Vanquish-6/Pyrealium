@@ -638,3 +638,14 @@ assertion of crash-free extended play. HUD labels/vitals remained incomplete,
 and opening the skills panel showed an empty list. Initial loading emitted
 rejected pre-ready script calls; unsupported `0x100c7` and `0x82030005` requests
 were also logged. These remain integration work, not completed gameplay.
+
+## Target-look replication (2026-10-24)
+
+The previously unsupported `0x100c7` now decodes exactly one 64-bit target ID,
+matching `ECM_Physics::SendEvt_CLookAt` (`00496980`). A ready player can look at
+a ready same-cell player, or clear using zero/all-ones sentinel IDs. Unknown,
+loading and cross-cell targets are rejected under the current visibility policy.
+Observers receive `0x10096`, the source InstanceIDWithStamp and target InstanceID,
+matching dispatch `00494010` and receiver `00495ac0`. This visual head-look path
+does not select a combat target or authorize an attack. It has parser, scene and
+two-peer real-UDP coverage; native two-client animation acceptance remains open.

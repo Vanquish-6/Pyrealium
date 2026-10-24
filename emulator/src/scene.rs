@@ -246,6 +246,31 @@ impl Scene {
         }
         Ok(deliveries)
     }
+    pub fn look_at(&self, id: u64, target: u64) -> Result<Vec<Delivery>, WorldError> {
+        let body = self.bodies.get(&id).ok_or(WorldError::InvalidValue)?;
+        if !body.ready || (target != 0 && target != u64::MAX && !self.can_observe(id, target)) {
+            return Err(WorldError::InvalidValue);
+        }
+        let mut recipients = self.neighbor_ids(body.placement.cell, id).peekable();
+        if recipients.peek().is_none() {
+            return Ok(Vec::new());
+        }
+        // RecvEvt_LookAt 00495ac0 consumes the source InstanceIDWithStamp,
+        // then the target InstanceID. DispatchEvent 00494010 uses 0x10096.
+        let mut event = Vec::with_capacity(24);
+        event.extend(0x10096u32.to_le_bytes());
+        event.extend(id.to_le_bytes());
+        event.extend(body.instance.to_le_bytes());
+        event.extend(0u16.to_le_bytes());
+        event.extend(target.to_le_bytes());
+        let data: Arc<[u8]> = event.into();
+        Ok(recipients
+            .map(|recipient| Delivery {
+                recipient,
+                data: data.clone(),
+            })
+            .collect())
+    }
     pub fn look(&self, id: u64, yaw: f32, pitch: f32) -> Result<Vec<Delivery>, WorldError> {
         if !yaw.is_finite() || !pitch.is_finite() {
             return Err(WorldError::InvalidValue);
@@ -297,6 +322,27 @@ mod tests {
         })
         .unwrap();
         Body::new(id, placement, bytes).unwrap()
+    }
+    #[test]
+    fn target_look_requires_ready_visible_objects_and_preserves_clear_sentinels() {
+        let mut scene = Scene::default();
+        scene.enter(body(1, 1)).unwrap();
+        scene.enter(body(2, 1)).unwrap();
+        scene.enter(body(3, 2)).unwrap();
+        scene.enter_hidden(body(4, 1)).unwrap();
+        for (source, target) in [(1, 3), (1, 4), (1, 99), (4, 1), (99, 1)] {
+            assert!(scene.look_at(source, target).is_err());
+        }
+        for target in [2, 0, u64::MAX] {
+            let events = scene.look_at(1, target).unwrap();
+            assert_eq!(events.len(), 1);
+            assert_eq!(events[0].recipient, 2);
+            assert_eq!(&events[0].data[..4], &0x10096u32.to_le_bytes());
+            assert_eq!(&events[0].data[4..12], &1u64.to_le_bytes());
+            assert_eq!(&events[0].data[12..16], &[1, 0, 0, 0]);
+            assert_eq!(&events[0].data[16..24], &target.to_le_bytes());
+        }
+        assert!(scene.look_at(3, 0).unwrap().is_empty());
     }
     #[test]
     fn visibility_movement_cross_cell_and_removal() {

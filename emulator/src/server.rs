@@ -667,6 +667,19 @@ pub fn run(config: Config) -> io::Result<()> {
                                     );
                                     return Ok(replies);
                                 }
+                                world::ClientEvent::LookAt { target } => {
+                                    let character = match peer.session.phase {
+                                        Phase::InWorld { character } => character,
+                                        _ => {
+                                            return Err(invalid(
+                                                "target look outside ready world session",
+                                            ));
+                                        }
+                                    };
+                                    deliveries
+                                        .extend(scene.look_at(character, target).map_err(other)?);
+                                    return Ok(replies);
+                                }
                                 world::ClientEvent::Look { yaw, pitch } => {
                                     if peer.motion.is_none() {
                                         return Err(invalid("look outside world session"));

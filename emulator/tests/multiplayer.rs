@@ -279,6 +279,17 @@ fn two_peers_see_movement_look_departure_and_saved_reentry() {
     let looked = b.events(1).remove(0);
     assert_eq!(&looked[..4], &0x100c9u32.to_le_bytes());
     assert_eq!(&looked[16..20], &0.25f32.to_le_bytes());
+    let mut target_look = 0x100c7u32.to_le_bytes().to_vec();
+    // Invisible/unknown targets must not emit a reply before the valid one.
+    target_look.extend(999u64.to_le_bytes());
+    a.send(3, &target_look);
+    target_look[4..12].copy_from_slice(&2u64.to_le_bytes());
+    a.send(3, &target_look);
+    let looked_at = b.events(1).remove(0);
+    assert_eq!(looked_at.len(), 24);
+    assert_eq!(&looked_at[..4], &0x10096u32.to_le_bytes());
+    assert_eq!(&looked_at[4..12], &1u64.to_le_bytes());
+    assert_eq!(&looked_at[16..24], &2u64.to_le_bytes());
     let mut logout = world::CHAR_EXIT_GAME.to_le_bytes().to_vec();
     logout.extend(1u64.to_le_bytes());
     a.send(4, &logout);
