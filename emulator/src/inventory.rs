@@ -64,6 +64,12 @@ pub enum Command {
     Unequip {
         item: u64,
     },
+    /// Native equipment-window removal into the dense bag list.
+    UnequipAt {
+        item: u64,
+        slot: u16,
+        destination: u16,
+    },
     Split {
         item: u64,
         new_id: u64,
@@ -282,6 +288,36 @@ impl Inventory {
                 let destination = self.free_slot().ok_or(InventoryError::NoSpace)?;
                 next.items.get_mut(item).unwrap().location = Location::Bag(destination);
             }
+            Command::UnequipAt {
+                item,
+                slot,
+                destination,
+            } => {
+                let original = self.owned(*item)?;
+                let count = self
+                    .items
+                    .values()
+                    .filter(|item| matches!(item.location, Location::Bag(_)))
+                    .count();
+                if !self.dense_bags()
+                    || original.location != Location::Equipped(*slot)
+                    || usize::from(*destination) > count
+                    || *destination >= BAG_SLOTS
+                {
+                    return Err(InventoryError::StaleLocation);
+                }
+                if self.free_slot().is_none() {
+                    return Err(InventoryError::NoSpace);
+                }
+                for entry in next.items.values_mut() {
+                    if let Location::Bag(index) = &mut entry.location {
+                        if *index >= *destination {
+                            *index += 1;
+                        }
+                    }
+                }
+                next.items.get_mut(item).unwrap().location = Location::Bag(*destination);
+            }
             Command::Split {
                 item,
                 new_id,
@@ -381,6 +417,11 @@ impl Command {
             Self::Equip { item, slot } => format!("e,{item},{slot}"),
             Self::Wear { item, slot } => format!("w,{item},{slot}"),
             Self::Unequip { item } => format!("u,{item}"),
+            Self::UnequipAt {
+                item,
+                slot,
+                destination,
+            } => format!("n,{item},{slot},{destination}"),
             Self::Split {
                 item,
                 new_id,
@@ -432,6 +473,11 @@ impl Command {
                 slot: small(*slot)?,
             },
             ("u", [item]) => Self::Unequip { item: *item },
+            ("n", [item, slot, destination]) => Self::UnequipAt {
+                item: *item,
+                slot: small(*slot)?,
+                destination: small(*destination)?,
+            },
             ("s", [item, new_id, quantity, destination]) => Self::Split {
                 item: *item,
                 new_id: *new_id,

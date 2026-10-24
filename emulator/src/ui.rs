@@ -258,6 +258,18 @@ pub fn hand_equipment(
     metadata: crate::inventory_request::Equipment,
     equipped: bool,
 ) -> Result<Vec<u8>, WorldError> {
+    hand_equipment_at(owner, item, slot, other_hands, metadata, equipped, 0)
+}
+
+pub fn hand_equipment_at(
+    owner: u64,
+    item: u64,
+    slot: u16,
+    other_hands: u16,
+    metadata: crate::inventory_request::Equipment,
+    equipped: bool,
+    destination: u16,
+) -> Result<Vec<u8>, WorldError> {
     if !matches!(slot, 0x40 | 0x80) || other_hands & !0xc0 != 0 || other_hands & slot != 0 {
         return Err(WorldError::InvalidValue);
     }
@@ -283,8 +295,17 @@ pub fn hand_equipment(
         2, 1, 2, 0x84, 0xcd, 4, 2, 4, 0x84, 0xcd, 0x84, 0xcd, 2, 2, 2, 4, 0x82, 0xcd, 2,
     ];
     if !equipped {
-        tags[7] = 2;
-        tags[15] = 2;
+        if destination >= crate::inventory::BAG_SLOTS {
+            return Err(WorldError::InvalidValue);
+        }
+        fields[6] = u32::from(destination);
+        fields[18] = u32::from(destination);
+        if destination != 0 {
+            tags[6] = 4;
+            tags[18] = 4;
+        }
+        // Retained 820e0056 replies keep both equipment-slot fields tagged 4;
+        // they are not constructor-zero fields even when removing equipment.
     }
     let root: Vec<_> = fields.into_iter().zip(tags).collect();
     let data = if equipped {

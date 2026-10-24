@@ -761,6 +761,134 @@ fn quest_action(
     Ok(updates)
 }
 
+fn change_hand_item(
+    peer: &mut Peer,
+    character: u64,
+    request: &crate::equipment::UseRequest,
+    destination: Option<(u16, u16)>,
+    store: &mut Store,
+    scene: &mut crate::scene::Scene,
+    metadata: &BTreeMap<u32, Option<crate::inventory_request::Metadata>>,
+    now: u64,
+) -> io::Result<Vec<crate::scene::Delivery>> {
+    if request.owner != character {
+        return Err(invalid("Item owner does not match this character."));
+    }
+    if peer
+        .last_inventory_ms
+        .is_some_and(|last| now.saturating_sub(last) < 100)
+    {
+        return Err(invalid("Wait briefly before changing equipment again."));
+    }
+    let saved = &store.characters[&character];
+    if !saved.progression.alive() || peer.combat {
+        return Err(invalid("Change equipment while alive and out of combat."));
+    }
+    if !saved.inventory.dense_bags() {
+        return Err(invalid("This equipment profile requires a dense bag list."));
+    }
+    let item = saved
+        .inventory
+        .items()
+        .find(|item| item.id == request.item)
+        .ok_or_else(|| invalid("Item is not owned."))?;
+    let hand = metadata
+        .get(&item.definition)
+        .and_then(|entry| *entry)
+        .and_then(|entry| entry.equipment)
+        .ok_or_else(|| invalid("This item-use profile is not available."))?;
+    let slot = hand
+        .hand_slot(item)
+        .ok_or_else(|| invalid("Only supported hand-held items can be changed here."))?;
+    let equipped =
+        destination.is_none() && matches!(item.location, crate::inventory::Location::Bag(_));
+    let command = if let Some((expected_slot, requested)) = destination {
+        if item.location != crate::inventory::Location::Equipped(expected_slot)
+            || slot != expected_slot
+        {
+            return Err(invalid("The item is no longer equipped in that slot."));
+        }
+        let count = saved
+            .inventory
+            .items()
+            .filter(|item| matches!(item.location, crate::inventory::Location::Bag(_)))
+            .count() as u16;
+        if requested >= crate::inventory::BAG_SLOTS {
+            return Err(invalid("That backpack position is unavailable."));
+        }
+        crate::inventory::Command::UnequipAt {
+            item: item.id,
+            slot,
+            destination: requested.min(count),
+        }
+    } else if equipped {
+        crate::inventory::Command::Wear {
+            item: item.id,
+            slot,
+        }
+    } else {
+        crate::inventory::Command::Unequip { item: item.id }
+    };
+    let candidate = saved.inventory.apply(&command).map_err(other)?;
+    let changed = candidate
+        .items()
+        .find(|item| item.id == request.item)
+        .unwrap();
+    let bag_slot = match changed.location {
+        crate::inventory::Location::Bag(index) => index,
+        _ => 0,
+    };
+    let other_hands = saved
+        .inventory
+        .items()
+        .filter(|other| other.id != item.id)
+        .fold(0, |mask, other| match other.location {
+            crate::inventory::Location::Equipped(slot) => mask | (slot & 0xc0),
+            _ => mask,
+        });
+    let acknowledgment = crate::ui::hand_equipment_at(
+        character,
+        item.id,
+        slot,
+        other_hands,
+        hand,
+        equipped,
+        bag_slot,
+    )
+    .map_err(other)?;
+    let instance = scene
+        .next_item_instance(character, item.id)
+        .map_err(other)?;
+    let parent_instance = peer
+        .motion
+        .as_ref()
+        .ok_or_else(|| invalid("Equipment has no avatar lifetime."))?
+        .instance;
+    let spawn = inventory_spawn(changed, character, instance, parent_instance, metadata)?;
+    scene
+        .validate_hand_change(character, item.id, &spawn, equipped)
+        .map_err(other)?;
+    let old_instance = scene
+        .inventory_instance(character, item.id)
+        .map_err(other)?;
+    let events = vec![
+        world::destroy_inventory_item(item.id, old_instance),
+        spawn.clone(),
+        acknowledgment,
+    ];
+    peer.validate_scene_batch(&events)?;
+    store.inventory_command(&peer.session.account, character, command)?;
+    let updates = scene
+        .hand_change(character, request.item, spawn, equipped)
+        .map_err(other)?;
+    peer.last_inventory_ms = Some(now);
+    peer.queue_ordered_batch(events)?;
+    Ok(updates
+        .into_iter()
+        .filter(|delivery| delivery.recipient != character)
+        .collect())
+}
+
 fn selection_status(
     observer: u64,
     target: u64,
@@ -1396,6 +1524,8 @@ pub fn run(config: Config) -> io::Result<()> {
     let mut next_checkpoint = 5000;
     let mut diagnosed_events = BTreeSet::new();
     let mut diagnosed_application_errors = BTreeSet::new();
+    let mut diagnosed_packet_errors = BTreeSet::new();
+    let mut diagnosed_queues = BTreeSet::new();
     loop {
         let now = Instant::now();
         let now_ms = start.elapsed().as_millis() as u64;
@@ -1446,6 +1576,9 @@ pub fn run(config: Config) -> io::Result<()> {
                 }
                 let mut deliveries = Vec::new();
                 let mut group_requests = Vec::new();
+                // Keep transport recovery outside fallible application handling.
+                // A later world/UI rejection must not discard ACK-covered NAKs.
+                let mut recovery_packets = Vec::new();
                 let result = (|| -> io::Result<Vec<Vec<u8>>> {
                     if h.flags == wire::LOGON {
                         if port_index != 0 {
@@ -1604,6 +1737,7 @@ pub fn run(config: Config) -> io::Result<()> {
                         return Err(invalid("session not connected"));
                     }
                     let received = peer.transport.receive(bytes, now).map_err(other)?;
+                    recovery_packets.extend(received.retransmissions);
                     if received.logoff {
                         // Validation includes checksum and current session identity.
                         // The end-of-loop removal releases presence and ownership.
@@ -1628,14 +1762,24 @@ pub fn run(config: Config) -> io::Result<()> {
                         body.extend(0.0f32.to_le_bytes());
                         replies.push(peer.control(wire::ECHO_RESPONSE, &body)?);
                     }
-                    replies.extend(
-                        peer.transport
-                            .retransmit_requested(&received.naks, now)
-                            .map_err(other)?,
-                    );
                     for message in received.messages {
                         if !matches!(message.queue, 3 | 4) {
                             counters.rejected += 1;
+                            let opcode = message
+                                .data
+                                .get(..4)
+                                .map(|bytes| u32::from_le_bytes(bytes.try_into().unwrap()))
+                                .unwrap_or(0);
+                            if diagnosed_queues.len() < 16
+                                && diagnosed_queues.insert((message.queue, opcode))
+                            {
+                                eprintln!(
+                                    "client queue rejected: queue={} opcode={opcode:#x} bytes={} blob={:#x}",
+                                    message.queue,
+                                    message.data.len(),
+                                    message.blob_id
+                                );
+                            }
                             continue;
                         }
                         counters.events += 1;
@@ -2363,60 +2507,75 @@ pub fn run(config: Config) -> io::Result<()> {
                                                 }
                                                 return Ok(replies);
                                             }
-                                            if peer.last_inventory_ms.is_some_and(|last| {
-                                                now_ms.saturating_sub(last) < 100
-                                            }) {
-                                                return Err(invalid("inventory action cooldown"));
-                                            }
-                                            let prepared = (|| -> io::Result<(crate::inventory::Command, Vec<u8>, Vec<u8>, bool)> {
-                                                if !config.initialize_ui { return Err(invalid("Inventory is not initialized.")); }
-                                                if request.owner != character { return Err(invalid("Item owner does not match this character.")); }
-                                                let saved = &store.characters[&character];
-                                                if !saved.progression.alive() || peer.combat { return Err(invalid("Change equipment while alive and out of combat.")); }
-                                                if !saved.inventory.dense_bags() { return Err(invalid("This equipment profile requires a dense bag list.")); }
-                                                let item = saved.inventory.items().find(|item| item.id == request.item).ok_or_else(||invalid("Item is not owned."))?;
-                                                let hand = inventory_metadata.get(&item.definition).and_then(|entry| *entry).and_then(|entry| entry.equipment).ok_or_else(||invalid("This item-use profile is not available."))?;
-                                                let slot = hand.hand_slot(item).ok_or_else(||invalid("Only supported single hand-held items can be equipped here."))?;
-                                                let equipped = matches!(item.location, crate::inventory::Location::Bag(_));
-                                                let command = if equipped { crate::inventory::Command::Wear {item: item.id, slot} } else {crate::inventory::Command::Unequip {item:item.id}};
-                                                let candidate = saved.inventory.apply(&command).map_err(other)?;
-                                                let changed = candidate.items().find(|item| item.id == request.item).unwrap();
-                                                let other_hands = saved.inventory.items().filter(|other| other.id != item.id).fold(0, |mask, other| match other.location {
-                                                    crate::inventory::Location::Equipped(slot) => mask | (slot & 0xc0), _ => mask,
-                                                });
-                                                let acknowledgment = crate::ui::hand_equipment(character, item.id, slot, other_hands, hand, equipped).map_err(other)?;
-                                                let instance = scene.next_item_instance(character, item.id).map_err(other)?;
-                                                let parent_instance = peer.motion.as_ref().ok_or_else(||invalid("Equipment has no avatar lifetime."))?.instance;
-                                                let spawn = inventory_spawn(changed, character, instance, parent_instance, &inventory_metadata)?;
-                                                Ok((command, spawn, acknowledgment, equipped))
-                                            })();
-                                            match prepared {
-                                                Ok((command, spawn, acknowledgment, equipped)) => {
-                                                    store.inventory_command(
-                                                        &peer.session.account,
-                                                        character,
-                                                        command,
-                                                    )?;
-                                                    peer.last_inventory_ms = Some(now_ms);
-                                                    deliveries.extend(
-                                                        scene
-                                                            .hand_change(
-                                                                character,
-                                                                request.item,
-                                                                spawn,
-                                                                equipped,
-                                                            )
-                                                            .map_err(other)?,
-                                                    );
-                                                    deliveries.push(crate::scene::Delivery {
-                                                        recipient: character,
-                                                        data: acknowledgment.into(),
-                                                    });
-                                                }
+                                            let result = if config.initialize_ui {
+                                                change_hand_item(
+                                                    peer,
+                                                    character,
+                                                    &request,
+                                                    None,
+                                                    &mut store,
+                                                    &mut scene,
+                                                    &inventory_metadata,
+                                                    now_ms,
+                                                )
+                                            } else {
+                                                Err(invalid("Inventory is not initialized."))
+                                            };
+                                            match result {
+                                                Ok(updates) => deliveries.extend(updates),
                                                 Err(error) => replies.extend(
                                                     peer.send_event(
                                                         &script::chat(
                                                             &format!("Item use rejected: {error}"),
+                                                            1,
+                                                        )
+                                                        .map_err(other)?,
+                                                        now,
+                                                    )?,
+                                                ),
+                                            }
+                                        }
+                                        script::Request::UnEquip(request) => {
+                                            let result =
+                                                (|| -> io::Result<Vec<crate::scene::Delivery>> {
+                                                    if !config.initialize_ui {
+                                                        return Err(invalid(
+                                                            "Inventory is not initialized.",
+                                                        ));
+                                                    }
+                                                    let slot = u16::try_from(request.slot)
+                                                        .map_err(|_| {
+                                                            invalid("Invalid equipment slot.")
+                                                        })?;
+                                                    let destination =
+                                                        u16::try_from(request.destination)
+                                                            .map_err(|_| {
+                                                                invalid(
+                                                                    "Invalid backpack position.",
+                                                                )
+                                                            })?;
+                                                    let item = crate::equipment::UseRequest {
+                                                        owner: request.owner,
+                                                        item: request.item,
+                                                    };
+                                                    change_hand_item(
+                                                        peer,
+                                                        character,
+                                                        &item,
+                                                        Some((slot, destination)),
+                                                        &mut store,
+                                                        &mut scene,
+                                                        &inventory_metadata,
+                                                        now_ms,
+                                                    )
+                                                })(
+                                                );
+                                            match result {
+                                                Ok(updates) => deliveries.extend(updates),
+                                                Err(error) => replies.extend(
+                                                    peer.send_event(
+                                                        &script::chat(
+                                                            &format!("Unequip rejected: {error}"),
                                                             1,
                                                         )
                                                         .map_err(other)?,
@@ -2734,8 +2893,17 @@ pub fn run(config: Config) -> io::Result<()> {
                                             let name = &store.characters[&character].name;
                                             match request {
                                                 script::Request::Say(text) => {
-                                                    if matches!(text.trim().to_ascii_lowercase().as_str(), "@source" | "@license") {
-                                                        peer.queue_ordered_batch(vec![script::chat(&crate::licensing::notice(), 1).map_err(other)?])?;
+                                                    if matches!(
+                                                        text.trim().to_ascii_lowercase().as_str(),
+                                                        "@source" | "@license"
+                                                    ) {
+                                                        peer.queue_ordered_batch(vec![
+                                                            script::chat(
+                                                                &crate::licensing::notice(),
+                                                                1,
+                                                            )
+                                                            .map_err(other)?,
+                                                        ])?;
                                                         return Ok(replies);
                                                     }
                                                     if let Some(action) =
@@ -3446,7 +3614,12 @@ pub fn run(config: Config) -> io::Result<()> {
                                         deliveries
                                             .extend(scene.activate(character).map_err(other)?);
                                         if first {
-                                            deliveries.push(crate::scene::Delivery { recipient: character, data: script::chat(&crate::licensing::notice(), 1).map_err(other)?.into() });
+                                            deliveries.push(crate::scene::Delivery {
+                                                recipient: character,
+                                                data: script::chat(&crate::licensing::notice(), 1)
+                                                    .map_err(other)?
+                                                    .into(),
+                                            });
                                         }
                                         if first && config.initialize_ui {
                                             for packet in
@@ -3507,6 +3680,9 @@ pub fn run(config: Config) -> io::Result<()> {
                     }
                     Ok(replies)
                 })();
+                for packet in recovery_packets {
+                    primary.send_to(&packet, addr)?;
+                }
                 match result {
                     Ok(replies) => {
                         for reply in replies {
@@ -3515,10 +3691,19 @@ pub fn run(config: Config) -> io::Result<()> {
                     }
                     Err(error) => {
                         counters.rejected += 1;
-                        if counters.rejected <= 12 {
+                        let reason: String = error.to_string().chars().take(512).collect();
+                        if diagnosed_packet_errors.len() < 32
+                            && diagnosed_packet_errors.insert(reason)
+                        {
                             eprintln!(
-                                "packet rejected: flags={:#x} sequence={} bytes={} reason={error}",
-                                h.flags, h.sequence, len
+                                "packet rejected: flags={:#x} sequence={} bytes={} reason={error} state={}",
+                                h.flags,
+                                h.sequence,
+                                len,
+                                peers
+                                    .get(&addr)
+                                    .map(|peer| peer.transport.diagnostic())
+                                    .unwrap_or_else(|| "no peer".into())
                             );
                         }
                     }

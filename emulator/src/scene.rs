@@ -265,13 +265,13 @@ impl Scene {
             .checked_add(1)
             .ok_or(WorldError::LimitExceeded)
     }
-    pub fn hand_change(
-        &mut self,
+    pub fn validate_hand_change(
+        &self,
         owner: u64,
         item: u64,
-        spawn: Vec<u8>,
+        spawn: &[u8],
         equipped: bool,
-    ) -> Result<Vec<Delivery>, WorldError> {
+    ) -> Result<u16, WorldError> {
         let instance = self.next_item_instance(owner, item)?;
         if spawn.len() != if equipped { 72 } else { 56 }
             || spawn[..4] != world::CREATE_OBJECT.to_le_bytes()
@@ -284,12 +284,23 @@ impl Scene {
         if equipped && spawn[28..36] != owner.to_le_bytes() {
             return Err(WorldError::InvalidValue);
         }
-        let body = self.bodies.get_mut(&owner).unwrap();
+        let body = &self.bodies[&owner];
         if body.item_instances.len() >= 89 && !body.item_instances.contains_key(&item)
             || equipped && body.hands.len() >= 2 && !body.hands.contains_key(&item)
         {
             return Err(WorldError::LimitExceeded);
         }
+        Ok(instance)
+    }
+    pub fn hand_change(
+        &mut self,
+        owner: u64,
+        item: u64,
+        spawn: Vec<u8>,
+        equipped: bool,
+    ) -> Result<Vec<Delivery>, WorldError> {
+        let instance = self.validate_hand_change(owner, item, &spawn, equipped)?;
+        let body = self.bodies.get_mut(&owner).unwrap();
         let old_instance = body
             .item_instances
             .get(&item)

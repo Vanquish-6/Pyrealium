@@ -25,6 +25,7 @@ pub enum Request {
     Emote(u32),
     InventoryMove(crate::inventory_request::MoveRequest),
     UseObject(crate::equipment::UseRequest),
+    UnEquip(crate::equipment::UnEquipRequest),
     Examine(u64),
     UseSkill {
         skill: u32,
@@ -179,6 +180,11 @@ pub fn decode(function: u32, bytes: &[u8]) -> Result<Request, WorldError> {
             let request = crate::equipment::UseRequest::decode(bytes)?;
             r.pos = bytes.len();
             Request::UseObject(request)
+        }
+        crate::equipment::UNEQUIP => {
+            let request = crate::equipment::UnEquipRequest::decode(bytes)?;
+            r.pos = bytes.len();
+            Request::UnEquip(request)
         }
         crate::inventory_request::MOVE => {
             let request = crate::inventory_request::MoveRequest::arguments(bytes)?;

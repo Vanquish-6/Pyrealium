@@ -48,6 +48,8 @@ pub struct Received {
     pub ack: u32,
     pub echo_request: Option<f32>,
     pub naks: Vec<u32>,
+    /// Validated retry bytes staged before the same packet retires ACKed data.
+    pub retransmissions: Vec<Vec<u8>>,
 }
 #[derive(Clone)]
 struct Assembly {
@@ -82,6 +84,19 @@ pub struct Transport {
     ordered_bytes: usize,
 }
 impl Transport {
+    /// Bounded counters for rejection diagnostics; never exposes cipher keys.
+    pub fn diagnostic(&self) -> String {
+        format!(
+            "received_through={} generated_through={} next_send={} next_ordered={} pending={} assemblies={} ordered={}",
+            self.contiguous,
+            self.generated,
+            self.next_outgoing,
+            self.next_ordered,
+            self.pending.len(),
+            self.assemblies.len(),
+            self.ordered.len()
+        )
+    }
     pub fn new(incoming_seed: u32, outgoing_seed: u32, recipient: u16, iteration: u16) -> Self {
         Self {
             incoming: Isaac::new(incoming_seed),
@@ -113,9 +128,7 @@ impl Transport {
             // consume neither ISAAC keys nor assembly/order state, so copying
             // pending payloads provides no rollback benefit.
             let packet = wire::decode_session_packet(bytes, None)?;
-            if let Some(ack) = packet.ack {
-                self.acknowledge(ack)?;
-            }
+            let retransmissions = self.receive_ack_naks(packet.ack, &packet.naks, now)?;
             return Ok(Received {
                 logoff: packet.header.flags == wire::LOGOFF,
                 messages: Vec::new(),
@@ -123,6 +136,7 @@ impl Transport {
                 ack: self.contiguous,
                 echo_request: packet.echo_request,
                 naks: packet.naks,
+                retransmissions,
             });
         }
         // A malformed packet must never consume ISAAC state or partially publish a message.
@@ -162,9 +176,7 @@ impl Transport {
             return Err(TransportError::Sequence);
         }
         let duplicate = encrypted && (seq <= self.contiguous || self.seen.contains(&seq));
-        if let Some(ack) = packet.ack {
-            self.acknowledge(ack)?;
-        }
+        let retransmissions = self.receive_ack_naks(packet.ack, &packet.naks, now)?;
         let mut messages = Vec::new();
         self.assemblies
             .retain(|_, a| now.saturating_duration_since(a.started) < Duration::from_secs(30));
@@ -190,6 +202,7 @@ impl Transport {
             ack: self.contiguous,
             echo_request: packet.echo_request,
             naks: packet.naks,
+            retransmissions,
         })
     }
     fn deliver(
@@ -379,27 +392,65 @@ impl Transport {
     pub fn has_unacknowledged(&self) -> bool {
         !self.pending.is_empty()
     }
+    fn receive_ack_naks(
+        &mut self,
+        ack: Option<u32>,
+        sequences: &[u32],
+        now: Instant,
+    ) -> Result<Vec<Vec<u8>>, TransportError> {
+        // Native optional headers process HandleNak (004c5d60) before
+        // HandlePak (004c5d20); the latter defers retirement through QueueFlush.
+        // PAK is highest observed, so its packet may also NAK an earlier hole.
+        if ack.is_some_and(|sequence| sequence >= self.next_outgoing) {
+            return Err(TransportError::Sequence);
+        }
+        let retransmissions = self.retransmit_requested_inner(sequences, now, ack)?;
+        // All fallible validation above precedes mutation on the control path.
+        // The encrypted path additionally runs on a transactional candidate.
+        if let Some(ack) = ack {
+            self.acknowledge(ack)?;
+        }
+        Ok(retransmissions)
+    }
     pub fn retransmit_requested(
         &mut self,
         sequences: &[u32],
         now: Instant,
     ) -> Result<Vec<Vec<u8>>, TransportError> {
+        self.retransmit_requested_inner(sequences, now, None)
+    }
+    fn retransmit_requested_inner(
+        &mut self,
+        sequences: &[u32],
+        now: Instant,
+        retiring_through: Option<u32>,
+    ) -> Result<Vec<Vec<u8>>, TransportError> {
         if sequences.len() > 256 {
             return Err(TransportError::Capacity);
         }
-        let mut result = Vec::new();
+        let mut staged = Vec::new();
         for seq in sequences.iter().copied().collect::<BTreeSet<_>>() {
-            if let Some(p) = self.pending.get_mut(&seq) {
+            if let Some(p) = self.pending.get(&seq) {
                 if p.retries >= 8 {
                     return Err(TransportError::RetryLimit);
                 }
-                // Rate-limit repeated NAKs; retry packet bytes and checksum remain identical.
-                if now.saturating_duration_since(p.sent) >= Duration::from_millis(100) {
-                    p.retries += 1;
-                    p.sent = now;
-                    result.push(p.bytes.to_vec());
+                // Retiring a requested packet must not defeat its NAK merely
+                // because it was sent recently. It can be staged only once:
+                // the accompanying ACK removes it immediately afterward.
+                if retiring_through.is_some_and(|ack| seq <= ack)
+                    || now.saturating_duration_since(p.sent) >= Duration::from_millis(100)
+                {
+                    staged.push((seq, p.bytes.to_vec()));
                 }
             }
+        }
+        // Preflight every requested packet before changing any retry counters.
+        let mut result = Vec::with_capacity(staged.len());
+        for (seq, bytes) in staged {
+            let pending = self.pending.get_mut(&seq).unwrap();
+            pending.retries += 1;
+            pending.sent = now;
+            result.push(bytes);
         }
         Ok(result)
     }

@@ -636,3 +636,42 @@ key `41000009` maps to DID `47001108`. That currency selects function `821a0004`
 which reads private integer quality `0c1c`, matching Progression's gold updates.
 No separate physical gold stack is required for this native catalog. This is
 static evidence, not an observed successful purchase in the client.
+
+## Equipment-window and recovery repair (2026-10-24)
+
+A player reported reduced interaction and failure to unequip through the equipment
+window/drag-to-bag path. The running executable was confirmed to be the latest
+deployed build. The session recorded 312 incoming packets, 257 rejections and only
+21 dispatched events; that counter alone does not identify the rejection cause.
+Packet and rejected-channel diagnostics now have independent bounded reason
+budgets, so pre-ready application messages cannot hide later transport failures.
+Diagnostics expose sequence/order counts, never ISAAC keys.
+
+The equipment-window path was not routed. It uses native `820e0015`, a strict
+180-byte `1f6`/`1f5` action constructed by `b4000e` through `1f6002b`, then
+`9ab4000a` / `820e005b`. The source equipment slot and repeated identities are
+validated; fields 6 and 18 are the requested backpack destination. Both recovered
+native callers supply concrete positions, not a negative sentinel. The server
+rechecks ownership and the currently equipped hand, then inserts at the bounded
+dense-list destination. Empty positions beyond the dense list append at its end.
+The distinct `n,IID,slot,destination` journal command preserves old `u` replay.
+
+Generic item use and explicit unequip now share hand-change preparation and
+ownership rules. Scene shape/capacity and the owner's full destroy/create/ack
+batch are admitted before persistence. Replies describe the actual final bag
+position. Captured `820e0056` replies retain tag 4 on equipment-slot fields 7/15;
+the previous reply changed those tags to 2. Destination fields retain their
+constructor-zero representation at zero and the native scalar representation
+when nonzero.
+
+Separately, native optional-header processing stages `HandleNak` before
+`HandlePak` (`004c5d60`, `004c5d20`). The old receiver retired ACKed packets before
+the server collected requested retries. A combined NAK/ACK could therefore erase
+the missing world/UI packet without retransmitting it. Retries are now staged
+before retirement and published outside fallible application handling. ACK ranges,
+checksums, queue acceptance, sequence windows and ISAAC semantics are unchanged.
+No late-NAK history cache is introduced by this repair.
+
+These are source-grounded repairs, not proof of the reported session's full cause.
+No test suites or automated native-client runs were performed; fresh player
+unequip and interaction acceptance remains required after deployment.
