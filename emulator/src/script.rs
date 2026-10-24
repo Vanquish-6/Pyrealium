@@ -16,6 +16,8 @@ pub const RESURRECT: u32 = 0x8207000e;
 pub enum Request {
     Group(crate::groups::Request),
     MerchantSell(crate::merchants::SellRequest),
+    MerchantBuy(crate::merchants::BuyRequest),
+    ExamineClear,
     CraftValidate(crate::crafting::ValidateRequest),
     CraftExecute(crate::crafting::ExecuteRequest),
     Resurrect,
@@ -107,6 +109,11 @@ pub fn decode(function: u32, bytes: &[u8]) -> Result<Request, WorldError> {
             r.pos = bytes.len();
             Request::MerchantSell(request)
         }
+        crate::merchants::BUY => {
+            let request = crate::merchants::BuyRequest::decode(bytes)?;
+            r.pos = bytes.len();
+            Request::MerchantBuy(request)
+        }
         crate::crafting::VALIDATE => {
             let request = crate::crafting::ValidateRequest::decode(bytes)?;
             r.pos = bytes.len();
@@ -135,9 +142,12 @@ pub fn decode(function: u32, bytes: &[u8]) -> Result<Request, WorldError> {
             Request::UseSkill { skill, target }
         }
         crate::examination::REQUEST => {
-            let target = crate::examination::decode(bytes)?;
+            let target = crate::examination::decode_request(bytes)?;
             r.pos = bytes.len();
-            Request::Examine(target)
+            match target {
+                crate::examination::Request::Object(target) => Request::Examine(target),
+                crate::examination::Request::Clear => Request::ExamineClear,
+            }
         }
         crate::equipment::USE => {
             let request = crate::equipment::UseRequest::decode(bytes)?;

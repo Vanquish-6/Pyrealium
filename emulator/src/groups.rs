@@ -323,7 +323,11 @@ impl Runtime {
                 looting,
                 social,
             } => {
-                if *looting != 2 || !social {
+                // The native create panel initially sends (1, false). Training
+                // groups explicitly normalize that default to our supported
+                // personal-reward profile, also reflected by snapshot flags 4.
+                let native_default = *looting == 1 && !social;
+                if !native_default && (*looting != 2 || !social) {
                     return Err(GroupError::UnsupportedMode);
                 }
                 if !valid_name(name) {
@@ -352,6 +356,13 @@ impl Runtime {
                 next.membership.insert(actor, id);
                 next.invitations.remove(&actor);
                 refresh.insert(id);
+                deliveries.push(Delivery {
+                    recipient: actor,
+                    data: script::chat(
+                        "Training groups use individual experience and personal rewards.",
+                        1,
+                    )?,
+                });
             }
             Request::Invite(target) => {
                 if *target == actor || !online.get(target).is_some_and(Member::valid) {
@@ -695,6 +706,11 @@ fn snapshot(name: &str, leader: u64, members: &[Member]) -> Result<Vec<u8>, Worl
         return Err(WorldError::InvalidValue);
     }
     let name_id = 3 + members.len() as u32 * 3;
+    // Pinned 7148 WLib: 81f1003d -> 01f00002 constructs the native
+    // FellowshipAdaptor from fields 7, 5/6, 2 and 4. Fields 0/1 and 3 are
+    // retained at their native 01f0001e constructor defaults; their wider
+    // server semantics are unknown. Flags 4 decode as social=true, looting=2
+    // through 01f00012 / 01f0002e, matching the captured personal profile.
     let mut objects = vec![Object::interpreted(
         0x1f0,
         vec![

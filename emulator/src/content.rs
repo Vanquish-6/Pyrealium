@@ -60,14 +60,17 @@ impl Content {
         Self::parse(include_str!("../content/world.tsv"), game_data)
     }
     pub fn observed(game_data: &Path) -> io::Result<Self> {
-        Self::parse(include_str!("../content/observed-world.tsv"), game_data)
+        Self::parse(
+            include_str!("../content/world-observed-expanded.tsv"),
+            game_data,
+        )
     }
     pub fn training(game_data: &Path) -> io::Result<Self> {
         let mut combined = String::from("pyrealium-world-v3\n");
         // Keep the retained actor snapshot when enabling the training preset;
         // replacing it with the portal/lifestone-only base leaves known actors
         // absent even though the server reports that world content is enabled.
-        for line in include_str!("../content/observed-world.tsv")
+        for line in include_str!("../content/world-observed-expanded.tsv")
             .lines()
             .skip(1)
         {

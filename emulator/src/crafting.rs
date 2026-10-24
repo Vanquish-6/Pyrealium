@@ -21,6 +21,8 @@ pub const VALIDATE: u32 = 0x82060006;
 pub const EXECUTE: u32 = 0x82060012;
 pub const VALIDATION_REPLY: u32 = 0x82060016;
 pub const COMPLETION: u32 = 0x8206001c;
+pub const INITIALIZE: u32 = 0x82060019;
+pub const DEFAULT_SKILLS: u32 = 0x82060034;
 pub const HEALTH_RECIPE: u32 = 0x6f001f17;
 pub const VIGOR_RECIPE: u32 = 0x6f001f18;
 pub const CRAFT_SKILL_DID: u32 = 0x6f0028d7;
@@ -32,6 +34,144 @@ pub const HEALTH_OUTPUT: u32 = 0x47001745;
 pub const VIGOR_OUTPUT: u32 = 0x47001746;
 pub const MAX_INGREDIENTS: usize = 16;
 pub const COOLDOWN_MS: u64 = 1000; // Explicit development policy.
+
+/// Validate the interpreted layouts used by the native crafting panel before
+/// emitting its initialization. Native 7148 PackBuffer supplies the graph;
+/// these interpreted package field counts come from its WLib package metadata.
+pub fn validate_wlib(bytes: &[u8]) -> Result<(), WorldError> {
+    crate::ui::validate_layouts(bytes, &[(0x1d2, 7), (0x345f, 6), (0x1d9, 12)])
+}
+
+struct PanelObject {
+    kind: u32,
+    native: Vec<u32>,
+    fields: Vec<(u32, u8)>,
+}
+impl PanelObject {
+    fn interpreted(package: u32, fields: &[(u32, u8)]) -> Self {
+        Self {
+            kind: package << 16,
+            native: Vec::new(),
+            fields: fields.to_vec(),
+        }
+    }
+    fn native(package: u32, words: &[u32]) -> Self {
+        Self {
+            kind: 0xffff0000 | package,
+            native: words.to_vec(),
+            fields: Vec::new(),
+        }
+    }
+}
+fn panel_graph(objects: &[PanelObject]) -> Vec<u8> {
+    let mut bytes = Vec::new();
+    let word = |bytes: &mut Vec<u8>, value: u32| bytes.extend(value.to_le_bytes());
+    word(&mut bytes, 5);
+    word(&mut bytes, objects.len() as u32);
+    for id in 1..=objects.len() {
+        word(&mut bytes, id as u32);
+    }
+    for object in objects {
+        for value in [0x44000100, 0, object.kind] {
+            word(&mut bytes, value);
+        }
+        for value in &object.native {
+            word(&mut bytes, *value);
+        }
+        word(&mut bytes, object.fields.len() as u32);
+        for (value, _) in &object.fields {
+            word(&mut bytes, *value);
+        }
+        for (_, tag) in &object.fields {
+            bytes.push(*tag);
+        }
+        while bytes.len() % 4 != 0 {
+            bytes.push(0);
+        }
+    }
+    bytes
+}
+fn panel_skill() -> PanelObject {
+    PanelObject::interpreted(
+        0x345f,
+        &[
+            (0, 0x82),
+            (0, 0xcd),
+            (CRAFT_SKILL_DID, 2),
+            (0, 0x82),
+            (0, 0xcd),
+            (1, 2),
+        ],
+    )
+}
+fn panel_recipe(did: u32) -> PanelObject {
+    // Observed default recipe-state values: no charge/level/time overrides.
+    // Three doubles use native -1.0 sentinels, not captured player timestamps.
+    PanelObject::interpreted(
+        0x1d9,
+        &[
+            (0, 2),
+            (0, 0xc3),
+            (0xbff00000, 0xcd),
+            (0, 2),
+            (0, 0xc3),
+            (0xbff00000, 0xcd),
+            (u32::MAX, 2),
+            (did, 2),
+            (0, 0xc3),
+            (0xbff00000, 0xcd),
+            (0, 2),
+            (u32::MAX, 2),
+        ],
+    )
+}
+
+/// Native crafting-panel initialization, sent after UI_Load. Call this again
+/// after granting training-kit authorization, using its authoritative value.
+///
+/// Retained ac2_login_from_charoverview.elog corroborates both message graphs,
+/// their package layouts and the level-one 6f0028d7 entry. Capture build identity
+/// is unknown. This fresh graph grants only the two development potion recipes;
+/// it does not replay the captured hundreds of recipes, XP or last-craft time.
+/// The root's XP modifier, count and time are zero: crafting XP is not awarded
+/// by this development profile. Original entitlement/quantity balance is absent.
+pub fn initialization(authorized: bool) -> Result<Vec<Vec<u8>>, WorldError> {
+    let default_objects = if authorized {
+        vec![PanelObject::native(0x65, &[1, 2]), panel_skill()]
+    } else {
+        vec![PanelObject::native(0x65, &[0])]
+    };
+    let mut objects = vec![PanelObject::interpreted(
+        0x1d2,
+        &[
+            (u32::MAX, 1),
+            (0, 3),
+            (0, 4),
+            (0, 0x83),
+            (0, 0xcd),
+            (2, 1),
+            (if authorized { 4 } else { 3 }, 1),
+        ],
+    )];
+    if authorized {
+        objects.extend([
+            PanelObject::native(0x11, &[1, CRAFT_SKILL_DID, 3]),
+            panel_skill(),
+            PanelObject::native(0x11, &[2, HEALTH_RECIPE, 5, VIGOR_RECIPE, 6]),
+            panel_recipe(HEALTH_RECIPE),
+            panel_recipe(VIGOR_RECIPE),
+        ]);
+    } else {
+        objects.extend([
+            PanelObject::native(0x11, &[0]),
+            PanelObject::native(0x11, &[0]),
+        ]);
+    }
+    Ok(vec![
+        crate::script::private_call(DEFAULT_SKILLS, &panel_graph(&default_objects))?,
+        crate::script::private_call(INITIALIZE, &panel_graph(&objects))?,
+    ])
+}
 
 /// Asset identity is original DAT data. Quantity one and stack limit one are
 /// deliberately bounded development policy, including for Tallow: the recipe

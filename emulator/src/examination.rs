@@ -8,9 +8,17 @@ use std::{collections::BTreeMap, io, path::Path};
 
 pub const REQUEST: u32 = 0x820a0007;
 
-pub fn decode(bytes: &[u8]) -> Result<u64, WorldError> {
-    // ExaminationRequest::StreamPack 00609660 has no newer options word.
-    if bytes.len() != 44 {
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Request {
+    Object(u64),
+    Clear,
+}
+
+/// Decode only the object and cleared request profiles proved by build 7148.
+/// Clear/default construction (00609530 / 006095f0) sets type and admin to
+/// zero; StreamPack 00609660 then emits those two words without a union value.
+pub fn decode_request(bytes: &[u8]) -> Result<Request, WorldError> {
+    if !matches!(bytes.len(), 36 | 44) {
         return Err(WorldError::InvalidValue);
     }
     let word = |offset: usize| u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
@@ -20,17 +28,29 @@ pub fn decode(bytes: &[u8]) -> Result<u64, WorldError> {
         || word(12) != 0x44000100
         || word(16) != 0
         || word(20) != 0xffff009a
-        || word(24) != 0x40000002
         || word(28) != 0
-        || word(40) != 0
     {
         return Err(WorldError::InvalidValue);
     }
-    let id = u64::from(word(32)) | (u64::from(word(36)) << 32);
-    if [0, u64::MAX].contains(&id) {
-        return Err(WorldError::InvalidValue);
+    match (word(24), bytes.len()) {
+        (0, 36) if word(32) == 0 => Ok(Request::Clear),
+        (0x40000002, 44) if word(40) == 0 => {
+            let id = u64::from(word(32)) | (u64::from(word(36)) << 32);
+            if [0, u64::MAX].contains(&id) {
+                return Err(WorldError::InvalidValue);
+            }
+            Ok(Request::Object(id))
+        }
+        _ => Err(WorldError::InvalidValue),
     }
-    Ok(id)
+}
+
+/// Legacy object-only entry point; clear requests are intentionally distinct.
+pub fn decode(bytes: &[u8]) -> Result<u64, WorldError> {
+    match decode_request(bytes)? {
+        Request::Object(id) => Ok(id),
+        Request::Clear => Err(WorldError::InvalidValue),
+    }
 }
 
 #[derive(Clone, Debug)]

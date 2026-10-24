@@ -210,7 +210,7 @@ fn info_payload(state: Progress, play_fx: bool) -> Result<Vec<u8>, WorldError> {
     word(&mut bytes, TRAINING_QUEST);
     bytes.extend(world::literal_name("Training Grounds")?);
     bytes.extend(world::literal_name(&format!(
-        "Defeat three training creatures, then type @quest claim for {REWARD_XP} experience and {REWARD_GOLD} gold."
+        "Defeat three Idol Spawn training creatures, then speak to a training mentor for {REWARD_XP} experience and {REWARD_GOLD} gold. You may also use @quest claim."
     ))?);
     word(&mut bytes, ICON);
     word(&mut bytes, status(state));
@@ -218,7 +218,7 @@ fn info_payload(state: Progress, play_fx: bool) -> Result<Vec<u8>, WorldError> {
     let entry = if state.claimed {
         "Training complete. You claimed the reward.".into()
     } else if state.killed == GOAL {
-        "Training creatures defeated: 3/3. Type @quest claim to receive your reward.".into()
+        "Training creatures defeated: 3/3. Speak to a training mentor to receive your reward, or use @quest claim.".into()
     } else {
         format!("Training creatures defeated: {}/3.", state.killed)
     };

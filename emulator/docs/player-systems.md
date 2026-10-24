@@ -550,3 +550,37 @@ native group-chat routing and persistent membership are unfinished.
 Library/binary compilation and an optimized build succeeded. No test suites or
 automated native-client runs were performed. The local server was restarted with
 the training profile; complete native shop/crafting/group acceptance remains open.
+
+## Native training interfaces (2026-10-24)
+
+Quartermaster interaction now builds the native four-item store catalog through
+`b83a0013`; purchases use strict `b83a000b` requests and the catalog refresh
+`b83a002a`. Graph layouts `385d/382e/3812`, a pinned store template and the actual
+gold definition are validated before enabling it. Offer IIDs are fresh, scoped to
+the active shop and separate from owned item identities. Leaving range, death,
+combat, logout or 30 seconds of inactivity retires the shop context. Buy requests
+cannot choose prices or grant an unissued offer. Inventory selling remains the
+fixed buyback surface; the newer shop's consignment tab is a separate, unfinished
+escrow/listing feature and must not be interpreted as an immediate sale.
+
+The native crafting panel receives default skills `82060034`, then tree state
+`82060019`, after UI_Load. Only the training skill and two actual potion recipes
+are advertised, with fresh graphs and zero earned counters. Original craft-rule
+parity and native UI eligibility/assembly still require client acceptance.
+
+Native group creation accepts the panel's default settings and explicitly
+normalizes them to the supported individual-XP/personal-reward group. The owner
+is told this policy; snapshots report the actual settings. The pinned client's
+FellowshipAdaptor path consumes the existing name, leader, member map and flags.
+
+Three authored Pectar Training Master placements accept/update/claim the training
+quest on interaction. Two extra corridor Idol Spawn allow the three-kill objective
+without waiting for one creature to respawn repeatedly. Native SelectionInfo
+`8212002c` now populates the target panel and follows creature health changes,
+separately from public object qualities. Its exact package `ab` packing follows
+`006097c0` and `ac2_npc_target.elog`. Native 36-byte type-zero examination clear
+requests are accepted as no-ops, following `00609530`/`00609660`.
+
+These interfaces compile; graph construction alone does not establish successful
+display or interaction in the original client. No test suites or automated game
+runs were performed for these changes.

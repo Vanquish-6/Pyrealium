@@ -3,6 +3,22 @@
 use crate::{script, world::WorldError};
 
 pub const LOAD: u32 = 0x82120027;
+/// SelectionInfo::StreamPack 006097c0 and retained ac2_npc_target.elog.
+/// The native target panel is separate from the object's public qualities.
+pub fn selection(target: u64, vitals: Option<[u32; 4]>) -> Result<Vec<u8>, WorldError> {
+    let values = if let Some([health, maximum, vigor, max_vigor]) = vitals {
+        if maximum == 0 || health > maximum || vigor > max_vigor {
+            return Err(WorldError::InvalidValue);
+        }
+        vec![0x40000001, health, 0, maximum, vigor, 0, max_vigor]
+    } else {
+        vec![0]
+    };
+    let mut args = Vec::new();
+    graph(&mut args, &[Object::native(0xab, &values)]);
+    args.extend(script::identity(target));
+    script::private_call(0x8212002c, &args)
+}
 pub fn death_notice(reason: &str) -> Result<Vec<u8>, WorldError> {
     script::private_call(0x8207002b, &script::literal(reason)?)
 }

@@ -1,8 +1,13 @@
 //! Authored development quartermaster transactions and a bounded native sale.
 //!
 //! Prices/stock are server policy, not recovered original economy. The retained
-//! shop captures do not establish a usable native catalog graph. Chat commands
-//! provide the current shop surface; no fabricated shop heap graph is sent.
+//! nested shopping capture establishes the native catalog and purchase graphs.
+//! Fresh bounded graphs use server-owned offer identities and fixed stock.
+//! Evidence: npc.interaction/shopping.elog, ikeras.weapons.vendor.buying.weapon.elog;
+//! converted build-7148 WLib 56000005 b83a0013 at 102780, b8320007 at 11bdb0,
+//! b8320019 at 11c57c; native UIShop adapter 00467ce0. Captured client build
+//! identity is unknown; matching bytecode corroborates field access and UI calls.
+//! Native client acceptance of newly authored stock remains a runtime boundary.
 //! Native 820f0002/820f0009 single-item sale fields follow the retained sale
 //! capture. That request has no merchant IID or session nonce: the caller must
 //! establish and revalidate a nearby merchant context before accepting it.
@@ -20,6 +25,14 @@ pub const MERCHANT_ENTITY: u32 = 0x47003724;
 pub const MERCHANT_VISUAL: u32 = 0x1f001941;
 pub const SELL: u32 = 0x820f0002;
 pub const SALE_RESULT: u32 = 0x820f0009;
+pub const VIEW_STORE: u32 = 0xb83a0013;
+pub const REFRESH_STORE: u32 = 0xb83a002a;
+pub const BUY: u32 = 0xb83a000b;
+/// Matching interpreted layouts; callers must verify their active WLib.
+pub const LAYOUTS: [(usize, u32); 3] = [(0x385d, 4), (0x382e, 11), (0x3812, 10)];
+const STORE_TEMPLATE: u32 = 0x6f00609a;
+const GOLD_DEFINITION: u32 = 0x47001108;
+const STOCK: [Stock; 4] = [Stock::Potion, Stock::Weapon, Stock::Mucor, Stock::Tallow];
 pub const MUCOR_DEFINITION: u32 = 0x47001744;
 pub const MUCOR_VISUAL: u32 = 0x1f000e37;
 pub const MUCOR_PHYSICAL: u32 = 0x4700176b;
@@ -96,6 +109,27 @@ pub struct Catalog {
 }
 impl Catalog {
     pub fn validate(portal: &mut Dat) -> io::Result<Self> {
+        // The retained catalog loads this native StoreTemplate for its title,
+        // description and portrait. Stock and prices below are authored policy.
+        let template = portal.read(STORE_TEMPLATE)?;
+        let gold = portal.read(GOLD_DEFINITION)?;
+        let fingerprint = |bytes: &[u8]| {
+            bytes.iter().fold(0xcbf29ce484222325u64, |hash, byte| {
+                (hash ^ u64::from(*byte)).wrapping_mul(0x100000001b3)
+            })
+        };
+        if template.len() != 760
+            || fingerprint(&template) != 0x67688aec506e3138
+            || gold.len() != 84
+            || fingerprint(&gold) != 0x8f7c1215933eab75
+        {
+            return Err(io::Error::other(
+                "unsupported native store template or gold definition",
+            ));
+        }
+        for texture in [0x41006f81, 0x4100034b, 0x410082d6] {
+            portal.read(texture)?;
+        }
         portal.read(MERCHANT_ENTITY)?;
         portal.read(MERCHANT_VISUAL)?;
         let potion = crate::item_services::validate_potion(portal)?;
@@ -381,4 +415,220 @@ pub fn sale_result(owner: u64, ordinal: u16) -> Result<Vec<u8>, WorldError> {
     arguments.extend(crate::script::integer(u32::from(ordinal)));
     arguments.extend(crate::script::identity(0));
     crate::script::private_call(SALE_RESULT, &arguments)
+}
+
+/// One server-issued catalog context. Allocate fresh offer IIDs whenever this
+/// context is replaced, and expire it on logout, death, or leaving trade range.
+/// The caller revalidates range and commits inventory/gold and queued UI events
+/// atomically. Client graph references never become owned inventory identities.
+#[derive(Clone, Debug)]
+pub struct Shop {
+    merchant: u64,
+    offers: [u64; 4],
+}
+impl Shop {
+    pub fn new(merchant: u64, offers: [u64; 4]) -> Result<Self, WorldError> {
+        if [0, u64::MAX].contains(&merchant)
+            || offers.iter().enumerate().any(|(index, id)| {
+                [0, u64::MAX, merchant].contains(id) || offers[..index].contains(id)
+            })
+        {
+            return Err(WorldError::InvalidValue);
+        }
+        Ok(Self { merchant, offers })
+    }
+
+    pub fn merchant(&self) -> u64 {
+        self.merchant
+    }
+
+    /// b83a0013 -> 1aa401de -> b8320006/b8320007 -> 38390006.
+    /// Native UIShop is constructed by client bytecode, never packed as an
+    /// invented native C++ heap object. The final IID is the merchant target;
+    /// the client obtains the active player through EFun 00720014.
+    pub fn open(&self, _validated_catalog: &Catalog) -> Result<Vec<u8>, WorldError> {
+        let mut objects = vec![ShopObject::interpreted(
+            0x385d,
+            vec![(2, 1), (STORE_TEMPLATE, 4), (4, 4), (0, 2)],
+        )];
+        let mut list = 4u32.to_le_bytes().to_vec();
+        for index in 0..4 {
+            list.extend((3 + index * 2u32).to_le_bytes());
+        }
+        objects.push(ShopObject::native(0x65, list));
+        for (index, stock) in STOCK.into_iter().enumerate() {
+            let identity = self.offers[index];
+            let texture = match stock {
+                Stock::Potion => 0x41006f81,
+                Stock::Weapon | Stock::Mucor => 0x4100034b,
+                Stock::Tallow => 0x410082d6,
+            };
+            objects.push(ShopObject::interpreted(
+                0x382e,
+                vec![
+                    (stock.definition(), 4),
+                    (u32::MAX, 1),
+                    (identity as u32, 0x84),
+                    ((identity >> 32) as u32, 0xcd),
+                    (texture, 4),
+                    (4 + index as u32 * 2, 1),
+                    ((stock.buy_price() as f32).to_bits(), 4),
+                    (GOLD_DEFINITION, 4),
+                    (1, 4), // Advertise the supported single-item quantity.
+                    (index as u32, 2),
+                    (0, 2),
+                ],
+            ));
+            objects.push(ShopObject::native(
+                0x6a,
+                crate::world::literal_name(match stock {
+                    Stock::Potion => "Health Potion",
+                    Stock::Weapon => "Training Weapon",
+                    Stock::Mucor => "Mucor Mushroom",
+                    Stock::Tallow => "Tallow",
+                })?,
+            ));
+        }
+        let mut arguments = shop_graph(&objects);
+        arguments.extend(crate::script::identity(self.merchant));
+        crate::script::private_call(VIEW_STORE, &arguments)
+    }
+
+    /// The retained shopping capture sends the same store/list/sale graph and
+    /// merchant tail through b83a002a after purchases. Matching WLib dispatches
+    /// 1aa401e2 -> b8320008 -> b8320007, then UI update EFun 38390001.
+    pub fn refresh(&self, validated_catalog: &Catalog) -> Result<Vec<u8>, WorldError> {
+        let mut bytes = self.open(validated_catalog)?;
+        bytes[4..8].copy_from_slice(&REFRESH_STORE.to_le_bytes());
+        Ok(bytes)
+    }
+
+    pub fn plan_buy(
+        &self,
+        owner: u64,
+        request: &BuyRequest,
+        inventory: &Inventory,
+        state: &Progression,
+        item_id: u64,
+    ) -> Result<Plan, MerchantError> {
+        if request.owner != owner
+            || request.merchant != self.merchant
+            || owner == self.merchant
+            || self.offers.contains(&item_id)
+            || [owner, self.merchant].contains(&item_id)
+        {
+            return Err(MerchantError::InvalidIdentity);
+        }
+        let index = self
+            .offers
+            .iter()
+            .position(|&id| id == request.offer)
+            .ok_or(MerchantError::NotForSale)?;
+        plan_buy(STOCK[index], inventory, state, item_id)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BuyRequest {
+    pub owner: u64,
+    pub merchant: u64,
+    pub offer: u64,
+}
+impl BuyRequest {
+    /// Captured b83a000b: exact 3812 ten-field graph and empty native 3b
+    /// selection. Only quantity one is supported. All references, tags, unused
+    /// fields and object boundaries are checked; client prices are absent.
+    pub fn decode(arguments: &[u8]) -> Result<Self, WorldError> {
+        if arguments.len() != 104 {
+            return Err(WorldError::InvalidValue);
+        }
+        let w = |offset| u32::from_le_bytes(arguments[offset..offset + 4].try_into().unwrap());
+        let iid = |offset| u64::from(w(offset)) | u64::from(w(offset + 4)) << 32;
+        let root = w(8);
+        let selection = w(12);
+        if w(0) != 5
+            || w(4) != 2
+            || [0, u32::MAX].contains(&root)
+            || [0, u32::MAX, root].contains(&selection)
+            || w(16) != 0x44000100
+            || w(20) != 0
+            || w(24) != 0x38120000
+            || w(28) != 10
+            || w(40) != selection
+            || w(52) != 1
+            || w(64) != 0
+            || w(68) != 0
+            || arguments[72..82] != [0x84, 0xcd, 1, 0x84, 0xcd, 4, 0x82, 0xcd, 2, 4]
+            || w(84) != 0x44000100
+            || w(88) != 0
+            || w(92) != 0xffff003b
+            || w(96) != 0
+            || w(100) != 0
+        {
+            return Err(WorldError::InvalidValue);
+        }
+        let request = Self {
+            offer: iid(32),
+            owner: iid(44),
+            merchant: iid(56),
+        };
+        if [request.offer, request.owner, request.merchant]
+            .iter()
+            .any(|id| [0, u64::MAX].contains(id))
+            || request.offer == request.owner
+            || request.offer == request.merchant
+            || request.owner == request.merchant
+        {
+            return Err(WorldError::InvalidValue);
+        }
+        Ok(request)
+    }
+}
+
+struct ShopObject {
+    kind: u32,
+    native: Vec<u8>,
+    fields: Vec<(u32, u8)>,
+}
+impl ShopObject {
+    fn interpreted(package: u16, fields: Vec<(u32, u8)>) -> Self {
+        Self {
+            kind: u32::from(package) << 16,
+            native: Vec::new(),
+            fields,
+        }
+    }
+    fn native(kind: u16, native: Vec<u8>) -> Self {
+        Self {
+            kind: 0xffff0000 | u32::from(kind),
+            native,
+            fields: Vec::new(),
+        }
+    }
+}
+fn shop_graph(objects: &[ShopObject]) -> Vec<u8> {
+    let mut bytes = Vec::new();
+    let word = |bytes: &mut Vec<u8>, value: u32| bytes.extend(value.to_le_bytes());
+    word(&mut bytes, 5);
+    word(&mut bytes, objects.len() as u32);
+    for reference in 1..=objects.len() {
+        word(&mut bytes, reference as u32);
+    }
+    for object in objects {
+        for value in [0x44000100, 0, object.kind] {
+            word(&mut bytes, value);
+        }
+        bytes.extend(&object.native);
+        word(&mut bytes, object.fields.len() as u32);
+        for &(value, _) in &object.fields {
+            word(&mut bytes, value);
+        }
+        for &(_, tag) in &object.fields {
+            bytes.push(tag);
+        }
+        while bytes.len() % 4 != 0 {
+            bytes.push(0);
+        }
+    }
+    bytes
 }
