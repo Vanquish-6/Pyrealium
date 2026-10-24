@@ -103,3 +103,51 @@ the newer reader. Training does not yet grant starter equipment or abilities.
 
 Compiled only. No tests, benchmarks, native client launch or deployment/restart
 were performed for this addition.
+
+## Skill catalog and training interface
+
+The DAT importer resolves `700016e2`'s native skill hash and external references,
+then reads bounded common fields and supported dependency objects from each
+definition. It exports 1,952 definitions; 192 unsupported common-field layouts
+remain in `content/unresolved-skills.json`. Species, level, credit cost, rank cap,
+advancement-record reference, prerequisites and incompatibilities are retained.
+This does not evaluate advancement curves or implement active skill effects.
+SHA256 provenance and FNV compatibility fingerprints are recorded. The opt-in
+HUD startup validates the index and every exported definition against the supplied
+DAT before using the imported rules. Regenerating this catalog after `k1` journals
+exist requires an explicit skill migration.
+
+Native train/untrain/raise requests use the captured integer argument profile:
+functions `82140002`, `82140007`, `8214000c`, exactly eight argument bytes. Training
+and immediate rank-zero untraining now mutate a durable skill book, flush the
+`k1` journal event before acknowledgment, and send native skill and credit updates.
+Replay repeats ownership, eligibility, credit, dependency and incompatibility
+validation. Reconnect initializes the complete saved skill hash. Credits used by
+trained skills remain deducted when level-up updates the available balance.
+
+The supported training profile is human, ordinary skills through minimum level
+50; faction/common, hero, recall, portal and mob grants require further services.
+Requests must satisfy imported species/level/prerequisite/credit rules, including
+incompatibility in both directions. Duplicate training, dead-player changes,
+removing prerequisite skills and removing locked grants are rejected. A skill
+book is bounded to 128 entries. Rank zero is the captured newly-trained leaf
+profile. Locked grants are enforced server-side; their full native arrow/status
+presentation has not been established.
+
+SkillData uses interpreted package `231`, fifteen fields; initialization checks
+that layout in the supplied WLib. Train updates use `8214000d`; removals use
+`82140014`; credit changes use `82140011`. Saved skills initialize the skill map
+within UI_Load. The retained skilling captures support these envelope/object
+layouts, but their original build identity and native acceptance remain unverified.
+
+`skill-state --character-id N [--event t,HEX|g,HEX|u,HEX] --data PATH` provides
+offline inspection, training, explicit zero-credit locked grants and untraining
+under the existing exclusive store lock. No starter skills are automatically
+inferred from the catalog. Native requests cannot invoke the operator grant path.
+
+Advancement requests currently return an unavailable message and do not spend XP.
+The supplied client advancement records are not the precomputed table shape
+expected by the older reference reader; using its assumptions would debit the
+wrong amounts. Active ability use, costs/cooldowns/effects, timed original
+untraining, hero/crafting/faction systems and full original training eligibility
+remain separate work. No automated tests or native client checks were run.

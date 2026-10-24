@@ -1,0 +1,967 @@
+{
+  "definitions": 1952,
+  "index_entries": 2144,
+  "unresolved": [
+    {
+      "skill": 609,
+      "record": "7000196c",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1474,
+      "record": "700038fc",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1475,
+      "record": "700038fd",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1476,
+      "record": "700038fe",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1477,
+      "record": "700038ff",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1478,
+      "record": "70003900",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1479,
+      "record": "70003901",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1481,
+      "record": "70003903",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1482,
+      "record": "70003904",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1483,
+      "record": "70003905",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1484,
+      "record": "70003906",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1485,
+      "record": "70003907",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1486,
+      "record": "70003908",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1487,
+      "record": "70003909",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1488,
+      "record": "7000390a",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1489,
+      "record": "7000390b",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1490,
+      "record": "7000390c",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1491,
+      "record": "7000390d",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1492,
+      "record": "7000390e",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1493,
+      "record": "7000390f",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1494,
+      "record": "70003910",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1495,
+      "record": "70003911",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1508,
+      "record": "70003925",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1509,
+      "record": "70003926",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1510,
+      "record": "70003927",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1511,
+      "record": "70003915",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1512,
+      "record": "70003928",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1513,
+      "record": "7000392e",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1514,
+      "record": "7000392d",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1516,
+      "record": "70003930",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1517,
+      "record": "70003931",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1518,
+      "record": "70003932",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1519,
+      "record": "70003933",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1520,
+      "record": "70003934",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1521,
+      "record": "70003937",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1522,
+      "record": "70003938",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1523,
+      "record": "70003939",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1524,
+      "record": "7000393a",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1525,
+      "record": "7000393c",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1526,
+      "record": "7000393d",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1527,
+      "record": "7000393e",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1528,
+      "record": "7000393f",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1529,
+      "record": "70003940",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1530,
+      "record": "70003941",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1531,
+      "record": "70003942",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1532,
+      "record": "70003943",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1533,
+      "record": "70003944",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1534,
+      "record": "70003947",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1536,
+      "record": "70003949",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1537,
+      "record": "7000394a",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1538,
+      "record": "7000394b",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1539,
+      "record": "7000394c",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1540,
+      "record": "7000394d",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1542,
+      "record": "700039b9",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1543,
+      "record": "700039ba",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1544,
+      "record": "700039bb",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1545,
+      "record": "700039b5",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1546,
+      "record": "700039b6",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1547,
+      "record": "700039b7",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1548,
+      "record": "700039b8",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1549,
+      "record": "700039bc",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1550,
+      "record": "700039bd",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1551,
+      "record": "700039be",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1552,
+      "record": "700039bf",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1553,
+      "record": "700039c0",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1554,
+      "record": "700039c1",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1555,
+      "record": "700039c2",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1556,
+      "record": "700039d9",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1557,
+      "record": "700039da",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1558,
+      "record": "700039e9",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1559,
+      "record": "700039ea",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1560,
+      "record": "700039db",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1561,
+      "record": "700039eb",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1562,
+      "record": "700039dd",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1563,
+      "record": "700039dc",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1564,
+      "record": "700039de",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1565,
+      "record": "700039ee",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1566,
+      "record": "700039ec",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1567,
+      "record": "700039e1",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1568,
+      "record": "700039df",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1569,
+      "record": "700039d8",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1570,
+      "record": "700039ed",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1571,
+      "record": "700039e0",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1868,
+      "record": "700039f5",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1869,
+      "record": "70003aea",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1870,
+      "record": "70003aeb",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1871,
+      "record": "70003aec",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1872,
+      "record": "70003aed",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1873,
+      "record": "70003aee",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1874,
+      "record": "70003aef",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1875,
+      "record": "70003af0",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1876,
+      "record": "70003af1",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1877,
+      "record": "70003af2",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1878,
+      "record": "70003af3",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1879,
+      "record": "70003af4",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1880,
+      "record": "70003a0d",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1881,
+      "record": "70003af5",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1882,
+      "record": "700039f6",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1883,
+      "record": "700039f7",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1884,
+      "record": "700039f8",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1885,
+      "record": "700039f9",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1888,
+      "record": "70003c2b",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1889,
+      "record": "70003c2c",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1890,
+      "record": "70003c2d",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1891,
+      "record": "70003c2e",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1892,
+      "record": "70003c2f",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1893,
+      "record": "70003c30",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1894,
+      "record": "70003c31",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1895,
+      "record": "70003c32",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1896,
+      "record": "70003c33",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1897,
+      "record": "70003c29",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1898,
+      "record": "70003c2a",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1899,
+      "record": "70003bd2",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1900,
+      "record": "70003bd3",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1901,
+      "record": "70003bd4",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1902,
+      "record": "70003bd5",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1903,
+      "record": "70003bd6",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1904,
+      "record": "70003bd7",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1905,
+      "record": "70003bd8",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1906,
+      "record": "70003bd9",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1907,
+      "record": "70003bda",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1908,
+      "record": "70003bdb",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1909,
+      "record": "70003bdc",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1910,
+      "record": "70003bdd",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1911,
+      "record": "70003bde",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1912,
+      "record": "70003bdf",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1913,
+      "record": "70003be0",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1914,
+      "record": "70003be1",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1915,
+      "record": "70003be2",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1916,
+      "record": "70003bf6",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1917,
+      "record": "70003bf7",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1918,
+      "record": "70003bf8",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1919,
+      "record": "70003bf9",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1920,
+      "record": "70003bfa",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1921,
+      "record": "70003bfb",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1922,
+      "record": "70003bfc",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1923,
+      "record": "70003bfd",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1924,
+      "record": "70003bfe",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1925,
+      "record": "70003bff",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1926,
+      "record": "70003c00",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1927,
+      "record": "70003c01",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1928,
+      "record": "70003c02",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 1929,
+      "record": "70003bea",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2084,
+      "record": "70003d09",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2085,
+      "record": "70003d24",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2086,
+      "record": "70003d0a",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2087,
+      "record": "70003d27",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2088,
+      "record": "70003d0b",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2089,
+      "record": "70003d0c",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2090,
+      "record": "70003d25",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2092,
+      "record": "70003d1b",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2093,
+      "record": "70003d28",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2094,
+      "record": "70003cec",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2095,
+      "record": "70003d04",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2096,
+      "record": "70003d1c",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2097,
+      "record": "70003ced",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2098,
+      "record": "70003d0d",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2099,
+      "record": "70003d29",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2100,
+      "record": "70003d2a",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2101,
+      "record": "70003d1d",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2102,
+      "record": "70003d0e",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2103,
+      "record": "70003d1e",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2104,
+      "record": "70003cee",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2105,
+      "record": "70003d1f",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2106,
+      "record": "70003cef",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2107,
+      "record": "70003d20",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2108,
+      "record": "70003cf0",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2109,
+      "record": "70003d21",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2110,
+      "record": "70003cf1",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2111,
+      "record": "70003d22",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2112,
+      "record": "70003ce8",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2113,
+      "record": "70003cf2",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2116,
+      "record": "70003d2c",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2117,
+      "record": "70003d2f",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2118,
+      "record": "70003d2d",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2119,
+      "record": "70003d2e",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2120,
+      "record": "70003d7f",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2121,
+      "record": "70003d80",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2122,
+      "record": "70003d81",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2160,
+      "record": "70003d97",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2161,
+      "record": "70003d98",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2162,
+      "record": "70003d99",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2163,
+      "record": "70003dc5",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2164,
+      "record": "70003dc6",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2165,
+      "record": "70003dc7",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2178,
+      "record": "70003de5",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2189,
+      "record": "70003e0f",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2190,
+      "record": "70003e10",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2191,
+      "record": "70003e11",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2192,
+      "record": "70003e12",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2193,
+      "record": "70003e13",
+      "reason": "unsupported skill common-field bounds"
+    },
+    {
+      "skill": 2209,
+      "record": "70003e37",
+      "reason": "unsupported skill common-field bounds"
+    }
+  ],
+  "advancement_curves_evaluated": false
+}

@@ -305,6 +305,8 @@ pub fn run(config: Config) -> io::Result<()> {
         let mut portal = crate::dat::Dat::open(directory.join("portal.dat"))?;
         let wlib = portal.read(0x56000005)?;
         crate::ui::validate_wlib(&wlib).map_err(other)?;
+        crate::ui::validate_skills_wlib(&wlib).map_err(other)?;
+        crate::skills::validate_assets(&mut portal)?;
         if store
             .characters
             .values()
@@ -701,6 +703,73 @@ pub fn run(config: Config) -> io::Result<()> {
                                         }
                                     };
                                     match request {
+                                        script::Request::Skill { action, skill } => {
+                                            if !config.initialize_ui {
+                                                replies.extend(peer.send_event(&script::chat("Skills are not available in this session.",1).map_err(other)?,now)?);
+                                                return Ok(replies);
+                                            }
+                                            let command = match action {
+                                                crate::skills::Action::Train => {
+                                                    crate::skills::Command::Train(skill)
+                                                }
+                                                crate::skills::Action::Untrain => {
+                                                    crate::skills::Command::Untrain(skill)
+                                                }
+                                                crate::skills::Action::Raise => {
+                                                    replies.extend(peer.send_event(&script::chat(crate::skills::SkillError::AdvancementUnavailable.message(),1).map_err(other)?,now)?);
+                                                    return Ok(replies);
+                                                }
+                                            };
+                                            let saved = &store.characters[&character];
+                                            let race = saved
+                                                .creation
+                                                .as_ref()
+                                                .map_or(1, |request| request.race);
+                                            if let Err(error) = saved.skills.apply(
+                                                command,
+                                                &saved.progression,
+                                                race,
+                                            ) {
+                                                replies.extend(
+                                                    peer.send_event(
+                                                        &script::chat(error.message(), 1)
+                                                            .map_err(other)?,
+                                                        now,
+                                                    )?,
+                                                );
+                                                return Ok(replies);
+                                            }
+                                            store.skill_command(
+                                                &peer.session.account,
+                                                character,
+                                                command,
+                                            )?;
+                                            let saved = &store.characters[&character];
+                                            let wire = match action {
+                                                crate::skills::Action::Train => {
+                                                    crate::ui::skill_update(
+                                                        skill,
+                                                        saved.skills.get(skill).unwrap(),
+                                                    )
+                                                }
+                                                _ => crate::ui::skill_remove(skill),
+                                            }
+                                            .map_err(other)?;
+                                            deliveries.push(crate::scene::Delivery {
+                                                recipient: character,
+                                                data: wire.into(),
+                                            });
+                                            deliveries.push(crate::scene::Delivery {
+                                                recipient: character,
+                                                data: crate::ui::skill_credits(
+                                                    saved
+                                                        .skills
+                                                        .available_credits(&saved.progression),
+                                                )
+                                                .map_err(other)?
+                                                .into(),
+                                            });
+                                        }
                                         script::Request::UiSettings(settings) => {
                                             store.update_ui(
                                                 &peer.session.account,
@@ -1226,16 +1295,18 @@ pub fn run(config: Config) -> io::Result<()> {
                                                             || !c.hotbar.is_empty()
                                                             || c.inventory.items().next().is_some()
                                                             || c.progression != crate::progression::Progression::default()
+                                                            || !c.skills.is_empty()
                                                     })
                                                 }
                                                 _ => None,
                                             };
                                             if let Some(saved) = saved {
-                                                let restored = crate::ui::player_state(
+                                                let restored = crate::ui::player_all(
                                                     saved.ui.as_ref(),
                                                     Some(&saved.hotbar),
                                                     Some(&saved.inventory),
                                                     Some(&saved.progression),
+                                                    Some(&saved.skills),
                                                 )
                                                 .map_err(other)?;
                                                 let instance=peer.motion.as_ref().ok_or_else(||invalid("inventory bootstrap without avatar lifetime"))?.instance;
@@ -1332,9 +1403,11 @@ pub fn run(config: Config) -> io::Result<()> {
                         if config.initialize_ui {
                             updates.push(crate::scene::Delivery {
                                 recipient: player,
-                                data: crate::ui::skill_credits(state.level().credits)
-                                    .map_err(other)?
-                                    .into(),
+                                data: crate::ui::skill_credits(
+                                    store.characters[&player].skills.available_credits(&state),
+                                )
+                                .map_err(other)?
+                                .into(),
                             });
                         }
                         for wire in state.private_updates() {

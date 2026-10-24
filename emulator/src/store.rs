@@ -26,6 +26,7 @@ pub struct Character {
     pub hotbar: crate::preferences::Hotbar,
     pub inventory: crate::inventory::Inventory,
     pub progression: crate::progression::Progression,
+    pub skills: crate::skills::Book,
 }
 
 pub struct Store {
@@ -135,6 +136,29 @@ impl Store {
         }
         self.append_record(&format!("g1\t{id}\t{}", command.encode()))?;
         self.characters.get_mut(&id).unwrap().progression = next;
+        Ok(())
+    }
+    pub fn skill_command(
+        &mut self,
+        account: &str,
+        id: u64,
+        command: crate::skills::Command,
+    ) -> io::Result<()> {
+        let character = self
+            .characters
+            .get(&id)
+            .filter(|c| c.account == account && !c.deleted)
+            .ok_or_else(|| invalid("skill character not owned"))?;
+        let race = character
+            .creation
+            .as_ref()
+            .map_or(1, |request| request.race);
+        let next = character
+            .skills
+            .apply(command, &character.progression, race)
+            .map_err(io::Error::other)?;
+        self.append_record(&format!("k1\t{id}\t{}", command.encode()))?;
+        self.characters.get_mut(&id).unwrap().skills = next;
         Ok(())
     }
     pub fn progression_batch(
@@ -368,6 +392,7 @@ impl Store {
             hotbar: crate::preferences::Hotbar::default(),
             inventory: crate::inventory::Inventory::default(),
             progression: crate::progression::Progression::default(),
+            skills: crate::skills::Book::default(),
         };
         let line = match creation {
             None => format!("v1\t{}\t{}\t{}", c.id, c.account, c.name),
@@ -516,6 +541,26 @@ pub fn decode_journal(bytes: &[u8]) -> io::Result<BTreeMap<u64, Character>> {
             return Err(invalid("character journal checksum mismatch"));
         }
         let fields: Vec<_> = data.split('\t').collect();
+        if fields.len() == 3 && fields[0] == "k1" {
+            let id = fields[1]
+                .parse::<u64>()
+                .map_err(|_| invalid("invalid skill owner"))?;
+            let command = crate::skills::Command::decode(fields[2])
+                .map_err(|_| invalid("invalid skill mutation"))?;
+            let character = records
+                .get_mut(&id)
+                .filter(|c| !c.deleted)
+                .ok_or_else(|| invalid("skill owner unavailable"))?;
+            let race = character
+                .creation
+                .as_ref()
+                .map_or(1, |request| request.race);
+            character.skills = character
+                .skills
+                .apply(command, &character.progression, race)
+                .map_err(|_| invalid("invalid saved skill transition"))?;
+            continue;
+        }
         if fields.len() == 3 && fields[0] == "g2" {
             let id = fields[1]
                 .parse::<u64>()
@@ -705,6 +750,7 @@ pub fn decode_journal(bytes: &[u8]) -> io::Result<BTreeMap<u64, Character>> {
                 hotbar: crate::preferences::Hotbar::default(),
                 inventory: crate::inventory::Inventory::default(),
                 progression: crate::progression::Progression::default(),
+                skills: crate::skills::Book::default(),
             },
         );
     }

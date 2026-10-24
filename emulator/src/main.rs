@@ -6,6 +6,9 @@ use std::{env, net::SocketAddr, path::PathBuf, process::ExitCode};
 
 fn usage() {
     println!(
+        "  skill-state --character-id N [--event t,SKILL_HEX|g,SKILL_HEX|u,SKILL_HEX] --data PATH\n    Offline skill inspection, training, explicit free grant, or untraining."
+    );
+    println!(
         "  player-state --character-id N [--event COMMAND] --data PATH\n    Offline progression inspection/edit: x,XP g,GOLD s,GOLD d,DAMAGE h,HEAL v,COST r,RECOVERY z(resurrect)."
     );
     println!(
@@ -93,6 +96,29 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     match command.as_str() {
+        "skill-state" => {
+            let mut store = Store::open(&data)?;
+            let id = character_id.ok_or("--character-id is required")?;
+            if let Some(event) = progression_event {
+                store.skill_command(&account, id, pyrealium::skills::Command::decode(&event)?)?;
+            }
+            let saved = store
+                .characters
+                .get(&id)
+                .filter(|c| c.account == account && !c.deleted)
+                .ok_or("active character not owned")?;
+            println!(
+                "{}: {} available skill credits",
+                saved.name,
+                saved.skills.available_credits(&saved.progression)
+            );
+            for (id, entry) in saved.skills.entries() {
+                println!(
+                    "{id:#x}\trank={}\tcredits={}\tlocked={}",
+                    entry.rank, entry.credits, entry.locked
+                );
+            }
+        }
         "player-state" => {
             let mut store = Store::open(&data)?;
             let id = character_id.ok_or("--character-id is required")?;

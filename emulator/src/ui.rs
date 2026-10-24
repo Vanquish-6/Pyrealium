@@ -16,6 +16,9 @@ pub fn validate_wlib(bytes: &[u8]) -> Result<(), WorldError> {
 pub fn validate_inventory_wlib(bytes: &[u8]) -> Result<(), WorldError> {
     validate_layouts(bytes, &[(0x1a2, 3), (0x1f9, 6)])
 }
+pub fn validate_skills_wlib(bytes: &[u8]) -> Result<(), WorldError> {
+    validate_layouts(bytes, &[(0x231, 15)])
+}
 fn validate_layouts(bytes: &[u8], layouts: &[(usize, u32)]) -> Result<(), WorldError> {
     struct Reader<'a> {
         bytes: &'a [u8],
@@ -169,6 +172,36 @@ pub fn skill_credits(credits: u16) -> Result<Vec<u8>, WorldError> {
     );
     script::private_call(0x82140011, &args)
 }
+fn skill_object(id: u32, entry: &crate::skills::Trained) -> Object {
+    Object::interpreted(
+        0x231,
+        &[
+            (0, 0xc3),
+            (0xbff00000, 0xcd),
+            (u32::from(entry.rank), INT),
+            (0, 0x83),
+            (0, 0xcd),
+            (0, 0x82),
+            (0, 0xcd),
+            (3, INT),
+            (0, 0xc3),
+            (0xbff00000, 0xcd),
+            (0, INT),
+            (0, INT),
+            (1, INT),
+            (0, INT),
+            (id, 4),
+        ],
+    )
+}
+pub fn skill_update(id: u32, entry: &crate::skills::Trained) -> Result<Vec<u8>, WorldError> {
+    let mut args = Vec::new();
+    graph(&mut args, &[skill_object(id, entry)]);
+    script::private_call(0x8214000d, &args)
+}
+pub fn skill_remove(id: u32) -> Result<Vec<u8>, WorldError> {
+    script::private_call(0x82140014, &script::integer(id))
+}
 pub fn player(
     settings: Option<&crate::preferences::UiSettings>,
     hotbar: Option<&crate::preferences::Hotbar>,
@@ -188,6 +221,15 @@ pub fn player_state(
     inventory: Option<&crate::inventory::Inventory>,
     progression: Option<&crate::progression::Progression>,
 ) -> Result<Vec<u8>, WorldError> {
+    player_all(settings, hotbar, inventory, progression, None)
+}
+pub fn player_all(
+    settings: Option<&crate::preferences::UiSettings>,
+    hotbar: Option<&crate::preferences::Hotbar>,
+    inventory: Option<&crate::inventory::Inventory>,
+    progression: Option<&crate::progression::Progression>,
+    skills: Option<&crate::skills::Book>,
+) -> Result<Vec<u8>, WorldError> {
     let mut args = script::integer(progression.map_or(0, |state| state.gold));
     graph(
         &mut args,
@@ -201,14 +243,26 @@ pub fn player_state(
     // A zero mask retains native Clear/default values; no captured settings.
     let options = crate::preferences::options_words(settings, hotbar)?;
     graph(&mut args, &[Object::native(0x9b, &options)]);
-    graph(
-        &mut args,
-        &[
+    let mut trained = skills
+        .into_iter()
+        .flat_map(|book| book.entries())
+        .collect::<Vec<_>>();
+    trained.sort_unstable_by_key(|(id, _)| (id % 11, *id));
+    let mut skill_map = vec![trained.len() as u32];
+    for (index, (id, _)) in trained.iter().enumerate() {
+        skill_map.extend([*id, 5 + index as u32]);
+    }
+    let mut skill_objects =
+        vec![
             Object::interpreted(
                 0x233,
                 &[
                     (
-                        progression.map_or(0, |state| u32::from(state.level().credits)),
+                        progression.map_or(0, |state| {
+                            u32::from(skills.map_or(state.level().credits, |book| {
+                                book.available_credits(state)
+                            }))
+                        }),
                         INT,
                     ),
                     (0, 0x82),
@@ -222,9 +276,12 @@ pub fn player_state(
             ),
             Object::native(1, &[0]),
             Object::native(1, &[0]),
-            Object::native(0x11, &[0]), // No trained skill entries.
-        ],
-    );
+            Object::native(0x11, &skill_map),
+        ];
+    for (id, entry) in trained {
+        skill_objects.push(skill_object(id, entry));
+    }
+    graph(&mut args, &skill_objects);
     graph(
         &mut args,
         &[

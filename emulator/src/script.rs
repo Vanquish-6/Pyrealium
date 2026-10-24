@@ -17,9 +17,16 @@ pub enum Request {
     Attack(Option<u64>),
     UiSettings(crate::preferences::UiSettings),
     Hotbar(crate::preferences::HotbarUpdate),
+    Skill {
+        action: crate::skills::Action,
+        skill: u32,
+    },
     Target(Option<u64>),
     Say(String),
-    Tell { recipient: String, text: String },
+    Tell {
+        recipient: String,
+        text: String,
+    },
 }
 
 struct Reader<'a> {
@@ -76,6 +83,18 @@ pub fn decode(function: u32, bytes: &[u8]) -> Result<Request, WorldError> {
     }
     let mut r = Reader { bytes, pos: 0 };
     let request = match function {
+        crate::skills::TRAIN | crate::skills::UNTRAIN | crate::skills::RAISE => {
+            let skill = r.int()?;
+            if skill == 0 || skill > 65535 {
+                return Err(WorldError::InvalidValue);
+            }
+            let action = match function {
+                crate::skills::TRAIN => crate::skills::Action::Train,
+                crate::skills::UNTRAIN => crate::skills::Action::Untrain,
+                _ => crate::skills::Action::Raise,
+            };
+            Request::Skill { action, skill }
+        }
         crate::preferences::HOTBAR_UPDATE => {
             let update = crate::preferences::HotbarUpdate::decode(bytes)?;
             r.pos = bytes.len();

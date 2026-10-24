@@ -14,6 +14,7 @@ pub mod progression;
 pub mod scene;
 pub mod script;
 pub mod server;
+pub mod skills;
 pub mod state;
 pub mod store;
 pub mod transport;

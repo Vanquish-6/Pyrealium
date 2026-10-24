@@ -180,6 +180,12 @@ The rules and starter placement are development content; original combat formula
 skills, animations, collision, item looting and native acceptance are unfinished.
 See [player systems integration](docs/player-systems.md).
 
+The opt-in HUD path also restores a persistent skill book and handles captured
+native training/untraining requests with imported level/species/credit/dependency
+rules for the supported human profile. The catalog contains 1,952 definitions;
+192 unresolved definitions are recorded separately. Advancement and active skill
+effects are unfinished; unsupported advancement does not spend player XP.
+
 Game-data mode (`serve --game-data PATH`) now loads the bundled stationary world
 pack automatically. Use `--content content/world.tsv` for an editable external
 pack, or `--content none` to disable content, alongside normal bind/account/data options.
