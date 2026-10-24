@@ -73,6 +73,12 @@ fn in_range(a: Option<Placement>, b: Option<Placement>, range: f32) -> bool {
 }
 impl Encounters {
     pub fn load(path: &Path, content: &Content) -> io::Result<Self> {
+        if path == Path::new("training") {
+            return Self::parse(
+                include_str!("../content/development-encounters.tsv"),
+                content,
+            );
+        }
         let mut bytes = Vec::new();
         File::open(path)?.take(65537).read_to_end(&mut bytes)?;
         if bytes.len() > 65536 {
@@ -80,6 +86,12 @@ impl Encounters {
         }
         let text =
             std::str::from_utf8(&bytes).map_err(|_| invalid("encounter profile encoding"))?;
+        Self::parse(text, content)
+    }
+    fn parse(text: &str, content: &Content) -> io::Result<Self> {
+        if text.len() > 65536 {
+            return Err(invalid("encounter profile exceeds 64 KiB"));
+        }
         let mut lines = text.lines();
         if lines.next() != Some("pyrealium-encounters-v1") {
             return Err(invalid("encounter profile header"));

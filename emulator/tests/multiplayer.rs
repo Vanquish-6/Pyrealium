@@ -197,6 +197,7 @@ fn two_peers_see_movement_look_departure_and_saved_reentry() {
             content: None,
             encounters: None,
             initialize_ui: false,
+            training_kit: false,
             bind: addr,
             account: "local".into(),
             data: server_dir,

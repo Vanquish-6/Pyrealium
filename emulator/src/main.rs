@@ -6,6 +6,12 @@ use std::{env, net::SocketAddr, path::PathBuf, process::ExitCode};
 
 fn usage() {
     println!(
+        "  serve-training --game-data PATH [--account local --data PATH --bind 127.0.0.1:9000]\n    Development preset: initialized HUD, bundled training encounter, and once-per-character hand item."
+    );
+    println!(
+        "  serve --initialize-ui true --training-kit true --game-data PATH\n    Explicit development kit: grants one DAT-backed hand item once per human character. Disabled by default."
+    );
+    println!(
         "  skill-state --character-id N [--event t,SKILL_HEX|g,SKILL_HEX|u,SKILL_HEX] --data PATH\n    Offline skill inspection, training, explicit free grant, or untraining."
     );
     println!(
@@ -48,6 +54,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut record_id = None;
     let mut character_id = None;
     let mut initialize_ui = false;
+    let mut training_kit = false;
     let mut item_id = None;
     let mut slot = None;
     let mut source_slot = None;
@@ -76,6 +83,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             "--id" => record_id = Some(u32::from_str_radix(value.trim_start_matches("0x"), 16)?),
             "--character-id" => character_id = Some(value.parse::<u64>()?),
             "--initialize-ui" => initialize_ui = value.parse::<bool>()?,
+            "--training-kit" => training_kit = value.parse::<bool>()?,
             "--item-id" => {
                 item_id = Some(if let Some(hex) = value.strip_prefix("0x") {
                     u64::from_str_radix(hex, 16)?
@@ -269,17 +277,26 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 bytes.len()
             );
         }
-        "serve" => server::run(Config {
-            bind,
-            account,
-            data,
-            run_seconds: seconds,
-            visual_did: visual,
-            game_data,
-            initialize_ui,
-            content,
-            encounters,
-        })?,
+        "serve" | "serve-training" => {
+            if command == "serve-training" {
+                initialize_ui = true;
+                training_kit = true;
+                content.get_or_insert_with(|| PathBuf::from("training"));
+                encounters.get_or_insert_with(|| PathBuf::from("training"));
+            }
+            server::run(Config {
+                bind,
+                account,
+                data,
+                run_seconds: seconds,
+                visual_did: visual,
+                game_data,
+                initialize_ui,
+                training_kit,
+                content,
+                encounters,
+            })?;
+        }
         "stop" => {
             if !data.join("server.lock").is_file() {
                 return Err("no server lock found at the selected data directory".into());

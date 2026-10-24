@@ -43,7 +43,8 @@ implementation or acceptance. A MusicLoader error can require Continue.
   now toggles supported hand equipment, persists bag/equipment state, and creates
   attached hand objects for the owner and nearby players. Armor composition,
   equipment bonuses, general item use and native acceptance remain unfinished.
-  No automatic starter grants.
+  An explicit development training-kit option supplies one hand item once per
+  human character; normal serving does not infer original starter grants.
 - Native object examination for visible players, owned inventory, visible hand
   equipment and active same-cell content. Names use supported DAT localization
   references; live health and the owner's private progression come from server
@@ -179,6 +180,12 @@ Exact addresses, identities, policies, test boundaries and open work:
 
 ## Remaining gameplay work
 
+`serve-training --game-data PATH` selects the bundled starter encounter, initialized
+HUD and once-per-character development hand item. Add the normal account, bind
+and data options as needed. The rules and placement are embedded, so this preset
+does not depend on launching from the emulator directory. It is an authored
+development slice; full original progression and native acceptance remain open.
+
 An explicit development encounter loop is available with `--content training
 --initialize-ui true --encounters content/development-encounters.tsv` alongside
 the normal game-data/account/bind/data options. It connects native attack targets
@@ -231,8 +238,8 @@ An opt-in player HUD profile is available with
 options. It requires the converted 7148 assets, emits UI_Load once after scene
 completion, and restores saved progression, skills, owned inventory, window
 settings and hotbar bindings. Story, quest and active-effect graphs remain empty.
-It grants
-no items, skills, gold or progress. This profile is not enabled by
+Without the explicit training-kit option it grants no items, skills, gold or
+progress. This profile is not enabled by
 default: native UI acceptance and backing gameplay systems remain unfinished.
 
 Complete the native UI/script bootstrap, appearance

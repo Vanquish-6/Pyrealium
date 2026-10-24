@@ -26,6 +26,7 @@ pub struct Config {
     pub visual_did: Option<u32>,
     pub game_data: Option<PathBuf>,
     pub initialize_ui: bool,
+    pub training_kit: bool,
     pub content: Option<PathBuf>,
     pub encounters: Option<PathBuf>,
 }
@@ -448,6 +449,9 @@ pub fn run(config: Config) -> io::Result<()> {
         ));
     }
     let mut inventory_metadata = BTreeMap::new();
+    if config.training_kit && !config.initialize_ui {
+        return Err(invalid("--training-kit true requires --initialize-ui true"));
+    }
     let initial_ui = if config.initialize_ui {
         let directory = config.game_data.as_ref().unwrap();
         let mut portal = crate::dat::Dat::open(directory.join("portal.dat"))?;
@@ -455,12 +459,17 @@ pub fn run(config: Config) -> io::Result<()> {
         crate::ui::validate_wlib(&wlib).map_err(other)?;
         crate::ui::validate_skills_wlib(&wlib).map_err(other)?;
         crate::skills::validate_assets(&mut portal)?;
-        if store
-            .characters
-            .values()
-            .any(|c| !c.deleted && c.inventory.items().next().is_some())
+        if config.training_kit
+            || store
+                .characters
+                .values()
+                .any(|c| !c.deleted && c.inventory.items().next().is_some())
         {
             crate::ui::validate_inventory_wlib(&wlib).map_err(other)?;
+            if config.training_kit {
+                let metadata = crate::training_kit::validate(&mut portal)?;
+                inventory_metadata.insert(crate::training_kit::DEFINITION, Some(metadata));
+            }
             for character in store.characters.values().filter(|c| !c.deleted) {
                 for item in character.inventory.items() {
                     portal.read(item.definition)?;
@@ -547,7 +556,11 @@ pub fn run(config: Config) -> io::Result<()> {
                     .characters
                     .values()
                     .filter(|character| !character.deleted)
-                    .flat_map(|character| character.inventory.items().map(|item| item.definition)),
+                    .flat_map(|character| character.inventory.items().map(|item| item.definition))
+                    .chain(
+                        std::iter::once(crate::training_kit::DEFINITION)
+                            .filter(|_| config.training_kit),
+                    ),
             ),
         )?
     } else {
@@ -1499,6 +1512,25 @@ pub fn run(config: Config) -> io::Result<()> {
                                                     return Err(invalid(
                                                         "saved placement references unavailable cell",
                                                     ));
+                                                }
+                                                if config.training_kit {
+                                                    let saved = &store.characters[&character_id];
+                                                    if saved.training_kit
+                                                        || saved.inventory.free_slot().is_some()
+                                                    {
+                                                        if store.grant_training_kit(
+                                                            &peer.session.account,
+                                                            character_id,
+                                                        )? {
+                                                            eprintln!(
+                                                                "Development training kit saved for character {character_id}"
+                                                            );
+                                                        }
+                                                    } else {
+                                                        eprintln!(
+                                                            "Development training kit deferred for character {character_id}: bag full"
+                                                        );
+                                                    }
                                                 }
                                                 let instance = store.begin_instance(
                                                     &peer.session.account,

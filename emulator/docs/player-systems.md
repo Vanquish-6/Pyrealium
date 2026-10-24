@@ -278,3 +278,32 @@ Retained `ac2_npc_target.elog` and
 and string/break node pattern; their build identity remains unverified. Matching
 7148 recovered serializers govern the emitted layout. This was compiled only;
 no tests, native game launch or running-server replacement were performed.
+
+## Explicit development training preset
+
+`serve-training --game-data PATH` enables the initialized HUD, bundled `training`
+world and encounter profiles, and `--training-kit true`. The normal `serve`
+command keeps that grant disabled. `--encounters training` also selects the
+embedded development rules without a working-directory dependency; an explicit
+encounter file remains supported. The preset accepts the normal account/bind/data
+options and optional content/encounter overrides.
+
+The kit is a single quantity-one hand item, definition `47000f1e`, physical
+`4700035b`, visual `1f000056`, under an explicit development grant policy. DAT
+validation requires those backing records, their supported physical-definition
+prefix, and the imported valid/preferred/primary hand locations. No original
+starter entitlement, ability grant, economy or item balance is inferred.
+
+At world entry, the kit uses one free bag slot for an eligible human character.
+One checksummed/fsynced `t1` journal record records the grant and the persistent
+once-per-character marker atomically. Replay repeats profile, global item-ID,
+space and inventory validation. Reconnect, deletion/restoration and consuming
+the item cannot repeat the grant. A full bag defers a first grant without blocking
+world entry. Older journals default the marker to false; journals containing
+`t1` require this reader and its immutable kit definition.
+
+The kit definition is included in startup metadata and examination-name caches
+before it can be granted. The owned item enters the normal inventory bootstrap,
+sorting, hand-equipment and examination paths. This change was compile checked
+only; no grants were executed against existing player data and no tests or native
+client checks were run.

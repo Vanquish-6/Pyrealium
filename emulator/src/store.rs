@@ -27,6 +27,7 @@ pub struct Character {
     pub inventory: crate::inventory::Inventory,
     pub progression: crate::progression::Progression,
     pub skills: crate::skills::Book,
+    pub training_kit: bool,
 }
 
 pub struct Store {
@@ -115,6 +116,40 @@ impl Store {
             .checked_add(1)
             .filter(|id| id >> 48 == crate::inventory::ITEM_NAMESPACE >> 48)
             .ok_or_else(|| invalid("item identity exhausted"))
+    }
+    pub fn grant_training_kit(&mut self, account: &str, id: u64) -> io::Result<bool> {
+        let character = self
+            .characters
+            .get(&id)
+            .filter(|c| c.account == account && !c.deleted)
+            .ok_or_else(|| invalid("training kit character not owned"))?;
+        if character.training_kit {
+            return Ok(false);
+        }
+        if !character.creation.as_ref().is_some_and(|request| {
+            request.race == 1 && request.entity_did == crate::bootstrap::PLAYER_ENTITY
+        }) {
+            return Err(invalid(
+                "training kit requires the human development profile",
+            ));
+        }
+        let slot = character
+            .inventory
+            .free_slot()
+            .ok_or_else(|| invalid("training kit requires a free bag slot"))?;
+        let item = self.next_item_id()?;
+        let next = character
+            .inventory
+            .apply(&crate::inventory::Command::Grant(
+                crate::training_kit::item(item, slot),
+            ))
+            .map_err(|_| invalid("invalid training kit grant"))?;
+        // One fsync publishes both ownership and the once-per-character marker.
+        self.append_record(&format!("t1\t{id}\t{item}"))?;
+        let character = self.characters.get_mut(&id).unwrap();
+        character.inventory = next;
+        character.training_kit = true;
+        Ok(true)
     }
     pub fn progression_command(
         &mut self,
@@ -393,6 +428,7 @@ impl Store {
             inventory: crate::inventory::Inventory::default(),
             progression: crate::progression::Progression::default(),
             skills: crate::skills::Book::default(),
+            training_kit: false,
         };
         let line = match creation {
             None => format!("v1\t{}\t{}\t{}", c.id, c.account, c.name),
@@ -541,6 +577,43 @@ pub fn decode_journal(bytes: &[u8]) -> io::Result<BTreeMap<u64, Character>> {
             return Err(invalid("character journal checksum mismatch"));
         }
         let fields: Vec<_> = data.split('\t').collect();
+        if fields.len() == 3 && fields[0] == "t1" {
+            let id = fields[1]
+                .parse::<u64>()
+                .map_err(|_| invalid("invalid training kit owner"))?;
+            let item = fields[2]
+                .parse::<u64>()
+                .map_err(|_| invalid("invalid training kit item"))?;
+            let high = records
+                .values()
+                .map(|character| character.inventory.high_water())
+                .max()
+                .unwrap_or(crate::inventory::ITEM_NAMESPACE);
+            if high.checked_add(1) != Some(item) {
+                return Err(invalid("nonsequential training kit identity"));
+            }
+            let character = records
+                .get_mut(&id)
+                .filter(|character| !character.deleted && !character.training_kit)
+                .ok_or_else(|| invalid("invalid repeated training kit grant"))?;
+            if !character.creation.as_ref().is_some_and(|request| {
+                request.race == 1 && request.entity_did == crate::bootstrap::PLAYER_ENTITY
+            }) {
+                return Err(invalid("unsupported training kit character profile"));
+            }
+            let slot = character
+                .inventory
+                .free_slot()
+                .ok_or_else(|| invalid("training kit bag full"))?;
+            character.inventory = character
+                .inventory
+                .apply(&crate::inventory::Command::Grant(
+                    crate::training_kit::item(item, slot),
+                ))
+                .map_err(|_| invalid("invalid training kit inventory transition"))?;
+            character.training_kit = true;
+            continue;
+        }
         if fields.len() == 3 && fields[0] == "k1" {
             let id = fields[1]
                 .parse::<u64>()
@@ -751,6 +824,7 @@ pub fn decode_journal(bytes: &[u8]) -> io::Result<BTreeMap<u64, Character>> {
                 inventory: crate::inventory::Inventory::default(),
                 progression: crate::progression::Progression::default(),
                 skills: crate::skills::Book::default(),
+                training_kit: false,
             },
         );
     }

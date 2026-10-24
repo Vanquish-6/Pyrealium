@@ -19,6 +19,7 @@ pub mod server;
 pub mod skills;
 pub mod state;
 pub mod store;
+pub mod training_kit;
 pub mod transport;
 pub mod ui;
 pub mod wire;
