@@ -131,6 +131,7 @@ class Assets:
     def color_mesh(self, mesh):
         from preview_material import material_info
         colors = [(130, 145, 155)] * (len(mesh["indices"]) // 3)
+        mesh["material_images"] = {}
         for group in mesh["groups"]:
             material = mesh["materials"][group["material"]]
             if material not in self.materials:
@@ -143,6 +144,8 @@ class Assets:
             info = self.materials[material]
             self.materials.move_to_end(material)
             image = info.get("image")
+            if image:
+                mesh["material_images"][group["material"]] = image
             if info.get("image_error"):
                 self.material_warnings.add(f"Material {material:08x}: {info['image_error']}")
             for offset in range(group["start"], group["start"] + group["count"], 3):

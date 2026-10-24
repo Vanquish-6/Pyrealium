@@ -1,5 +1,19 @@
 # Build 7148 character and world event evidence
 
+## Material defaults and zero-category surfaces (2026-10-24)
+
+`preview_material.py` now reads the base RenderMaterial's embedded modifier
+properties before ordered material-instance overrides (`005b9e00`, `005b91b0`).
+It also accepts a zero data-category word for RenderSurface records:
+`DBObj::UnPack_Type` (`006d7830`) reads that value verbatim; categorization is
+determined by the object's family, not a high bit in the category value.
+Room material `3100034f` now resolves its inherited slot-3000 texture `40000771`
+to real 256x256 DXT1 pixels. Base material `2b` records can be resolved directly.
+Decoded texture images are retained on mesh material groups for per-pixel
+rendering. Complete shader layers and effects are still outside this reader.
+Checked through syntax compilation and read-only DAT extraction; no test suite
+or game was launched.
+
 ## Native geometry for the content editor (2026-10-24)
 
 The former position-dot canvas is supplemented with an actual DAT geometry

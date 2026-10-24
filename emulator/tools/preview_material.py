@@ -34,10 +34,7 @@ class Reader:
             raise MaterialFormatError("unexpected trailing material data")
 
 
-def modifier_properties(data):
-    reader = Reader(data)
-    if reader.u32() >> 24 != 0x30:
-        raise MaterialFormatError("not a native material modifier")
+def _properties(reader):
     count = reader.u32()
     if count > 256:
         raise MaterialFormatError("too many material properties")
@@ -53,8 +50,30 @@ def modifier_properties(data):
         # Two BIT32 values, field type, and texture-coordinate index (005daf10).
         reader.take(fields * 16)
         properties.append(dict(name=name, kind=kind, value=value, fields=fields))
+    return properties
+
+
+def modifier_properties(data):
+    reader = Reader(data)
+    if reader.u32() >> 24 != 0x30:
+        raise MaterialFormatError("not a native material modifier")
+    properties = _properties(reader)
     reader.end()
     return properties
+
+
+def base_properties(data, did):
+    """Read RenderMaterial's embedded MaterialModifier before its shader layers.
+
+    005b9e00 streams the DBObj DID then this->properties (005b91b0).
+    Layer/stage bytecode is deliberately left opaque, not scanned for DIDs.
+    """
+    reader = Reader(data)
+    if reader.u32() != did or did >> 24 != 0x2b:
+        raise MaterialFormatError("invalid base render material")
+    if reader.u32() != 0:
+        raise MaterialFormatError("unsupported embedded modifier identity")
+    return _properties(reader)
 
 
 def texture_levels(data):
@@ -83,7 +102,9 @@ def decode_texture(data):
     reader = Reader(data)
     did, category = reader.u32(), reader.u32()
     width, height, pixel_format, image_size = (reader.u32() for _ in range(4))
-    if did >> 24 != 0x41 or category & 0x80000000 == 0:
+    # IsCategorized is a property of the DBObj family, not the category value.
+    # Native DBObj::UnPack_Type accepts zero as well as high-bit categories.
+    if did >> 24 != 0x41:
         raise MaterialFormatError("not a categorized native render surface")
     if not 0 < width <= 4096 or not 0 < height <= 4096 or width * height > 16_000_000:
         raise MaterialFormatError("texture dimensions exceed editor bounds")
@@ -186,19 +207,26 @@ def texture_image(portal, texture_did, surfaces=None, max_size=256):
 def material_info(portal, did, surfaces=None, max_size=256, include_image=True):
     """Resolve supported material-instance overrides and their real base pixels.
 
-    Material shaders, inheritance/defaults from RenderMaterial2b, recoloring,
-    multitexture blending and effect modifiers remain unevaluated. A missing
-    slot3000 override is reported, never replaced by a guessed texture.
+    Base RenderMaterial properties precede instance modifiers. Complete shader
+    layers, recoloring, multitexture blending and effects remain unevaluated.
     """
-    reader = Reader(portal.read(did))
-    record, base, material_type, count = (reader.u32() for _ in range(4))
-    if record != did or did >> 24 != 0x31 or base >> 24 != 0x2B or count > 256:
-        raise MaterialFormatError("unsupported material-instance profile")
-    modifiers = [reader.u32() for _ in range(count)]
-    reader.end()
+    if did >> 24 == 0x2b:
+        base, material_type, modifiers = did, None, []
+    else:
+        reader = Reader(portal.read(did))
+        record, base, material_type, count = (reader.u32() for _ in range(4))
+        if record != did or did >> 24 != 0x31 or base >> 24 != 0x2B or count > 256:
+            raise MaterialFormatError("unsupported material-instance profile")
+        modifiers = [reader.u32() for _ in range(count)]
+        reader.end()
     if any(modifier >> 24 != 0x30 for modifier in modifiers):
         raise MaterialFormatError("invalid native material-modifier reference")
-    textures, properties = {}, []
+    textures, properties = {}, base_properties(portal.read(base), base)
+    for prop in properties:
+        if prop["kind"] == 3000 and len(prop["value"]) == 4:
+            texture = struct.unpack("<I", prop["value"])[0]
+            if texture >> 24 == 0x40:
+                textures[prop["name"]] = texture
     for modifier in modifiers:
         values = modifier_properties(portal.read(modifier))
         properties.extend(values)
@@ -209,14 +237,14 @@ def material_info(portal, did, surfaces=None, max_size=256, include_image=True):
                     textures[prop["name"]] = texture
     result = dict(did=did, base=base, material_type=material_type,
                   modifiers=modifiers, textures=textures,
-                  scope="Actual texture slot3000 override; complete native shader/material evaluation is not implemented")
+                  scope="Actual base properties plus ordered instance overrides; complete shader evaluation is not implemented")
     result["color_properties"] = {
         prop["name"]: list(struct.unpack("<4f", prop["value"]))
         for prop in properties if prop["kind"] == 2000 and len(prop["value"]) == 16
     }
     base_texture = textures.get(3000)
     if base_texture is None:
-        result["image_error"] = "No explicit texture-slot3000 override; base material defaults are not interpreted"
+        result["image_error"] = "No supported base or instance texture-slot3000 property"
     elif include_image:
         try:
             image = texture_image(portal, base_texture, surfaces, max_size)
