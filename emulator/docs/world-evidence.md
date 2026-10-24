@@ -649,3 +649,35 @@ Observers receive `0x10096`, the source InstanceIDWithStamp and target InstanceI
 matching dispatch `00494010` and receiver `00495ac0`. This visual head-look path
 does not select a combat target or authorize an attack. It has parser, scene and
 two-peer real-UDP coverage; native two-client animation acceptance remains open.
+
+## Opt-in empty-player HUD profile (2026-10-24)
+
+`--initialize-ui true` enables a newly encoded fourteen-argument UI_Load profile
+after the first SceneRenderingComplete of each avatar lifetime. Repeated scene
+completion does not duplicate it. The switch is off by default and requires the
+converted build-7148 bootstrap profile; installed 7230 data is rejected.
+
+The retained classic PCAP `Packets/login.logout/login.from.char.overview.screen.elog`
+(SHA-256 `7f0d175d9ed5f972da5573a9203dc445495fcbff41afac9b610397e86a05ec70`)
+contains a reassembled 11,164-byte UI_Load with a 11,152-byte argument buffer.
+Its object layouts were compared with the matching client decoder, rather than
+replaying the captured character's items, trained skills, gold or progression.
+The capture's original client build is unconfirmed. Matching WLib package info
+independently reports interpreted sizes 2, 8, 14 and 2 for packages `0x1a4`,
+`0x233`, `0x14f` and `0x24a7`, respectively. The new writer uses those exact sizes.
+Native kinds are checked against factories `004b3980`/`00466c10`; HeapObject
+unpacking (`006dbbd0`) defines the field-word/tag/alignment layout. The options
+profile uses a zero u64 mask, following `GameplayOptionsProfile::StreamPack`
+(`006000b0`) and Clear (`005ffc60`), which clears m_bitField before decoding.
+
+The profile contains empty story/quest/skill/effect/equipment/item collections,
+zero gold/XP/credits and four empty development bag descriptors (42/12/12/12
+capacity, a local policy). It is presentation initialization, not an inventory,
+quest, combat or progression implementation. Fields not semantically recovered
+remain experimental, including trailing status flags. No captured packet or
+character-specific state is distributed as a runtime fixture.
+
+Tests independently walk all fourteen arguments, verify closed reference graphs,
+check alignment and field tags, and exercise ordered delivery over real UDP after
+scene completion plus duplicate completion. This does not establish native HUD
+acceptance; keep the switch opt-in until a matching-client run validates it.

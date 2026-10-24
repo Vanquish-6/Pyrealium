@@ -30,6 +30,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut landblocks = None;
     let mut record_id = None;
     let mut character_id = None;
+    let mut initialize_ui = false;
     while let Some(arg) = args.next() {
         let value = args
             .next()
@@ -47,6 +48,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             "--landblocks" => landblocks = Some(PathBuf::from(value)),
             "--id" => record_id = Some(u32::from_str_radix(value.trim_start_matches("0x"), 16)?),
             "--character-id" => character_id = Some(value.parse::<u64>()?),
+            "--initialize-ui" => initialize_ui = value.parse::<bool>()?,
             _ => return Err(format!("unknown option {arg}").into()),
         }
     }
@@ -99,6 +101,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             run_seconds: seconds,
             visual_did: visual,
             game_data,
+            initialize_ui,
         })?,
         "stop" => {
             if !data.join("server.lock").is_file() {

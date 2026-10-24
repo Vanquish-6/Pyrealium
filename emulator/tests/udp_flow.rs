@@ -100,6 +100,7 @@ fn run_enter_rejection(game_data: Option<std::path::PathBuf>, expect_bootstrap: 
     let server_dir = dir.clone();
     let worker = std::thread::spawn(move || {
         server::run(Config {
+            initialize_ui: expect_bootstrap,
             bind: addr,
             account: "local".into(),
             data: server_dir,
@@ -312,6 +313,11 @@ fn run_enter_rejection(game_data: Option<std::path::PathBuf>, expect_bootstrap: 
                 4,
                 world::SCENE_RENDERING_COMPLETE.to_le_bytes().to_vec(),
             ),
+            (
+                0x0300000000000007,
+                4,
+                world::SCENE_RENDERING_COMPLETE.to_le_bytes().to_vec(),
+            ),
             (0x0100000100000003, 3, update.encode().unwrap()),
         ];
         // Replayed time and another instance must not overwrite accepted placement.
@@ -332,13 +338,15 @@ fn run_enter_rejection(game_data: Option<std::path::PathBuf>, expect_bootstrap: 
             }
         }
         let mut exit_events = Vec::new();
-        while exit_events.len() < 2 {
+        while exit_events.len() < 3 {
             let (len, _) = socket.recv_from(&mut buf).unwrap();
             let reply = peer.receive(&buf[..len], Instant::now()).unwrap();
             exit_events.extend(reply.messages.into_iter().map(|m| m.data));
         }
-        assert_eq!(exit_events[0], world::char_exit_game());
-        assert_eq!(&exit_events[1][..4], &world::CHARACTER_SET.to_le_bytes());
+        assert_eq!(exit_events.len(), 3);
+        assert_eq!(exit_events[0], pyrealium::ui::empty_player().unwrap());
+        assert_eq!(exit_events[1], world::char_exit_game());
+        assert_eq!(&exit_events[2][..4], &world::CHARACTER_SET.to_le_bytes());
         for packet in peer
             .send(
                 0x0300000000000006,

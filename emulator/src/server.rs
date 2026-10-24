@@ -24,6 +24,7 @@ pub struct Config {
     pub run_seconds: Option<u64>,
     pub visual_did: Option<u32>,
     pub game_data: Option<PathBuf>,
+    pub initialize_ui: bool,
 }
 struct Peer {
     client_version: String,
@@ -226,6 +227,15 @@ pub fn run(config: Config) -> io::Result<()> {
         .as_deref()
         .map(crate::bootstrap::Bootstrap::load)
         .transpose()?;
+    if config.initialize_ui
+        && !bootstrap
+            .as_ref()
+            .is_some_and(|profile| profile.supports_client("7148"))
+    {
+        return Err(invalid(
+            "experimental UI initialization requires converted build-7148 game data",
+        ));
+    }
     let primary = UdpSocket::bind(config.bind)?;
     let mut secondary_addr = config.bind;
     secondary_addr.set_port(config.bind.port() + 1);
@@ -884,6 +894,12 @@ pub fn run(config: Config) -> io::Result<()> {
                                     return Ok(replies);
                                 }
                                 world::ClientEvent::SceneRenderingComplete => {
+                                    let first =
+                                        matches!(peer.session.phase, Phase::Entering { .. });
+                                    if first && config.initialize_ui {
+                                        let packet = crate::ui::empty_player().map_err(other)?;
+                                        replies.extend(peer.send_event(&packet, now)?);
+                                    }
                                     peer.session.scene_complete().map_err(other)?;
                                     if let Phase::InWorld { character } = peer.session.phase {
                                         deliveries

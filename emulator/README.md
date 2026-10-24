@@ -111,7 +111,7 @@ corruption rather than silently discarding progress.
 
 ## Validation and measured performance
 
-The current standard suite passes **54 unit tests and seven integration checks**,
+The current standard suite passes **55 unit tests and seven integration checks**,
 including one real-UDP test. Three additional opt-in UDP tests cover the converted bootstrap, rejection
 of incompatible installed assets, and two-player movement/look/logout/re-entry,
 deletion and connection-logoff behavior. They passed on the supplied assets.
@@ -159,6 +159,13 @@ Exact addresses, identities, policies, test boundaries and open work:
 - [World entry, movement, persistence and native observations](docs/world-evidence.md)
 
 ## Remaining gameplay work
+
+An opt-in empty-player HUD experiment is available with
+`serve --initialize-ui true --game-data PATH` alongside the normal bind/account/data
+options. It requires the converted 7148 assets, emits UI_Load once after scene
+completion, and uses typed empty story, quest, skill, effect and inventory graphs.
+It grants no items, skills, gold or progress. This profile is not enabled by
+default: native UI acceptance and backing gameplay systems remain unfinished.
 
 Complete the native UI/script bootstrap, appearance
 customization, world-content loading, collision and authoritative movement,

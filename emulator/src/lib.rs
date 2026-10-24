@@ -11,5 +11,6 @@ pub mod server;
 pub mod state;
 pub mod store;
 pub mod transport;
+pub mod ui;
 pub mod wire;
 pub mod world;

@@ -194,6 +194,7 @@ fn two_peers_see_movement_look_departure_and_saved_reentry() {
     let server_dir = dir.clone();
     let worker = std::thread::spawn(move || {
         server::run(Config {
+            initialize_ui: false,
             bind: addr,
             account: "local".into(),
             data: server_dir,
