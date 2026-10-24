@@ -743,6 +743,7 @@ fn quest_action(
     action: &str,
     store: &mut Store,
     scene: &mut crate::scene::Scene,
+    speaker: Option<u64>,
 ) -> io::Result<Vec<crate::scene::Delivery>> {
     if !scene.can_observe(character, character) {
         return Err(invalid("Player is not ready."));
@@ -784,7 +785,12 @@ fn quest_action(
             crate::quests::GOAL
         ),
     };
-    let mut events = vec![script::chat(&text, 1).map_err(other)?];
+    let mut events = match speaker {
+        Some(speaker) => {
+            npc_interaction_events(character, speaker, scene, "Pectar, Training Master", &text)?
+        }
+        None => vec![script::chat(&text, 1).map_err(other)?],
+    };
     if quests.get().is_some() {
         events.push(quests.update().map_err(other)?);
     }
@@ -1124,6 +1130,35 @@ const TRAINING_MERCHANT_OUTDOOR: u64 = 0x8140000000030006;
 const TRAINING_MERCHANT_CORRIDOR: u64 = 0x814000000003000d;
 const TRAINING_MENTORS: [u64; 3] = [0x8140000000030008, 0x8140000000030009, 0x814000000003000a];
 
+fn npc_interaction_events(
+    owner: u64,
+    target: u64,
+    scene: &crate::scene::Scene,
+    name: &str,
+    text: &str,
+) -> io::Result<Vec<Vec<u8>>> {
+    let player = scene
+        .player_placement(owner)
+        .ok_or_else(|| invalid("Player is not ready."))?;
+    let npc = scene
+        .examination_content(owner, target)
+        .ok_or_else(|| invalid("NPC is not visible."))?;
+    let distance = player
+        .coordinates
+        .iter()
+        .zip(npc.placement.coordinates)
+        .map(|(a, b)| (a - b).powi(2))
+        .sum::<f32>()
+        .sqrt();
+    if player.cell != npc.placement.cell || distance > 4.0 {
+        return Err(invalid("Move within four metres of the NPC."));
+    }
+    Ok(vec![
+        crate::interaction::success(owner, target, player, distance).map_err(other)?,
+        crate::interaction::speech(target, name, text).map_err(other)?,
+    ])
+}
+
 fn use_training_mentor(
     peer: &mut Peer,
     character: u64,
@@ -1162,7 +1197,7 @@ fn use_training_mentor(
     } else {
         "status"
     };
-    quest_action(peer, character, action, store, scene)
+    quest_action(peer, character, action, store, scene, Some(target))
 }
 
 fn merchant_ready(character: u64, scene: &crate::scene::Scene) -> io::Result<u64> {
@@ -1204,6 +1239,7 @@ fn merchant_action(
     catalog: &crate::merchants::Catalog,
     next_offer: &mut u64,
     now: u64,
+    npc_use: bool,
 ) -> io::Result<Vec<crate::scene::Delivery>> {
     let merchant = merchant_ready(character, scene)?;
     let saved = &store.characters[&character];
@@ -1223,10 +1259,19 @@ fn merchant_action(
             .ok_or_else(|| invalid("Shop offer identities exhausted; restart required."))?;
         let offers = std::array::from_fn(|index| *next_offer + 1 + index as u64);
         let shop = crate::merchants::Shop::new(merchant, offers).map_err(other)?;
-        peer.queue_ordered_batch(vec![
-            shop.open(catalog).map_err(other)?,
-            script::chat(&crate::merchants::listing(), 1).map_err(other)?,
-        ])?;
+        let mut events = if npc_use {
+            npc_interaction_events(
+                character,
+                merchant,
+                scene,
+                "Tebor the Armorer",
+                &crate::merchants::listing(),
+            )?
+        } else {
+            vec![script::chat(&crate::merchants::listing(), 1).map_err(other)?]
+        };
+        events.push(shop.open(catalog).map_err(other)?);
+        peer.queue_ordered_batch(events)?;
         *next_offer = last_offer;
         peer.native_shop = Some(shop);
         peer.merchant_open_ms = Some(now);
@@ -1375,6 +1420,7 @@ pub fn run(config: Config) -> io::Result<()> {
         crate::crafting::validate_wlib(&wlib).map_err(other)?;
         crate::ui::validate_layouts(&wlib, &crate::merchants::LAYOUTS).map_err(other)?;
         crate::ui::validate_layouts(&wlib, &crate::groups::LAYOUTS).map_err(other)?;
+        crate::ui::validate_layouts(&wlib, &crate::interaction::LAYOUTS).map_err(other)?;
         if config.training_kit
             || config.lifestones
             || config.portals
@@ -2028,6 +2074,21 @@ pub fn run(config: Config) -> io::Result<()> {
                                             }
                                             return Ok(replies);
                                         }
+                                        script::Request::MerchantClose(merchant) => {
+                                            if peer
+                                                .native_shop
+                                                .as_ref()
+                                                .is_some_and(|shop| shop.merchant() == merchant)
+                                            {
+                                                peer.queue_ordered_batch(vec![
+                                                    crate::merchants::close(merchant)
+                                                        .map_err(other)?,
+                                                ])?;
+                                                peer.native_shop = None;
+                                                peer.merchant_open_ms = None;
+                                            }
+                                            return Ok(replies);
+                                        }
                                         script::Request::MerchantConsignment(merchant) => {
                                             let text = if peer
                                                 .native_shop
@@ -2404,6 +2465,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                                     })?,
                                                     &mut next_offer,
                                                     now_ms,
+                                                    true,
                                                 ) {
                                                     Ok(updates) => deliveries.extend(updates),
                                                     Err(error) => replies.extend(
@@ -3012,7 +3074,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                                         peer.last_chat_ms = Some(now_ms);
                                                         let result = action.map_err(io::Error::other).and_then(|action| {
                                                             if !config.training_kit { return Err(invalid("The training quartermaster is not enabled.")); }
-                                                            merchant_action(peer, character, action, &mut store, &mut scene, &inventory_metadata, merchant_catalog.as_ref().ok_or_else(|| invalid("Merchant catalog is not enabled."))?, &mut next_offer, now_ms)
+                                                            merchant_action(peer, character, action, &mut store, &mut scene, &inventory_metadata, merchant_catalog.as_ref().ok_or_else(|| invalid("Merchant catalog is not enabled."))?, &mut next_offer, now_ms, false)
                                                         });
                                                         match result {
                                                             Ok(updates) => {
@@ -3179,7 +3241,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                                         let action = words[1..].join(" ");
                                                         match quest_action(
                                                             peer, character, &action, &mut store,
-                                                            &mut scene,
+                                                            &mut scene, None,
                                                         ) {
                                                             Ok(updates) => {
                                                                 deliveries.extend(updates)
@@ -3886,6 +3948,19 @@ pub fn run(config: Config) -> io::Result<()> {
             let mut updates = Vec::new();
             for event in events {
                 match event {
+                    crate::encounters::Event::IdolVisual(actor, action) => {
+                        match scene.idol_presentation(actor, action) {
+                            Ok(deliveries) => updates.extend(deliveries),
+                            Err(error) => {
+                                let reason = format!("Creature presentation {actor:#x}: {error}");
+                                if diagnosed_application_errors.len() < 32
+                                    && diagnosed_application_errors.insert(reason.clone())
+                                {
+                                    eprintln!("{reason}");
+                                }
+                            }
+                        }
+                    }
                     crate::encounters::Event::Swing(player) => {
                         if let Some(addr) = active_characters.get(&player) {
                             if let Some(peer) = peers.get_mut(addr) {
@@ -4082,8 +4157,16 @@ pub fn run(config: Config) -> io::Result<()> {
                     _ => false,
                 };
                 if !valid {
-                    peer.native_shop = None;
+                    let merchant = peer.native_shop.take().unwrap().merchant();
                     peer.merchant_open_ms = None;
+                    if peer
+                        .queue_ordered_batch(vec![
+                            crate::merchants::close(merchant).map_err(other)?,
+                        ])
+                        .is_err()
+                    {
+                        remove.insert(*addr);
+                    }
                 }
             }
             if peer.session.expired(now_ms) {

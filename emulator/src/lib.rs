@@ -12,6 +12,7 @@ pub mod encounters;
 pub mod equipment;
 pub mod examination;
 pub mod groups;
+pub mod interaction;
 pub mod inventory;
 pub mod inventory_request;
 pub mod item_services;

@@ -27,6 +27,7 @@ pub struct Object {
     pub destroy: Arc<[u8]>,
     active: bool,
     instance: u16,
+    visual_stamp: u16,
     stats: BTreeMap<u32, (u32, Arc<[u8]>)>,
 }
 impl Object {
@@ -128,6 +129,34 @@ impl Content {
         object.active = false;
         Ok(object.destroy.clone())
     }
+    pub fn idol_presentation(
+        &mut self,
+        id: u64,
+        action: crate::combat_visual::IdolAction,
+    ) -> io::Result<Vec<Arc<[u8]>>> {
+        let object = self
+            .objects
+            .get_mut(&id)
+            .filter(|object| object.active)
+            .ok_or_else(|| invalid("inactive creature presentation"))?;
+        // Do not apply this behavior table to unrelated observed creatures.
+        if object.entity != crate::quests::TARGET_ENTITY
+            || object.spawn.get(16..20) != Some(0x1f0003d1u32.to_le_bytes().as_slice())
+        {
+            return Ok(Vec::new());
+        }
+        if object.spawn.get(20..24) != Some(0x8082u32.to_le_bytes().as_slice()) {
+            return Err(invalid("unsupported Idol physics presentation"));
+        }
+        let (stamp, mode, events) =
+            crate::combat_visual::idol(id, object.instance, object.visual_stamp, action)
+                .map_err(|error| invalid(format!("creature presentation: {error}")))?;
+        let spawn = Arc::make_mut(&mut object.spawn);
+        spawn[26..28].copy_from_slice(&stamp.to_le_bytes());
+        spawn[28..32].copy_from_slice(&mode.to_le_bytes());
+        object.visual_stamp = stamp;
+        Ok(events.into_iter().map(Arc::from).collect())
+    }
     pub fn respawn(&mut self, id: u64) -> io::Result<()> {
         let object = self
             .objects
@@ -139,6 +168,14 @@ impl Content {
             .checked_add(1)
             .ok_or_else(|| invalid("content lifetime exhausted"))?;
         Arc::make_mut(&mut object.spawn)[24..26].copy_from_slice(&object.instance.to_le_bytes());
+        object.visual_stamp = 0;
+        Arc::make_mut(&mut object.spawn)[26..28].copy_from_slice(&0u16.to_le_bytes());
+        if object.entity == crate::quests::TARGET_ENTITY
+            && object.spawn.get(20..24) == Some(0x8082u32.to_le_bytes().as_slice())
+        {
+            Arc::make_mut(&mut object.spawn)[28..32]
+                .copy_from_slice(&crate::combat_visual::PEACE.to_le_bytes());
+        }
         Arc::make_mut(&mut object.destroy)[12..14].copy_from_slice(&object.instance.to_le_bytes());
         let keys = object
             .stats
@@ -324,6 +361,7 @@ impl Content {
                     destroy: destroy.into(),
                     active: true,
                     instance: 1,
+                    visual_stamp: 0,
                     stats: BTreeMap::new(),
                 },
             );

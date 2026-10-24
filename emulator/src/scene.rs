@@ -420,6 +420,26 @@ impl Scene {
             })
             .collect())
     }
+    pub fn idol_presentation(
+        &mut self,
+        id: u64,
+        action: crate::combat_visual::IdolAction,
+    ) -> std::io::Result<Vec<Delivery>> {
+        let cell = self
+            .content
+            .cell(id)
+            .ok_or_else(|| std::io::Error::other("creature inactive"))?;
+        let events = self.content.idol_presentation(id, action)?;
+        Ok(self
+            .neighbor_ids(cell, 0)
+            .flat_map(|recipient| {
+                events
+                    .iter()
+                    .cloned()
+                    .map(move |data| Delivery { recipient, data })
+            })
+            .collect())
+    }
     pub fn respawn_content(&mut self, id: u64) -> std::io::Result<Vec<Delivery>> {
         self.content.respawn(id)?;
         let object = self.content.object(id).unwrap();

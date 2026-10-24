@@ -33,6 +33,7 @@ struct Actor {
     target: Option<u64>,
     next_attack: u64,
     respawn_at: Option<u64>,
+    despawn_at: Option<u64>,
 }
 #[derive(Clone, Copy)]
 struct Attack {
@@ -41,6 +42,7 @@ struct Attack {
     repeat: bool,
 }
 pub enum Event {
+    IdolVisual(u64, crate::combat_visual::IdolAction),
     Swing(u64),
     Item {
         player: u64,
@@ -213,6 +215,7 @@ impl Encounters {
                             target: None,
                             next_attack: 0,
                             respawn_at: None,
+                            despawn_at: None,
                         },
                     )
                 })
@@ -462,7 +465,17 @@ impl Encounters {
                         actor.rule.xp, actor.rule.gold
                     ),
                 });
-                events.push(Event::Despawn(attack.target));
+                if actor.entity == crate::quests::TARGET_ENTITY {
+                    events.push(Event::IdolVisual(
+                        attack.target,
+                        crate::combat_visual::IdolAction::Death,
+                    ));
+                    // Authored presentation grace; rewards and attack authority
+                    // are already settled. This is not a lootable corpse.
+                    actor.despawn_at = Some(now.saturating_add(1500.min(actor.rule.respawn)));
+                } else {
+                    events.push(Event::Despawn(attack.target));
+                }
                 let stopped = self
                     .attacks
                     .iter()
@@ -475,6 +488,10 @@ impl Encounters {
             } else if actor.target.is_none() {
                 actor.target = Some(player);
                 actor.next_attack = now.saturating_add(actor.rule.interval);
+                events.push(Event::IdolVisual(
+                    attack.target,
+                    crate::combat_visual::IdolAction::Combat,
+                ));
             }
             if !attack.repeat {
                 self.attacks.remove(&player);
@@ -482,6 +499,10 @@ impl Encounters {
         }
         for (&id, actor) in &mut self.actors {
             if actor.health == 0 {
+                if actor.despawn_at.is_some_and(|until| now >= until) {
+                    actor.despawn_at = None;
+                    events.push(Event::Despawn(id));
+                }
                 if actor.respawn_at.is_some_and(|until| now >= until) {
                     actor.health = actor.rule.health;
                     actor.respawn_at = None;
@@ -518,6 +539,10 @@ impl Encounters {
                     actor.next_attack = now.saturating_add(actor.rule.interval);
                 } else {
                     actor.target = None;
+                    events.push(Event::IdolVisual(
+                        id,
+                        crate::combat_visual::IdolAction::Peace,
+                    ));
                     if actor.health != actor.rule.health {
                         actor.health = actor.rule.health;
                         events.push(Event::Health {
@@ -535,6 +560,10 @@ impl Encounters {
             let previous = store.characters[&target].progression.clone();
             store.progression_command(&account, target, Command::Damage(actor.rule.damage))?;
             actor.next_attack = now.saturating_add(actor.rule.interval);
+            events.push(Event::IdolVisual(
+                id,
+                crate::combat_visual::IdolAction::Swing,
+            ));
             let state = store.characters[&target].progression.clone();
             events.push(Event::Note {
                 player: target,

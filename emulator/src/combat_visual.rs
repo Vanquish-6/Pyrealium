@@ -10,6 +10,52 @@ pub const PEACE: u32 = 0x40000001;
 pub const ONE_HAND: u32 = 0x4100000a;
 pub const MELEE_AUTO: u32 = 0x41000089;
 
+#[derive(Clone, Copy)]
+pub enum IdolAction {
+    Combat,
+    Swing,
+    Peace,
+    Death,
+}
+
+/// Exact Idol Spawn profile: BehaviorTable 44000018 and retained fight capture.
+/// Return the final shared visual stamp, snapshot mode and fresh wire messages.
+pub fn idol(
+    owner: u64,
+    instance: u16,
+    current_stamp: u16,
+    action: IdolAction,
+) -> Result<(u16, u32, Vec<Vec<u8>>), WorldError> {
+    let final_stamp = current_stamp
+        .checked_add(if matches!(action, IdolAction::Swing) {
+            2
+        } else {
+            1
+        })
+        .ok_or(WorldError::LimitExceeded)?;
+    let mode = match action {
+        IdolAction::Combat | IdolAction::Swing => 0x41000012,
+        IdolAction::Peace => PEACE,
+        IdolAction::Death => 0x41000005,
+    };
+    let mut events = Vec::new();
+    if matches!(action, IdolAction::Death) {
+        let mut wire = prefix(DO_BEHAVIOR, owner, instance, final_stamp)?;
+        wire.extend(3u32.to_le_bytes()); // behavior and explicit mode, no captured context.
+        wire.extend(0x4100001fu32.to_le_bytes());
+        wire.extend(mode.to_le_bytes());
+        events.push(wire);
+    } else {
+        let mut wire = prefix(DO_MODE, owner, instance, current_stamp + 1)?;
+        wire.extend(mode.to_le_bytes());
+        events.push(wire);
+        if matches!(action, IdolAction::Swing) {
+            events.push(swing(owner, instance, final_stamp)?);
+        }
+    }
+    Ok((final_stamp, mode, events))
+}
+
 fn prefix(opcode: u32, owner: u64, instance: u16, stamp: u16) -> Result<Vec<u8>, WorldError> {
     if [0, u64::MAX].contains(&owner) || instance == 0 || stamp == 0 {
         return Err(WorldError::InvalidValue);

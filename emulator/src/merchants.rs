@@ -28,6 +28,16 @@ pub const SALE_RESULT: u32 = 0x820f0009;
 pub const VIEW_STORE: u32 = 0xb83a0013;
 pub const REFRESH_STORE: u32 = 0xb83a002a;
 pub const BUY: u32 = 0xb83a000b;
+pub const LEAVE: u32 = 0xb83a0003;
+pub const CLOSE: u32 = 0xb83a0010;
+
+/// Native LeaveStore updates only the matching active merchant context.
+pub fn close(merchant: u64) -> Result<Vec<u8>, WorldError> {
+    if [0, u64::MAX].contains(&merchant) {
+        return Err(WorldError::InvalidValue);
+    }
+    crate::script::private_call(CLOSE, &crate::script::identity(merchant))
+}
 /// Matching interpreted layouts; callers must verify their active WLib.
 pub const LAYOUTS: [(usize, u32); 3] = [(0x385d, 4), (0x382e, 11), (0x3812, 10)];
 const STORE_TEMPLATE: u32 = 0x6f00609a;

@@ -801,3 +801,48 @@ No success result is fabricated for an unsupported effect.
 Target-specific StopAttacking 82040025 (native 00463580 through b40104/9aac0013)
 accepts its exact tagged-IID argument and stops only the matching current target.
 A delayed stop for a different target does not cancel the current attack.
+
+### Native training NPC use, speech and store closure
+
+Mentor and quartermaster clicks now complete the captured NPC action through
+82160021, then send named NPC speech through 82050017. The mentor's existing
+durable quest transition and its completion/speech/journal batch are admitted
+before persistence. The quartermaster queues completion, speech and the store
+opening together. Chat commands retain their separate non-NPC presentation.
+
+The completion's native Position is the player's current placement, not the
+NPC's location; its raw float distance comes from the live player/NPC positions.
+The server still requires visibility, the same cell and a four-metre range.
+The 245 package layout is checked against the active WLib. Only the observed
+success profile is encoded; alternate result flags do not receive guessed
+failure meanings. Native branching conversation choices remain unresolved.
+Evidence: merchant-hello capture SHA256
+101b39cdaee4a2fd618fb97b85914ba4419ccb5fdeb2b992ec6708e18b9dc915,
+26 successful action graphs, and 82160021 -> 1aa4007d -> 9ab7000a.
+
+Client LeaveStore b83a0003 and server close b83a0010 use a tagged merchant IID.
+The client-close handler clears only a matching active shop. Range, death,
+combat and inactivity expiration now send the matching native close event.
+Evidence: 11 client requests and two server responses; native 00450240/004602b0
+and b8320014 -> 38390003. A server-close example is AC2_Waffen_Werchant.elog,
+SHA256 0f2df5b7c2a42b05b2a38095d23f174ffe31a731852b6e36124ffa71a834fc41.
+
+### Idol Spawn combat and death presentation
+
+The exact training Idol entity 470007d1 / visual 1f0003d1 now uses captured
+monster combat mode 41000012 and Melee_Auto1 41000089 when retaliating. Its death
+uses behavior 4100001f with explicit mode 41000005. These differ from a player's
+one-handed stance; captured mode 41000003 belongs to separate corpse objects.
+BehaviorTable 44000018 confirms the monster attack combo at 17a18 and death
+combo at bb8c. Exact-entity capture evidence is
+ac2_mobspawn_player_figth_und_move.elog, SHA256
+6431a55321ac65a012839b1c5264f4a2b34433ab17b1b738f41f4d18fea74cd1.
+
+Each creature shares a checked visual counter across mode/behavior messages.
+Its spawn snapshot retains the current mode for arriving observers. Respawn
+resets presentation with a fresh lifetime and standing mode. A defeated training
+Idol remains visible for an authored 1.5-second presentation grace (bounded by
+its respawn interval), while health, reward and attack authority are already
+settled. It is not a lootable corpse. Other creature visuals are not assigned
+unverified Idol animations. Native movement/pathfinding, original combat timing,
+general corpse/loot behavior and fresh player acceptance remain incomplete.
