@@ -234,7 +234,12 @@ fn two_peers_see_movement_look_departure_and_saved_reentry() {
         &script::client_call(script::TARGET, &script::identity(2)).unwrap(),
     );
     a.send(3, &script::client_call(script::COMBAT_START, &[1]).unwrap());
-    a.send(3, &script::client_call(script::COMBAT_START, &[]).unwrap());
+    for target in [999, 1, 2] {
+        a.send(
+            3,
+            &script::client_call(script::COMBAT_START, &script::identity(target)).unwrap(),
+        );
+    }
     assert_eq!(
         a.events(1)[0],
         script::private_call(script::COMBAT_STATE, &script::integer(1)).unwrap()

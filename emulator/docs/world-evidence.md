@@ -689,3 +689,22 @@ This gate checks the four serialized class layouts, not script behavior. The
 constant HUD packet is built once at startup and reused for each new avatar
 lifetime. Tests cover the gate's valid/malformed layouts, and the supplied
 converted archive passes the enabled real-UDP bootstrap test.
+
+## Native combat-start target argument (2026-10-24)
+
+The HUD-enabled native session completed scene loading and produced a 12-byte
+`0x82040008` argument buffer that the old development-only empty/int parser
+rejected. The matching WLib outbound stub loads a long argument and calls
+PackLInt (`0x00500003`) before sending this event; native PackLInt (`0053f830`)
+writes tag 2 followed by a 64-bit value. Combat start now accepts this exact
+target encoding, normalizes zero/all-ones as no target, and checks that other
+targets are visible ready objects. Self-targeting is rejected as local policy.
+The empty/int development forms remain for compatibility. Combat stop remains
+the no-argument/reserved-int form; the matching outbound stub does not pack a
+long target. This repairs the request dialect, not combat damage simulation.
+
+Tests check exact types, sentinel IDs, every native-buffer truncation and trailing
+bytes. The two-peer real-UDP test rejects unknown/self targets before accepting
+the other ready player, then continues stop/chat/movement/logout. The native
+session later exited with no access violation recorded; HUD presentation and
+extended stability are still unverified without a fresh visual observation.

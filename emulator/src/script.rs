@@ -14,6 +14,7 @@ pub const TARGET: u32 = 0x82120016;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Request {
     Combat(bool),
+    Attack(Option<u64>),
     Target(Option<u64>),
     Say(String),
     Tell { recipient: String, text: String },
@@ -74,11 +75,16 @@ pub fn decode(function: u32, bytes: &[u8]) -> Result<Request, WorldError> {
     let mut r = Reader { bytes, pos: 0 };
     let request = match function {
         COMBAT_START | COMBAT_STOP => {
-            // Local supported profile: no arguments, or a reserved zero int.
-            if !bytes.is_empty() && r.int()? != 0 {
-                return Err(WorldError::InvalidValue);
+            if function == COMBAT_START && bytes.len() == 12 {
+                let target = r.iid()?;
+                Request::Attack((target != 0 && target != u64::MAX).then_some(target))
+            } else {
+                // Local supported profile: no arguments, or a reserved zero int.
+                if !bytes.is_empty() && r.int()? != 0 {
+                    return Err(WorldError::InvalidValue);
+                }
+                Request::Combat(function == COMBAT_START)
             }
-            Request::Combat(function == COMBAT_START)
         }
         TARGET => {
             let id = r.iid()?;
@@ -186,6 +192,26 @@ mod tests {
         let mut long = integer(0);
         long.extend(literal(&"x".repeat(513)).unwrap());
         assert!(decode(SAY, &long).is_err());
+    }
+    #[test]
+    fn native_combat_start_preserves_target_and_requires_exact_lint_encoding() {
+        for id in [0, u64::MAX, 7, 0x8120000012345678] {
+            let args = identity(id);
+            assert_eq!(
+                decode(COMBAT_START, &args),
+                Ok(Request::Attack((id != 0 && id != u64::MAX).then_some(id)))
+            );
+            for length in 1..args.len() {
+                assert!(decode(COMBAT_START, &args[..length]).is_err());
+            }
+            let mut extra = args;
+            extra.push(0);
+            assert!(decode(COMBAT_START, &extra).is_err());
+        }
+        let mut wrong = identity(7);
+        wrong[..4].copy_from_slice(&1u32.to_le_bytes());
+        assert!(decode(COMBAT_START, &wrong).is_err());
+        assert!(decode(COMBAT_STOP, &identity(7)).is_err());
     }
     #[test]
     fn script_envelope_is_bounded_and_exact() {

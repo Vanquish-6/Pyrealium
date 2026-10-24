@@ -570,7 +570,24 @@ pub fn run(config: Config) -> io::Result<()> {
                                             }
                                             peer.target = target;
                                         }
-                                        script::Request::Combat(enabled) => {
+                                        request @ (script::Request::Combat(_)
+                                        | script::Request::Attack(_)) => {
+                                            let enabled = match request {
+                                                script::Request::Combat(enabled) => enabled,
+                                                script::Request::Attack(target) => {
+                                                    if target.is_some_and(|target| {
+                                                        target == character
+                                                            || !scene.can_observe(character, target)
+                                                    }) {
+                                                        return Err(invalid(
+                                                            "attack target is not a visible other object",
+                                                        ));
+                                                    }
+                                                    peer.target = target;
+                                                    true
+                                                }
+                                                _ => unreachable!(),
+                                            };
                                             let response = script::private_call(
                                                 script::COMBAT_STATE,
                                                 &script::integer(u32::from(enabled)),
