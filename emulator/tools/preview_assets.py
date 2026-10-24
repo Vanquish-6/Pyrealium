@@ -231,29 +231,47 @@ class Assets:
             warnings.extend(animation.warnings)
         except (OSError, ValueError, KeyError) as error:
             warnings.append(f"Animation: {error}")
-        if not 0x100 <= (cell & 65535) <= 0xfffb:
-            warnings.append("Outdoor terrain geometry is not supported by this preview yet")
-            return instances, warnings
-        current = decode_cell(self.cells.read(cell))
-        if current["cell"] != cell:
-            raise ValueError("Cell record identity mismatch")
-        neighbors = dict.fromkeys([cell] + current["visible_cells"] + current["shared_cells"])
         loaded = set()
         static = []
-        for identity in list(neighbors)[:32]:
-            if identity >> 16 != cell >> 16 or not 0x100 <= (identity & 65535) <= 0xfffb:
-                continue
-            try:
-                room = current if identity == cell else decode_cell(self.cells.read(identity))
-                if room["cell"] != identity:
-                    raise ValueError("Neighbor identity mismatch")
-                add(self.mesh(room["mesh"]), room["position"], room["quaternion"], (1, 1, 1), "world")
-                loaded.add(identity)
-                static.extend(room["placements"])
-            except (OSError, ValueError, KeyError) as error:
-                warnings.append(f"Room {identity:08x}: {error}")
-        if len(neighbors) > 32:
-            warnings.append("Neighbor room preview is limited to 32 cells")
+        outdoor = 1 <= (cell & 65535) <= 64
+        block_side = 0
+        if outdoor:
+            from preview_terrain import terrain_scene
+            terrain = terrain_scene(self.cells, self.portal, cell, neighbors=1)
+            block_side = terrain["definitions"]["block_side"]
+            grid = {name: terrain["definitions"][name] for name in ("cell_side", "cells", "block_side")}
+            for source in instances:
+                source["outdoor_grid"] = grid
+            for source in terrain["instances"]:
+                self.color_mesh(source["mesh"])
+                add(source["mesh"],source["position"],source["quaternion"],source["scale"],"world")
+                instances[-1]["terrain"] = True
+                instances[-1]["outdoor_grid"] = grid
+            loaded.update(terrain["loaded_cells"])
+            static.extend(terrain["placements"])
+            warnings.extend(terrain["warnings"])
+        elif 0x100 <= (cell & 65535) <= 0xfffb:
+            current = decode_cell(self.cells.read(cell))
+            if current["cell"] != cell:
+                raise ValueError("Cell record identity mismatch")
+            neighbors = dict.fromkeys([cell] + current["visible_cells"] + current["shared_cells"])
+            for identity in list(neighbors)[:32]:
+                if identity >> 16 != cell >> 16 or not 0x100 <= (identity & 65535) <= 0xfffb:
+                    continue
+                try:
+                    room = current if identity == cell else decode_cell(self.cells.read(identity))
+                    if room["cell"] != identity:
+                        raise ValueError("Neighbor identity mismatch")
+                    add(self.mesh(room["mesh"]), room["position"], room["quaternion"], (1, 1, 1), "world")
+                    instances[-1]["cell"] = identity
+                    loaded.add(identity)
+                    static.extend(room["placements"])
+                except (OSError, ValueError, KeyError) as error:
+                    warnings.append(f"Room {identity:08x}: {error}")
+            if len(neighbors) > 32:
+                warnings.append("Neighbor room preview is limited to 32 cells")
+        else:
+            warnings.append("Invalid or reserved cell identifier")
         # Static DAT placements are already in block space, unlike room meshes.
         static.sort(key=lambda row: sum((a-b)**2 for a,b in zip(row["position"], position)))
         missing = 0
@@ -280,7 +298,12 @@ class Assets:
             try:
                 for mesh, sizes in self.creature(int(row[2], 16)):
                     factor = float(row[11]) if len(row) == 12 and row[11] != "-" else 1
-                    add(mesh, [float(v) for v in row[4:7]], [float(v) for v in row[7:11]],
+                    origin = [float(v) for v in row[4:7]]
+                    if outdoor:
+                        identity = int(row[3],16)
+                        origin[0] += ((identity>>24)-(cell>>24))*block_side
+                        origin[1] += (((identity>>16)&255)-((cell>>16)&255))*block_side
+                    add(mesh, origin, [float(v) for v in row[7:11]],
                         [v * factor for v in sizes], "saved")
             except (OSError, ValueError, KeyError) as error:
                 warnings.append(f"Saved object {row[0]}: {error}")

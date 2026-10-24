@@ -229,11 +229,14 @@ The server creates/removes them as players enter/leave their cell. Two additiona
 portal locations remain in the unresolved report because their terrain is missing.
 A 7,583-entry entity/visual catalog and offline placement tool support explicit
 NPC/object authoring. Double-click `OpenContentEditor.cmd` for the graphical
-catalog browser, native interior/creature 3D preview and position map (Python with Tk required), or run
+catalog browser, native creature/interior/outdoor 3D preview and position map (Python with Tk required), or run
 `python tools/content_editor.py --game-data PATH`. The GUI is syntax checked;
 actual DAT geometry/material extraction is verified, while interactive acceptance
 remains pending. The Windows renderer now supports actual UV textures and depth
 buffering, with a software fallback; native shader parity remains unfinished.
+Native clip playback supports play/pause, clip selection and playback speed.
+Outdoor height blocks use DAT terrain textures, native vertex colors and a
+neighbor ring; road/corner blending, water and procedural scenery remain open.
 `--lifestones true` enables development binding/recall;
 `--portals true` enables 156 imported portal routes plus the authored training
 gateway when that source is loaded. Four source/destination entries remain

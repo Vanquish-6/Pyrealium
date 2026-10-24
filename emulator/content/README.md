@@ -145,6 +145,17 @@ Shift-click a world surface to set X/Y/Z through a ray intersection with its
 actual triangles. **Cut away ceiling** helps inspect an interior from above.
 The camera stays fixed while coordinates, heading or scale change.
 
+Outdoor cells (`0001`–`0040` in a block) load the actual height block and one
+neighbor ring. Heights use the native 256-entry height table, not a linear guess;
+holes, triangle cuts, surface selection, UV tiling and vertex-color variation
+come from the DAT definitions and recovered client formulas. Real terrain
+material-stage textures are displayed with native vertex colors. Ceiling cutaway
+starts disabled outdoors. Shift-clicking another outdoor cell or block updates
+the cell ID and local X/Y/Z together; interior room picks retain their room ID.
+Saved neighboring outdoor placements receive the proper block offset.
+Road/corner surface blending, water and procedural scenery remain unfinished
+and are reported in Details. This preview does not establish traversability.
+
 **Play animation** loops a real native clip for the selected supported creature.
 The clip list shows recovered asset IDs and periods; the mapped idle clip is
 selected first where available. Pause or choose another clip, and change

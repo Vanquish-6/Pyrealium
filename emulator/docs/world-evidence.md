@@ -1,5 +1,33 @@
 # Build 7148 character and world event evidence
 
+## Native outdoor height blocks and terrain materials (2026-10-24)
+
+`preview_terrain.py` reads region, landscape, terrain and surface descriptors,
+height blocks and outdoor static-entity prefixes. Evidence includes `00629d60`,
+`0048f310`, `0048f980`, `0048ca50`, `0048cca0`, `00522000`, `006c6460`,
+`00522380`, `006c5910`, `006c45a0`, `006c44d0`, `006c4970` and `006c36d0`.
+The installed landscape uses 160 m blocks, 10 m vertex spacing and the actual
+256-float height lookup. The real lookup includes a nonmonotonic entry; no
+monotonic or linear substitute is imposed. Hole code 30, native hash-based
+diagonals, slope/surface selection, material variants and HSV variation are
+preserved within the supported profile.
+
+Ground diffuse textures are read from the actual first material-layer stage
+(`005b9e00` -> `005cc0b0` -> `005be300`), after base properties and instance
+overrides. Examples: `2b000033` -> `40000241`, `2b000037` -> `40000244`,
+and detail material `2b000007` -> `4000003c`. Alpha mask `4000023e` is not
+misrepresented as diffuse ground texture. The OpenGL backend now modulates
+textures with native packed vertex colors. Detail UVs are retained; complete
+native detail/corner/road passes, water and procedural scenery remain incomplete.
+
+At `74ba0008`, read-only extraction produced nine blocks, 4,608 triangles,
+25 material-image group references and seven static placement records. Unmapped
+static visuals are explicitly omitted. Neighbor geometry and saved placements
+share the selected block's coordinate frame. Outdoor ray picks canonicalize the
+block/cell and local coordinates together; interior picks preserve room IDs.
+No GUI, test suite or native client was launched. These are static/data checks,
+not proof of live renderer acceptance or collision semantics.
+
 ## Native clip playback and bind-correct skinning (2026-10-24)
 
 `preview_animation.py` follows AnimMap `006796f0`, DBAnimator `0067a5f0`,

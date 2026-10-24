@@ -74,6 +74,7 @@ class Preview3D(ttk.Frame):
         self.animation_time = 0.0
         self.animation_last = time.perf_counter()
         self.clip_ids = {}
+        self.picked_cell = None
         controls = ttk.Frame(self)
         controls.pack(fill="x", pady=(0, 4))
         ttk.Button(controls, text="Focus creature (F)", command=self.focus_placement).pack(side="left")
@@ -125,6 +126,7 @@ class Preview3D(ttk.Frame):
         self.placement = self.center
         self.initial_heading = heading
         self.scene_warnings = list(warnings)
+        self.cutaway.set(not any(source.get("terrain") for source in instances))
         self.geometry_warnings = []
         self.instances = []
         total_triangles = sum(len(instance["mesh"].get("indices", ())) // 3 for instance in instances)
@@ -159,6 +161,7 @@ class Preview3D(ttk.Frame):
                 "groups": mesh.get("groups", ()),
                 "material_images": mesh.get("material_images", {}),
                 "colors": mesh.get("colors", ()),
+                "cell": source.get("cell"),
                 "mesh_source": mesh,
                 "animation_set": source.get("animation_set"),
             }
@@ -374,7 +377,7 @@ class Preview3D(ttk.Frame):
                     continue
                 color_index = offset // 3
                 color = colors[color_index] if color_index < len(colors) else self.COLORS.get(item["role"], self.COLORS["world"])
-                yield a, b, c, color, item["role"]
+                yield a, b, c, color, item["role"], item["cell"]
 
     def draw(self):
         self.pending = None
@@ -400,8 +403,7 @@ class Preview3D(ttk.Frame):
                     self.gpu = GLRenderer(self.canvas, self.redraw)
                 count = self.gpu.render(list(self.visible_instances()), eye, forward, right, up,
                                         width, height, self.placement[2]+3.5 if self.cutaway.get() else None)
-                self.status.set(f"Native UV textures · depth buffer · {count:,} triangles · "
-                                f"{self.gpu.info['renderer']}"
+                self.status.set(f"Textured 3D view · {count:,} triangles"
                                 + (f" · {len(self.scene_warnings)} loading notes in Details" if self.scene_warnings else ""))
                 return
             except (RuntimeError, OSError, ValueError, ImportError) as error:
@@ -413,7 +415,7 @@ class Preview3D(ttk.Frame):
         focal = min(width, height) * 0.92
         light = unit((0.25, -0.4, 0.85))
         triangles = []
-        for a, b, c, color, role in self.visible_triangles():
+        for a, b, c, color, role, cell in self.visible_triangles():
             normal = cross(sub(b, a), sub(c, a))
             if dot(normal, normal) < 1e-18:
                 continue
@@ -486,7 +488,8 @@ class Preview3D(ttk.Frame):
         eye, forward, right, up = self.camera()
         direction = unit(add(forward, add(mul(right, (event.x-width/2)/focal), mul(up, (height/2-event.y)/focal))))
         best = None
-        for a, b, c, _, role in self.visible_triangles():
+        best_cell = None
+        for a, b, c, _, role, cell in self.visible_triangles():
             if role != "world":
                 continue
             edge1, edge2 = sub(b, a), sub(c, a)
@@ -506,7 +509,9 @@ class Preview3D(ttk.Frame):
             distance = dot(edge2, q) * inverse
             if distance > 0.15 and (best is None or distance < best):
                 best = distance
+                best_cell = cell
         if best is not None:
+            self.picked_cell = best_cell
             self.on_pick(add(eye, mul(direction, best)))
         else:
             self.status.set("No loaded world surface under that point. Orbit or zoom to a visible room surface.")

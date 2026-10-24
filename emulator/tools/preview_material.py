@@ -76,6 +76,33 @@ def base_properties(data, did):
     return _properties(reader)
 
 
+def base_stage_texture(data, did):
+    """Bounded first-layer first-stage texture; shader tails remain opaque.
+
+    RenderMaterial 005b9e00 -> MaterialLayer 005cc0b0 (flags/stage count)
+    -> LayerStage 005be300 (first field is texture DID). This is the actual
+    terrain diffuse source when no texture-slot property supplies an override.
+    """
+    reader = Reader(data)
+    if reader.u32() != did or reader.u32() != 0:
+        raise MaterialFormatError("unsupported base material prefix")
+    _properties(reader)
+    layers = reader.u32()
+    if layers > 64:
+        raise MaterialFormatError("base material layer capacity")
+    if layers == 0:
+        return None
+    reader.u32()  # trueFlags
+    reader.u32()  # falseFlags
+    stages = reader.u32()
+    if stages > 4:
+        raise MaterialFormatError("base material stage capacity")
+    if stages == 0:
+        return None
+    texture = reader.u32()
+    return texture if texture >> 24 == 0x40 else None
+
+
 def texture_levels(data):
     reader = Reader(data)
     did, source_type, count = reader.u32(), reader.u32(), reader.u32()
@@ -221,7 +248,8 @@ def material_info(portal, did, surfaces=None, max_size=256, include_image=True):
         reader.end()
     if any(modifier >> 24 != 0x30 for modifier in modifiers):
         raise MaterialFormatError("invalid native material-modifier reference")
-    textures, properties = {}, base_properties(portal.read(base), base)
+    base_data = portal.read(base)
+    textures, properties = {}, base_properties(base_data, base)
     for prop in properties:
         if prop["kind"] == 3000 and len(prop["value"]) == 4:
             texture = struct.unpack("<I", prop["value"])[0]
@@ -243,6 +271,11 @@ def material_info(portal, did, surfaces=None, max_size=256, include_image=True):
         for prop in properties if prop["kind"] == 2000 and len(prop["value"]) == 16
     }
     base_texture = textures.get(3000)
+    if base_texture is None:
+        base_texture = base_stage_texture(base_data, base)
+        if base_texture:
+            textures[3000] = base_texture
+            result["texture_source"] = "base first-layer stage"
     if base_texture is None:
         result["image_error"] = "No supported base or instance texture-slot3000 property"
     elif include_image:

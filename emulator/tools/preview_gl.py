@@ -111,6 +111,7 @@ class GLRenderer:
             "glEnableClientState": (None, [uint]), "glDisableClientState": (None, [uint]),
             "glVertexPointer": (None, [sint, uint, sint, ptr]),
             "glNormalPointer": (None, [uint, sint, ptr]),
+            "glColorPointer": (None, [sint, uint, sint, ptr]),
             "glTexCoordPointer": (None, [sint, uint, sint, ptr]),
             "glDrawElements": (None, [uint, sint, uint, ptr]),
             "glColor4f": (None, [C.c_float] * 4),
@@ -216,17 +217,33 @@ class GLRenderer:
     def _buffers(self, item):
         vertices, indices = item["vertices"], item["indices"]
         normals, uvs = item.get("normals", ()), item.get("uvs", ())
+        colors = item.get("colors", ())
         if len(vertices) > self.MAX_ARRAY_VERTICES or len(indices) > self.MAX_ARRAY_INDICES:
             raise ValueError("Preview geometry exceeds the GPU upload budget")
+        key = (id(vertices), id(indices), id(normals), id(uvs), id(colors))
+        # Retaining source references in the entry prevents ID reuse. Static
+        # geometry therefore needs neither repeated index scans nor re-uploads.
+        if key in self.arrays:
+            self.arrays.move_to_end(key)
+            return key, self.arrays[key]
         if len(indices) % 3 or any(not isinstance(index, int) or index < 0 or index >= len(vertices) for index in indices):
             raise ValueError("Invalid triangle indices supplied to OpenGL")
-        key = (id(vertices), id(indices), id(normals), id(uvs))
-        if key not in self.arrays:
-            self.arrays[key] = dict(refs=(vertices, indices, normals, uvs),
-                vertices=self._array(vertices, 3),
-                indices=(C.c_uint32 * len(indices))(*indices),
-                normals=self._array(normals, 3) if len(normals) == len(vertices) else None,
-                uvs=self._array(uvs, 2) if len(uvs) == len(vertices) else None)
+        packed_colors = None
+        if colors:
+            if len(colors) != len(vertices) or any(not isinstance(value, int) or not 0 <= value <= 0xffffffff for value in colors):
+                raise ValueError("Invalid packed native vertex colors supplied to OpenGL")
+            rgba = bytearray(len(colors) * 4)
+            for index, color in enumerate(colors):
+                # Native packed value is ARGB; GL_UNSIGNED_BYTE consumes RGBA.
+                rgba[index*4:index*4+4] = bytes(((color >> 16) & 255, (color >> 8) & 255,
+                                               color & 255, (color >> 24) & 255))
+            packed_colors = (C.c_ubyte * len(rgba)).from_buffer_copy(rgba)
+        self.arrays[key] = dict(refs=(vertices, indices, normals, uvs, colors),
+            vertices=self._array(vertices, 3),
+            indices=(C.c_uint32 * len(indices))(*indices),
+            normals=self._array(normals, 3) if len(normals) == len(vertices) else None,
+            uvs=self._array(uvs, 2) if len(uvs) == len(vertices) else None,
+            colors=packed_colors)
         self.arrays.move_to_end(key)
         return key, self.arrays[key]
 
@@ -307,6 +324,11 @@ class GLRenderer:
             key, buffers = self._buffers(item)
             used_arrays.add(key)
             gl.glVertexPointer(3, 0x1406, 0, buffers["vertices"])
+            if buffers["colors"] is not None:
+                gl.glEnableClientState(0x8076)  # COLOR_ARRAY
+                gl.glColorPointer(4, 0x1401, 0, buffers["colors"])
+            else:
+                gl.glDisableClientState(0x8076)
             if buffers["normals"] is not None:
                 gl.glEnableClientState(0x8075)
                 gl.glNormalPointer(0x1406, 0, buffers["normals"])
@@ -327,6 +349,8 @@ class GLRenderer:
             groups = item.get("groups") or [dict(start=0, count=len(indices), material=0)]
             images = item.get("material_images", {})
             for group in groups:
+                if group["start"] >= len(indices):
+                    continue  # A bounded viewport may trim later material groups.
                 start, amount = group["start"], min(group["count"], len(indices)-group["start"])
                 if start < 0 or amount < 0 or start % 3 or amount % 3:
                     raise ValueError("Invalid material triangle group supplied to OpenGL")
@@ -354,6 +378,7 @@ class GLRenderer:
         gl.glDisable(0x3000)
         gl.glDisableClientState(0x8074)
         gl.glDisableClientState(0x8075)
+        gl.glDisableClientState(0x8076)
         gl.glDisableClientState(0x8078)
         gl.glDisable(0x0de1)
         error = gl.glGetError()

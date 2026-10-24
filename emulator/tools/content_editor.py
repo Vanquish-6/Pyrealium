@@ -27,6 +27,9 @@ class Editor:
         self.scene_ready = None
         self.content_revision = 0
         self.closing = False
+        self.changing_fields = False
+        self.outdoor_grid = None
+        self.active_scene_cell = None
         root.protocol("WM_DELETE_WINDOW", self.close)
         root.title("World Content Placement")
         root.geometry("1180x790")
@@ -203,11 +206,22 @@ class Editor:
         if not selected:
             return
         row = next(row for row in self.placements if row[0] == selected[0])
-        for name, value in zip(("Entity", "Cell", "X", "Y", "Z"), row[1:2] + row[3:7]):
-            self.fields[name].set(value)
-        self.fields["Scale"].set(row[11] if len(row) == 12 and row[11] != "-" else "")
+        values = dict(zip(("Entity", "Cell", "X", "Y", "Z"), row[1:2] + row[3:7]))
+        values["Scale"] = row[11] if len(row) == 12 and row[11] != "-" else ""
+        self.set_fields(values)
+
+    def set_fields(self, values):
+        self.changing_fields = True
+        try:
+            for name,value in values.items():
+                self.fields[name].set(value)
+        finally:
+            self.changing_fields = False
+        self.preview()
 
     def preview(self):
+        if self.changing_fields:
+            return
         self.refresh_scene()
         self.canvas.delete("all")
         self.transform = None
@@ -278,8 +292,18 @@ class Editor:
             self.preview()
 
     def pick_3d(self, point):
-        for name, value in zip(("X", "Y", "Z"), point):
-            self.fields[name].set(format(value, ".9g"))
+        cell = self.view3d.picked_cell or self.active_scene_cell
+        if self.outdoor_grid and self.active_scene_cell is not None:
+            from preview_terrain import placement_from_point
+            try:
+                cell, point = placement_from_point(self.active_scene_cell, point, self.outdoor_grid)
+            except ValueError as error:
+                self.status.set(str(error))
+                return
+        values = {name:format(value,".9g") for name,value in zip(("X","Y","Z"),point)}
+        if cell is not None:
+            values["Cell"] = f"{cell:08x}"
+        self.set_fields(values)
 
     def refresh_scene(self):
         if self.closing:
@@ -344,11 +368,13 @@ class Editor:
         self.scene_ready = key
         try:
             instances, warnings = future.result()
+            self.active_scene_cell = key[1]
+            self.outdoor_grid = next((row["outdoor_grid"] for row in instances if "outdoor_grid" in row),None)
             self.view3d.set_scene(instances, position, warnings, heading=heading)
             self.view3d.update_placement(self.wanted[1], self.wanted[2], self.wanted[3])
             count = sum(len(row["mesh"]["indices"]) // 3 for row in instances)
             self.render_status.set(f"Loaded {len(instances)} native meshes · {count:,} triangles. "
-                                   + (warnings[0] if warnings else "Actual DAT geometry; default pose."))
+                                   + (f"{len(warnings)} loading notes in Details." if warnings else "Native assets loaded."))
         except (OSError, ValueError, KeyError) as error:
             self.render_status.set(f"3D preview unavailable: {error}")
 
