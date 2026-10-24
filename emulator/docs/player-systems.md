@@ -848,3 +848,25 @@ its respawn interval), while health, reward and attack authority are already
 settled. It is not a lootable corpse. Other creature visuals are not assigned
 unverified Idol animations. Native movement/pathfinding, original combat timing,
 general corpse/loot behavior and fresh player acceptance remain incomplete.
+
+### Human initialization and observer snapshots
+
+Supported human visuals 1f000023/24 now receive initial mode 40000001 in their
+PhysicsDesc. Human BehaviorTable 44000001 declares that mode, and cleaned
+AC2_Char_Login_From_Char_Overview.elog (SHA256
+cf0a600359537d487b2c92152381a4f1cf247a1379f292832fb71bf63c19c88c)
+contains visual 1f000024 with the same standing mode. Omitting it supplied mode
+zero to native physics rather than preserving the DAT initial mode.
+
+Scene bodies now record the validated position offset for the generated
+position-only, mode-plus-position and mode/slider-plus-position subsets. Movement
+updates no longer assume the cell is always at byte 28. Combat mode and its
+visual stamp are retained in player snapshots for newly arriving observers.
+
+The quartermaster's minimal visual was separately confirmed by an exact
+47003724 / 1f001941 capture (SHA256
+0fee071b833ef0d26c87474544a9fd56525f0b8509da81acbbd2de5bf45a1567).
+Native VisualDesc inheritance 0063ee40 supplies its DAT appearance. Pectar's
+1f000deb DAT likewise supplies setup 040001cb and animation map 03000044.
+No guessed inline clothing graph was added to either NPC; an exact Pectar
+creation capture remains unfound.

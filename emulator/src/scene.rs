@@ -16,6 +16,7 @@ pub struct Body {
     pub placement: Placement,
     instance: u16,
     spawn: Vec<u8>,
+    position_offset: usize,
     ready: bool,
     public_stats: BTreeMap<(u32, u32), (u32, Arc<[u8]>)>,
     hands: BTreeMap<u64, Arc<[u8]>>,
@@ -36,11 +37,24 @@ impl Body {
         if instance == 0 {
             return Err(WorldError::InvalidValue);
         }
+        // Generated native subsets place optional mode/slider data before
+        // Position. Never overwrite those fields using a fixed cell offset.
+        let flags = u32::from_le_bytes(spawn[20..24].try_into().unwrap());
+        let position_offset = match flags {
+            0x8000 => 28,
+            0x8080 => 32,
+            0x8082 => 48,
+            _ => return Err(WorldError::InvalidValue),
+        };
+        if spawn.len() < position_offset + 32 {
+            return Err(WorldError::InvalidValue);
+        }
         Ok(Self {
             id,
             placement,
             instance,
             spawn,
+            position_offset,
             ready: false,
             public_stats: BTreeMap::new(),
             hands: BTreeMap::new(),
@@ -120,14 +134,15 @@ impl Body {
     }
     fn relocate(&mut self, placement: Placement) {
         self.placement = placement;
-        self.spawn[28..32].copy_from_slice(&placement.cell.to_le_bytes());
+        let offset = self.position_offset;
+        self.spawn[offset..offset + 4].copy_from_slice(&placement.cell.to_le_bytes());
         for (i, n) in placement
             .coordinates
             .iter()
             .chain(placement.orientation().iter())
             .enumerate()
         {
-            self.spawn[32 + i * 4..36 + i * 4].copy_from_slice(&n.to_le_bytes());
+            self.spawn[offset + 4 + i * 4..offset + 8 + i * 4].copy_from_slice(&n.to_le_bytes());
         }
     }
     fn destroy(&self) -> Arc<[u8]> {
@@ -191,6 +206,31 @@ impl Scene {
             .into_iter()
             .flat_map(|cell| self.content.at(cell).map(|object| object.id))
             .collect()
+    }
+    /// Keep the inherited mode in late-observer CreateObject snapshots.
+    pub fn save_combat_mode(
+        &mut self,
+        owner: u64,
+        fighting: bool,
+        stamp: u16,
+    ) -> Result<(), WorldError> {
+        let body = self
+            .bodies
+            .get_mut(&owner)
+            .filter(|body| body.ready)
+            .ok_or(WorldError::InvalidValue)?;
+        if body.position_offset >= 32 {
+            body.spawn[26..28].copy_from_slice(&stamp.to_le_bytes());
+            body.spawn[28..32].copy_from_slice(
+                &(if fighting {
+                    crate::combat_visual::ONE_HAND
+                } else {
+                    crate::combat_visual::PEACE
+                })
+                .to_le_bytes(),
+            );
+        }
+        Ok(())
     }
     pub fn inventory_instance(&self, owner: u64, item: u64) -> Result<u16, WorldError> {
         let body = self

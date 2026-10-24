@@ -619,7 +619,7 @@ fn training_combat_visual(
     peer: &mut Peer,
     character: u64,
     store: &Store,
-    scene: &crate::scene::Scene,
+    scene: &mut crate::scene::Scene,
     fighting: bool,
     swing: bool,
 ) -> io::Result<Vec<crate::scene::Delivery>> {
@@ -635,12 +635,14 @@ fn training_combat_visual(
         return Ok(Vec::new());
     }
     let (mut next, stamp) = peer.emotes.next_visual(saved.instance).map_err(other)?;
+    let mut last_stamp = stamp;
     let mut events = vec![
         crate::combat_visual::mode(character, saved.instance, stamp, fighting).map_err(other)?,
     ];
     if swing {
         let (after, stamp) = next.next_visual(saved.instance).map_err(other)?;
         next = after;
+        last_stamp = stamp;
         events.push(crate::combat_visual::swing(character, saved.instance, stamp).map_err(other)?);
     }
     peer.validate_scene_batch(&events)?;
@@ -648,6 +650,9 @@ fn training_combat_visual(
     for event in events {
         deliveries.extend(scene.broadcast(character, event).map_err(other)?);
     }
+    scene
+        .save_combat_mode(character, fighting, last_stamp)
+        .map_err(other)?;
     peer.emotes = next;
     Ok(deliveries)
 }
@@ -2320,7 +2325,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                                     peer.target = Some(target);
                                                     peer.pending_skill = Some(request_id);
                                                     deliveries.extend(training_combat_visual(
-                                                        peer, character, &store, &scene, true,
+                                                        peer, character, &store, &mut scene, true,
                                                         false,
                                                     )?);
                                                     Ok(())
@@ -3047,7 +3052,8 @@ pub fn run(config: Config) -> io::Result<()> {
                                             peer.combat = enabled;
                                             if config.training_kit {
                                                 deliveries.extend(training_combat_visual(
-                                                    peer, character, &store, &scene, enabled, false,
+                                                    peer, character, &store, &mut scene, enabled,
+                                                    false,
                                                 )?);
                                             }
                                         }
@@ -3979,7 +3985,7 @@ pub fn run(config: Config) -> io::Result<()> {
                                     });
                                 }
                                 match training_combat_visual(
-                                    peer, player, &store, &scene, true, true,
+                                    peer, player, &store, &mut scene, true, true,
                                 ) {
                                     Ok(deliveries) => updates.extend(deliveries),
                                     Err(error) => {
@@ -4116,8 +4122,9 @@ pub fn run(config: Config) -> io::Result<()> {
                                     data: script::skill_finished(request_id).map_err(other)?.into(),
                                 });
                             }
-                            match training_combat_visual(peer, player, &store, &scene, false, false)
-                            {
+                            match training_combat_visual(
+                                peer, player, &store, &mut scene, false, false,
+                            ) {
                                 Ok(deliveries) => updates.extend(deliveries),
                                 Err(_) => {
                                     if let Some(addr) = active_characters.get(&player) {
