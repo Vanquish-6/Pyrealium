@@ -8,7 +8,7 @@ The normal local server remains loopback-only unless `--auth-data` is supplied.
 
 ## Starting size
 
-For a small alpha, start with a Linux x86-64 VPS, two vCPUs, 4 GB RAM, 40 GB SSD,
+For a small alpha, start with a Linux VPS, two vCPUs, 4 GB RAM, 40 GB SSD,
 public IPv4 and off-host backups. Prefer a region close to the players and good
 single-core performance. The gameplay loop is currently one thread; extra cores
 do not automatically multiply world capacity. The account backend is a separate
@@ -30,6 +30,65 @@ Provider prices and availability were checked on 2026-10-24; see
 [DigitalOcean](https://www.digitalocean.com/pricing/droplets) and
 [Hetzner](https://www.hetzner.com/cloud/cost-optimized/).
 Allow a separate budget for backups and a domain; no paid resource was ordered.
+
+## Sharing the existing Oracle host
+
+A read-only inspection on 2026-10-24 at approximately 14:06 UTC found an
+ARM64 Ubuntu 22.04 host with two logical CPUs and 11,932 MiB RAM. Available
+memory was 7,917 MiB, the load averages were 0.08/0.22/0.18, and a short CPU
+sample was 87–89% idle. Both Aetherium worlds were active, using approximately
+1.5 GiB each. These are quiet-period observations, not peak-load guarantees.
+
+The root volume had only 3.9 GiB free and was 92% used. Do not install the
+matching AC2 assets or compile on that volume in this state. Expand the volume
+and filesystem, or attach storage mounted specifically for AC2. The read-only
+`deploy/shared-host-preflight.sh` requires at least 12 GiB free before copying
+assets and 4 GiB available RAM. It also checks existing service health and AC2
+port conflicts. It never cleans files or changes an existing service.
+
+Build an immutable published revision on a separate workstation. For Linux/WSL,
+install the Rust musl target with `rustup target add aarch64-unknown-linux-musl`,
+set `PYREALIUM_SOURCE_URL` to the published revision URL, and run
+`deploy/build-linux-arm64.sh`. The host needs its usual native linker for Rust
+build scripts and procedural macros. Rust LLD links the ARM64 musl executable;
+this avoids requiring a newer glibc than Oracle's Ubuntu installation provides.
+Compilation and ELF inspection do not establish runtime or WAN compatibility.
+
+On a Windows Rust/MSVC build workstation, install the same musl target and run
+`deploy/build-linux-arm64.ps1 -SourceRoot PATH -SourceUrl REVISION_URL`, with an
+optional `-TargetDirectory PATH`. Use an immutable source archive for `PATH` so
+another editor's uncommitted changes cannot enter the release. This build uses
+the Windows host toolchain for procedural macros and Rust LLD for ARM linking.
+
+Install `deploy/pyrealium.slice` along with both AC2 service units. The slice
+caps both AC2 processes together at 75% of one CPU and 2 GiB RAM, with a 1.5 GiB
+memory-pressure threshold, lower CPU/I/O weights and no swap allowance. Each
+service has additional memory/task/log limits. These are conservative starting
+limits for a shared two-core host; they may throttle AC2 under load. Shared
+kernel, storage and network contention remain possible. Do not change
+Aetherium's units, limits, executable, ports or data when installing AC2.
+
+Nginx already owns ports 80/443 on this host. Use the separate virtual-host
+template `deploy/nginx-accounts.conf.example`; do not install Caddy or replace
+the existing Nginx configuration. A real account hostname, matching certificate
+and canonical account origin are required before enabling that virtual host.
+Validate the complete Nginx configuration before a graceful reload. Keep the
+account backend on 127.0.0.1:19400 and use only UDP 19370/19371 for AC2, leaving
+Aetherium's UDP 9000/9001 and 9100/9101 untouched. Add only the AC2-specific
+firewall rules after the isolated service is ready; never flush either firewall.
+
+Stage small release bundles under the operator's home directory first. Check
+their SHA-256 before installation. Provision a separate `pyrealium` user and
+directories using the layout below; leave the services disabled until storage,
+matching assets, the content manifest, account setup and HTTPS are ready. Record
+Aetherium's PIDs and activation timestamps before/after installation. Rollback
+stops only the AC2 services and removes only its new web virtual host; it does
+not restart Aetherium. Never delete another application's files to make room.
+
+Resource-control semantics are documented in
+[systemd.resource-control](https://www.freedesktop.org/software/systemd/man/249/systemd.resource-control.html);
+proxy forwarding directives are documented by
+[Nginx](https://nginx.org/en/docs/http/ngx_http_proxy_module.html).
 
 ## Authentication flow
 

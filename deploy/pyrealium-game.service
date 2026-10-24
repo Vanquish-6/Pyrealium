@@ -8,6 +8,9 @@ Requires=pyrealium-accounts.service
 Type=simple
 User=pyrealium
 Group=pyrealium
+Slice=pyrealium.slice
+Nice=10
+IOSchedulingClass=idle
 WorkingDirectory=/opt/pyrealium
 ExecStart=/opt/pyrealium/pyrealium serve-training --auth-data /var/lib/pyrealium/auth --bind 0.0.0.0:19370 --data /var/lib/pyrealium/game --game-data /srv/pyrealium/game-data --content /srv/pyrealium/live-world.tsv
 ExecStop=/opt/pyrealium/pyrealium stop --data /var/lib/pyrealium/game --seconds 20
@@ -21,6 +24,10 @@ ProtectHome=true
 PrivateTmp=true
 ReadWritePaths=/var/lib/pyrealium
 MemoryMax=1G
+MemoryHigh=768M
+TasksMax=64
+LogRateLimitIntervalSec=30s
+LogRateLimitBurst=200
 
 [Install]
 WantedBy=multi-user.target

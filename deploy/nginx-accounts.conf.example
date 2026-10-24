@@ -1,0 +1,31 @@
+# Add a separate virtual host to the existing Nginx installation. Replace the
+# hostname and certificate paths only after provisioning that hostname's cert.
+# Do not replace nginx.conf or any existing Aetherium virtual host.
+server {
+    listen 443 ssl;
+    server_name accounts.example.com;
+    ssl_certificate /etc/letsencrypt/live/accounts.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/accounts.example.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    client_max_body_size 4k;
+    client_body_timeout 10s;
+    client_header_timeout 5s;
+    keepalive_timeout 30s;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+
+    location / {
+        proxy_pass http://127.0.0.1:19400;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        # Account tickets bind to the source IPv4 address. Never append a
+        # caller-supplied forwarding chain or put this endpoint behind a CDN.
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header Connection "";
+        proxy_connect_timeout 3s;
+        proxy_send_timeout 10s;
+        proxy_read_timeout 30s;
+        proxy_request_buffering on;
+    }
+}

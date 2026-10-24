@@ -1,0 +1,14 @@
+[Unit]
+Description=AC2 resource budget on a shared host
+
+[Slice]
+CPUAccounting=true
+CPUQuota=75%
+CPUWeight=20
+MemoryAccounting=true
+MemoryHigh=1536M
+MemoryMax=2G
+MemorySwapMax=0
+IOAccounting=true
+IOWeight=20
+TasksMax=128
