@@ -214,15 +214,17 @@ The server must be stopped. Development grants require existing definition and
 visual records in `--game-data`, with operator-supplied stack/equipment rules.
 `inventory-reorder --character-id N --request PATH` imports one reassembled
 296-byte native sorting request while offline. It requires matching owner/item
-identities and a dense bag list; it does not enable live client sorting.
+identities and a dense bag list. Live sorting is separately handled by the
+initialized HUD for the supported single-item profile described above.
 Existence of a DAT definition does not establish starter entitlement or balance.
 See [inventory storage boundaries](docs/world-evidence.md#transactional-inventory-storage-2026-10-24).
 
-An opt-in empty-player HUD experiment is available with
+An opt-in player HUD profile is available with
 `serve --initialize-ui true --game-data PATH` alongside the normal bind/account/data
 options. It requires the converted 7148 assets, emits UI_Load once after scene
-completion, and uses typed empty story, quest, skill, effect and inventory graphs.
-It restores saved window settings and hotbar bindings when present, and grants
+completion, and restores saved progression, skills, owned inventory, window
+settings and hotbar bindings. Story, quest and active-effect graphs remain empty.
+It grants
 no items, skills, gold or progress. This profile is not enabled by
 default: native UI acceptance and backing gameplay systems remain unfinished.
 

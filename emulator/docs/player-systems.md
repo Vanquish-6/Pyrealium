@@ -22,8 +22,9 @@ World entry now restores saved vitals, level and gold in the integer quality
 table and XP in the long-int quality table. CBaseQualities::GetPackHeader
 `00516d10` assigns long-int tables bit `0x800`; Pack `00516f80` places them last.
 The two XP keys retain native bucket order. HUD initialization receives saved
-gold and the level profile's skill credits; skill training/spending is not yet
-connected. Other quest/effect/skill payloads remain at their earlier scope.
+gold and available skill credits after deducting the saved skill book. Native
+training/untraining, encounter rewards and resurrection use the store transitions
+described below. Quest and active-effect payloads remain at their earlier scope.
 
 Private int (`0x10069`) and long-int (`0x100d4`) update builders follow dispatch
 `00494010` and receivers `004981b0` / `00498350`. Live mutation consumers are
@@ -189,3 +190,10 @@ seven replies with additional property graphs. Its SHA256 is
 Only the single-object, single-item profile is generated here. Capture build
 identity and native UI acceptance remain unverified. This change was compiled;
 no tests, native client launch, deployment or server restart were performed.
+
+Equipment integration remains open. The retained player equip captures send
+general object-use function `82160016` with package `245`, rather than direct
+`820e004f`/`820e0015` requests. Replies use packages `1f6` and `1f5` and are
+accompanied by item/player appearance or parenting updates. Offline equipment
+storage does not establish that complete native transition; no live equipment
+mutation has been enabled from those declarations alone.
