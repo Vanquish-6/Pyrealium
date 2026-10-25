@@ -14,7 +14,7 @@ Pyrealium contains a Rust emulator and a Windows player launcher. The server use
 
 ## Confidence is unlimited. Features are itemized.
 
-**Status updated 2026-10-24. Experimental local development server; not ready for general players.**
+**Status updated 2026-10-25. Experimental local development server; not ready for general players.**
 
 - **Observed with the native 7148 client:** local login, character selection, world/terrain rendering, walking and saved cross-cell placement.
 - **Implemented in Rust, with fresh client acceptance still pending:** the initialized HUD, supported inventory/equipment, skill training and advancement, development combat/healing, death/resurrection, binding/Recall, portal travel, a training quest, potions/emotes, command-based trading/crafting and session groups.
@@ -42,12 +42,12 @@ A compiled packet handler is not a verified player experience. Recent runtime ad
 | HUD and preferences | Opt-in UI initialization restores progression, skills, inventory, quest journal, window settings and hotbar bindings; fresh client acceptance pending |
 | Inventory and equipment | Transactional bags, sorting and supported hand equip/unequip; native item acquisition/removal codecs; armor composition and equipment bonuses missing |
 | Skills | Catalog-based human training/untraining and XP advancement; development basic attack and learned self-heal; most original active effects/cast behavior missing |
-| Combat and progression | Development creature damage/retaliation, vigor costs, XP/gold, levels, regeneration and timed respawns; original formulas, projectiles and pathfinding missing |
+| Combat and progression | Placed creatures use their `portal.dat` health, damage, armor and death XP; the four training creatures keep authored beginner stats. Vigor costs, XP/gold, levels, armor reduction, regeneration and timed respawns; original hit formulas, projectiles and pathfinding missing |
 | Death and return | Saved vitals/Dead state, death UI, Resurrect, lifestone binding and Recall implemented; original cast presentation and death penalties missing |
 | Quest journal | One authored Training Grounds quest: three kills, persistent progress, once-only 120 XP / 10 gold via a clickable training mentor or `@quest claim`; original quests/dialogue missing |
 | Item rewards and potions | Training encounters grant a single health potion into a supported bag; consuming it atomically restores up to 25 health; corpse/general loot and native acceptance pending |
 | Portals | 156 imported routes plus three authored training/return gateways; captured portal visual mode/slider restored; original travel presentation/access rules unfinished |
-| World content | Training preset retains 247 base placements, 525 observed actors and 13 authored training objects; native interior visibility and a development outdoor view range; full world population missing |
+| World content | 15,127 placed objects: 247 imported lifestones/portals, 14,865 objects observed in retail packet captures (most from the final 2012–2017 servers, including the human starter dungeon) and 15 authored training objects. Observed objects stand where they were captured; AI, wandering and spawn schedules are missing |
 | Content placement editor | DAT-backed mesh/texture/animation/interior/outdoor preview implemented; latest native paint/Tk crash patch awaits a fresh GUI load |
 | Merchants and crafting | Native four-item shop/catalog and Buy button, inventory buyback, crafting panel with two potion recipes and atomic item/gold changes; consignment and full original economy missing |
 | Groups and broader social play | Session groups up to eight: create/invite/accept/decline/leave/dismiss/disband, native member snapshots, vitals/cell refresh and @g chat; XP/loot remain individual; fresh two-client acceptance pending |
@@ -70,8 +70,9 @@ The Rust runtime now has an authored training loop: receive a hand item and basi
 attack skill, fight a stationary creature, earn XP/gold and potion rewards,
 advance a three-kill quest, and claim its reward through the native journal path.
 A learned human healing skill, potion use, death/resurrection, binding/Recall and
-validated portal destinations are integrated. Use `serve-training --game-data PATH`
-with the supported converted assets; see the runtime guide for account/data options.
+validated portal destinations are integrated. `serve --game-data PATH` with the
+supported converted assets turns all of it on. On Windows, `emulator\Start-Server.ps1`
+does that using the folders already saved in the launcher; see the runtime guide.
 The underlying persistence and codecs compile, but this complete loop has not
 received fresh matching-client acceptance. No public-player readiness is implied.
 

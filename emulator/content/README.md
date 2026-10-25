@@ -22,6 +22,47 @@ It does not populate the human starter dungeon or supply AI, trading, damage,
 loot, quest interactions, death or respawn behavior. The regular default pack
 continues to use only the table-derived placements.
 
+## Retail capture population
+
+`capture-spawns.tsv` holds 14,340 stationary objects read from retail packet
+captures and not already placed by the other packs. Most come from captures
+made on the 2012–2017 servers shortly before they closed: a human character from
+creation and the starter dungeon (landblock `0298`) through Arwic, Kehan and the
+Osteth vaults, plus two other players' sessions. The training pack loads it
+after `world-observed-expanded.tsv` and `training-world.tsv`.
+`capture-spawns-report.json` records each capture, its hash and why objects
+were skipped.
+
+Regenerate it with `python tools/import_capture_corpus.py`; edit `ROOTS` in that
+script to point at your capture folders. It uses the same decoder as the
+observation pack below, with these differences for the newer captures:
+
+- World objects are accepted in both the `81200000` and `81300000` id ranges,
+  and server-sent static objects whose `40` ids encode their landblock.
+- Captures made on the player's machine record an IP length of 0; the frame
+  length is used instead.
+- Messages are rebuilt as they complete, and an unfinished one is dropped when
+  more than 8,192 or 16 MiB are pending, so hour-long captures fit in memory.
+- Objects later attached to an owner (Physics Parent `0x10087`) or put in a
+  container (Contain `0x100cb`) are skipped, so worn and carried items are not
+  placed in the world.
+- The first capture to place objects in a cell owns that cell.
+
+These are snapshot positions. Creatures stand where they were seen; wandering,
+AI, spawn generators and respawn schedules are not reconstructed.
+
+## Creature combat stats
+
+`creature-combat.tsv` lists 152 placed creatures with the combat fields their
+`portal.dat` entity records carry: health, natural damage, armor, death XP and
+level, with an interval column that is 0 when the record has no natural weapon
+time. Parent records are merged first, as the 2012 server's
+`Entity.LoadFromPortalDat` does. Regenerate it with:
+
+```powershell
+python tools/import_creature_combat.py PORTAL_DAT content/creature-entities.txt content/creature-combat.tsv
+```
+
 ## Capture-observed actors
 
 `observed-world.tsv` contains the observation pack; `observed-actors.json`

@@ -15,10 +15,9 @@ implemented in Rust but still need fresh matching-client acceptance as one loop.
 Two-client appearance/visibility and general-player readiness are unverified.
 A MusicLoader error can require Continue.
 
-**Status updated 2026-10-24.** Recent runtime changes passed library/server
-compilation and an optimized build. The local training server has been rebuilt
-and restarted. No test suites were run; the latest player systems and content
-visibility fixes still need fresh matching-client acceptance.
+**Status updated 2026-10-25.** The library tests pass and the server loads the
+full 15,127-object world against the converted assets. The latest player systems
+and the larger population still need fresh matching-client acceptance.
 The training profile's combat values, quest, item rewards and instant travel
 are authored development policies; they do not establish original AC2 parity.
 
@@ -123,6 +122,23 @@ Use `--seconds 30` for a timed run. To stop gracefully from another terminal:
 
 Use the same data directory for both commands. Separate build directories let you
 compile without replacing an executable already in use by a test server.
+
+### One-command local server
+
+If the launcher already points at a prepared `compat-7148` game folder, run this
+from this directory and leave the window open:
+
+```powershell
+.\Start-Server.ps1
+```
+
+It reads the account, host, port and game folder from the launcher settings
+(`%LOCALAPPDATA%\Pyrealium\launcher.xml`), refuses non-loopback hosts, clears a
+stale `data\server.lock` only when no server is running, and starts
+`serve --game-data`. With game data, `serve` enables the HUD, training kit,
+lifestones, portals, the full world content and combat; any of those can still be
+turned off with its own flag (for example `--portals false`). It uses
+`target\debug` first, then the release builds, so rebuild the one it will pick.
 
 ## Native world experiment
 
@@ -256,6 +272,16 @@ most skill effects, combat animations, collision, corpse/general loot and native
 acceptance are unfinished.
 See [player systems integration](docs/player-systems.md).
 
+Every placed creature in `content/creature-entities.txt` can be fought. The 152
+whose `portal.dat` records carry combat stats use them: health
+(`GameplayStatistics_MaxHealth`), natural damage, armor (`NPC_ArmorLevel`) and
+death experience, extracted into `content/creature-combat.tsv`. The other 40 use
+a 60-health / 6-damage starter profile. Explicit rows in the encounter file win,
+so the four training creatures keep beginner stats (the retail Idol Spawn is
+level 24 and would one-hit a new character). Creature armor reduces your hits and
+your level armor reduces theirs, never below 1. Attack speed, range, gold and the
+original hit formula are still development values.
+
 The opt-in HUD path also restores a persistent skill book and handles captured
 native training/untraining requests with imported level/species/credit/dependency
 rules for the supported human profile. The catalog contains 1,952 definitions;
@@ -324,8 +350,9 @@ and backing gameplay systems remain unfinished.
 
 ## Training merchants, crafting and groups
 
-`serve-training` now keeps the 247 base placements and 525 captured actors, plus
-13 authored training objects. There are exits in the start and corridor rooms,
+`serve-training` (and `serve --game-data`) loads 15,127 placed objects: the 247
+base placements, 525 actors from the older captures, 14,340 objects from the
+2012–2017 retail captures and 15 authored training objects. There are exits in the start and corridor rooms,
 an outdoor return gateway, quartermasters, clickable training mentors and four
 training creatures. Interior
 visibility uses the DAT's native visible-room arrays. Outdoors, the surrounding
