@@ -210,9 +210,9 @@ impl Encounters {
         {
             return Err(invalid("player or regeneration profile bounds"));
         }
-        // portal.dat combat fields override an authored row for that entity.
-        // Interval 0 means the record had no natural weapon time. Creatures
-        // with no combat record keep the starter profile.
+        // An authored row wins: the retail Idol Spawn is level 24 and one-hits a
+        // level 1 character. Interval 0 means the record had no natural weapon
+        // time. Creatures with no combat record keep the starter profile.
         for line in include_str!("../content/creature-combat.tsv").lines() {
             if line.is_empty() || line.starts_with('#') || line.starts_with("pyrealium-") {
                 continue;
@@ -258,13 +258,10 @@ impl Encounters {
                 xp,
                 gold: 2,
             };
-            if let Some(existing) = rules.get_mut(&entity) {
-                existing.health = rule.health;
-                existing.damage = rule.damage;
-                existing.armor = rule.armor;
-                existing.interval = rule.interval;
-                existing.xp = rule.xp;
-            } else if rules.len() >= 4096 || rules.insert(entity, rule).is_some() {
+            if rules.contains_key(&entity) {
+                continue;
+            }
+            if rules.len() >= 4096 || rules.insert(entity, rule).is_some() {
                 return Err(invalid("creature combat rule limit"));
             }
         }

@@ -58,7 +58,9 @@ def object_description(data):
         raise Unsupported("not-create-object")
     identity = r.identity()
     # Narrow capture namespace profile excludes player avatars and their state.
-    if identity >> 32 != 0x81200000:
+    # 0x8120/0x8130 are world objects (pre-2012 and 2012-2017 servers); 0x40 IIDs
+    # carry their landblock and are server-sent static objects.
+    if identity >> 32 not in (0x81200000, 0x81300000) and identity >> 56 != 0x40:
         raise Unsupported("non-world-namespace")
     if r.word() != 2:
         raise Unsupported("unsupported-visual-description")
@@ -114,7 +116,7 @@ def object_description(data):
 def messages(raw):
     if len(raw)<24 or raw[:4] not in [b"\xd4\xc3\xb2\xa1",b"\x4d\x3c\xb2\xa1"] or struct.unpack_from("<I",raw,20)[0]!=1:
         raise ValueError("expected little-endian classic Ethernet PCAP")
-    pos, groups, storage = 24, {}, 0
+    pos, groups, storage, done = 24, {}, 0, set()
     while pos<len(raw):
         if pos+16>len(raw):
             raise ValueError("truncated PCAP record header")
@@ -129,6 +131,9 @@ def messages(raw):
         ip = frame[14:]
         ih = (ip[0]&15)*4
         total = struct.unpack_from(">H",ip,2)[0]
+        if total == 0:
+            # Host-side captures with segmentation offload record a zero length.
+            total = len(ip)
         if ip[0]>>4!=4 or ih<20 or total>len(ip) or total<ih+8 or ip[9]!=17 or struct.unpack_from(">H",ip,6)[0]&0x3fff:
             continue
         udp = ip[ih:total]
@@ -161,18 +166,26 @@ def messages(raw):
                 raise ValueError("invalid fragment bounds")
             key = (ip[12:20],udp[:4],payload[12:14],payload[18:20],blob,queue,count)
             fragment = payload[offset+16:offset+size]
+            offset += size
+            if key in done:
+                continue
             parts = groups.setdefault(key,{})
             if index in parts and parts[index]!=fragment:
                 raise ValueError("conflicting duplicate fragment")
             if index not in parts:
                 storage += len(fragment)
                 parts[index] = fragment
-            if len(groups)>8192 or storage>16*1024*1024 or sum(map(len,parts.values()))>65536:
+            if sum(map(len,parts.values()))>65536:
                 raise ValueError("capture reassembly limit")
-            offset += size
-    for key,parts in groups.items():
-        if len(parts)==key[-1]:
-            yield b"".join(parts[i] for i in range(key[-1]))
+            # Long captures lose fragments; the oldest unfinished blob is abandoned.
+            while len(groups)>8192 or storage>16*1024*1024:
+                stale = next(iter(groups))
+                storage -= sum(map(len,groups.pop(stale).values()))
+            if len(parts)==count:
+                del groups[key]
+                storage -= sum(map(len,parts.values()))
+                done.add(key)
+                yield b"".join(parts[i] for i in range(count))
 
 
 def convert(paths, base, game_data, skip_broken=False):
@@ -205,9 +218,9 @@ def convert(paths, base, game_data, skip_broken=False):
         for path in paths:
             try:
                 with path.open("rb") as file:
-                    raw = file.read(64*1024*1024+1)
-                if len(raw)>64*1024*1024:
-                    raise ValueError("capture exceeds 64 MiB")
+                    raw = file.read(128*1024*1024+1)
+                if len(raw)>128*1024*1024:
+                    raise ValueError("capture exceeds 128 MiB")
                 blobs = list(messages(raw))
             except ValueError as error:
                 if not skip_broken:
@@ -217,11 +230,17 @@ def convert(paths, base, game_data, skip_broken=False):
             source_hash = hashlib.sha256(raw).hexdigest()
             source = {"file":path.name,"sha256":source_hash,"accepted":0,"rejected":Counter()}
             seen, source_cells = set(), set()
+            # Equipped and carried items are created at their owner's position,
+            # then attached by Physics Parent (0x10087) or Contain (0x100cb).
+            attached = {struct.unpack_from("<Q",data,4)[0] for data in blobs
+                        if len(data)>=12 and data[:4] in (b"\x87\x00\x01\x00",b"\xcb\x00\x01\x00")}
             for data in blobs:
                 if data[:4]!=b"\x58\x00\x01\x00":
                     continue
                 try:
                     actor = object_description(data)
+                    if int(actor["source_iid"],16) in attached:
+                        raise Unsupported("parented-or-contained")
                     if actor["source_iid"] in seen:
                         raise Unsupported("repeated-observation")
                     seen.add(actor["source_iid"])

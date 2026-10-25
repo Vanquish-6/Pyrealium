@@ -1,7 +1,7 @@
 {
-  "captures": 516,
-  "accepted_before_dedupe": 547,
-  "added": 28,
+  "captures": 773,
+  "accepted_before_dedupe": 14859,
+  "added": 14340,
   "skipped": {
     "already-placed": 519
   },
@@ -73,9 +73,8 @@
     {
       "file": "mounted.movement.enemy.mobs.elog",
       "sha256": "afa9055cd4a186d8647be56d91711969f902b10004f52523635758a48851e9f5",
-      "accepted": 8,
+      "accepted": 9,
       "rejected": {
-        "non-world-namespace": 1,
         "unsupported-or-unplaced-physics": 5
       }
     },
@@ -174,9 +173,9 @@
     {
       "file": "recalling.to.lifestone.elog",
       "sha256": "e68d7dd8997e790b41cd26ba74f080a4bcaddd16a8b28eb9b241177c8f24543a",
-      "accepted": 1,
+      "accepted": 2,
       "rejected": {
-        "non-world-namespace": 2
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -228,7 +227,7 @@
       "sha256": "73ba4db486f4e45214df7c0a5e0e15d29d1aae1a2724ffc5711138bccebff24e",
       "accepted": 1,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -270,9 +269,9 @@
     {
       "file": "using.world.object.initiates.automovement.to.object.elog",
       "sha256": "2713b4554f024e0dd6d1325990a78ff2e5372f22181b119000cc3c3789590978",
-      "accepted": 0,
+      "accepted": 1,
       "rejected": {
-        "non-world-namespace": 2
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -308,9 +307,9 @@
     {
       "file": "heroes.dungeon.1.portal.1.elog",
       "sha256": "857fe1090ac1885bfe2cfcbf52efc47e062cb726c736d7a986595cb22c756106",
-      "accepted": 4,
+      "accepted": 10,
       "rejected": {
-        "non-world-namespace": 8
+        "unsupported-or-contained-description": 2
       }
     },
     {
@@ -318,8 +317,8 @@
       "sha256": "773f6b559f47c4ef156752e8ed973121914a93bb9569d0f3cabb0c356ab0ed3d",
       "accepted": 0,
       "rejected": {
-        "cell-covered-by-earlier-capture": 4,
-        "non-world-namespace": 8
+        "cell-covered-by-earlier-capture": 10,
+        "unsupported-or-contained-description": 2
       }
     },
     {
@@ -327,15 +326,15 @@
       "sha256": "95dea59b25197e197abcaf2842964bb0c0afc5682a4bb335d6a46a06bc84b260",
       "accepted": 4,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "rustwater.redute.portal.at.gate.of.madness.elog",
       "sha256": "504925759265522a13870633ca54b141dae141a5a0c474f0bbe44cb352dac697",
-      "accepted": 7,
+      "accepted": 10,
       "rejected": {
-        "non-world-namespace": 4
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -349,7 +348,7 @@
       "sha256": "903e8b229159d0bb7234be1af79c41a6b107c08d326a4944a9d0130cbb144cad",
       "accepted": 10,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -369,7 +368,7 @@
       "sha256": "1308dc25385fef892a26a22f7a99df7d2d19bc8790113799313c766751905c02",
       "accepted": 6,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -377,16 +376,14 @@
       "sha256": "6bc48fe762087642ebd0a05027d36842cfa3d184b2d47781e77362c1d8bc9bb6",
       "accepted": 23,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "kydi.water.temple.entrance.portal.elog",
       "sha256": "23e33e5eace966424f5d50c13e00dd228313f0a1074906de9cf6abe0aa33279c",
-      "accepted": 4,
-      "rejected": {
-        "non-world-namespace": 2
-      }
+      "accepted": 6,
+      "rejected": {}
     },
     {
       "file": "lumari.ghost.mines.closing.door.elog",
@@ -397,10 +394,8 @@
     {
       "file": "lumari.ghost.mines.entrance.portal.elog",
       "sha256": "70d291cb1752edc53176bdb40ce65c5dfabe9cdde21e5115b36e2e52e96daa44",
-      "accepted": 1,
-      "rejected": {
-        "non-world-namespace": 2
-      }
+      "accepted": 3,
+      "rejected": {}
     },
     {
       "file": "lumari.ghost.mines.nonlocked.doors.opening.elog",
@@ -437,9 +432,9 @@
     {
       "file": "arkanus.tomb.heroes.shrine.entrance.portal.elog",
       "sha256": "9183c1ff1b5344753b32832ab17cad765e7b4a516e496b881410e238e3c4a6a5",
-      "accepted": 1,
+      "accepted": 3,
       "rejected": {
-        "non-world-namespace": 3,
+        "unsupported-or-contained-description": 1,
         "unsupported-visual-description": 1
       }
     },
@@ -460,47 +455,45 @@
       "sha256": "f7e2aa44eeacbed27e48cab377b4e9c91128ea1395b1a69bf1e23992ae4acd69",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "crone.laboratories.elog",
       "sha256": "57251846685b3b180af67f974221c3d4fd1c692ead5af8b8f67c9661a4ff42d8",
-      "accepted": 5,
+      "accepted": 10,
       "rejected": {
-        "non-world-namespace": 6
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "dungeon.of.the.ancients_in.lake_lower.catacombs.elog",
       "sha256": "32ba76566221557d02afc870d40f49dab716cfed55d2c5b310ab272aea736d4c",
-      "accepted": 3,
+      "accepted": 5,
       "rejected": {
-        "non-world-namespace": 3
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "dungeon.of.the.ancients_in.lake_outer.catacombs.elog",
       "sha256": "93582f53b9d0d90f9eee0fb2a00cea6ed2cd1e4a8a5e3a6f1e07f963fb51069a",
-      "accepted": 0,
+      "accepted": 1,
       "rejected": {
-        "non-world-namespace": 2
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "dungeon.of.the.ancients_in.lake_upper.catacombs.elog",
       "sha256": "49f5e46e56165e8076e307c59e3d71abacc6f6a49dfdfa31040c68bf76a0b78e",
-      "accepted": 2,
-      "rejected": {
-        "non-world-namespace": 2
-      }
+      "accepted": 4,
+      "rejected": {}
     },
     {
       "file": "final.filinus.nexus.entrance.portal.elog",
       "sha256": "5422b4ff0120a0f5903044490f1b43b39e35fbc99620a4d6b0d9cfc6115ce9da",
       "accepted": 17,
       "rejected": {
-        "non-world-namespace": 3
+        "unsupported-or-contained-description": 3
       }
     },
     {
@@ -516,7 +509,7 @@
       "sha256": "97e6bc92afd69c139b0849d7899a34a66ed127f0b2f9e02d605d3a1c8c84c0e2",
       "accepted": 1,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -524,7 +517,7 @@
       "sha256": "7bb561817dfe0e27890ede0fd525c4446fef1ad42184f1ccd7f7bdd7310f264b",
       "accepted": 22,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -540,7 +533,7 @@
       "sha256": "2a58ba93326e3f3410baf4280727aa811c4dfd8ee77a053209942b1dd6d166e6",
       "accepted": 1,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -554,7 +547,7 @@
       "sha256": "224dcc06984feccd005a458899a88d2005a363a7d94584f054e94608d6f82ce5",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -562,7 +555,7 @@
       "sha256": "a784cf63d40b985acb7f8ea6bfdcf78369c0ddf6c1591f7c43e29e532c363288",
       "accepted": 17,
       "rejected": {
-        "non-world-namespace": 4
+        "unsupported-or-contained-description": 4
       }
     },
     {
@@ -580,51 +573,47 @@
     {
       "file": "human.porting.from.beginner.area.with.glyph.to.shardroom.elog",
       "sha256": "27805e3cdbf5107d8258433eb79c5abe54f84b725e6fa5f708462a2354a995c3",
-      "accepted": 1,
+      "accepted": 2,
       "rejected": {
-        "non-world-namespace": 2
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "human.porting.from.shardroom.to.lost.wish.elog",
       "sha256": "e444793051c37ec1dc33ede61ab25939b7d193aa49aa2830b85ee6b46c92baf7",
-      "accepted": 0,
-      "rejected": {
-        "non-world-namespace": 2
-      }
+      "accepted": 2,
+      "rejected": {}
     },
     {
       "file": "lugian.porting.from.beginner.area.with.glyph.to.shardroom.elog",
       "sha256": "d6914859581eed7ac7854fba9d5eefe924fcc9ca8cb07a8375878551c6a01000",
       "accepted": 0,
       "rejected": {
-        "missing-dat-asset-or-cell": 1,
-        "non-world-namespace": 2
+        "missing-dat-asset-or-cell": 2,
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "lugian.porting.from.shardroom.to.esper.elog",
       "sha256": "1a3d543d95d67bdc60a9a0293edf94634514b6a372ded1f63a75169abf95f112",
-      "accepted": 1,
+      "accepted": 5,
       "rejected": {
-        "non-world-namespace": 5
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "tumerok.porting.from.beginner.area.with.glyph.to.shardroom.elog",
       "sha256": "6c5d8fcd1cff8f7e5cfaa57b454196eec027e129b8e2a3002d38f2f699886907",
-      "accepted": 1,
+      "accepted": 2,
       "rejected": {
-        "non-world-namespace": 2
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "tumerok.porting.from.shardroom.to.lost.wish.elog",
       "sha256": "d6f4d8d78919f4d8b7edaf77f26296451c0d5f21034ad67b12923cb9f9b07497",
-      "accepted": 1,
-      "rejected": {
-        "non-world-namespace": 1
-      }
+      "accepted": 2,
+      "rejected": {}
     },
     {
       "file": "clicking.cragstone.nexus.to.be.rewarded.with.recall.elog",
@@ -637,47 +626,45 @@
       "sha256": "4ea28c9eb58fba7323498b10629147774f1bf9d35c93f2608c09a4b4896dee16",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "ac2_linvak_gevoth_entrance.portal.elog",
       "sha256": "db53542d9b73bd151d7a1d624cb649a0f3cc5824684d04049c1f85cef7f54152",
-      "accepted": 18,
+      "accepted": 38,
       "rejected": {
-        "non-world-namespace": 22
+        "unsupported-or-contained-description": 2
       }
     },
     {
       "file": "ac2_linvak_gevoth_shardroom_exitportal.elog",
       "sha256": "8dab5bb9d4a195c8209be30ee964e3f96fb5835c95090cd5f4935a3d4176f92f",
-      "accepted": 0,
+      "accepted": 2,
       "rejected": {
-        "non-world-namespace": 3
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "ac2_linvak_gevoth_vault_vestibul_port.elog",
       "sha256": "4f3bac3ee5ec582e1bc4ee8be4476016382da7d31c35034bd0f6a44ec7522573",
-      "accepted": 1,
+      "accepted": 5,
       "rejected": {
-        "non-world-namespace": 5
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "ac2_linvak_malthabbor_entrance.portal.elog",
       "sha256": "7c6129b9e2fc07545e3b672bf524a47f2bbf09368acc9c0e2799a1419cb4e2d4",
-      "accepted": 0,
-      "rejected": {
-        "non-world-namespace": 2
-      }
+      "accepted": 2,
+      "rejected": {}
     },
     {
       "file": "ac2_linvak_malthabbor_shardroom_exitportal.elog",
       "sha256": "906c151ec2cf1d091b144d3c0ade20d0afc3d7b55f05af009aee0bda278515b7",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -685,7 +672,7 @@
       "sha256": "a0a8c89f24938137f0ed974008358c3eed67413e20064e8014c8cb28d8db9954",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -693,23 +680,23 @@
       "sha256": "66b0c1f2b2b8c10f7850a08fc3b5d6b744471693e76d8f5ba92e6ad6c03793bf",
       "accepted": 1,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "ac2_linvak_nepeth_entrance.portal.elog",
       "sha256": "f7321f52b8694f1f04978e35556b99ca46ed2e7690da1f15ef9a6ffc0fa48076",
-      "accepted": 16,
+      "accepted": 39,
       "rejected": {
-        "non-world-namespace": 24
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "ac2_linvak_nepeth_portal_to_second_island.elog",
       "sha256": "7a709989ccd1889aa69d813d918474166815cbb8879eb354a07c1ff878f67c3d",
-      "accepted": 13,
+      "accepted": 37,
       "rejected": {
-        "non-world-namespace": 27
+        "unsupported-or-contained-description": 3
       }
     },
     {
@@ -721,9 +708,9 @@
     {
       "file": "ac2_linvak_nepeth_shardroom_exitport.elog",
       "sha256": "86dc1e9d74917bf12929e112ee46cdc7a7b56514c5c7e7aea91e524868c399f6",
-      "accepted": 0,
+      "accepted": 1,
       "rejected": {
-        "non-world-namespace": 2
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -731,47 +718,47 @@
       "sha256": "1f295512907cea141aa55fa362f3ade618e209e258237cb860242ad94a1d648a",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "ac2_linvak_nepeth_vault_vestibul_port.elog",
       "sha256": "a96951e8f554c21e0f888f8a181a50867218d49ae88f14da6846cf631c6548b1",
-      "accepted": 1,
+      "accepted": 8,
       "rejected": {
-        "non-world-namespace": 8
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "ac2_Linvak_oradi_boss.platform1_portal.elog",
       "sha256": "eadd4ab55198a5a71e5df1d47baf4f920a216e1f4b943bb51ccfd58beed766a9",
-      "accepted": 1,
+      "accepted": 9,
       "rejected": {
-        "non-world-namespace": 10
+        "unsupported-or-contained-description": 2
       }
     },
     {
       "file": "ac2_Linvak_oradi_distant.platform.portal.elog",
       "sha256": "330564cc3bad1a435f71a3762e67b27b0a5f67a72be1c894ae27ec1b8b275a24",
-      "accepted": 20,
+      "accepted": 38,
       "rejected": {
-        "non-world-namespace": 21
+        "unsupported-or-contained-description": 3
       }
     },
     {
       "file": "ac2_Linvak_oradi_entrance.portal.elog",
       "sha256": "5f377b851d5ced6792c3dc935a13d3fd2bd2aef2ed8769af538c192eb2841723",
-      "accepted": 17,
+      "accepted": 35,
       "rejected": {
-        "non-world-namespace": 19
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "ac2_Linvak_oradi_shardroom.exit.portal.elog",
       "sha256": "110dd95cea13420afd4fdac54198b5fc7d0c9d7df4c9dbe3fcc824be19f5586e",
-      "accepted": 0,
+      "accepted": 1,
       "rejected": {
-        "non-world-namespace": 2
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -791,7 +778,7 @@
       "sha256": "5149e1420323569915b5b46a338a873859d5ffac68c9318e49090849eddaf2e8",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -799,7 +786,7 @@
       "sha256": "4df15d8655719aca0d32908a2cee4ae8394646e9ccf18a248f86315b993c338f",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -821,7 +808,7 @@
       "sha256": "b582ffb3997077984267cdd1a2d6ab2a5d914ea73a9da0b1b563888a915fb34c",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -829,23 +816,23 @@
       "sha256": "f42302338664e4c2fa6e8a307d682f9de399ea849a8b2f0761033763c41b8614",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "ac2_Linvak_thusik_vault_Vestibul.bossroom.portal.elog",
       "sha256": "7c1b2ea9e9c522bf4c4ec898a5a6b0bb07b9b9e2919a7feee077deea2f155400",
-      "accepted": 1,
+      "accepted": 2,
       "rejected": {
-        "non-world-namespace": 2
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "ac2_linvak_winterhollows_entrance.portal.elog",
       "sha256": "0016fc248fbe0e74b92f61309e19bba623ee7fc3bb9499763e127c7439b87d38",
-      "accepted": 0,
+      "accepted": 2,
       "rejected": {
-        "non-world-namespace": 3
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -853,7 +840,7 @@
       "sha256": "3e9a8b70938548a3a97f5df9f77733c9613e7f769b8827bd0029499085bf8d31",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -861,7 +848,7 @@
       "sha256": "c77a04f0ba4fa023c86d7bb1375500842be8285c4e72b156e973f03e94c67221",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -873,9 +860,9 @@
     {
       "file": "ac2_omishan_ariaki_entrance.portal.elog",
       "sha256": "76beadfb8c4bdd29d444565f1f52cd3046ee0957eb8284986362463a334a1ab3",
-      "accepted": 13,
+      "accepted": 23,
       "rejected": {
-        "non-world-namespace": 12
+        "unsupported-or-contained-description": 2
       }
     },
     {
@@ -883,7 +870,7 @@
       "sha256": "7748d2d32f3c0448a297946d88daa47dad1943faf6163252487bf847f41ac3d9",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -891,15 +878,15 @@
       "sha256": "a1ce5a6dd889b98abc443cfcef65f2a17da6d28455f4754ee231d5053b2b0b22",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "ac2_omishan_ariaki_vault_vestibul_portal.elog",
       "sha256": "cb378d5f6ec8b584a056b13a0d1e22ed31c1c28905e43aa6bd8a63494c1dcfba",
-      "accepted": 3,
+      "accepted": 5,
       "rejected": {
-        "non-world-namespace": 3
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -913,7 +900,7 @@
       "sha256": "a35b574912175cd3906c932e03f5c832d5436f6b8dc2df6155e14620d962dd29",
       "accepted": 5,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -921,7 +908,7 @@
       "sha256": "2adefd26bc80261af0b6e9795e7d5e6da733069c76c0347133d535989d12e3a4",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -929,7 +916,7 @@
       "sha256": "3de3736bfeb84381cecaefa2fff9af3360f41342f6deeab7fde9159536947ab8",
       "accepted": 1,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -943,7 +930,7 @@
       "sha256": "c0b80a0ae2a28281332644d28e61e105bd7155c28661c7eb71839aff74940a07",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -951,7 +938,7 @@
       "sha256": "5f911f2f6974c05005693736fa575361fd1d27bfa670dc24aea1b4c9610d597a",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -959,7 +946,7 @@
       "sha256": "219f64cd681ecc598d585a0094cd4b8f03173543add831a9abb005372c699259",
       "accepted": 1,
       "rejected": {
-        "non-world-namespace": 2,
+        "unsupported-or-contained-description": 2,
         "unsupported-or-unplaced-physics": 1
       }
     },
@@ -974,7 +961,7 @@
       "sha256": "50cc4d77d90fc5d953cab845f80015e6196281bf018d24e324529d947766c3eb",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -982,7 +969,7 @@
       "sha256": "85633ef207da231bd9836f9381d36b0be3e87bbf006d1752a7aebcabb136c1b7",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -990,7 +977,7 @@
       "sha256": "681ae92462f82abbf1b99fb7eca6afc701bb3fc703645bd60c9bfc16f99db901",
       "accepted": 1,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1002,9 +989,9 @@
     {
       "file": "ac2_omishan_naderu_porting.out.elog",
       "sha256": "fe1f802a50e2f26f6e27e86ed6cc12c0ac8672dfa7a18863b3f741521c786edb",
-      "accepted": 0,
+      "accepted": 1,
       "rejected": {
-        "non-world-namespace": 2
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1012,7 +999,7 @@
       "sha256": "6ce5273b5dc4c4e4aced0ee5053d3b3213401f10b0b64201804efa0789e59701",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1020,23 +1007,23 @@
       "sha256": "d4dc922727f757febdb0bf9a169752feeeb3e50fd75973ec768fd0577a124c11",
       "accepted": 1,
       "rejected": {
-        "non-world-namespace": 2
+        "unsupported-or-contained-description": 2
       }
     },
     {
       "file": "ac2_omishan_tou-tou_porting.in.elog",
       "sha256": "2c697ec51692c481f50e9d9cb7eef261688cc5f2e5d62d764e7ffdf480c0d81f",
-      "accepted": 17,
+      "accepted": 28,
       "rejected": {
-        "non-world-namespace": 15
+        "unsupported-or-contained-description": 4
       }
     },
     {
       "file": "ac2_omishan_tou-tou_porting.out.elog",
       "sha256": "e488d81de05e34bf586beb106df6d60aab76e016aa85eac5c3c517495799e147",
-      "accepted": 0,
+      "accepted": 1,
       "rejected": {
-        "non-world-namespace": 2
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1044,15 +1031,15 @@
       "sha256": "75dd716e30d396e9332dad49bcc293c49dd1fd42fd9929df0e15186aeae2cabe",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "ac2_omishan_tou-tou_vault_vestibul_portal.elog",
       "sha256": "9cd93896ad74acdb9310b617589e39112c185c6862b9422ba617c6abec7c7cb3",
-      "accepted": 1,
+      "accepted": 5,
       "rejected": {
-        "non-world-namespace": 5
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1060,7 +1047,7 @@
       "sha256": "d550bc4762b3d162e98ae582362fd648e8061e5a9148c3a5bb3ac7c12ffbe7f8",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1068,7 +1055,7 @@
       "sha256": "229a58d93518a7611dcad8f0e0054a6000ab9fcf0a2b0a20b78765a41cd846fb",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1076,31 +1063,29 @@
       "sha256": "3b5e23357e17e6b1f9103a2804ca8e4c45a8d69c856288eeb291fdbef0767e43",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "ac2_omishan_vesayan_vault_vestibul_portal.elog",
       "sha256": "afb22c72575e037e70d338071bf62ccd3be8206b02f6a0bbe8d77889a1c67371",
-      "accepted": 0,
-      "rejected": {
-        "non-world-namespace": 1
-      }
+      "accepted": 1,
+      "rejected": {}
     },
     {
       "file": "arwic.vault.bossroom.portal.elog",
       "sha256": "e96ccb8fddef7bacb30c497feeb79d597573944a31f2fe42862e5ccbdb83bd0c",
       "accepted": 1,
       "rejected": {
-        "non-world-namespace": 2
+        "unsupported-or-contained-description": 2
       }
     },
     {
       "file": "arwic.vault.exit.portal.elog",
       "sha256": "f7a330634d31b5b751872194d7e94d26d467590b4152c5d394ee42f3a7766f2a",
-      "accepted": 0,
+      "accepted": 1,
       "rejected": {
-        "non-world-namespace": 2
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1108,7 +1093,7 @@
       "sha256": "2fdcc5ba78ccccf441ab973436a97926e5aaaf45688890b927752742936b5a15",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1122,7 +1107,7 @@
       "sha256": "b14e28ab3dd8dcb458efe15f8a70a1e18cc0ccac7c186d31f898f9fc91497570",
       "accepted": 4,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1134,9 +1119,9 @@
     {
       "file": "cobalt.vault.exit.portal.elog",
       "sha256": "9c2d23960f85c9c2fad5b4cbf71399b08ec1c209dc88ce2d2ea4a803d7a19264",
-      "accepted": 0,
+      "accepted": 1,
       "rejected": {
-        "non-world-namespace": 2
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1150,7 +1135,7 @@
       "sha256": "236aaa84a5aaacf58092b3d1e06e8bc1512456526a72e9723a36820101c6bf92",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1158,7 +1143,7 @@
       "sha256": "58473493a87762b2390fa579e05c46688a883398b568104c6cb1bd46a6059b67",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1174,7 +1159,8 @@
       "sha256": "9a1e06aae54cd8f8fdafb0c2e435aedf3963afe2e068bc0d7bf1eec7a5a4711d",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 2
+        "cell-covered-by-earlier-capture": 1,
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1183,7 +1169,7 @@
       "accepted": 1,
       "rejected": {
         "cell-covered-by-earlier-capture": 1,
-        "non-world-namespace": 2
+        "unsupported-or-contained-description": 2
       }
     },
     {
@@ -1221,9 +1207,9 @@
     {
       "file": "ac2_esper_vault.exit.portal.elog",
       "sha256": "c25ac5f15faa8527a70e12cda5832e51f60f2da87f958d47f9bb967d82b4a738",
-      "accepted": 0,
+      "accepted": 1,
       "rejected": {
-        "non-world-namespace": 2
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1231,7 +1217,7 @@
       "sha256": "5989e42c0e7d3499a57c23e3c9811a9b6124d6c614e654b983ba8fd2d847e2bb",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1245,23 +1231,21 @@
       "sha256": "5563836b06090d8ca64c0aa00df73f06c97b6347bfd3cd5ef0a07a4d6ef28f6a",
       "accepted": 1,
       "rejected": {
-        "non-world-namespace": 2
+        "unsupported-or-contained-description": 2
       }
     },
     {
       "file": "drudge.citadel.entry.portal.elog",
       "sha256": "bcd0af96bd74432279199c212aee97570da9cf27d044814e95a8bcde9b8d3081",
-      "accepted": 2,
-      "rejected": {
-        "non-world-namespace": 1
-      }
+      "accepted": 3,
+      "rejected": {}
     },
     {
       "file": "drudge.citadel.exit.portal.elog",
       "sha256": "685989ab047889ec4e171949234a225a0a819b07d5c66465f3cb6352d2985b73",
       "accepted": 7,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1275,7 +1259,7 @@
       "sha256": "ba8ea4fbb74ff53287bbc8866c82b887c5775ea934f299300c28ddb22a12b6cd",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1295,7 +1279,8 @@
       "sha256": "740e6f5e85de90073dfefab46162ccb187f208b9d934d9f6e8bdf6ab90445477",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 2
+        "cell-covered-by-earlier-capture": 1,
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1303,31 +1288,31 @@
       "sha256": "640f9607b691d0e6a749b458fb5c9e4a9a1a7cd72094345edc0807084119ab0f",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "lost.wish.vault.bossroom.portal.elog",
       "sha256": "3a2b6a14d972271d315717d38f51144c6e60f469ccf9dccb0b0a8b4e1275d2a8",
-      "accepted": 1,
+      "accepted": 5,
       "rejected": {
-        "non-world-namespace": 5
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "lost.wish.vault.entry.portal.elog",
       "sha256": "20eb9ad72357621c586b364a90259ddd9e51b7d86764f67fcbb0169cd426cb59",
-      "accepted": 19,
+      "accepted": 45,
       "rejected": {
-        "non-world-namespace": 28
+        "unsupported-or-contained-description": 2
       }
     },
     {
       "file": "lost.wish.vault.exit.portal.elog",
       "sha256": "7fa1f8a5bcb33dde779e085f6fed749a3b04f532bc0a26f601bf7c5badfd1838",
-      "accepted": 1,
+      "accepted": 3,
       "rejected": {
-        "non-world-namespace": 3
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1335,7 +1320,7 @@
       "sha256": "85408b45f30263ae1d64bf6e912035cdfb8d0bf9a3607f25041d0aae6a063e6c",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1343,7 +1328,7 @@
       "sha256": "b8567e9c43d011313e9ba0870995895d40be9df0894d30e80c3b83604e49615c",
       "accepted": 1,
       "rejected": {
-        "non-world-namespace": 2
+        "unsupported-or-contained-description": 2
       }
     },
     {
@@ -1351,15 +1336,15 @@
       "sha256": "59ed653d62c83779e1c0ce80283c9ee2749de8684d24a286cf02804d8c99dc59",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "mad.crone.exit.portal.elog",
       "sha256": "ecd99162a1eabb394cb40612ee95d9cf939956ab81caaebc40c84abe1f4fd31f",
-      "accepted": 0,
+      "accepted": 1,
       "rejected": {
-        "non-world-namespace": 2
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1367,23 +1352,23 @@
       "sha256": "049241f889f7da503437be8e9f9900e994399f4c49683fbaef689ec3f16b96fc",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "prosper.vault.bossroom.portal.elog",
       "sha256": "55e518a7ea5ba51defdce96b42a6ba62b8aaeac1d67d5e965377464c3681d954",
-      "accepted": 1,
+      "accepted": 5,
       "rejected": {
-        "non-world-namespace": 5
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "prosper.vault.entry.portal.elog",
       "sha256": "dc4a3cd1dad3bf862a1e73de1935d5195b2f41a8c01343f5002df1acc796e89c",
-      "accepted": 15,
+      "accepted": 32,
       "rejected": {
-        "non-world-namespace": 19
+        "unsupported-or-contained-description": 2
       }
     },
     {
@@ -1391,7 +1376,7 @@
       "sha256": "aaba2c34d650cbca497adae4f7d08c9953059c9bf60321550aedd49f74b2012c",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1399,7 +1384,7 @@
       "sha256": "1c20971590087dc3d2d552463abc85731943030a772d99fe4dd40a87614cb9bc",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1419,7 +1404,7 @@
       "sha256": "ffa5018e84cc34963e56ad71bc6bc2069e7e3f7fd7ad66ddbf7cb592904c7bca",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 7
+        "missing-dat-asset-or-cell": 7
       }
     },
     {
@@ -1503,34 +1488,31 @@
     {
       "file": "omishan.armorshop.elog",
       "sha256": "a427a9e193173034ce8fd3228102be3eab7a3728a456255f36df99dce4cbeed0",
-      "accepted": 0,
-      "rejected": {
-        "non-world-namespace": 7
-      }
+      "accepted": 7,
+      "rejected": {}
     },
     {
       "file": "entering.store.elog",
       "sha256": "151e597f929ab760414d102a20b3cd79ae6f8b082e15d789ff503e6e5257c376",
-      "accepted": 0,
+      "accepted": 5,
       "rejected": {
-        "non-world-namespace": 6
+        "duplicate-placement": 1
       }
     },
     {
       "file": "leaving.store.elog",
       "sha256": "cd42f2bc0c71c13fdb32e8844bdb12b27add1c2dde9498a78dbcccce55a58900",
-      "accepted": 10,
+      "accepted": 12,
       "rejected": {
-        "non-world-namespace": 2,
         "unsupported-or-contained-description": 4
       }
     },
     {
       "file": "omishan_ikeras_entering.armor.shop.elog",
       "sha256": "be09eae7d5498096db7adaef8c4a5cfae1a9ab43ce0cf203ab84afff9d32f16b",
-      "accepted": 0,
+      "accepted": 6,
       "rejected": {
-        "non-world-namespace": 7
+        "duplicate-placement": 1
       }
     },
     {
@@ -1542,9 +1524,9 @@
     {
       "file": "omishan_ikeras_entering.skills.shop.elog",
       "sha256": "f016d12d5501488398097db9a955db1c777aafc4e8cc5248172358a1d1e42fe1",
-      "accepted": 0,
+      "accepted": 4,
       "rejected": {
-        "non-world-namespace": 5
+        "duplicate-placement": 1
       }
     },
     {
@@ -1564,7 +1546,7 @@
       "sha256": "49026e1591d1b4d3f6b3453e6022b14a3a1153277057d5d5886fbd905c6ee2ea",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 7
+        "missing-dat-asset-or-cell": 7
       }
     },
     {
@@ -1572,7 +1554,7 @@
       "sha256": "8f36fcb5f3255639f8321ca7c8f7432cda69ea1f48b134e8c1f0e0cce5a90d87",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 6
+        "missing-dat-asset-or-cell": 6
       }
     },
     {
@@ -1595,10 +1577,8 @@
     {
       "file": "vendor.guild.treasurevendo.at.heroes.shrine.osteth.elog",
       "sha256": "fa1af66d0c77b8aa4d62ea3222ae436c3380717e159441102e9414ac301092de",
-      "accepted": 8,
-      "rejected": {
-        "non-world-namespace": 1
-      }
+      "accepted": 9,
+      "rejected": {}
     },
     {
       "file": "ac2_pet_combat.elog",
@@ -1659,11 +1639,10 @@
     {
       "file": "combat.log.entering.combat.and.mob.out.of.range.elog",
       "sha256": "d9797cd4f07bdff4058dfba07f1cd8e8a4050c70f79847a3163b870929d6640b",
-      "accepted": 3,
+      "accepted": 4,
       "rejected": {
         "cell-covered-by-earlier-capture": 1,
-        "non-world-namespace": 2,
-        "unsupported-or-contained-description": 5
+        "unsupported-or-contained-description": 6
       }
     },
     {
@@ -1709,11 +1688,10 @@
     {
       "file": "group.combat.buffing.wiping.running.elog",
       "sha256": "c9af73e6e7cf7bf0a04408e1212cfd147cec9345353072a16d666afc9b58fb4c",
-      "accepted": 3,
+      "accepted": 4,
       "rejected": {
-        "cell-covered-by-earlier-capture": 3,
-        "non-world-namespace": 3,
-        "unsupported-or-contained-description": 2,
+        "cell-covered-by-earlier-capture": 4,
+        "unsupported-or-contained-description": 3,
         "unsupported-visual-description": 1
       }
     },
@@ -1742,9 +1720,8 @@
     {
       "file": "player.huge.combat.log.elog",
       "sha256": "cad884e6eda670259255e076b19fb15f33b8cb2403ec0f6b4d3c7e6e36cabcc5",
-      "accepted": 7,
+      "accepted": 8,
       "rejected": {
-        "non-world-namespace": 1,
         "unsupported-or-contained-description": 4,
         "unsupported-visual-description": 3
       }
@@ -1836,7 +1813,7 @@
       "sha256": "",
       "accepted": 0,
       "rejected": {
-        "unreadable-capture": "capture reassembly limit"
+        "unreadable-capture": "invalid fragment bounds"
       }
     },
     {
@@ -1844,7 +1821,9 @@
       "sha256": "61c7aae4fb651263a00606b8e01ddb6675d1ef70264d2b6f3034093813f0e9a6",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 4,
+        "cell-covered-by-earlier-capture": 1,
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 2,
         "unsupported-or-unplaced-physics": 47,
         "unsupported-visual-description": 16
       }
@@ -1854,7 +1833,9 @@
       "sha256": "61c7aae4fb651263a00606b8e01ddb6675d1ef70264d2b6f3034093813f0e9a6",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 4,
+        "cell-covered-by-earlier-capture": 1,
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 2,
         "unsupported-or-unplaced-physics": 47,
         "unsupported-visual-description": 16
       }
@@ -1864,16 +1845,16 @@
       "sha256": "70675daf2671196af4017ef1b41907cf5a4dcd55f3f4a461a3fc0fbe10a73993",
       "accepted": 0,
       "rejected": {
-        "missing-dat-asset-or-cell": 3,
-        "non-world-namespace": 4
+        "missing-dat-asset-or-cell": 6,
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "ac2_omishan_allyhall2.elog",
       "sha256": "22c63ceacbac14b9c2c1a03bbbb68963509897652ff53396e4470800cd674616",
-      "accepted": 3,
+      "accepted": 6,
       "rejected": {
-        "non-world-namespace": 4
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -1984,10 +1965,9 @@
     {
       "file": "ac2_player_die.elog",
       "sha256": "8ba384cff244547611e19b968da802dd1ec88c98e076653906e6e654731fb4b6",
-      "accepted": 1,
+      "accepted": 7,
       "rejected": {
         "cell-covered-by-earlier-capture": 2,
-        "non-world-namespace": 6,
         "unsupported-or-contained-description": 1,
         "unsupported-visual-description": 1
       }
@@ -2011,7 +1991,7 @@
       "sha256": "026dfb4c49e13b320fa9b9e8958053a75f10c9ec2bb080e94345e18ea4dbddcb",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -2053,9 +2033,9 @@
     {
       "file": "linvak_tukal_accessing_portal_allegiance_hall.elog",
       "sha256": "3d6ad2bf6b1404532a068ce8f404b8833ef3ce7edf08be87272c6908ec300f4e",
-      "accepted": 3,
+      "accepted": 6,
       "rejected": {
-        "non-world-namespace": 4
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -2063,32 +2043,32 @@
       "sha256": "487af5800dc4aaadfd7c801351c207682739e68b7615d5cc596e90227dcbf1eb",
       "accepted": 0,
       "rejected": {
-        "cell-covered-by-earlier-capture": 3,
-        "non-world-namespace": 4
+        "cell-covered-by-earlier-capture": 6,
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "osteth_cragstone_accessing_portal_allegiance_hall.elog",
       "sha256": "363f5a20c14c0e9841eaef2c67dcfd53a72732a5cbc0a56308d8f686162e79b6",
-      "accepted": 3,
+      "accepted": 6,
       "rejected": {
-        "non-world-namespace": 4
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "osteth_port_into_guild_hall.elog",
       "sha256": "39496ddb961d249b8d675fd3a6f7216787b2e79e04f3b7aa8aa200a8b7021632",
-      "accepted": 3,
+      "accepted": 6,
       "rejected": {
-        "non-world-namespace": 4
+        "unsupported-or-contained-description": 1
       }
     },
     {
       "file": "osteth_port_into_guild_hall_2.elog",
       "sha256": "9aee0def445149defa39546985b8d243d08bbdd392c91e88a557e8593383bbb7",
-      "accepted": 3,
+      "accepted": 6,
       "rejected": {
-        "non-world-namespace": 4
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -2171,9 +2151,9 @@
     {
       "file": "AC2_complete_client_start_until_login.elog",
       "sha256": "d2182e7666c27e5a5fd2252fdad732ca9021a72c2e2ed5c05aa8a7a274badcf8",
-      "accepted": 2,
+      "accepted": 3,
       "rejected": {
-        "non-world-namespace": 2,
+        "non-world-namespace": 1,
         "unsupported-or-contained-description": 1,
         "unsupported-or-unplaced-physics": 50,
         "unsupported-visual-description": 15
@@ -2394,7 +2374,7 @@
       "sha256": "5580b11030e42fd2930fd8825664e9ef1c75caea3146494776828a51b4417ce5",
       "accepted": 1,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -2402,7 +2382,7 @@
       "sha256": "f09ee0704e29419c571a34043e3318e5f9534f1876758a4bb78ee053d241fb08",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -2497,7 +2477,9 @@
       "sha256": "054e8d362c9da63d68b25d320b161d212d22a6bc32c1af4c776308542be3347b",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 12
+        "cell-covered-by-earlier-capture": 6,
+        "non-world-namespace": 4,
+        "unsupported-or-contained-description": 2
       }
     },
     {
@@ -2551,8 +2533,8 @@
       "accepted": 0,
       "rejected": {
         "cell-covered-by-earlier-capture": 2,
-        "non-world-namespace": 2,
-        "unsupported-or-contained-description": 5,
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 6,
         "unsupported-or-unplaced-physics": 61,
         "unsupported-visual-description": 16
       }
@@ -2648,23 +2630,22 @@
       "sha256": "0bcda5050a3aa307b2d60a466a176cff4d048bd4ddb49eb38d9121803291387b",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 7
+        "missing-dat-asset-or-cell": 7
       }
     },
     {
       "file": "linvak.weapons.shop.elog",
       "sha256": "fd264c65035a3416cc6d6aad69585f520099aad1aa841b84e1b2105b7d95e594",
-      "accepted": 0,
-      "rejected": {
-        "non-world-namespace": 4
-      }
+      "accepted": 4,
+      "rejected": {}
     },
     {
       "file": "AC2_Char_Login_From_Char_Overview.elog",
       "sha256": "380fe43a78ef775820574c4672da71615ac3a77716fcd86b475db71e4a49753d",
-      "accepted": 0,
+      "accepted": 2,
       "rejected": {
-        "non-world-namespace": 4,
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 1,
         "unsupported-or-unplaced-physics": 14,
         "unsupported-visual-description": 1
       }
@@ -2744,7 +2725,8 @@
       "sha256": "11e28af9d0b7fefd2c51b979d596b9f2d2107ab5220add3894dfb0e477414990",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 6
+        "non-world-namespace": 5,
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -2790,10 +2772,8 @@
     {
       "file": "riding.around.2.elog",
       "sha256": "9029a51ea30085aefdf39bd6a23e27ff53a65b05ee40b98c0950f1d4273d7c70",
-      "accepted": 7,
-      "rejected": {
-        "non-world-namespace": 1
-      }
+      "accepted": 8,
+      "rejected": {}
     },
     {
       "file": "riding.around.3.elog",
@@ -2804,9 +2784,8 @@
     {
       "file": "riding.around.4.elog",
       "sha256": "f37b0bb24a285443daa9c1f6773f396ed932fd61b640b4910905a744fd50eb2b",
-      "accepted": 11,
+      "accepted": 12,
       "rejected": {
-        "non-world-namespace": 1,
         "unsupported-or-contained-description": 1,
         "unsupported-or-unplaced-physics": 4
       }
@@ -2902,25 +2881,23 @@
     {
       "file": "omishan.curiosity.shop.elog",
       "sha256": "a38dd1de44dce6ab9fc95b57abae66e578fda7a8e6304b3c6d28a1686b8afca6",
-      "accepted": 0,
+      "accepted": 2,
       "rejected": {
-        "non-world-namespace": 3
+        "duplicate-placement": 1
       }
     },
     {
       "file": "omishan.weapons.shop.elog",
       "sha256": "6dad6af98219ff5084ce836fcca13347e1a34cd4935d5900023fddc544fb60c2",
-      "accepted": 0,
-      "rejected": {
-        "non-world-namespace": 4
-      }
+      "accepted": 4,
+      "rejected": {}
     },
     {
       "file": "pet.rename.moving.around.elog",
       "sha256": "4b7d77bdbce357c6d1fd13e66b3d293226ebb5f2d0611528550b14af07951c29",
       "accepted": 1,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -2978,9 +2955,10 @@
     {
       "file": "AC2_CahrCreateBtnClick_bis_LoginNoobZone_human_female.elog",
       "sha256": "2375f89f624ca179841467b0f7a639e4ea78929a1bd292d4ac6f6899b132d1f8",
-      "accepted": 5,
+      "accepted": 13,
       "rejected": {
-        "non-world-namespace": 10,
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 1,
         "unsupported-or-unplaced-physics": 4,
         "unsupported-visual-description": 3
       }
@@ -2994,9 +2972,10 @@
     {
       "file": "AC2_Char_Create_human_and_login_to_noobe.zone.elog",
       "sha256": "b2b60db61362767a581cab8882518dbd75c58b4e8a7ec265f79f1ad4587e85a7",
-      "accepted": 5,
+      "accepted": 13,
       "rejected": {
-        "non-world-namespace": 10,
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 1,
         "unsupported-or-unplaced-physics": 4,
         "unsupported-visual-description": 3
       }
@@ -3018,8 +2997,9 @@
       "sha256": "b6d30560da01dacbbd428715f566b54a1fb84c712636ab011b68084b0ac1e534",
       "accepted": 0,
       "rejected": {
-        "missing-dat-asset-or-cell": 3,
-        "non-world-namespace": 9,
+        "missing-dat-asset-or-cell": 10,
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 1,
         "unsupported-or-unplaced-physics": 4,
         "unsupported-visual-description": 3
       }
@@ -3067,8 +3047,9 @@
       "sha256": "2375f89f624ca179841467b0f7a639e4ea78929a1bd292d4ac6f6899b132d1f8",
       "accepted": 0,
       "rejected": {
-        "cell-covered-by-earlier-capture": 5,
-        "non-world-namespace": 10,
+        "cell-covered-by-earlier-capture": 13,
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 1,
         "unsupported-or-unplaced-physics": 4,
         "unsupported-visual-description": 3
       }
@@ -3096,7 +3077,8 @@
       "sha256": "fa0a0e51f4d9d1d775a43e92d8aa77740553dbe6649ae286d7da2cb0f5d1fa8a",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 3,
+        "cell-covered-by-earlier-capture": 2,
+        "unsupported-or-contained-description": 1,
         "unsupported-visual-description": 1
       }
     },
@@ -3191,10 +3173,9 @@
     {
       "file": "char.movement.3.elog",
       "sha256": "1d7cef1f8f25614f2620f8f2073d2f10059590f21f55beb3d0020ea290064552",
-      "accepted": 0,
+      "accepted": 1,
       "rejected": {
-        "non-world-namespace": 4,
-        "unsupported-or-contained-description": 1
+        "unsupported-or-contained-description": 4
       }
     },
     {
@@ -3202,8 +3183,7 @@
       "sha256": "0ec0bdab63e23555b132c4322423b9a6f0398b6024a6c14ed538c09f9c3540c9",
       "accepted": 0,
       "rejected": {
-        "cell-covered-by-earlier-capture": 2,
-        "non-world-namespace": 1,
+        "cell-covered-by-earlier-capture": 3,
         "unsupported-or-contained-description": 1
       }
     },
@@ -3216,17 +3196,15 @@
     {
       "file": "player.falling.down.long.way.elog",
       "sha256": "e8f4f1eb8cae2dc4678bf772ce861a1549026c2182b8d0b499b49e12b9606a68",
-      "accepted": 1,
-      "rejected": {
-        "non-world-namespace": 3
-      }
+      "accepted": 4,
+      "rejected": {}
     },
     {
       "file": "pvp.zone.elog",
       "sha256": "e469a153e4d3b3701c8c05be80a41681521a36317744aaf9e0f23d6e71452c53",
       "accepted": 0,
       "rejected": {
-        "non-world-namespace": 1
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -3430,19 +3408,18 @@
     {
       "file": "AC2_Char_NexusPort_Cragstone.elog",
       "sha256": "42b9a01d8ae46ffae075ff80eb3ce20d29a918bfc33e76b5d099edb2090c8357",
-      "accepted": 8,
+      "accepted": 11,
       "rejected": {
         "cell-covered-by-earlier-capture": 1,
-        "non-world-namespace": 3,
         "unsupported-visual-description": 1
       }
     },
     {
       "file": "ac2_portalen.elog",
       "sha256": "f7e2d860a8a83bbfd76f2f7eaa88bbe96509e94091c7a9f61fa4cbc783e7ff3e",
-      "accepted": 2,
+      "accepted": 3,
       "rejected": {
-        "non-world-namespace": 2
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -3454,17 +3431,15 @@
     {
       "file": "portal.comes.into.range.elog",
       "sha256": "c7f2f78ec08d427fe9a50d45be72b8c54196a30f78aa487d534e997bc196e1c3",
-      "accepted": 0,
-      "rejected": {
-        "non-world-namespace": 1
-      }
+      "accepted": 1,
+      "rejected": {}
     },
     {
       "file": "porting.to.arramora.elog",
       "sha256": "f06e8e1c9ad67441acb2d1b078736d3d31c9d5849fb5d2697660f020d50c664c",
-      "accepted": 3,
+      "accepted": 4,
       "rejected": {
-        "non-world-namespace": 2
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -3472,8 +3447,8 @@
       "sha256": "0a51cb8b8f1745dc08178c0586b7a4d25cb720f9bc6fe7934cd4a63ee3b03f68",
       "accepted": 0,
       "rejected": {
-        "cell-covered-by-earlier-capture": 7,
-        "non-world-namespace": 6,
+        "cell-covered-by-earlier-capture": 10,
+        "non-world-namespace": 3,
         "unsupported-or-contained-description": 1,
         "unsupported-or-unplaced-physics": 2,
         "unsupported-visual-description": 2
@@ -3496,25 +3471,25 @@
       "sha256": "315480326f5f3d19497d5b7f6eb31e1728f455922d6ba64b2f659b305327cece",
       "accepted": 1,
       "rejected": {
-        "non-world-namespace": 3
+        "cell-covered-by-earlier-capture": 1,
+        "unsupported-or-contained-description": 2
       }
     },
     {
       "file": "porting.into.allegiance.hall.elog",
       "sha256": "3fd0853cf40dbfa49c6cc123294ab8d4e3e14e8d3e204eb78ca96ec884d3ef00",
-      "accepted": 0,
+      "accepted": 2,
       "rejected": {
-        "cell-covered-by-earlier-capture": 3,
-        "non-world-namespace": 4,
-        "unsupported-or-contained-description": 3
+        "cell-covered-by-earlier-capture": 4,
+        "unsupported-or-contained-description": 4
       }
     },
     {
       "file": "porting.into.linvak.weapons.chamber.elog",
       "sha256": "e6e8e13d0be6067c2b0326fbd76cbe9426811fe88256dc425972886f183907da",
-      "accepted": 8,
+      "accepted": 10,
       "rejected": {
-        "non-world-namespace": 3
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -3542,9 +3517,9 @@
     {
       "file": "omishan.kydi.watertemple.entering.combination.accessing.entry.portal.elog",
       "sha256": "173759f496bb6ee8a887eb56e6b7e996c9c825f395d8f2da17f327435e21679e",
-      "accepted": 1,
+      "accepted": 5,
       "rejected": {
-        "non-world-namespace": 5
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -3686,9 +3661,9 @@
     {
       "file": "quest_die_kabale_des_sclavus_hierophanten_sclavus_hierophanten_tempel_portal_betreten.elog",
       "sha256": "00fdae4238d750dce9b55ffbbb0c4b13ce3a2cf577be2559ce80378b804a0fe5",
-      "accepted": 0,
+      "accepted": 1,
       "rejected": {
-        "non-world-namespace": 2
+        "unsupported-or-contained-description": 1
       }
     },
     {
@@ -3726,6 +3701,2996 @@
       "sha256": "e460acc53a31e4f28b038dcda87d61e083c6397889ec5fd7fc5e161c0ba26584",
       "accepted": 0,
       "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485070379_log.pcap",
+      "sha256": "c248809880e4cb4044808d2fbb0dfb2c688f959239d4c607287527aab0f3632d",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485070669_log.pcap",
+      "sha256": "c50129e6aaecfd6a27774a7bc8409bfbd727d3a3401386220c48c2f37b7692c6",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485082462_log.pcap",
+      "sha256": "63643a68f4af8c1e7a771497a44b0913731e839f2861e778e193a3be0113cc54",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485082723_log.pcap",
+      "sha256": "1c78bf112f3e946b498fac1ebf63aa796a7a1a971384972d82268181b7cc7ba1",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 10,
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 4,
+        "unsupported-visual-description": 3
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485082854_log.pcap",
+      "sha256": "7eaa9e4846b9cb8910f134df01212cfa34cc75f9adf2272eda3043bbd9eb55b8",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485083221_log.pcap",
+      "sha256": "5a53b1c9ac8c50b0d6cf8aaf318d5efb9e5b4e97121dcf2e199c047b108ae407",
+      "accepted": 20,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 6,
+        "repeated-observation": 1,
+        "unsupported-or-contained-description": 4,
+        "unsupported-or-unplaced-physics": 5
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485083663_log.pcap",
+      "sha256": "a2ee52c4d2a8965179803b0059c21b1dafb1881bb6234a5c1eca7657211f9363",
+      "accepted": 2,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 1,
+        "missing-dat-asset-or-cell": 1,
+        "unsupported-or-contained-description": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485083715_log.pcap",
+      "sha256": "e6318606938227c8d97e1b92141c08fd978a917782f0ca2013c84ed34844cad7",
+      "accepted": 8,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 3,
+        "missing-dat-asset-or-cell": 5,
+        "unsupported-or-contained-description": 4
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485083798_log.pcap",
+      "sha256": "abcd8ea277af94a26ef5c186070760d93d6ba87b32281c68771208dd56f88886",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485083823_log.pcap",
+      "sha256": "58c150e8e9b166f185f2b25b693629bc1d54c0876802a2df80abb23f9916448b",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485083892_log.pcap",
+      "sha256": "980032b8c6ef3615156a885a31ec247d619e27389579221a3cfea0d22e8e5350",
+      "accepted": 7,
+      "rejected": {
+        "missing-dat-asset-or-cell": 3,
+        "repeated-observation": 4,
+        "unsupported-or-contained-description": 2,
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485084091_log.pcap",
+      "sha256": "8841db01297ae12b1599af59146a00b0372161d0b03024e2a38c3aaa049b955d",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 3,
+        "missing-dat-asset-or-cell": 1,
+        "unsupported-or-contained-description": 4
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485084123_log.pcap",
+      "sha256": "83adf15fa4fc58d7e147d50f7d1ffb06daac88f4c6af780f95fe0a5bbe62ef0a",
+      "accepted": 98,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 37,
+        "duplicate-placement": 3,
+        "missing-dat-asset-or-cell": 63,
+        "non-world-namespace": 15,
+        "repeated-observation": 20,
+        "unsupported-or-contained-description": 90,
+        "unsupported-or-unplaced-physics": 120,
+        "unsupported-visual-description": 22
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485084165_log.pcap",
+      "sha256": "b7e7a97c6470b153836420c141bb4dfe8304f93b0d4dbfdb30b7a674fa7ea8cd",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485084211_log.pcap",
+      "sha256": "09e9e44748fa4e3505ab59710607302b5ca1bb8decafb61813f3be7f25057c49",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 3,
+        "non-world-namespace": 2,
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 61,
+        "unsupported-visual-description": 9
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485084263_log.pcap",
+      "sha256": "af7d5db9f3ffad19d63f477f08f86871efd051fa9977215a7765ec7442bd5303",
+      "accepted": 9,
+      "rejected": {
+        "missing-dat-asset-or-cell": 3,
+        "unsupported-or-contained-description": 4,
+        "unsupported-or-unplaced-physics": 8,
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485084477_log.pcap",
+      "sha256": "71fecf8dfac8116d10e8e5d944aeab853a9d52bdd990d8d6696d255e19555987",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 6,
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485084637_log.pcap",
+      "sha256": "b7933cf9dcc0ce242d5c4855a464b2a8f846d8fb28b3458c71a87c681df8b145",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485084912_log.pcap",
+      "sha256": "903ff81d76d58e35bb79be38025c6b84f12c657073e6d6c06f41839c84d1e296",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485084939_log.pcap",
+      "sha256": "655ee210542ecac04a8e2f958c75d3159f832aa7e44df9975249202061af7a9a",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485085029_log.pcap",
+      "sha256": "8c7240d8034fc197ad778ccb9ad5b5e09c8e61378113052acf75669b81376bd7",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485085160_log.pcap",
+      "sha256": "505fee37a6af238b4e112738762ea8cd268977cf1ced3399f698ea62e695964d",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485085258_log.pcap",
+      "sha256": "5ea386067234c263392ecde24f97733d8c9a05640ee765f0497d2e4a5370fb68",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 7,
+        "missing-dat-asset-or-cell": 3,
+        "unsupported-or-contained-description": 6,
+        "unsupported-or-unplaced-physics": 8,
+        "unsupported-visual-description": 4
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485085575_log.pcap",
+      "sha256": "b4b522ec42e49a79017e85430c32bd7931ca99c8e736929d2123478f270cbe89",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 1,
+        "missing-dat-asset-or-cell": 3,
+        "unsupported-or-contained-description": 3,
+        "unsupported-or-unplaced-physics": 2,
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485085670_log.pcap",
+      "sha256": "c4b58b619c887d9cc1856fc5cd9b410204502ca1269fbb4bac1fde68a2b57017",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485085673_log.pcap",
+      "sha256": "51b001975fef0d7f285ba95bd0aad4f262926a9dabff3c0c11a4507c317288ab",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485085693_log.pcap",
+      "sha256": "d5141137bd15d383622cbc8d47e18e620b5172a1ebdd0cbf49b3731584a8586b",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 2,
+        "missing-dat-asset-or-cell": 1,
+        "unsupported-or-contained-description": 3,
+        "unsupported-or-unplaced-physics": 2
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485085809_log.pcap",
+      "sha256": "46122511d6e947375c44d75b1715a90163227dbcd38431363d3fdec26e556c99",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485085854_log.pcap",
+      "sha256": "65d3556185866d1140b27d5bbc50b9e7876bfaaf4756f0eb3edf0990bc82f7af",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485085880_log.pcap",
+      "sha256": "22a93e74cb09d5f504d0c3c62258660e510078c9d2663f3a94938484ac844859",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 1,
+        "missing-dat-asset-or-cell": 1,
+        "unsupported-or-contained-description": 2
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485085945_log.pcap",
+      "sha256": "89167ce7b7e38941b4f46a0fe06412f0448f36e2dca53f8dd69205d175e8ea64",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 44,
+        "missing-dat-asset-or-cell": 27,
+        "non-world-namespace": 1,
+        "repeated-observation": 10,
+        "unsupported-or-contained-description": 37,
+        "unsupported-or-unplaced-physics": 18,
+        "unsupported-visual-description": 13
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485087083_log.pcap",
+      "sha256": "1e9283a929113ff49c6aeb85d3368a8f93dbc13ecb2801aa98fccec820823d6e",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 13,
+        "missing-dat-asset-or-cell": 3,
+        "repeated-observation": 10,
+        "unsupported-or-contained-description": 5,
+        "unsupported-or-unplaced-physics": 4
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485087275_log.pcap",
+      "sha256": "1e033a8b2f11ccaa5537de14ea512fc1f20ca40e8aab54c74ff88752523fca09",
+      "accepted": 5,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 3,
+        "missing-dat-asset-or-cell": 5,
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 10,
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485087345_log.pcap",
+      "sha256": "08b1f9030a361feb5b3451383dccea7b2e062f874274ffcf8f66a9561c14e518",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485087393_log.pcap",
+      "sha256": "84faf42870fe59f838698a1499f3da634208e05e9d57520c7797502d2822a27a",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485087416_log.pcap",
+      "sha256": "af5f0b92898725a2a57d8a522a0c6a1c7435f965460dbe4a1d5f8e8b9be2974b",
+      "accepted": 10,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 6,
+        "missing-dat-asset-or-cell": 16,
+        "repeated-observation": 8,
+        "unsupported-or-contained-description": 10,
+        "unsupported-or-unplaced-physics": 4,
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485087987_log.pcap",
+      "sha256": "8c13548a76bc52371c93375245634cedcf34a1cadb95c0a15e9bdd6ab80ba55a",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 27,
+        "non-world-namespace": 1,
+        "repeated-observation": 2,
+        "unsupported-or-contained-description": 17,
+        "unsupported-or-unplaced-physics": 21
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485102105_log.pcap",
+      "sha256": "2c475263c06ef7bc2cbc6d492f13b28547b4f9d72dd29b8b3fdcd0b0c1a5c51d",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485102264_log.pcap",
+      "sha256": "51adc79205d20c299feb6acd49a50aedd7d42a3ac222b34baf15323c020ce761",
+      "accepted": 3,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 5,
+        "missing-dat-asset-or-cell": 6,
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 7,
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485102947_log.pcap",
+      "sha256": "e08fc144d4e431b7a27c728a03161300fadbe620a87d3fcd5d98e9d2b1ba7afa",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 53,
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 24,
+        "unsupported-or-unplaced-physics": 5
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485103526_log.pcap",
+      "sha256": "7d33dbaca901a399f50e39acbedbe476f87275e98cce180161523c4aa639197d",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485103624_log.pcap",
+      "sha256": "d3702d0d4ec7f8cf2bd2be642077bbc556d50d72bad6aa7d073e6f399173a638",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485103674_log.pcap",
+      "sha256": "dd3a61cc7ecbf55bd6f9a7c6c9fdd9a70f704e1852ff2c121512c3b6c11a5d33",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485103733_log.pcap",
+      "sha256": "ebb3361ba9e27fe18cdaaf33174c884112265eccd1f4c20ef40859916993d4a9",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 5,
+        "unsupported-visual-description": 2
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485104006_log.pcap",
+      "sha256": "1690967e031fbefcc94e44e30c70560932c767fa03466ca944439d219aec2945",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485104067_log.pcap",
+      "sha256": "6703e2a76994c80fe6bf9e6a58dd68f4181cfbb1754f94b7aa4b4db00897343e",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485104138_log.pcap",
+      "sha256": "95cebfa216c5861b75659c2f01f1da2698f23fe78581c20830bf6c00437314ae",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 1,
+        "missing-dat-asset-or-cell": 1,
+        "non-world-namespace": 2,
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 27,
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485104472_log.pcap",
+      "sha256": "2cca7b1fe5e39e92c35e0e1211e9e2143c628027f671b527d45c487951f55189",
+      "accepted": 37,
+      "rejected": {
+        "missing-dat-asset-or-cell": 3,
+        "repeated-observation": 7,
+        "unsupported-or-contained-description": 21,
+        "unsupported-or-unplaced-physics": 3,
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485104940_log.pcap",
+      "sha256": "38372f4b4161b8d0cb17705d917e1258d92cb616c01a35fa1ee6d5d7f8b678f0",
+      "accepted": 58,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 4,
+        "missing-dat-asset-or-cell": 13,
+        "non-world-namespace": 2,
+        "unsupported-or-contained-description": 5,
+        "unsupported-or-unplaced-physics": 22
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485105545_log.pcap",
+      "sha256": "1fdbae605c2283485555a21dbfbca870ca205bddf80c19a592389c204dfe25a1",
+      "accepted": 20,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 1,
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 6,
+        "unsupported-or-unplaced-physics": 11
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485105947_log.pcap",
+      "sha256": "07b0ed25a90f3475bba07cce08523e540fcd9258a3978f6d16eb51f55316a667",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 1,
+        "non-world-namespace": 1,
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485106531_log.pcap",
+      "sha256": "69af7a40c539b22191b67ca5f256640d91c241616b50bc322ea0b890aa6854b3",
+      "accepted": 3,
+      "rejected": {
+        "unsupported-or-contained-description": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485106933_log.pcap",
+      "sha256": "e861d416cc8856565e3a46661902e2fdce7d852446af70eab0f27276cd8f0583",
+      "accepted": 50,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 20,
+        "missing-dat-asset-or-cell": 4,
+        "non-world-namespace": 2,
+        "parented-or-contained": 1,
+        "repeated-observation": 4,
+        "unsupported-or-contained-description": 49,
+        "unsupported-or-unplaced-physics": 30,
+        "unsupported-visual-description": 4
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485107775_log.pcap",
+      "sha256": "31ebd19b0e421becd58959616c00d02c0d8c3c6a6e23a321c2118a831032fdba",
+      "accepted": 2,
+      "rejected": {
+        "unsupported-or-contained-description": 2
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485107846_log.pcap",
+      "sha256": "6152cf844140503524cb1daf8eb31e6b449283cce0e84b0bd13638e8db951b84",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1,
+        "unsupported-or-unplaced-physics": 5
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485111375_log.pcap",
+      "sha256": "5f0138e77ec7d376eb45777768bd5007b2282748f92b30e047bd0925f26f104a",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 24,
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485111632_log.pcap",
+      "sha256": "f4fc19a84723ad790423d3fef1ad03d87e80368b77c84808bd808406620da03b",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485112131_log.pcap",
+      "sha256": "5bb0db3a5b4d18176e90a543d7879bd0964bc000ff2ad90a1061065d69655a81",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485112701_log.pcap",
+      "sha256": "6b8c36d47546b40c86b4402b40dc2d328270841b4add6b082d6976cfa13755f7",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1,
+        "unsupported-or-unplaced-physics": 4,
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485115054_log.pcap",
+      "sha256": "b9e6063b5ac5f9b22cac67afed6c66f1a6be4d34aebeb0e3c3c2a0348beced0c",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-22_1485118476_log.pcap",
+      "sha256": "2306f12e9c3a74288ab32d948b2f091df7ca086368f685cb72be8709b694b896",
+      "accepted": 43,
+      "rejected": {
+        "missing-dat-asset-or-cell": 14,
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 5
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485129169_log.pcap",
+      "sha256": "4bddb82da76a49ed3a6179a84369bc0c8372d316b48056967147d698998a64a1",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 9,
+        "missing-dat-asset-or-cell": 3,
+        "unsupported-or-contained-description": 4,
+        "unsupported-or-unplaced-physics": 58,
+        "unsupported-visual-description": 10
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485155415_log.pcap",
+      "sha256": "9a3df6564ca4dd2b87a95e151323708e3458fe85473bf636b3f7ceb132f5ef36",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-23_1485164675_log.pcap",
+      "sha256": "c4b58b619c887d9cc1856fc5cd9b410204502ca1269fbb4bac1fde68a2b57017",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-23_1485166935_log.pcap",
+      "sha256": "73b1dabef189d6d7ad319f0b062a10710e012943e01f4248785a14e8367637d8",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 8,
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485168746_log.pcap",
+      "sha256": "79b4b517c3c42ec42ea190d2f577eb96763d4188764bb2bf7d2b198fdf9c4be7",
+      "accepted": 82,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 7,
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 6
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485168999_log.pcap",
+      "sha256": "0cd930e13c1b934a6afb178cac2ca047f66d86846228be4b98fdd1c3e45bbf90",
+      "accepted": 15,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 7,
+        "unsupported-or-contained-description": 12
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485169753_log.pcap",
+      "sha256": "c44ac330c7a9f49e1c5acd2b0b11f6e3f0010d14d1f5ee0dfd8ce88f6cb492cf",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-23_1485172642_log.pcap",
+      "sha256": "d1bba323c189163e6f6c70b968b84d9ba0b7bceaab96e0becfb1b0fe49e6f592",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-23_1485172783_log.pcap",
+      "sha256": "64c2cf00e07e5952efe0da15053aeda8c79bd7bb0a5ed4183d379b9980a5acbb",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-23_1485172809_log.pcap",
+      "sha256": "889d88d9f9b1464ce551b67e659c56848603bdaea2bb47eddcfa613263187120",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-23_1485172861_log.pcap",
+      "sha256": "f5420e1f172dc30de3a80d29eabaf7c74241871534e9ca598f551b1494c1ec88",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-23_1485172891_log.pcap",
+      "sha256": "2fc841aee6e85a075e744c046f1893a74911d886a16eabf4be1d6b11ddc545cd",
+      "accepted": 17,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 28,
+        "missing-dat-asset-or-cell": 1,
+        "unsupported-or-contained-description": 15,
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485173049_log.pcap",
+      "sha256": "1b531d4252b443514b04a2f0f2cff112d736a2afbd6057c009e352aa41b611a9",
+      "accepted": 11,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 5,
+        "missing-dat-asset-or-cell": 6,
+        "parented-or-contained": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485174082_log.pcap",
+      "sha256": "aab5f6fd9ea42034ba2ad788acf755b143e37cb9e06a91780d50cedd3520a56f",
+      "accepted": 7,
+      "rejected": {
+        "missing-dat-asset-or-cell": 33,
+        "parented-or-contained": 1,
+        "repeated-observation": 3,
+        "unsupported-or-contained-description": 24,
+        "unsupported-or-unplaced-physics": 9,
+        "unsupported-visual-description": 17
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485174537_log.pcap",
+      "sha256": "19dbc62f5e90ed0a7d83d19d8dd9623c7875b4fce7020e30f6d02694bf83824f",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485174825_log.pcap",
+      "sha256": "c4a6da59ad85650f27900f4e05c2d67e52465f36d5b4a55b6847d4a68cbebe29",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485174980_log.pcap",
+      "sha256": "7e5baec810e2d8b4f68685c0893592d4c1e9b38ada49f17cfab9b0cf4e196934",
+      "accepted": 24,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 5,
+        "missing-dat-asset-or-cell": 5,
+        "unsupported-or-contained-description": 4,
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485203419_log.pcap",
+      "sha256": "28e70ec38ad8ce38422d499a49051e4f8a4adadb3deef282fefe9296258294af",
+      "accepted": 7,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 1,
+        "unsupported-or-contained-description": 9
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485206263_log.pcap",
+      "sha256": "6ea255bcd1de96a76b40388c4f14d9d1be7130be0cc06ae9abaec3cbe1761826",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 4
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485208895_log.pcap",
+      "sha256": "5d7f4dc89164688ae192ce6062e17deb22c918abd155ce16fe60e22776df5e5b",
+      "accepted": 9,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 1,
+        "unsupported-or-contained-description": 7,
+        "unsupported-or-unplaced-physics": 5
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485209468_log.pcap",
+      "sha256": "f215a6c73b2c7f488fd50d464eb8861a877dbb47c906e2d49028b69fa9ffd8a5",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 32,
+        "repeated-observation": 1,
+        "unsupported-or-contained-description": 8,
+        "unsupported-or-unplaced-physics": 5
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485210235_log.pcap",
+      "sha256": "d9e2397ac8e60b21fc1585a11dc867c45045f447521909b86ca3b322627634cd",
+      "accepted": 9,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 3,
+        "unsupported-or-contained-description": 9
+      }
+    },
+    {
+      "file": "pkt_2017-1-24_1485248308_log.pcap",
+      "sha256": "a3fdcf8d84739714b85b46dc235c7a7e0915e1584e77d9a0d2e50622a2360417",
+      "accepted": 12,
+      "rejected": {
+        "duplicate-placement": 11,
+        "missing-dat-asset-or-cell": 3,
+        "unsupported-or-contained-description": 20,
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-24_1485249891_log.pcap",
+      "sha256": "ee60d80ef31a8b7bb07a1c2761b92e8e9794760e2e369b76d50df865ee501c16",
+      "accepted": 34,
+      "rejected": {
+        "missing-dat-asset-or-cell": 7,
+        "repeated-observation": 16,
+        "unsupported-or-contained-description": 44,
+        "unsupported-or-unplaced-physics": 6,
+        "unsupported-visual-description": 33
+      }
+    },
+    {
+      "file": "pkt_2017-1-24_1485252756_log.pcap",
+      "sha256": "3145221b85108e9c5ef62b30056695234497ae29df2a46ee5c23b26ab6596a8b",
+      "accepted": 13,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 3,
+        "unsupported-or-contained-description": 12,
+        "unsupported-or-unplaced-physics": 9
+      }
+    },
+    {
+      "file": "pkt_2017-1-24_1485285208_log.pcap",
+      "sha256": "1bbee7bc25e9a45f5769a4af742e30ba07b21405d641e6da457d2277f8ea8ad6",
+      "accepted": 56,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 9,
+        "missing-dat-asset-or-cell": 10,
+        "non-world-namespace": 2,
+        "repeated-observation": 86,
+        "unsupported-or-contained-description": 48,
+        "unsupported-or-unplaced-physics": 16,
+        "unsupported-visual-description": 6
+      }
+    },
+    {
+      "file": "pkt_2017-1-24_1485286522_log.pcap",
+      "sha256": "962ec063da6ace5aa2aad54c2c1599cf155c384b54d1cc78b8a11d05ee79827e",
+      "accepted": 46,
+      "rejected": {
+        "duplicate-placement": 2,
+        "missing-dat-asset-or-cell": 2,
+        "non-world-namespace": 1,
+        "repeated-observation": 13,
+        "unsupported-or-contained-description": 3,
+        "unsupported-or-unplaced-physics": 6
+      }
+    },
+    {
+      "file": "pkt_2017-1-24_1485287258_log.pcap",
+      "sha256": "b661afa2fb7c5099a196a15653c8f052ca992dd8bcf6d86e7c6bbe4060d76d04",
+      "accepted": 3,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 1,
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-24_1485287429_log.pcap",
+      "sha256": "5f929d4506d9808e1895b1a33f4bb4fb7605b0b56a39611bf5c9fd6b06f0b322",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-contained-description": 5
+      }
+    },
+    {
+      "file": "pkt_2017-1-25_1485329729_log.pcap",
+      "sha256": "7941095ef1f9ab0aa579f0a3d6124336d144daba326f100abf40ef82e78869f1",
+      "accepted": 140,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 40,
+        "duplicate-placement": 70,
+        "missing-dat-asset-or-cell": 12,
+        "non-world-namespace": 3,
+        "repeated-observation": 82,
+        "unsupported-or-contained-description": 277,
+        "unsupported-or-unplaced-physics": 108
+      }
+    },
+    {
+      "file": "pkt_2017-1-25_1485341589_log.pcap",
+      "sha256": "0986655f56320d978bafb1642bb44b95cffc1f0d69963289f5185ee757a7c356",
+      "accepted": 338,
+      "rejected": {
+        "missing-dat-asset-or-cell": 92,
+        "parented-or-contained": 1,
+        "repeated-observation": 1,
+        "unsupported-or-contained-description": 6,
+        "unsupported-or-unplaced-physics": 56
+      }
+    },
+    {
+      "file": "pkt_2017-1-25_1485344411_log.pcap",
+      "sha256": "720ccfb82c2af26d67d1511807638bc842669979d420f2a6cdaf6cd13d2581d4",
+      "accepted": 293,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 10,
+        "missing-dat-asset-or-cell": 232,
+        "non-world-namespace": 5,
+        "repeated-observation": 20,
+        "unsupported-or-contained-description": 20,
+        "unsupported-or-unplaced-physics": 56,
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-29_1485669974_log.pcap",
+      "sha256": "e16c45377636578f834887416ceeb920b196070aba8a62713c865df615763e68",
+      "accepted": 223,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 17,
+        "duplicate-placement": 13,
+        "missing-dat-asset-or-cell": 94,
+        "repeated-observation": 35,
+        "unsupported-or-contained-description": 65,
+        "unsupported-or-unplaced-physics": 141,
+        "unsupported-visual-description": 13
+      }
+    },
+    {
+      "file": "pkt_2017-1-31_1485862283_log.pcap",
+      "sha256": "52649e6958d14cffa04b74765e2d64cb48d90675d3a371e091852f686f3af40e",
+      "accepted": 68,
+      "rejected": {
+        "missing-dat-asset-or-cell": 37,
+        "non-world-namespace": 2,
+        "repeated-observation": 13,
+        "unsupported-or-contained-description": 86,
+        "unsupported-or-unplaced-physics": 53,
+        "unsupported-visual-description": 61
+      }
+    },
+    {
+      "file": "pkt_2017-1-29_1485762287_log.pcap",
+      "sha256": "c5947816f2c00c3d1a8ae9c85252a1678191d707bcfabaea1302c8b52a07ca17",
+      "accepted": 68,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 108,
+        "missing-dat-asset-or-cell": 45,
+        "non-world-namespace": 5,
+        "repeated-observation": 81,
+        "unsupported-or-contained-description": 102,
+        "unsupported-or-unplaced-physics": 49,
+        "unsupported-visual-description": 27
+      }
+    },
+    {
+      "file": "pkt_2017-1-10_1484041115_log.pcap",
+      "sha256": "f9cece3782860eee081c32e8519106f80c3ec1432f90606865c935eeecc8b0a8",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-contained-description": 2,
+        "unsupported-or-unplaced-physics": 6
+      }
+    },
+    {
+      "file": "pkt_2017-1-10_1484076912_log.pcap",
+      "sha256": "d0f313ed2f72cf1d99750e844c90632db9822970ee515575f34a4509003997af",
+      "accepted": 5,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 4,
+        "non-world-namespace": 27,
+        "repeated-observation": 1,
+        "unsupported-or-contained-description": 2,
+        "unsupported-or-unplaced-physics": 26,
+        "unsupported-visual-description": 11
+      }
+    },
+    {
+      "file": "pkt_2017-1-10_1484095101_log.pcap",
+      "sha256": "8ce46e4b9aabe325154647e23da38f46fbe6d45b29307d53e08a476d9bc8af30",
+      "accepted": 434,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 355,
+        "duplicate-placement": 20,
+        "missing-dat-asset-or-cell": 109,
+        "non-world-namespace": 16,
+        "parented-or-contained": 1,
+        "repeated-observation": 293,
+        "unsupported-or-contained-description": 389,
+        "unsupported-or-unplaced-physics": 213,
+        "unsupported-visual-description": 156
+      }
+    },
+    {
+      "file": "pkt_2017-1-10_1484118126_log.pcap",
+      "sha256": "00916f50aa3a4ff188f3439398904ed312c136e6ea668cb75ee7dced6d549f9b",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 19,
+        "non-world-namespace": 2,
+        "unsupported-or-contained-description": 8,
+        "unsupported-or-unplaced-physics": 28,
+        "unsupported-visual-description": 6
+      }
+    },
+    {
+      "file": "pkt_2017-1-10_1484119385_log.pcap",
+      "sha256": "6acdb9c2d20ede1a17d02340e2d7ac4de5b7f3e6f8f5a44a191a5d5a8eea7f6a",
+      "accepted": 46,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 64,
+        "missing-dat-asset-or-cell": 21,
+        "non-world-namespace": 4,
+        "repeated-observation": 37,
+        "unsupported-or-contained-description": 55,
+        "unsupported-or-unplaced-physics": 15,
+        "unsupported-visual-description": 2
+      }
+    },
+    {
+      "file": "pkt_2017-1-10_1484121002_log.pcap",
+      "sha256": "8ca2d69675e39ccb0b49005fa1ebeede20e338c3221fd5ca778969c3fb009875",
+      "accepted": 223,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 28,
+        "missing-dat-asset-or-cell": 2,
+        "non-world-namespace": 6,
+        "parented-or-contained": 2,
+        "repeated-observation": 47,
+        "unsupported-or-contained-description": 82,
+        "unsupported-or-unplaced-physics": 28,
+        "unsupported-visual-description": 5
+      }
+    },
+    {
+      "file": "pkt_2017-1-11_1484170269_log.pcap",
+      "sha256": "195d39d95c28ff81fbe143ec3ee73a869bc75589f6ac4687f87e58b71e9b7e15",
+      "accepted": 77,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 182,
+        "missing-dat-asset-or-cell": 30,
+        "non-world-namespace": 9,
+        "repeated-observation": 76,
+        "unsupported-or-contained-description": 132,
+        "unsupported-or-unplaced-physics": 101,
+        "unsupported-visual-description": 58
+      }
+    },
+    {
+      "file": "pkt_2017-1-11_1484185841_log.pcap",
+      "sha256": "53042005e119f52f84a803f9890dfb97a6c122eab03d34cc16dca99ac1341d9d",
+      "accepted": 28,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 34,
+        "missing-dat-asset-or-cell": 6,
+        "non-world-namespace": 6,
+        "repeated-observation": 22,
+        "unsupported-or-contained-description": 51,
+        "unsupported-or-unplaced-physics": 18,
+        "unsupported-visual-description": 16
+      }
+    },
+    {
+      "file": "pkt_2017-1-12_1484213699_log.pcap",
+      "sha256": "b6cdee1a4fa20546b35a731242eb4041b995996e9a28b4a1f5743e5632498f1e",
+      "accepted": 1,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 19,
+        "missing-dat-asset-or-cell": 1,
+        "non-world-namespace": 2,
+        "unsupported-or-contained-description": 12,
+        "unsupported-or-unplaced-physics": 8,
+        "unsupported-visual-description": 2
+      }
+    },
+    {
+      "file": "pkt_2017-1-12_1484265073_log.pcap",
+      "sha256": "82661f4d75ddce383dd963f9230b2325e951bca9b5ba23c1e08b5daff3b8307c",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 7,
+        "non-world-namespace": 8,
+        "repeated-observation": 6,
+        "unsupported-or-contained-description": 5,
+        "unsupported-or-unplaced-physics": 25,
+        "unsupported-visual-description": 14
+      }
+    },
+    {
+      "file": "pkt_2017-1-12_1484267572_log.pcap",
+      "sha256": "a17b4e165f63b064723a540fe05da0b574bdb83b5c332de48cddad6414b9c28f",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 11,
+        "non-world-namespace": 13,
+        "repeated-observation": 5,
+        "unsupported-or-contained-description": 16,
+        "unsupported-or-unplaced-physics": 41,
+        "unsupported-visual-description": 18
+      }
+    },
+    {
+      "file": "pkt_2017-1-12_1484284469_log.pcap",
+      "sha256": "17c90b922fc90467cbdf73d0d851ee62d6e83e03048790d7a3c6a1e98e9bdca2",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 2,
+        "non-world-namespace": 5,
+        "repeated-observation": 2,
+        "unsupported-or-contained-description": 4,
+        "unsupported-or-unplaced-physics": 10,
+        "unsupported-visual-description": 4
+      }
+    },
+    {
+      "file": "pkt_2017-1-12_1484289775_log.pcap",
+      "sha256": "1ff4b7145fa1d9efbc9196ab43d77fda0bbf9623f0f14392a36c7ec28ae091b1",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 1,
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 10,
+        "unsupported-or-unplaced-physics": 5,
+        "unsupported-visual-description": 5
+      }
+    },
+    {
+      "file": "pkt_2017-1-12_1484291838_log.pcap",
+      "sha256": "5dc0d0de2aaabc4b5e56105dd39f257c157ba827265b8dc580169e450e2e870d",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 11,
+        "non-world-namespace": 7,
+        "unsupported-or-contained-description": 3,
+        "unsupported-or-unplaced-physics": 8,
+        "unsupported-visual-description": 7
+      }
+    },
+    {
+      "file": "pkt_2017-1-13_1484333352_log.pcap",
+      "sha256": "1306e5103351429e81414cd877d7afc7e293e05ec875ac1213c5da09f276db15",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 3,
+        "non-world-namespace": 2,
+        "unsupported-or-unplaced-physics": 5,
+        "unsupported-visual-description": 3
+      }
+    },
+    {
+      "file": "pkt_2017-1-13_1484338451_log.pcap",
+      "sha256": "435ef655eb80df0d5fdf784ed76ebc4272f3ddedef8e053099c0880c44ce9b5f",
+      "accepted": 6,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 13,
+        "non-world-namespace": 60,
+        "repeated-observation": 11,
+        "unsupported-or-contained-description": 16,
+        "unsupported-or-unplaced-physics": 87,
+        "unsupported-visual-description": 43
+      }
+    },
+    {
+      "file": "pkt_2017-1-13_1484379805_log.pcap",
+      "sha256": "af495b01c7edc6884d1a990705deb450291f358b515b509237a2cdfe3db7fbfc",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 2,
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 19,
+        "unsupported-visual-description": 2
+      }
+    },
+    {
+      "file": "pkt_2017-1-14_1484381529_log.pcap",
+      "sha256": "963879de2d0c74908a7bec2d7d573e12d637dc0cfaf90f49acf49e1062ca572e",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 2,
+        "non-world-namespace": 4,
+        "unsupported-or-unplaced-physics": 7,
+        "unsupported-visual-description": 2
+      }
+    },
+    {
+      "file": "pkt_2017-1-14_1484387289_log.pcap",
+      "sha256": "543e3400d7629fdabbf08eb3526bf13473eef89469c1c3f3ed225f22ea6e9cc1",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 10,
+        "unsupported-or-contained-description": 9,
+        "unsupported-or-unplaced-physics": 22,
+        "unsupported-visual-description": 9
+      }
+    },
+    {
+      "file": "pkt_2017-1-14_1484438111_log.pcap",
+      "sha256": "06613bebeb4ee3721aaf394753ee6bda3dc567fb6e6e777fa351103b48e35c7b",
+      "accepted": 6,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 20,
+        "non-world-namespace": 45,
+        "repeated-observation": 19,
+        "unsupported-or-contained-description": 43,
+        "unsupported-or-unplaced-physics": 133,
+        "unsupported-visual-description": 59
+      }
+    },
+    {
+      "file": "pkt_2017-1-14_1484460451_log.pcap",
+      "sha256": "a4ef80501abc8284709acf15b865a3dee27fbf91cf2c6ae518d7c2cbc28e11c1",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 6,
+        "non-world-namespace": 18,
+        "repeated-observation": 2,
+        "unsupported-or-contained-description": 28,
+        "unsupported-or-unplaced-physics": 87,
+        "unsupported-visual-description": 24
+      }
+    },
+    {
+      "file": "pkt_2017-1-14_1484464931_log.pcap",
+      "sha256": "ec4ed442987f43e27cc15de0a642f25a19266c74699dd2d9d68a6654bea750d6",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-14_1484464962_log.pcap",
+      "sha256": "80bfbd40c560feb334119fcb625b573f26b2b82062fa1260245299e794c59b30",
+      "accepted": 6,
+      "rejected": {
+        "repeated-observation": 2,
+        "unsupported-or-unplaced-physics": 2,
+        "unsupported-visual-description": 2
+      }
+    },
+    {
+      "file": "pkt_2017-1-14_1484465308_log.pcap",
+      "sha256": "daa5227e4e07ad8435e5d8881133e4a0399f6d7640ef1cb82ca267d04ca05dd2",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 3,
+        "unsupported-or-unplaced-physics": 6,
+        "unsupported-visual-description": 3
+      }
+    },
+    {
+      "file": "pkt_2017-1-14_1484465472_log.pcap",
+      "sha256": "e3bf166cee3aac32bfdf041833b977784e5bfbca489ae5108dfac7e89767a7ef",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 2,
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-14_1484466554_log.pcap",
+      "sha256": "52bbcb7dec09ca205752ba5bf9503dfa4fc115f8da7f62bf253cd60442bbda44",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 9,
+        "non-world-namespace": 14,
+        "unsupported-or-contained-description": 8,
+        "unsupported-or-unplaced-physics": 44,
+        "unsupported-visual-description": 19
+      }
+    },
+    {
+      "file": "pkt_2017-1-15_1484481901_log.pcap",
+      "sha256": "b18afbad77499f78eece5acc70f6ec62c6a246e100bcadef5529c902c0849484",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 3,
+        "non-world-namespace": 1,
+        "unsupported-or-unplaced-physics": 16,
+        "unsupported-visual-description": 5
+      }
+    },
+    {
+      "file": "pkt_2017-1-15_1484484472_log.pcap",
+      "sha256": "5cb30ff24d936d500d6df83ff72de74c3a87ad72ca5c0d6ac7dab60d2411abd2",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-contained-description": 2,
+        "unsupported-or-unplaced-physics": 4,
+        "unsupported-visual-description": 2
+      }
+    },
+    {
+      "file": "pkt_2017-1-15_1484522341_log.pcap",
+      "sha256": "bc3f1c443704197dae8a8e7ce4e361c41d0c7ca890b65dd814b52bdabcae294e",
+      "accepted": 2,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 4,
+        "non-world-namespace": 23,
+        "repeated-observation": 6,
+        "unsupported-or-contained-description": 11,
+        "unsupported-or-unplaced-physics": 34,
+        "unsupported-visual-description": 22
+      }
+    },
+    {
+      "file": "pkt_2017-1-15_1484540770_log.pcap",
+      "sha256": "8962debcf0fb390139688b65dc829d8145abff353f195fe7a5a24536c15e198a",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 6,
+        "non-world-namespace": 7,
+        "unsupported-or-contained-description": 4,
+        "unsupported-or-unplaced-physics": 24,
+        "unsupported-visual-description": 18
+      }
+    },
+    {
+      "file": "pkt_2017-1-15_1484547569_log.pcap",
+      "sha256": "edd1ab942f824fcb3075d6d394f495e56c89c453c5975dcb3a3d14bcc0b7c8c9",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 10,
+        "unsupported-or-contained-description": 2,
+        "unsupported-or-unplaced-physics": 42,
+        "unsupported-visual-description": 10
+      }
+    },
+    {
+      "file": "pkt_2017-1-16_1484598119_log.pcap",
+      "sha256": "af33967845dbef79a89a852e2c59fa2b8f6652e3a8564ba671114271fb372f07",
+      "accepted": 108,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 362,
+        "duplicate-placement": 9,
+        "missing-dat-asset-or-cell": 96,
+        "non-world-namespace": 6,
+        "repeated-observation": 218,
+        "unsupported-or-contained-description": 286,
+        "unsupported-or-unplaced-physics": 186,
+        "unsupported-visual-description": 106
+      }
+    },
+    {
+      "file": "pkt_2017-1-16_1484631305_log.pcap",
+      "sha256": "38427e3f352682e0a0808ac5c807a3bfba450ec4fd3a5ee3157893a2bbaeba74",
+      "accepted": 2,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 1,
+        "missing-dat-asset-or-cell": 1,
+        "repeated-observation": 13,
+        "unsupported-or-unplaced-physics": 7
+      }
+    },
+    {
+      "file": "pkt_2017-1-17_1484695997_log.pcap",
+      "sha256": "35cb2efb9e0236e4fd250cd77bbb46944f2eba069fbf6a760c6f829fca8f7d6c",
+      "accepted": 2,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 2,
+        "non-world-namespace": 1,
+        "repeated-observation": 23
+      }
+    },
+    {
+      "file": "pkt_2017-1-18_1484727913_log.pcap",
+      "sha256": "d166c37be8cbb39aca45ff6c2a2e70a4474d7d99f66871400c989e57ca8d201b",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 3,
+        "non-world-namespace": 3,
+        "unsupported-or-unplaced-physics": 12,
+        "unsupported-visual-description": 9
+      }
+    },
+    {
+      "file": "pkt_2017-1-18_1484774003_log.pcap",
+      "sha256": "9a8b8cc07179fcc2aee7387429608140877af3c1606b37c18669c81874a60333",
+      "accepted": 298,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 580,
+        "missing-dat-asset-or-cell": 113,
+        "non-world-namespace": 34,
+        "repeated-observation": 319,
+        "unsupported-or-contained-description": 464,
+        "unsupported-or-unplaced-physics": 302,
+        "unsupported-visual-description": 219
+      }
+    },
+    {
+      "file": "pkt_2017-1-18_1484807091_log.pcap",
+      "sha256": "d06a72626ad363cb864550e172459d5b312ca77409ac1e302f3d151bb71fbbd3",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 9,
+        "non-world-namespace": 2,
+        "repeated-observation": 2,
+        "unsupported-or-contained-description": 8,
+        "unsupported-or-unplaced-physics": 26,
+        "unsupported-visual-description": 4
+      }
+    },
+    {
+      "file": "pkt_2017-1-19_1484860325_log.pcap",
+      "sha256": "0a1554569b8f640b2d82e31cd00a38a4b7152d4a689be2b0eaf662f33607482f",
+      "accepted": 443,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 187,
+        "duplicate-placement": 23,
+        "missing-dat-asset-or-cell": 194,
+        "non-world-namespace": 53,
+        "parented-or-contained": 1,
+        "repeated-observation": 228,
+        "unsupported-or-contained-description": 380,
+        "unsupported-or-unplaced-physics": 255,
+        "unsupported-visual-description": 163
+      }
+    },
+    {
+      "file": "pkt_2017-1-20_1484948355_log.pcap",
+      "sha256": "82e9d74adad685ac787e306b5e064d4f885f0e60da492a347547c3270bd7c40a",
+      "accepted": 363,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 583,
+        "duplicate-placement": 21,
+        "missing-dat-asset-or-cell": 126,
+        "non-world-namespace": 27,
+        "parented-or-contained": 5,
+        "repeated-observation": 365,
+        "unsupported-or-contained-description": 456,
+        "unsupported-or-unplaced-physics": 233,
+        "unsupported-visual-description": 177
+      }
+    },
+    {
+      "file": "pkt_2017-1-20_1484979989_log.pcap",
+      "sha256": "eebf67d8d1fe1a78ebdfad86f69beec64d33385b599eaba73bbcca1dcf739b27",
+      "accepted": 488,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 181,
+        "duplicate-placement": 5,
+        "missing-dat-asset-or-cell": 125,
+        "parented-or-contained": 2,
+        "repeated-observation": 272,
+        "unsupported-or-contained-description": 293,
+        "unsupported-or-unplaced-physics": 170,
+        "unsupported-visual-description": 146
+      }
+    },
+    {
+      "file": "pkt_2017-1-21_1484998814_log.pcap",
+      "sha256": "7df01d805bff59da74143a9f2b0364936a624f41ef80a4381752d47d50cc591e",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 2,
+        "unsupported-or-contained-description": 2,
+        "unsupported-or-unplaced-physics": 9
+      }
+    },
+    {
+      "file": "pkt_2017-1-21_1485031156_log.pcap",
+      "sha256": "498bd3652b6c9d9bc436b7ca118f711e9348c6fe7e329fefea36d782d2789158",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 20,
+        "non-world-namespace": 62,
+        "repeated-observation": 3,
+        "unsupported-or-contained-description": 21,
+        "unsupported-or-unplaced-physics": 59,
+        "unsupported-visual-description": 49
+      }
+    },
+    {
+      "file": "pkt_2017-1-21_1485052739_log.pcap",
+      "sha256": "01f002c9e58985ae8e10f101d183cd758fd591b97592f9b54bfc23204a84afa3",
+      "accepted": 0,
+      "rejected": {
+        "non-world-namespace": 1,
+        "unsupported-or-unplaced-physics": 6,
+        "unsupported-visual-description": 2
+      }
+    },
+    {
+      "file": "pkt_2017-1-21_1485054260_log.pcap",
+      "sha256": "d0b95b07cdc479d08c3ed89af8b8fd79bcd744bb3d2ceb87c84485e8ae7d0003",
+      "accepted": 237,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 383,
+        "duplicate-placement": 6,
+        "missing-dat-asset-or-cell": 123,
+        "non-world-namespace": 48,
+        "parented-or-contained": 2,
+        "repeated-observation": 96,
+        "unsupported-or-contained-description": 167,
+        "unsupported-or-unplaced-physics": 114,
+        "unsupported-visual-description": 125
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485116763_log.pcap",
+      "sha256": "22b423b645280563ac57347c7297541fa9c1512b638e7b0e3c58c69d10928354",
+      "accepted": 703,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 311,
+        "duplicate-placement": 41,
+        "missing-dat-asset-or-cell": 414,
+        "non-world-namespace": 55,
+        "parented-or-contained": 1,
+        "repeated-observation": 629,
+        "unsupported-or-contained-description": 543,
+        "unsupported-or-unplaced-physics": 310,
+        "unsupported-visual-description": 253
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485205858_log.pcap",
+      "sha256": "bf0e2637e85743d14090526ba2ebfd8630bdd083f0e008cdfd879d044b05fb9d",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 12,
+        "non-world-namespace": 13,
+        "unsupported-or-contained-description": 13,
+        "unsupported-or-unplaced-physics": 62,
+        "unsupported-visual-description": 14
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485209755_log.pcap",
+      "sha256": "c993c0690f0eea22d045aa11eaac61b554ce3dcb0db4a997dead6e2b28b0f209",
+      "accepted": 292,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 281,
+        "duplicate-placement": 45,
+        "missing-dat-asset-or-cell": 243,
+        "non-world-namespace": 62,
+        "repeated-observation": 162,
+        "unsupported-or-contained-description": 339,
+        "unsupported-or-unplaced-physics": 253,
+        "unsupported-visual-description": 88
+      }
+    },
+    {
+      "file": "pkt_2017-1-24_1485308826_log.pcap",
+      "sha256": "6261ca6fb7c7aac5d565e8a7097c54ed9787c4488d669f8dce28021dbffbd2dc",
+      "accepted": 421,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 327,
+        "duplicate-placement": 94,
+        "missing-dat-asset-or-cell": 121,
+        "non-world-namespace": 11,
+        "parented-or-contained": 2,
+        "repeated-observation": 384,
+        "unsupported-or-contained-description": 379,
+        "unsupported-or-unplaced-physics": 248,
+        "unsupported-visual-description": 173
+      }
+    },
+    {
+      "file": "pkt_2017-1-25_1485336630_log.pcap",
+      "sha256": "e9bec1bb0d484e17c5d08a4c7c9b4691caf9d9961e44f5bdab420d509d201fd4",
+      "accepted": 13,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 136,
+        "missing-dat-asset-or-cell": 14,
+        "non-world-namespace": 10,
+        "repeated-observation": 36,
+        "unsupported-or-contained-description": 93,
+        "unsupported-or-unplaced-physics": 31,
+        "unsupported-visual-description": 38
+      }
+    },
+    {
+      "file": "pkt_2017-1-25_1485393895_log.pcap",
+      "sha256": "bdadea1b764898af20d9717153bea0e2d1cb745e3cc3098da8eb9f6f8d717154",
+      "accepted": 238,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 325,
+        "duplicate-placement": 1,
+        "missing-dat-asset-or-cell": 117,
+        "non-world-namespace": 18,
+        "parented-or-contained": 4,
+        "repeated-observation": 166,
+        "unsupported-or-contained-description": 254,
+        "unsupported-or-unplaced-physics": 141,
+        "unsupported-visual-description": 39
+      }
+    },
+    {
+      "file": "pkt_2017-1-25_1485404176_log.pcap",
+      "sha256": "6d64eac5ba44eeeaa0017cabbb96cc99f335a056842b22e00da2d29a9c05493b",
+      "accepted": 259,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 231,
+        "duplicate-placement": 53,
+        "missing-dat-asset-or-cell": 1071,
+        "non-world-namespace": 8,
+        "repeated-observation": 767,
+        "unsupported-or-contained-description": 381,
+        "unsupported-or-unplaced-physics": 49,
+        "unsupported-visual-description": 34
+      }
+    },
+    {
+      "file": "pkt_2017-1-26_1485420751_log.pcap",
+      "sha256": "067c1a5ab066cd7c623bba9d27801165a8ca39be82e9df13635a04ef2b4fbc4f",
+      "accepted": 104,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 129,
+        "missing-dat-asset-or-cell": 37,
+        "non-world-namespace": 11,
+        "repeated-observation": 133,
+        "unsupported-or-contained-description": 185,
+        "unsupported-or-unplaced-physics": 116,
+        "unsupported-visual-description": 26
+      }
+    },
+    {
+      "file": "pkt_2017-1-26_1485478191_log.pcap",
+      "sha256": "1eb38662423331fbedb25fa58d6e804f4f08e9f0943ed84cb38fffbe2b95237e",
+      "accepted": 222,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 287,
+        "duplicate-placement": 3,
+        "missing-dat-asset-or-cell": 72,
+        "non-world-namespace": 26,
+        "repeated-observation": 89,
+        "unsupported-or-contained-description": 244,
+        "unsupported-or-unplaced-physics": 139,
+        "unsupported-visual-description": 21
+      }
+    },
+    {
+      "file": "pkt_2017-1-27_1485525936_log.pcap",
+      "sha256": "993f8fc4aabd598f2c95c23854087a1fb1dde80e666804355aea21e7428c255c",
+      "accepted": 654,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 510,
+        "duplicate-placement": 125,
+        "missing-dat-asset-or-cell": 232,
+        "non-world-namespace": 85,
+        "repeated-observation": 697,
+        "unsupported-or-contained-description": 504,
+        "unsupported-or-unplaced-physics": 417,
+        "unsupported-visual-description": 115
+      }
+    },
+    {
+      "file": "pkt_2017-1-28_1485607306_log.pcap",
+      "sha256": "09ea9e74680d9944a7f63b8a65cb761c1fac8388628d81555a2c59b0bc26be7a",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 11,
+        "non-world-namespace": 13,
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 25,
+        "unsupported-visual-description": 6
+      }
+    },
+    {
+      "file": "pkt_2017-1-28_1485655635_log.pcap",
+      "sha256": "fad847824f1eb8fc133c499c1b47dbe99caa37a0b4132d0da68d1a5839d0f8cf",
+      "accepted": 2,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 194,
+        "non-world-namespace": 40,
+        "unsupported-or-unplaced-physics": 28,
+        "unsupported-visual-description": 22
+      }
+    },
+    {
+      "file": "pkt_2017-1-28_1485673336_log.pcap",
+      "sha256": "58d0c64b626fbec95e64fc4e50208bd59112ed45d6afee916afba63bc09d1b63",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 26,
+        "non-world-namespace": 5,
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 48,
+        "unsupported-visual-description": 15
+      }
+    },
+    {
+      "file": "pkt_2017-1-29_1485679959_log.pcap",
+      "sha256": "ba7e6ec9afa7da760110b8ec110383c0530dd5c20e66f04d19d89f9863c2c646",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 5,
+        "non-world-namespace": 9,
+        "unsupported-or-contained-description": 4,
+        "unsupported-or-unplaced-physics": 37,
+        "unsupported-visual-description": 15
+      }
+    },
+    {
+      "file": "pkt_2017-1-10_1484041078_log.pcap",
+      "sha256": "caf9839399b596a43ed673d7e29fc13beac35a1334db7673e640e6e8d7dc7e18",
+      "accepted": 3,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 37,
+        "non-world-namespace": 7,
+        "unsupported-or-contained-description": 4,
+        "unsupported-or-unplaced-physics": 6,
+        "unsupported-visual-description": 7
+      }
+    },
+    {
+      "file": "pkt_2017-1-10_1484076890_log.pcap",
+      "sha256": "7e1437eabf060866adabf07745c47a1227afa13d7a71af4f6c6bef946dc1f793",
+      "accepted": 124,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 61,
+        "duplicate-placement": 7,
+        "missing-dat-asset-or-cell": 35,
+        "non-world-namespace": 6,
+        "repeated-observation": 142,
+        "unsupported-or-contained-description": 74,
+        "unsupported-or-unplaced-physics": 36,
+        "unsupported-visual-description": 3
+      }
+    },
+    {
+      "file": "pkt_2017-1-10_1484094662_log.pcap",
+      "sha256": "20bb0cacf91d97467ab2b615c71ae8a7f12869342edf7a861c89528b4a4a280d",
+      "accepted": 79,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 280,
+        "duplicate-placement": 1,
+        "missing-dat-asset-or-cell": 37,
+        "non-world-namespace": 73,
+        "repeated-observation": 175,
+        "unsupported-or-contained-description": 175,
+        "unsupported-or-unplaced-physics": 166,
+        "unsupported-visual-description": 46
+      }
+    },
+    {
+      "file": "pkt_2017-1-10_1484118147_log.pcap",
+      "sha256": "323db4f9e05c7e0a6d2923234a3245b35a79d44a6d87d359aefb903046aba2b2",
+      "accepted": 44,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 41,
+        "duplicate-placement": 2,
+        "missing-dat-asset-or-cell": 1,
+        "non-world-namespace": 1,
+        "repeated-observation": 28,
+        "unsupported-or-contained-description": 29,
+        "unsupported-or-unplaced-physics": 36,
+        "unsupported-visual-description": 24
+      }
+    },
+    {
+      "file": "pkt_2017-1-10_1484119404_log.pcap",
+      "sha256": "0437fc7fd878a2316a61e02d79243ab3a59ea3bda26dc6496d0351017480dbcc",
+      "accepted": 185,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 388,
+        "missing-dat-asset-or-cell": 31,
+        "non-world-namespace": 17,
+        "parented-or-contained": 4,
+        "repeated-observation": 115,
+        "unsupported-or-contained-description": 167,
+        "unsupported-or-unplaced-physics": 70,
+        "unsupported-visual-description": 48
+      }
+    },
+    {
+      "file": "pkt_2017-1-11_1484160812_log.pcap",
+      "sha256": "5ec43a5314118b6bb427a1bf9c2a1209bf4c163472a74ea8711f75a37189a6ca",
+      "accepted": 1,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 4,
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-11_1484162934_log.pcap",
+      "sha256": "d347c4cdef1e0b41c9af098774970329a823938ca42955aa2ebd585f5055c2b1",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 2,
+        "unsupported-or-unplaced-physics": 2,
+        "unsupported-visual-description": 3
+      }
+    },
+    {
+      "file": "pkt_2017-1-11_1484170256_log.pcap",
+      "sha256": "ad7f4848a6e64896132d9bb7667895a306732dc88eb2758740d1046f98c60fac",
+      "accepted": 194,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 298,
+        "missing-dat-asset-or-cell": 111,
+        "non-world-namespace": 26,
+        "repeated-observation": 104,
+        "unsupported-or-contained-description": 100,
+        "unsupported-or-unplaced-physics": 81,
+        "unsupported-visual-description": 22
+      }
+    },
+    {
+      "file": "pkt_2017-1-11_1484185778_log.pcap",
+      "sha256": "aa4e55e5bba34594bc5f49a5ca3f1bafabe36d89ca4ea4c337d1879b41e09715",
+      "accepted": 238,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 465,
+        "duplicate-placement": 39,
+        "missing-dat-asset-or-cell": 120,
+        "non-world-namespace": 26,
+        "parented-or-contained": 10,
+        "repeated-observation": 299,
+        "unsupported-or-contained-description": 387,
+        "unsupported-or-unplaced-physics": 226,
+        "unsupported-visual-description": 158
+      }
+    },
+    {
+      "file": "pkt_2017-1-12_1484260167_log.pcap",
+      "sha256": "a47bc99633db7c21ddf00587ed9f9875f576fa6066ade57458009b4b76015e82",
+      "accepted": 286,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 473,
+        "duplicate-placement": 1,
+        "missing-dat-asset-or-cell": 191,
+        "non-world-namespace": 65,
+        "repeated-observation": 287,
+        "unsupported-or-contained-description": 384,
+        "unsupported-or-unplaced-physics": 260,
+        "unsupported-visual-description": 211
+      }
+    },
+    {
+      "file": "pkt_2017-1-12_1484279955_log.pcap",
+      "sha256": "32b2d973e6a521e82f1e2fdb65afc40fe48735b9688bb0e092e11cc94b7e1485",
+      "accepted": 114,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 468,
+        "duplicate-placement": 4,
+        "missing-dat-asset-or-cell": 99,
+        "non-world-namespace": 42,
+        "parented-or-contained": 1,
+        "repeated-observation": 345,
+        "unsupported-or-contained-description": 314,
+        "unsupported-or-unplaced-physics": 125,
+        "unsupported-visual-description": 86
+      }
+    },
+    {
+      "file": "pkt_2017-1-12_1484291632_log.pcap",
+      "sha256": "4b5f376e41425aaf3c292793cd193e12c536b1ff0d8af0dacbd5534bdd2a8921",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 13,
+        "non-world-namespace": 8,
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 5,
+        "unsupported-visual-description": 7
+      }
+    },
+    {
+      "file": "pkt_2017-1-13_1484333037_log.pcap",
+      "sha256": "7bad7428ee291cb1fc79c438240e6681ab3228ebce967f7abd1abd07febdd747",
+      "accepted": 1,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 3,
+        "missing-dat-asset-or-cell": 1,
+        "non-world-namespace": 5,
+        "unsupported-or-unplaced-physics": 5,
+        "unsupported-visual-description": 6
+      }
+    },
+    {
+      "file": "pkt_2017-1-13_1484337616_log.pcap",
+      "sha256": "47f992ae9fd0ccb604b8c57cde59059c75624bfbe612f8e521ca850e717b17af",
+      "accepted": 387,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 1125,
+        "duplicate-placement": 5,
+        "missing-dat-asset-or-cell": 323,
+        "non-world-namespace": 66,
+        "parented-or-contained": 1,
+        "repeated-observation": 1029,
+        "unsupported-or-contained-description": 736,
+        "unsupported-or-unplaced-physics": 315,
+        "unsupported-visual-description": 293
+      }
+    },
+    {
+      "file": "pkt_2017-1-13_1484379784_log.pcap",
+      "sha256": "77a91cfbd62c79db0d24eb8a43d0b824df30bb3ae85639b4815cf088b512d867",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 7,
+        "missing-dat-asset-or-cell": 2,
+        "non-world-namespace": 2,
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 6,
+        "unsupported-visual-description": 6
+      }
+    },
+    {
+      "file": "pkt_2017-1-14_1484381410_log.pcap",
+      "sha256": "6759cf34a7806e9beadb81de857592fb2229530b2a07316a7e3f4910b4fe1592",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 3,
+        "unsupported-or-unplaced-physics": 2
+      }
+    },
+    {
+      "file": "pkt_2017-1-14_1484436368_log.pcap",
+      "sha256": "6d9bfd09527ee82a1f161c251ffd2097a245192a839cbd5e5e73aacdf24714bc",
+      "accepted": 10,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 230,
+        "missing-dat-asset-or-cell": 54,
+        "non-world-namespace": 26,
+        "parented-or-contained": 1,
+        "repeated-observation": 153,
+        "unsupported-or-contained-description": 140,
+        "unsupported-or-unplaced-physics": 40,
+        "unsupported-visual-description": 27
+      }
+    },
+    {
+      "file": "pkt_2017-1-14_1484442361_log.pcap",
+      "sha256": "7428b0197267007f229c9a2e0b27da2c833cf042d126cef99570c892b4f00a01",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 4,
+        "non-world-namespace": 65,
+        "unsupported-or-contained-description": 57,
+        "unsupported-or-unplaced-physics": 103,
+        "unsupported-visual-description": 38
+      }
+    },
+    {
+      "file": "pkt_2017-1-14_1484455493_log.pcap",
+      "sha256": "28195b4cbdf180860216acc686e389efdc8964db47005b52be04141344dd0c7a",
+      "accepted": 47,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 197,
+        "missing-dat-asset-or-cell": 37,
+        "non-world-namespace": 19,
+        "repeated-observation": 74,
+        "unsupported-or-contained-description": 93,
+        "unsupported-or-unplaced-physics": 62,
+        "unsupported-visual-description": 19
+      }
+    },
+    {
+      "file": "pkt_2017-1-14_1484460624_log.pcap",
+      "sha256": "3c614e8a227a68d27498130d84f9a155dbed61a7b80e03332cefd4f2755200a7",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 7,
+        "non-world-namespace": 16,
+        "repeated-observation": 5,
+        "unsupported-or-contained-description": 6,
+        "unsupported-or-unplaced-physics": 56,
+        "unsupported-visual-description": 20
+      }
+    },
+    {
+      "file": "pkt_2017-1-14_1484465077_log.pcap",
+      "sha256": "5878544dfc0e5a4a82f2e3850b17b1da3465541012e774ec9f9804df14c39741",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 16,
+        "missing-dat-asset-or-cell": 1,
+        "non-world-namespace": 8,
+        "unsupported-or-contained-description": 12,
+        "unsupported-or-unplaced-physics": 12,
+        "unsupported-visual-description": 6
+      }
+    },
+    {
+      "file": "pkt_2017-1-15_1484478035_log.pcap",
+      "sha256": "cfc904541e3b40ca0cea1dd1f1c066da6a4d3774d8356c00f537d979a3c5988e",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 7,
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-15_1484478488_log.pcap",
+      "sha256": "e4c10bd9bfaa90ff89258c8c1030cfd4d5ef97166f67713519378413e0e6f60c",
+      "accepted": 5,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 37,
+        "missing-dat-asset-or-cell": 3,
+        "non-world-namespace": 10,
+        "repeated-observation": 12,
+        "unsupported-or-contained-description": 21,
+        "unsupported-or-unplaced-physics": 16,
+        "unsupported-visual-description": 6
+      }
+    },
+    {
+      "file": "pkt_2017-1-15_1484518720_log.pcap",
+      "sha256": "728b5e8ae80e22bd38dbca24726d27dcb23de0dbbf6fe18ad74d4363f2cdc3e4",
+      "accepted": 125,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 448,
+        "duplicate-placement": 5,
+        "missing-dat-asset-or-cell": 82,
+        "non-world-namespace": 35,
+        "repeated-observation": 433,
+        "unsupported-or-contained-description": 290,
+        "unsupported-or-unplaced-physics": 351,
+        "unsupported-visual-description": 34
+      }
+    },
+    {
+      "file": "pkt_2017-1-15_1484542955_log.pcap",
+      "sha256": "f9bcc989f4a7e8c2b7aaee6aeb61e0347b9f85f5b3f6850a03c41468b71b9088",
+      "accepted": 80,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 168,
+        "missing-dat-asset-or-cell": 42,
+        "non-world-namespace": 6,
+        "repeated-observation": 47,
+        "unsupported-or-contained-description": 62,
+        "unsupported-or-unplaced-physics": 28,
+        "unsupported-visual-description": 21
+      }
+    },
+    {
+      "file": "pkt_2017-1-16_1484556880_log.pcap",
+      "sha256": "129b5894bce87ba6af3a349dbdeaa06739cd927ab31f0a60150f8aacec3884e4",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 3,
+        "non-world-namespace": 1,
+        "unsupported-or-unplaced-physics": 13,
+        "unsupported-visual-description": 2
+      }
+    },
+    {
+      "file": "pkt_2017-1-16_1484618136_log.pcap",
+      "sha256": "e7d2f4793a2121c51869d9a1342f9d50ea3522c1c23c3356c86b0ae4aa0bab70",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 17,
+        "missing-dat-asset-or-cell": 3,
+        "non-world-namespace": 13,
+        "repeated-observation": 19,
+        "unsupported-or-contained-description": 30,
+        "unsupported-or-unplaced-physics": 16,
+        "unsupported-visual-description": 6
+      }
+    },
+    {
+      "file": "pkt_2017-1-17_1484698303_log.pcap",
+      "sha256": "bfde8c5f3f0484d6705a2119be752949822590392993056a885e164cc6b909f4",
+      "accepted": 42,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 291,
+        "missing-dat-asset-or-cell": 74,
+        "non-world-namespace": 25,
+        "repeated-observation": 119,
+        "unsupported-or-contained-description": 135,
+        "unsupported-or-unplaced-physics": 44,
+        "unsupported-visual-description": 30
+      }
+    },
+    {
+      "file": "pkt_2017-1-18_1484732181_log.pcap",
+      "sha256": "23fedc0171155fedf85cec297924c379854828afeffe7c29ad92f64b31658d72",
+      "accepted": 1,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 17,
+        "missing-dat-asset-or-cell": 1,
+        "non-world-namespace": 37,
+        "repeated-observation": 1,
+        "unsupported-or-contained-description": 16,
+        "unsupported-or-unplaced-physics": 57,
+        "unsupported-visual-description": 7
+      }
+    },
+    {
+      "file": "pkt_2017-1-18_1484775789_log.pcap",
+      "sha256": "82e739809db8768e7db04d8e01a86b223af59c0996de1eb191cc488c720be203",
+      "accepted": 68,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 258,
+        "missing-dat-asset-or-cell": 73,
+        "non-world-namespace": 31,
+        "parented-or-contained": 2,
+        "repeated-observation": 192,
+        "unsupported-or-contained-description": 193,
+        "unsupported-or-unplaced-physics": 125,
+        "unsupported-visual-description": 93
+      }
+    },
+    {
+      "file": "pkt_2017-1-19_1484863198_log.pcap",
+      "sha256": "80833b60d4c906e1f38ebb387f022412cf46d1b43f59a7a8e69b1e18b7095b71",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 18,
+        "missing-dat-asset-or-cell": 2,
+        "non-world-namespace": 8,
+        "repeated-observation": 3,
+        "unsupported-or-contained-description": 17,
+        "unsupported-or-unplaced-physics": 14,
+        "unsupported-visual-description": 5
+      }
+    },
+    {
+      "file": "pkt_2017-1-19_1484872775_log.pcap",
+      "sha256": "529065201e8497e7056435bb196770fe3cd59bb98660e5cb49ca3ae829590870",
+      "accepted": 11,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 247,
+        "missing-dat-asset-or-cell": 5,
+        "non-world-namespace": 59,
+        "repeated-observation": 18,
+        "unsupported-or-contained-description": 149,
+        "unsupported-or-unplaced-physics": 64,
+        "unsupported-visual-description": 60
+      }
+    },
+    {
+      "file": "pkt_2017-1-19_1484896754_log.pcap",
+      "sha256": "d597f9f1d864dcd82504466aae14114a11ca81906d0d60fdc0ea700e310f3250",
+      "accepted": 0,
+      "rejected": {
+        "unsupported-or-unplaced-physics": 8
+      }
+    },
+    {
+      "file": "pkt_2017-1-19_1484896936_log.pcap",
+      "sha256": "9fec984fd8b7393b5f8f124a5c9cb616b65bec45dc8d38dfd41cdd23116ff767",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 1,
+        "non-world-namespace": 5,
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 8,
+        "unsupported-visual-description": 3
+      }
+    },
+    {
+      "file": "pkt_2017-1-20_1484976636_log.pcap",
+      "sha256": "9615fc3944026fe8105cf2d4dea78cf2aea76d0e4f9508098cff3e2f72bd6024",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 12,
+        "non-world-namespace": 8,
+        "unsupported-or-contained-description": 3,
+        "unsupported-or-unplaced-physics": 22,
+        "unsupported-visual-description": 6
+      }
+    },
+    {
+      "file": "pkt_2017-1-21_1485032001_log.pcap",
+      "sha256": "3eef16efcac86a69fc4ffa94c79ef6c3a8c9bfc3485d4e6208d3fc30a1843ff7",
+      "accepted": 363,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 471,
+        "duplicate-placement": 7,
+        "missing-dat-asset-or-cell": 137,
+        "non-world-namespace": 65,
+        "repeated-observation": 297,
+        "unsupported-or-contained-description": 429,
+        "unsupported-or-unplaced-physics": 374,
+        "unsupported-visual-description": 83
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485205884_log.pcap",
+      "sha256": "aea7ef250852ff989f5452eed7426c62e9b72b89a6d178eac9543b9e8905559d",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 7,
+        "missing-dat-asset-or-cell": 1,
+        "non-world-namespace": 2,
+        "repeated-observation": 2,
+        "unsupported-or-contained-description": 15,
+        "unsupported-or-unplaced-physics": 36,
+        "unsupported-visual-description": 6
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485207233_log.pcap",
+      "sha256": "c060d5c88d77b7cf93d9bd5894e9058e281b0d7a67c0ef04094be7dcb9f0410e",
+      "accepted": 74,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 807,
+        "duplicate-placement": 3,
+        "missing-dat-asset-or-cell": 254,
+        "non-world-namespace": 58,
+        "parented-or-contained": 2,
+        "repeated-observation": 309,
+        "unsupported-or-contained-description": 423,
+        "unsupported-or-unplaced-physics": 326,
+        "unsupported-visual-description": 109
+      }
+    },
+    {
+      "file": "pkt_2017-1-24_1485309117_log.pcap",
+      "sha256": "e84339a29af640fe28398dde1b24a1557c8ce981ab47e9de768780ad12b1b2df",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 5,
+        "missing-dat-asset-or-cell": 1,
+        "non-world-namespace": 5,
+        "unsupported-or-unplaced-physics": 12,
+        "unsupported-visual-description": 11
+      }
+    },
+    {
+      "file": "pkt_2017-1-25_1485396302_log.pcap",
+      "sha256": "729df448b3b692c33620c7929a1dd05a65235148ee544eb9dffeab95e497eb91",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 51,
+        "missing-dat-asset-or-cell": 5,
+        "non-world-namespace": 26,
+        "repeated-observation": 9,
+        "unsupported-or-contained-description": 45,
+        "unsupported-or-unplaced-physics": 19,
+        "unsupported-visual-description": 21
+      }
+    },
+    {
+      "file": "pkt_2017-1-25_1485405020_log.pcap",
+      "sha256": "0d5f10807d58069c6aa2b0089c4b2708b1d368d68366b094f3bf7cb814fa82bc",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-26_1485420790_log.pcap",
+      "sha256": "e9c1062399408f225beb3e883de1ac0c728b56f372afbe57affdf84bc999ff71",
+      "accepted": 6,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 228,
+        "missing-dat-asset-or-cell": 25,
+        "non-world-namespace": 15,
+        "repeated-observation": 111,
+        "unsupported-or-contained-description": 176,
+        "unsupported-or-unplaced-physics": 131,
+        "unsupported-visual-description": 91
+      }
+    },
+    {
+      "file": "pkt_2017-1-26_1485478220_log.pcap",
+      "sha256": "c8a87873c7d55e137aaed85c07068e5457c8b2ee33796061f3a702279913a836",
+      "accepted": 7,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 267,
+        "missing-dat-asset-or-cell": 35,
+        "non-world-namespace": 39,
+        "repeated-observation": 59,
+        "unsupported-or-contained-description": 152,
+        "unsupported-or-unplaced-physics": 87,
+        "unsupported-visual-description": 32
+      }
+    },
+    {
+      "file": "pkt_2017-1-27_1485525951_log.pcap",
+      "sha256": "3557255104316c8fb922063c76521f708fe4b8cb24528c2dc02d8d6ab1c86d50",
+      "accepted": 37,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 1179,
+        "missing-dat-asset-or-cell": 158,
+        "non-world-namespace": 93,
+        "repeated-observation": 681,
+        "unsupported-or-contained-description": 528,
+        "unsupported-or-unplaced-physics": 383,
+        "unsupported-visual-description": 250
+      }
+    },
+    {
+      "file": "pkt_2017-1-28_1485615189_log.pcap",
+      "sha256": "b52b1ad3522a0e3547891d0a522417133fa90c22746d3b9a64bbba0802beeeeb",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 11,
+        "non-world-namespace": 5,
+        "unsupported-or-unplaced-physics": 14,
+        "unsupported-visual-description": 6
+      }
+    },
+    {
+      "file": "pkt_2017-1-28_1485657679_log.pcap",
+      "sha256": "b8e439f64cec13d84a75be84556d5b333d9c0564d5cf9d5fc986ebb9557e17f9",
+      "accepted": 170,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 628,
+        "duplicate-placement": 1,
+        "missing-dat-asset-or-cell": 119,
+        "non-world-namespace": 52,
+        "parented-or-contained": 2,
+        "repeated-observation": 454,
+        "unsupported-or-contained-description": 402,
+        "unsupported-or-unplaced-physics": 202,
+        "unsupported-visual-description": 56
+      }
+    },
+    {
+      "file": "pkt_2017-1-29_1485679330_log.pcap",
+      "sha256": "05cd1867afbb74d45a4a285fc6b013da872ef61d331e89371cf175c6b4f78766",
+      "accepted": 18,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 112,
+        "missing-dat-asset-or-cell": 32,
+        "non-world-namespace": 2,
+        "parented-or-contained": 1,
+        "repeated-observation": 59,
+        "unsupported-or-contained-description": 31,
+        "unsupported-or-unplaced-physics": 24,
+        "unsupported-visual-description": 6
+      }
+    },
+    {
+      "file": "pkt_2017-1-29_1485680694_log.pcap",
+      "sha256": "1eba8b33c12a3a3e22ae664900f70121c6b0628bbd1626a15f67c98e2a173034",
+      "accepted": 70,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 187,
+        "missing-dat-asset-or-cell": 132,
+        "non-world-namespace": 9,
+        "repeated-observation": 87,
+        "unsupported-or-contained-description": 166,
+        "unsupported-or-unplaced-physics": 264,
+        "unsupported-visual-description": 110
+      }
+    },
+    {
+      "file": "pkt_2017-1-30_1485770338_log.pcap",
+      "sha256": "1572ce0f743398002d7f321a2fa255faaf808025ff6def0eb33e84948596188c",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 4,
+        "non-world-namespace": 1,
+        "repeated-observation": 1,
+        "unsupported-or-unplaced-physics": 7,
+        "unsupported-visual-description": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-9_1484033102_log.pcap",
+      "sha256": "7fd197c0d90f27f9cb49f9459f68d857d64ff1515a75c8121ddc7503b6e74d3e",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 1,
+        "unsupported-or-unplaced-physics": 2
+      }
+    },
+    {
+      "file": "pkt_2017-1-9_1484033244_log.pcap",
+      "sha256": "5ed375e560df2d4c35b6f3c9b19a040377aafb05f059bdd1477e47e3200b7442",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 1
+      }
+    },
+    {
+      "file": "pkt_2017-1-9_1484033358_log.pcap",
+      "sha256": "348517526e1eb04923c9fcabccac0c26bb83817c0e372c57354224f2dbc1e20f",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 4,
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 6,
+        "unsupported-visual-description": 5
+      }
+    },
+    {
+      "file": "pkt_2017-1-9_1484033728_log.pcap",
+      "sha256": "b4134eaf1e12c88b3e4247d071e6236079cb396291e9fbf23262dcbdd43ff397",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 8,
+        "unsupported-or-contained-description": 8
+      }
+    },
+    {
+      "file": "pkt_2017-1-31_1485839353_log.pcap",
+      "sha256": "b94dce60d21e8be571304ac00b3a902b896244c1d05a85661cddc85ce8a78b2c",
+      "accepted": 1,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 37,
+        "missing-dat-asset-or-cell": 1,
+        "non-world-namespace": 45,
+        "unsupported-or-contained-description": 14,
+        "unsupported-or-unplaced-physics": 90,
+        "unsupported-visual-description": 33
+      }
+    },
+    {
+      "file": "pkt_2017-1-31_1485874876_log.pcap",
+      "sha256": "4c6c3243b5b7a23c2ad5f9b1cc74b647df42a03d61fa5dd5b97b8ca0290234c8",
+      "accepted": 190,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 350,
+        "missing-dat-asset-or-cell": 56,
+        "non-world-namespace": 680,
+        "repeated-observation": 318,
+        "unsupported-or-contained-description": 445,
+        "unsupported-or-unplaced-physics": 474,
+        "unsupported-visual-description": 614
+      }
+    },
+    {
+      "file": "pkt_2017-1-20_1484973986_log.pcap",
+      "sha256": "645112a15ef97171a71035fb20ec218045f5f9fcf9c809cf9490706760ad37c1",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 4,
+        "non-world-namespace": 2,
+        "unsupported-or-contained-description": 2,
+        "unsupported-or-unplaced-physics": 55,
+        "unsupported-visual-description": 12
+      }
+    },
+    {
+      "file": "pkt_2017-1-21_1485040337_log.pcap",
+      "sha256": "8ba7f54dd173afd5f5678b9bcc5ffafc1753dc0b6d8a4f74ab54666d8113c607",
+      "accepted": 481,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 304,
+        "duplicate-placement": 8,
+        "missing-dat-asset-or-cell": 329,
+        "non-world-namespace": 208,
+        "repeated-observation": 609,
+        "unsupported-or-contained-description": 835,
+        "unsupported-or-unplaced-physics": 996,
+        "unsupported-visual-description": 432
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485118510_log.pcap",
+      "sha256": "a03480b5e825223763e7ef3d5d6c75d5079b45bcfbe31b83d063ee1bd96490cd",
+      "accepted": 131,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 152,
+        "duplicate-placement": 12,
+        "missing-dat-asset-or-cell": 551,
+        "non-world-namespace": 138,
+        "parented-or-contained": 1,
+        "repeated-observation": 919,
+        "unsupported-or-contained-description": 568,
+        "unsupported-or-unplaced-physics": 330,
+        "unsupported-visual-description": 509
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485145275_log.pcap",
+      "sha256": "2c51c2a8aef2ebd88c8bfd1a954f8351cde4fae8c1d61d54eef64655908c4ed0",
+      "accepted": 35,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 168,
+        "missing-dat-asset-or-cell": 122,
+        "non-world-namespace": 5,
+        "repeated-observation": 56,
+        "unsupported-or-contained-description": 190,
+        "unsupported-or-unplaced-physics": 190,
+        "unsupported-visual-description": 153
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485155076_log.pcap",
+      "sha256": "e0f62edcb42e1f58627b67736d0b36d508b94572b6dc07391d769c58667d56da",
+      "accepted": 3,
+      "rejected": {
+        "missing-dat-asset-or-cell": 5,
+        "non-world-namespace": 2,
+        "repeated-observation": 6,
+        "unsupported-or-contained-description": 2,
+        "unsupported-or-unplaced-physics": 80,
+        "unsupported-visual-description": 28
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485156435_log.pcap",
+      "sha256": "6a90b1b241e6c086d13656137f090ac7c7bb01c9b9f2a47aa5e367a27d1edced",
+      "accepted": 226,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 124,
+        "duplicate-placement": 13,
+        "missing-dat-asset-or-cell": 115,
+        "non-world-namespace": 22,
+        "repeated-observation": 308,
+        "unsupported-or-contained-description": 185,
+        "unsupported-or-unplaced-physics": 292,
+        "unsupported-visual-description": 95
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485161525_log.pcap",
+      "sha256": "9cc3470384b13574d3f57c5c8998202669d185a8b918f5ba6c8c30a28c79a69e",
+      "accepted": 59,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 52,
+        "missing-dat-asset-or-cell": 46,
+        "non-world-namespace": 5,
+        "repeated-observation": 37,
+        "unsupported-or-contained-description": 71,
+        "unsupported-or-unplaced-physics": 106,
+        "unsupported-visual-description": 73
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485164731_log.pcap",
+      "sha256": "2976d9e9930b2b6d96481c1378b4ce30efc1cc8a418a9a32efec6a6ae80601a6",
+      "accepted": 68,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 77,
+        "missing-dat-asset-or-cell": 13,
+        "non-world-namespace": 17,
+        "repeated-observation": 86,
+        "unsupported-or-contained-description": 105,
+        "unsupported-or-unplaced-physics": 309,
+        "unsupported-visual-description": 113
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485231840_log.pcap",
+      "sha256": "344d09db2744c34c2f90f1ffc3734959be08028a2e758b044869286232cddc15",
+      "accepted": 322,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 209,
+        "duplicate-placement": 3,
+        "missing-dat-asset-or-cell": 111,
+        "non-world-namespace": 49,
+        "parented-or-contained": 1,
+        "repeated-observation": 162,
+        "unsupported-or-contained-description": 141,
+        "unsupported-or-unplaced-physics": 278,
+        "unsupported-visual-description": 84
+      }
+    },
+    {
+      "file": "pkt_2017-1-26_1485408144_log.pcap",
+      "sha256": "42bd19de88d3923ad028032fbd6f5225e26a525c9cad2d72726904eab412a4d2",
+      "accepted": 316,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 211,
+        "missing-dat-asset-or-cell": 75,
+        "non-world-namespace": 10,
+        "repeated-observation": 37,
+        "unsupported-or-contained-description": 93,
+        "unsupported-or-unplaced-physics": 261,
+        "unsupported-visual-description": 77
+      }
+    },
+    {
+      "file": "pkt_2017-1-26_1485481682_log.pcap",
+      "sha256": "98df787074b57bbe04096ee5e4ed5f4489c11b1feca13fd27e11c074fa3808fb",
+      "accepted": 240,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 89,
+        "missing-dat-asset-or-cell": 54,
+        "non-world-namespace": 31,
+        "repeated-observation": 100,
+        "unsupported-or-contained-description": 254,
+        "unsupported-or-unplaced-physics": 359,
+        "unsupported-visual-description": 97
+      }
+    },
+    {
+      "file": "pkt_2017-1-27_1485500038_log.pcap",
+      "sha256": "e14e5082b872065e9a5013eea5a10da335a85d8b0e33f7f55ac3a03ba5a08e70",
+      "accepted": 256,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 672,
+        "duplicate-placement": 3,
+        "missing-dat-asset-or-cell": 345,
+        "non-world-namespace": 25,
+        "parented-or-contained": 2,
+        "repeated-observation": 197,
+        "unsupported-or-contained-description": 451,
+        "unsupported-or-unplaced-physics": 733,
+        "unsupported-visual-description": 236
+      }
+    },
+    {
+      "file": "pkt_2017-1-27_1485514200_log.pcap",
+      "sha256": "ff18829f25937268e942dfd753c472e849d4725af378ce4b341666702bdf24df",
+      "accepted": 76,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 341,
+        "missing-dat-asset-or-cell": 120,
+        "non-world-namespace": 47,
+        "repeated-observation": 182,
+        "unsupported-or-contained-description": 271,
+        "unsupported-or-unplaced-physics": 619,
+        "unsupported-visual-description": 172
+      }
+    },
+    {
+      "file": "pkt_2017-1-27_1485557660_log.pcap",
+      "sha256": "40abf772f5591bd20fb80a2f6bc2f843e059d2871e195cdd8ad8a5a32b65b128",
+      "accepted": 493,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 490,
+        "duplicate-placement": 84,
+        "missing-dat-asset-or-cell": 588,
+        "non-world-namespace": 262,
+        "parented-or-contained": 1,
+        "repeated-observation": 534,
+        "unsupported-or-contained-description": 719,
+        "unsupported-or-unplaced-physics": 1046,
+        "unsupported-visual-description": 321
+      }
+    },
+    {
+      "file": "pkt_2017-1-28_1485659112_log.pcap",
+      "sha256": "5653e9b13ba3d5fc42a21aa6ede93ef2781965ddb00af2914d74787ad94b5202",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 5,
+        "missing-dat-asset-or-cell": 3,
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 4,
+        "unsupported-or-unplaced-physics": 64,
+        "unsupported-visual-description": 15
+      }
+    },
+    {
+      "file": "pkt_2017-1-29_1485705509_log.pcap",
+      "sha256": "d15b49c66f7cc248338d2fcd150ea7469025957b659b5653b79ec39fb918599d",
+      "accepted": 447,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 867,
+        "duplicate-placement": 57,
+        "missing-dat-asset-or-cell": 316,
+        "non-world-namespace": 413,
+        "parented-or-contained": 3,
+        "repeated-observation": 655,
+        "unsupported-or-contained-description": 839,
+        "unsupported-or-unplaced-physics": 943,
+        "unsupported-visual-description": 411
+      }
+    },
+    {
+      "file": "pkt_2017-1-29_1485726704_log.pcap",
+      "sha256": "a2bbda4dcce080b5dd6ee2f5e8124e5680cbccc2ec3c0add30017653fbdaef0a",
+      "accepted": 4,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 86,
+        "missing-dat-asset-or-cell": 20,
+        "non-world-namespace": 55,
+        "repeated-observation": 31,
+        "unsupported-or-contained-description": 88,
+        "unsupported-or-unplaced-physics": 165,
+        "unsupported-visual-description": 72
+      }
+    },
+    {
+      "file": "pkt_2017-1-29_1485732337_log.pcap",
+      "sha256": "",
+      "accepted": 0,
+      "rejected": {
+        "unreadable-capture": "capture reassembly limit"
+      }
+    },
+    {
+      "file": "pkt_2017-1-30_1485831521_log.pcap",
+      "sha256": "efeaa49b321b8a86e4a24e9427664b971b878492e1bac3cac08207b6a4ce9e7d",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 17,
+        "non-world-namespace": 18,
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 73,
+        "unsupported-visual-description": 35
+      }
+    },
+    {
+      "file": "pkt_2017-1-30_1485833726_log.pcap",
+      "sha256": "32fcd6c14cfe55ed7ca8c33f230c786e469dcf40fee10aa957c86db3dc1d2d9a",
+      "accepted": 1,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 31,
+        "non-world-namespace": 39,
+        "repeated-observation": 2,
+        "unsupported-or-contained-description": 15,
+        "unsupported-or-unplaced-physics": 168,
+        "unsupported-visual-description": 62
+      }
+    },
+    {
+      "file": "pkt_2017-1-30_1485835552_log.pcap",
+      "sha256": "a2123a9f588eec8318f8630990fa8857973352ea148cb973e07001d5050294e4",
+      "accepted": 13,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 103,
+        "missing-dat-asset-or-cell": 4,
+        "non-world-namespace": 65,
+        "repeated-observation": 48,
+        "unsupported-or-contained-description": 60,
+        "unsupported-or-unplaced-physics": 356,
+        "unsupported-visual-description": 131
+      }
+    },
+    {
+      "file": "pkt_2017-1-21_1485040609_log.pcap",
+      "sha256": "51dc8331308563bc9cf1b40be4c66b9687c1788160a8b2d0793ac40a69cc996e",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-21_1485042774_log.pcap",
+      "sha256": "137967623130c7beef4571c6a01bf7628ba2439f99e7f26a61d0b27b64b0676a",
+      "accepted": 15,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 443,
+        "missing-dat-asset-or-cell": 116,
+        "non-world-namespace": 158,
+        "repeated-observation": 199,
+        "unsupported-or-contained-description": 427,
+        "unsupported-or-unplaced-physics": 385,
+        "unsupported-visual-description": 224
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485118876_log.pcap",
+      "sha256": "eb63601ca29cd3f6253634e3a35b5cca62cd109c7385eee8c170272c77dafd75",
+      "accepted": 23,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 307,
+        "missing-dat-asset-or-cell": 349,
+        "non-world-namespace": 117,
+        "repeated-observation": 900,
+        "unsupported-or-contained-description": 554,
+        "unsupported-or-unplaced-physics": 162,
+        "unsupported-visual-description": 140
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485169731_log.pcap",
+      "sha256": "cf7eaa313d6a7263d9cdebb3bb0a2664ed943d6801a1f4f731f8956b54be513f",
+      "accepted": 1,
+      "rejected": {
+        "missing-dat-asset-or-cell": 2,
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 1,
+        "unsupported-or-unplaced-physics": 17,
+        "unsupported-visual-description": 11
+      }
+    },
+    {
+      "file": "pkt_2017-1-24_1485238971_log.pcap",
+      "sha256": "a6c78a296c16aa5fa2a3b4cfc44ad38527089a2228dd905bcbe7e1f30da39a92",
+      "accepted": 109,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 48,
+        "missing-dat-asset-or-cell": 173,
+        "non-world-namespace": 4,
+        "parented-or-contained": 1,
+        "repeated-observation": 77,
+        "unsupported-or-contained-description": 103,
+        "unsupported-or-unplaced-physics": 150,
+        "unsupported-visual-description": 125
+      }
+    },
+    {
+      "file": "pkt_2017-1-26_1485415833_log.pcap",
+      "sha256": "92d11d6e2bddf30d3b0db8a3f44c10b8d5ff618b423ed39790415e53aa7aef1a",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 5,
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 4,
+        "unsupported-or-unplaced-physics": 25,
+        "unsupported-visual-description": 12
+      }
+    },
+    {
+      "file": "pkt_2017-1-26_1485419080_log.pcap",
+      "sha256": "0ae8b90f55985101895ad729e009914362b7b56e9311faa48b8593d921e5279d",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 3,
+        "non-world-namespace": 1,
+        "unsupported-or-contained-description": 4,
+        "unsupported-or-unplaced-physics": 25,
+        "unsupported-visual-description": 12
+      }
+    },
+    {
+      "file": "pkt_2017-1-26_1485489976_log.pcap",
+      "sha256": "faf21ae585c704e8904a2bfa24c5217eaf4d1dbacd16f49a98384bb03c5317e6",
+      "accepted": 22,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 524,
+        "missing-dat-asset-or-cell": 48,
+        "non-world-namespace": 56,
+        "repeated-observation": 193,
+        "unsupported-or-contained-description": 399,
+        "unsupported-or-unplaced-physics": 532,
+        "unsupported-visual-description": 169
+      }
+    },
+    {
+      "file": "pkt_2017-1-27_1485561192_log.pcap",
+      "sha256": "f03497c978b718ab9fa24182629c0aa23c7380c4011412a9d85a5ea6ad36ef3d",
+      "accepted": 1,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 94,
+        "missing-dat-asset-or-cell": 25,
+        "non-world-namespace": 20,
+        "unsupported-or-contained-description": 41,
+        "unsupported-or-unplaced-physics": 69,
+        "unsupported-visual-description": 17
+      }
+    },
+    {
+      "file": "pkt_2017-1-27_1485577982_log.pcap",
+      "sha256": "32f5aabd8e3bc35da263536443f2718c7e48d81d12b8aed2e4c73496d4c38375",
+      "accepted": 1,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 139,
+        "missing-dat-asset-or-cell": 17,
+        "non-world-namespace": 41,
+        "repeated-observation": 36,
+        "unsupported-or-contained-description": 68,
+        "unsupported-or-unplaced-physics": 134,
+        "unsupported-visual-description": 50
+      }
+    },
+    {
+      "file": "pkt_2017-1-29_1485706216_log.pcap",
+      "sha256": "c98553f3d3224ab0184d8f6194f45ab5c2b12daf2906ca41b3361eac3c4082a2",
+      "accepted": 6,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 265,
+        "missing-dat-asset-or-cell": 23,
+        "non-world-namespace": 151,
+        "repeated-observation": 90,
+        "unsupported-or-contained-description": 99,
+        "unsupported-or-unplaced-physics": 189,
+        "unsupported-visual-description": 98
+      }
+    },
+    {
+      "file": "pkt_2017-1-30_1485834778_log.pcap",
+      "sha256": "50afa03695137a266c1ab5262193fedb897c229e7ceeb200c2040d8d3b8528fc",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 7,
+        "non-world-namespace": 7,
+        "unsupported-or-contained-description": 7,
+        "unsupported-or-unplaced-physics": 89,
+        "unsupported-visual-description": 34
+      }
+    },
+    {
+      "file": "pkt_2017-1-30_1485838362_log.pcap",
+      "sha256": "0e054554f3c1b1c0b252b965efbe322223c927b7b7a23efd5b2f435b18278fdf",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 26,
+        "non-world-namespace": 33,
+        "unsupported-or-contained-description": 8,
+        "unsupported-or-unplaced-physics": 107,
+        "unsupported-visual-description": 46
+      }
+    },
+    {
+      "file": "pkt_2017-1-21_1485040629_log.pcap",
+      "sha256": "a62b3535b523ae93dcbeb813cd60e3a4a7546195ebb4f30fa55e581d0333a849",
+      "accepted": 10,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 718,
+        "missing-dat-asset-or-cell": 188,
+        "non-world-namespace": 189,
+        "repeated-observation": 379,
+        "unsupported-or-contained-description": 601,
+        "unsupported-or-unplaced-physics": 475,
+        "unsupported-visual-description": 310
+      }
+    },
+    {
+      "file": "pkt_2017-1-22_1485118592_log.pcap",
+      "sha256": "9f5c503c9ed348811c3edeed21cf517cecd1ed2edf46a9d70aa3228bd165cab7",
+      "accepted": 1,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 329,
+        "missing-dat-asset-or-cell": 349,
+        "non-world-namespace": 113,
+        "parented-or-contained": 2,
+        "repeated-observation": 906,
+        "unsupported-or-contained-description": 549,
+        "unsupported-or-unplaced-physics": 158,
+        "unsupported-visual-description": 165
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485155990_log.pcap",
+      "sha256": "3f5962de32cc6f23e6f86b072f6e8c6a4af183704c31cce5cbbcc96c4774fa37",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 8,
+        "missing-dat-asset-or-cell": 1,
+        "non-world-namespace": 3,
+        "unsupported-or-contained-description": 4,
+        "unsupported-or-unplaced-physics": 39,
+        "unsupported-visual-description": 32
+      }
+    },
+    {
+      "file": "pkt_2017-1-23_1485160837_log.pcap",
+      "sha256": "2177d8a1e78d66e86389b635da09f057c8bab74c3f77a5ace7fe0c802af2286f",
+      "accepted": 1,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 106,
+        "missing-dat-asset-or-cell": 18,
+        "non-world-namespace": 18,
+        "parented-or-contained": 9,
+        "repeated-observation": 38,
+        "unsupported-or-contained-description": 70,
+        "unsupported-or-unplaced-physics": 69,
+        "unsupported-visual-description": 107
+      }
+    },
+    {
+      "file": "pkt_2017-1-24_1485234575_log.pcap",
+      "sha256": "c6fae10a22bb33a3c3450d9965415fab2dc06aa507c9766df9ae80909cf17157",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 3,
+        "missing-dat-asset-or-cell": 1,
+        "non-world-namespace": 3,
+        "parented-or-contained": 1,
+        "unsupported-or-contained-description": 4,
+        "unsupported-or-unplaced-physics": 17,
+        "unsupported-visual-description": 16
+      }
+    },
+    {
+      "file": "pkt_2017-1-24_1485237209_log.pcap",
+      "sha256": "054b71467f2dfb03d304551da826cff9f4e8d86e0bf7512749b9061962202476",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 19,
+        "missing-dat-asset-or-cell": 3,
+        "non-world-namespace": 3,
+        "unsupported-or-contained-description": 10,
+        "unsupported-or-unplaced-physics": 45,
+        "unsupported-visual-description": 28
+      }
+    },
+    {
+      "file": "pkt_2017-1-26_1485408417_log.pcap",
+      "sha256": "e88981ae1d61c23cc18b52aec23d957fba3775bd63fdd1b930b429343e3da2ba",
+      "accepted": 3,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 78,
+        "missing-dat-asset-or-cell": 5,
+        "non-world-namespace": 4,
+        "repeated-observation": 8,
+        "unsupported-or-contained-description": 24,
+        "unsupported-or-unplaced-physics": 21,
+        "unsupported-visual-description": 50
+      }
+    },
+    {
+      "file": "pkt_2017-1-26_1485415816_log.pcap",
+      "sha256": "3192746215e2836dd9ba1877c3744d73db6c484444fc020aa1d0819152931baf",
+      "accepted": 0,
+      "rejected": {}
+    },
+    {
+      "file": "pkt_2017-1-27_1485494374_log.pcap",
+      "sha256": "bfffecf9336a8adf4cebb8884e56b7e2603882856c97e0d7a883d1776a2c0f32",
+      "accepted": 1,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 118,
+        "missing-dat-asset-or-cell": 6,
+        "non-world-namespace": 15,
+        "repeated-observation": 45,
+        "unsupported-or-contained-description": 92,
+        "unsupported-or-unplaced-physics": 93,
+        "unsupported-visual-description": 46
+      }
+    },
+    {
+      "file": "pkt_2017-1-27_1485500185_log.pcap",
+      "sha256": "d142a9e8c2f39bcec74e856361eb0815ad3c03bbc0a9f33517595b00bffdec4d",
+      "accepted": 6,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 527,
+        "missing-dat-asset-or-cell": 189,
+        "non-world-namespace": 49,
+        "repeated-observation": 198,
+        "unsupported-or-contained-description": 353,
+        "unsupported-or-unplaced-physics": 680,
+        "unsupported-visual-description": 279
+      }
+    },
+    {
+      "file": "pkt_2017-1-27_1485555779_log.pcap",
+      "sha256": "a2eb43b68c4f622adb8b42b743cea2c6b3a55414fd73797f2e715bc5ff70521b",
+      "accepted": 24,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 682,
+        "missing-dat-asset-or-cell": 229,
+        "non-world-namespace": 190,
+        "repeated-observation": 236,
+        "unsupported-or-contained-description": 406,
+        "unsupported-or-unplaced-physics": 679,
+        "unsupported-visual-description": 281
+      }
+    },
+    {
+      "file": "pkt_2017-1-29_1485728906_log.pcap",
+      "sha256": "c4a1054876dd8a1d2fbf21618be223779127e5e2dadf50d07246ad9b4e237433",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 4,
+        "missing-dat-asset-or-cell": 1,
+        "non-world-namespace": 2,
+        "unsupported-or-contained-description": 3,
+        "unsupported-or-unplaced-physics": 24,
+        "unsupported-visual-description": 21
+      }
+    },
+    {
+      "file": "pkt_2017-1-30_1485831459_log.pcap",
+      "sha256": "89a75c38cb9bdf91e8f1abbe72cf2fa9fd8a142f19fe50f19ab952f6f0f0e30e",
+      "accepted": 48,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 541,
+        "duplicate-placement": 44,
+        "missing-dat-asset-or-cell": 63,
+        "non-world-namespace": 458,
+        "repeated-observation": 572,
+        "unsupported-or-contained-description": 269,
+        "unsupported-or-unplaced-physics": 527,
+        "unsupported-visual-description": 386
+      }
+    },
+    {
+      "file": "pkt_2017-1-31_1485876968_log.pcap",
+      "sha256": "6dd5e9a0f42f84d41ea7feced41d4f0bc86d51ed1b3e16831bc5fa7b348f6aec",
+      "accepted": 0,
+      "rejected": {
+        "cell-covered-by-earlier-capture": 6,
+        "non-world-namespace": 22,
+        "unsupported-or-contained-description": 29,
+        "unsupported-or-unplaced-physics": 46,
+        "unsupported-visual-description": 27
+      }
     }
   ]
 }

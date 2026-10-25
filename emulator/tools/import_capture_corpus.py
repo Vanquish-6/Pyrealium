@@ -15,6 +15,8 @@ BASE = ROOT / "content" / "world.tsv"
 OUTPUT = ROOT / "content" / "capture-spawns.tsv"
 REPORT = ROOT / "content" / "capture-spawns-report.json"
 ROOTS = [
+    Path(r"C:\Users\chris\Downloads\ac2-dat-decompile\archives\retail2017"),
+    Path(r"C:\Users\chris\Downloads\ac2-dat-decompile\archives\extra"),
     Path(r"C:\Users\chris\Downloads\3 emu2012 (Newest from Odn)\Packets"),
     Path(r"C:\Users\chris\Downloads\2 PyrealSourceCode\PyrealSourceCode\Users\User3\packets"),
     Path(r"C:\Users\chris\Downloads\2 PyrealSourceCode\PyrealSourceCode\Users\Ancaritha\DisassembledPackets"),
