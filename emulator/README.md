@@ -341,7 +341,8 @@ An opt-in player HUD profile is available with
 `serve --initialize-ui true --game-data PATH` alongside the normal bind/account/data
 options. It requires the converted 7148 assets, emits UI_Load once after scene
 completion, and restores saved progression, skills, owned inventory, window
-settings and hotbar bindings. Saved training quests restore through the native
+settings, gameplay preferences (radar, shortcut height and damage-text range)
+and hotbar bindings. Saved training quests restore through the native
 journal; story and active-effect graphs remain empty.
 HUD initialization itself grants no items, skills, gold or progress. Separate
 training, encounter and binding profiles enable their authored grants and
@@ -362,7 +363,7 @@ view settings do not reconstruct the complete original population or progression
 Near a quartermaster, use `@shop`, `@buy potion`, `@buy weapon`,
 `@buy mushroom`, `@buy tallow`, or `@sell SLOT` (1-based bag position).
 Prices and stock are authored. Purchases/sales commit ownership and gold together;
-the native shop catalog and Buy button are wired, and inventory selling requires
+the native shop catalog, refresh request and Buy button are wired, and inventory selling requires
 a fresh nearby shop context. Tallow is sold as a 100-unit bundle. Consignment
 listing/escrow remains unfinished and is explicitly rejected without charging a fee.
 
@@ -385,6 +386,11 @@ name/level changes. Updates are admitted for every recipient before the sent-sta
 cache advances, so a busy connection can retry without silently missing a change;
 `@g MESSAGE` sends group chat. Original native group-chat routing, shared rewards
 and persistent groups are not implemented. Fresh two-client UI acceptance is pending.
+
+Queued player attacks are cancelled on disconnect or session replacement, with
+attack cooldowns retained. Stale socket cleanup cannot remove a newer session's
+avatar. If a queued strike loses its target or range, the player receives a
+reason instead of a silent stop. This does not establish full combat parity.
 
 ## Still missing before general players
 
