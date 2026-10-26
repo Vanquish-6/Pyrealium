@@ -927,8 +927,10 @@ fn quest_action(
         "potion claim" => Some(crate::quests::Command::ClaimPotion),
         "journey" => Some(crate::quests::Command::AcceptJourney),
         "journey claim" => Some(crate::quests::Command::ClaimJourney),
+        "skill" => Some(crate::quests::Command::AcceptSkill),
+        "skill claim" => Some(crate::quests::Command::ClaimSkill),
         "claim" => Some(crate::quests::Command::Claim),
-        _ => return Err(invalid("Use @quest for status; start, claim, supplies, potion, potion claim, journey or journey claim for lessons.")),
+        _ => return Err(invalid("Use @quest for status; start, claim, supplies, potion, potion claim, journey, journey claim, skill or skill claim for lessons.")),
     };
     if command.is_some() && (!saved.progression.alive() || peer.combat) {
         return Err(invalid(
@@ -969,6 +971,20 @@ fn quest_action(
     let updates = scene.player_stats(character, &state);
     peer.queue_ordered_batch(events)?;
     Ok(updates)
+}
+
+/// The objective carries no reward, so it is persisted after the cast's own record.
+fn credit_skill_practice(peer: &mut Peer, character: u64, store: &mut Store) -> io::Result<()> {
+    let saved = &store.characters[&character];
+    if saved.quests.skill_phase() != 1 || !saved.progression.alive() {
+        return Ok(());
+    }
+    let next = saved.quests.apply(&crate::quests::Command::UsedSkill).map_err(other)?;
+    let mut events = next.updates().map_err(other)?;
+    events.push(script::chat(&next.guidance(), 1).map_err(other)?);
+    peer.validate_scene_batch(&events)?;
+    store.quest_command(&peer.session.account, character, crate::quests::Command::UsedSkill)?;
+    peer.queue_ordered_batch(events)
 }
 
 enum HandChange {
@@ -1403,6 +1419,12 @@ fn use_training_mentor(
     }
     peer.admit_npc_dialogue(now)?;
     let book = &store.characters[&character].quests;
+    if book.skill_phase() != 0 {
+        return quest_action(peer, character, if book.skill_phase() == 2 { "skill claim" } else { "status" }, store, scene, Some(target));
+    }
+    if book.journey_phase() == 4 {
+        return quest_action(peer, character, "skill", store, scene, Some(target));
+    }
     if book.journey_phase() != 0 {
         return quest_action(peer, character, if book.journey_phase() == 3 { "journey claim" } else { "status" }, store, scene, Some(target));
     }
@@ -2878,6 +2900,8 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                         script::skill_finished(request_id)
                                                             .map_err(other)?,
                                                     ])?;
+                                                } else {
+                                                    credit_skill_practice(peer, character, &mut store)?;
                                                 }
                                                 return Ok(replies);
                                             }

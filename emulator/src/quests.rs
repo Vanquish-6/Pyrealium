@@ -20,8 +20,13 @@ pub const SUPPLIES_XP: u64 = 80;
 pub const SUPPLIES_GOLD: u32 = 6;
 pub const POTION_QUEST: u32 = 0x4000ff03;
 pub const JOURNEY_QUEST: u32 = 0x4000ff04;
+pub const SKILL_QUEST: u32 = 0x4000ff05;
+pub const SKILL_XP: u64 = 150;
+pub const SKILL_GOLD: u32 = 15;
 pub fn rewards(command: &Command) -> Vec<crate::progression::Command> {
-    if matches!(command, Command::Claim) {
+    if matches!(command, Command::ClaimSkill) {
+        vec![crate::progression::Command::AwardXp(SKILL_XP), crate::progression::Command::AwardGold(SKILL_GOLD)]
+    } else if matches!(command, Command::Claim) {
         vec![
             crate::progression::Command::AwardXp(REWARD_XP),
             crate::progression::Command::AwardGold(REWARD_GOLD),
@@ -50,6 +55,7 @@ pub struct Book {
     supplies: Option<bool>,
     potion: u8, // 0 absent, 1 accepted, 2 crafted, 3 rewarded
     journey: u8, // 0 absent, 1 accepted, 2 bound, 3 travelled, 4 rewarded
+    skill: u8, // 0 absent, 1 accepted, 2 used, 3 rewarded
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -66,6 +72,9 @@ pub enum Command {
     BoundLifestone,
     Travelled,
     ClaimJourney,
+    AcceptSkill,
+    UsedSkill,
+    ClaimSkill,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -104,6 +113,7 @@ impl Command {
             Self::ClaimSupplies => "s.c".into(),
             Self::AcceptPotion => "p.a".into(), Self::CraftedPotion => "p.f".into(), Self::ClaimPotion => "p.c".into(),
             Self::AcceptJourney => "j.a".into(), Self::BoundLifestone => "j.b".into(), Self::Travelled => "j.t".into(), Self::ClaimJourney => "j.c".into(),
+            Self::AcceptSkill => "u.a".into(), Self::UsedSkill => "u.f".into(), Self::ClaimSkill => "u.c".into(),
         }
     }
     pub fn decode(text: &str) -> Result<Self, QuestError> {
@@ -114,6 +124,7 @@ impl Command {
             "s.c" => Ok(Self::ClaimSupplies),
             "p.a" => Ok(Self::AcceptPotion), "p.f" => Ok(Self::CraftedPotion), "p.c" => Ok(Self::ClaimPotion),
             "j.a" => Ok(Self::AcceptJourney), "j.b" => Ok(Self::BoundLifestone), "j.t" => Ok(Self::Travelled), "j.c" => Ok(Self::ClaimJourney),
+            "u.a" => Ok(Self::AcceptSkill), "u.f" => Ok(Self::UsedSkill), "u.c" => Ok(Self::ClaimSkill),
             _ => {
                 let hex = text.strip_prefix("k,").ok_or(QuestError::InvalidRecord)?;
                 if hex.len() != 8 || !hex.bytes().all(|value| value.is_ascii_hexdigit()) {
@@ -136,6 +147,7 @@ impl Book {
     /// Shared player guidance for mentor speech, quest commands and the journal.
     /// The quest state and immutable rewards remain the persisted authored profile.
     pub fn guidance(&self) -> String {
+        if self.skill != 0 { return self.skill_guidance(); }
         if self.journey != 0 { return self.journey_guidance(); }
         if self.potion != 0 { return self.potion_guidance(); }
         if self.supplies.is_some() { return self.supplies_guidance(); }
@@ -188,6 +200,16 @@ impl Book {
             }
             Command::ClaimJourney => {
                 if self.journey != 3 { return Err(if self.journey == 4 { QuestError::AlreadyCompleted } else { QuestError::NotReady }); } next.journey = 4;
+            }
+            Command::AcceptSkill => {
+                if self.journey != 4 { return Err(QuestError::NotReady); }
+                if self.skill != 0 { return Err(QuestError::AlreadyAccepted); } next.skill = 1;
+            }
+            Command::UsedSkill => {
+                if self.skill != 1 { return Err(QuestError::NotReady); } next.skill = 2;
+            }
+            Command::ClaimSkill => {
+                if self.skill != 2 { return Err(if self.skill == 3 { QuestError::AlreadyCompleted } else { QuestError::NotReady }); } next.skill = 3;
             }
             Command::AcceptSupplies => {
                 if !self.training.is_some_and(|state| state.claimed) { return Err(QuestError::NotReady); }
@@ -254,13 +276,14 @@ impl Book {
     /// The gmQuestInfoList argument used by UI_Load for saved journal restoration.
     pub fn list_graph(&self) -> Result<Vec<u8>, WorldError> {
         let mut payload = Vec::new();
-        word(&mut payload, u32::from(self.training.is_some()) + u32::from(self.supplies.is_some()) + u32::from(self.potion != 0) + u32::from(self.journey != 0));
+        word(&mut payload, u32::from(self.training.is_some()) + u32::from(self.supplies.is_some()) + u32::from(self.potion != 0) + u32::from(self.journey != 0) + u32::from(self.skill != 0));
         if let Some(state) = self.training {
             payload.extend(info_payload(state, false)?);
         }
         if let Some(claimed) = self.supplies { payload.extend(supplies_payload(claimed, false)?); }
         if self.potion != 0 { payload.extend(self.lesson_payload(false, false)?); }
         if self.journey != 0 { payload.extend(self.lesson_payload(true, false)?); }
+        if self.skill != 0 { payload.extend(self.skill_payload(false)?); }
         Ok(native_graph(0xa1, &payload))
     }
 }
@@ -342,6 +365,12 @@ impl Book {
                 events.push(script::private_call(UPDATE, &args)?);
             }
         }
+        if self.skill != 0 {
+            let mut args = script::integer(0);
+            args.extend(native_graph(0xa0, &self.skill_payload(true)?));
+            args.extend(script::integer(if self.skill == 3 { COMPLETED } else { UNDERWAY }));
+            events.push(script::private_call(UPDATE, &args)?);
+        }
         Ok(events)
     }
 }
@@ -400,7 +429,7 @@ impl Book {
         match self.journey {
             2 => "A Safe Journey: your lifestone is bound. Leave combat and use a training portal, then speak to a training mentor at your destination.".into(),
             3 => "A Safe Journey: you bound a lifestone and used a training portal. Speak to a training mentor for 80 experience and 10 gold.".into(),
-            4 => "Training complete! You finished combat, supplies, potion crafting and safe travel. You received the final 80 experience and 10 gold. The outdoor hub connects all three racial starts; its mentors and quartermasters remain available.".into(),
+            4 => "A Safe Journey complete. You received 80 experience and 10 gold. Speak to a mentor again to begin Skill Practice, the final lesson.".into(),
             _ => "A Safe Journey: use a lifestone to bind it, then use a training portal. Leave combat before both actions. Speak to a mentor at your destination for 80 experience and 10 gold. Rebind now even if you bound a lifestone before accepting this lesson.".into(),
         }
     }
@@ -410,6 +439,27 @@ impl Book {
         } else { (POTION_QUEST, "Potion Practice", self.potion_guidance(), self.potion == 3) };
         let mut bytes = Vec::new(); word(&mut bytes, id);
         bytes.extend(world::literal_name(name)?); bytes.extend(world::literal_name(&text)?);
+        word(&mut bytes, ICON); word(&mut bytes, if claimed { COMPLETED } else { UNDERWAY });
+        word(&mut bytes, u32::from(!claimed)); bytes.extend(world::literal_name(&text)?); word(&mut bytes, 1);
+        bytes.extend((-1.0f64).to_le_bytes()); bytes.extend((-1.0f64).to_le_bytes()); word(&mut bytes, 0);
+        bytes.extend(0f64.to_le_bytes()); bytes.extend(0f64.to_le_bytes()); word(&mut bytes, u32::from(play_fx));
+        Ok(bytes)
+    }
+}
+impl Book {
+    pub fn skill_phase(&self) -> u8 { self.skill }
+    pub fn skill_guidance(&self) -> String {
+        match self.skill {
+            2 => format!("Skill Practice: you used an active skill. Leave combat and speak to a training mentor for {SKILL_XP} experience and {SKILL_GOLD} gold."),
+            3 => format!("Training complete! You finished combat, supplies, potion crafting, safe travel and skill use, and received the final {SKILL_XP} experience and {SKILL_GOLD} gold. The outdoor hub connects all three racial starts; its mentors and quartermasters remain available. Spend your experience in the skill panel and explore beyond the training grounds."),
+            _ => format!("Skill Practice: open the skill panel, train an active skill with your skill credits, drag it to your hotbar and use it. A healing skill on yourself, an attack skill on an Idol Spawn, or the Recall skill you gained by binding a lifestone all count. Then speak to a training mentor for {SKILL_XP} experience and {SKILL_GOLD} gold."),
+        }
+    }
+    fn skill_payload(&self, play_fx: bool) -> Result<Vec<u8>, WorldError> {
+        let text = self.skill_guidance();
+        let claimed = self.skill == 3;
+        let mut bytes = Vec::new(); word(&mut bytes, SKILL_QUEST);
+        bytes.extend(world::literal_name("Skill Practice")?); bytes.extend(world::literal_name(&text)?);
         word(&mut bytes, ICON); word(&mut bytes, if claimed { COMPLETED } else { UNDERWAY });
         word(&mut bytes, u32::from(!claimed)); bytes.extend(world::literal_name(&text)?); word(&mut bytes, 1);
         bytes.extend((-1.0f64).to_le_bytes()); bytes.extend((-1.0f64).to_le_bytes()); word(&mut bytes, 0);

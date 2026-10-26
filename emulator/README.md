@@ -551,6 +551,11 @@ share this explicit authored progression:
    authored training portal, then speak to a mentor at the destination for
    80 XP and 10 gold. Binding before acceptance and ordinary movement/recall
    do not complete the lesson.
+5. **Skill Practice**: after acceptance, successfully use any active skill
+   (a self heal, an attack skill on a creature, or the Recall skill granted by
+   binding), then speak to a mentor for 150 XP and 15 gold. This completes the
+   training chain. Journal revision `q5` saves acceptance, the use credit and
+   the once-only claim.
 
 The new `q4` revision saves lesson acceptance and once-only claims. `a3` saves
 a canonical two-ingredient crafting exchange with its objective credit; replay
