@@ -299,7 +299,10 @@ impl Store {
                     .map_or(1, |request| request.race),
             )
             .map_err(io::Error::other)?;
-        if character.binding == Some(placement)
+        let quests = if character.quests.journey_phase() == 1 {
+            character.quests.apply(&crate::quests::Command::BoundLifestone).map_err(io::Error::other)?
+        } else { character.quests.clone() };
+        if quests == character.quests && character.binding == Some(placement)
             && character
                 .skills
                 .get(crate::skills::LIFESTONE_RECALL)
@@ -307,10 +310,12 @@ impl Store {
         {
             return Ok(());
         }
-        self.append_record(&format!("l2\t{id}\t{}", encode_placement(placement)))?;
+        let revision = if quests != character.quests { "l3" } else { "l2" };
+        self.append_record(&format!("{revision}\t{id}\t{}", encode_placement(placement)))?;
         let character = self.characters.get_mut(&id).unwrap();
         character.binding = Some(placement);
         character.skills = skills;
+        character.quests = quests;
         Ok(())
     }
     pub fn ensure_lifestone_recall(&mut self, account: &str, id: u64) -> io::Result<bool> {
@@ -356,6 +361,18 @@ impl Store {
         self.append_record(&format!("p2\t{id}\t{}", encode_placement(placement)))?;
         self.positions.insert(id, placement);
         self.positions_dirty = true;
+        Ok(())
+    }
+    pub fn relocate_training_portal(&mut self, account: &str, id: u64, placement: Placement, portal: u64) -> io::Result<()> {
+        let character = self.characters.get(&id).filter(|c| c.account == account && !c.deleted && c.progression.alive()).ok_or_else(|| invalid("Travel requires an owned living character"))?;
+        if character.quests.journey_phase() != 2 || !crate::quests::is_training_portal(portal) {
+            return self.relocate(account, id, placement);
+        }
+        if !placement.valid() { return Err(invalid("Invalid training portal destination")); }
+        let quests = character.quests.apply(&crate::quests::Command::Travelled).map_err(io::Error::other)?;
+        self.append_record(&format!("p3\t{id}\t{portal:016x}\t{}", encode_placement(placement)))?;
+        self.characters.get_mut(&id).unwrap().quests = quests;
+        self.positions.insert(id, placement); self.positions_dirty = true;
         Ok(())
     }
     /// Binding must have passed world/cell validation before this transaction.
@@ -503,7 +520,7 @@ impl Store {
         id: u64,
         command: crate::quests::Command,
     ) -> io::Result<bool> {
-        if matches!(command, crate::quests::Command::Kill(_) | crate::quests::Command::ClaimSupplies) {
+        if matches!(command, crate::quests::Command::Kill(_) | crate::quests::Command::ClaimSupplies | crate::quests::Command::CraftedPotion | crate::quests::Command::BoundLifestone | crate::quests::Command::Travelled) {
             return Err(invalid("quest completion requires its authoritative reward transaction"));
         }
         let character = self
@@ -519,7 +536,11 @@ impl Store {
         for reward in crate::quests::rewards(&command) {
             progression = progression.apply(&reward).map_err(io::Error::other)?;
         }
-        let revision = if matches!(command, crate::quests::Command::AcceptSupplies) { "q3" } else { "q1" };
+        let revision = match command {
+            crate::quests::Command::AcceptSupplies => "q3",
+            crate::quests::Command::AcceptPotion | crate::quests::Command::ClaimPotion | crate::quests::Command::AcceptJourney | crate::quests::Command::ClaimJourney => "q4",
+            _ => "q1",
+        };
         self.append_record(&format!("{revision}\t{id}\t{}", command.encode()))?;
         let character = self.characters.get_mut(&id).unwrap();
         character.quests = quests;
@@ -607,13 +628,14 @@ impl Store {
         items: &[crate::inventory::Command],
         changes: &[crate::progression::Command],
     ) -> io::Result<()> {
-        self.player_transaction_quest(account, id, items, changes, false)
+        self.player_transaction_quest(account, id, items, changes, false, false)
     }
     pub fn player_transaction_quest(
         &mut self, account: &str, id: u64,
         items: &[crate::inventory::Command], changes: &[crate::progression::Command],
-        supplies: bool,
+        supplies: bool, practice: bool,
     ) -> io::Result<()> {
+        if supplies && practice { return Err(invalid("Multiple quest exchanges in one transaction")); }
         let character = self
             .characters
             .get(&id)
@@ -637,8 +659,11 @@ impl Store {
         let quests = if supplies {
             if !character.progression.alive() { return Err(invalid("Supply exchange requires a living player")); }
             crate::quests::validate_supplies_exchange(&character.quests, &character.inventory, items, changes, first.ok_or_else(|| invalid("Missing supply output identity"))?)?
+        } else if practice {
+            if !character.progression.alive() { return Err(invalid("Crafting requires a living owner")); }
+            crate::quests::validate_practice_craft(&character.quests, &character.inventory, items, changes, first.ok_or_else(|| invalid("Missing craft output identity"))?)?
         } else { character.quests.clone() };
-        let revision = if supplies { "a2" } else { "a1" };
+        let revision = if supplies { "a2" } else if practice { "a3" } else { "a1" };
         self.append_record(&format!(
             "{revision}\t{id}\t{}\t{}",
             crate::player_transaction::encode_items(items),
@@ -1218,13 +1243,14 @@ fn decode_journal_collect(
                 output.push(line.to_owned());
             }
         }
-        if fields.len() == 3 && matches!(fields[0], "q1" | "q3") {
+        if fields.len() == 3 && matches!(fields[0], "q1" | "q3" | "q4") {
             let id = fields[1]
                 .parse::<u64>()
                 .map_err(|_| invalid("invalid quest owner"))?;
             let command = crate::quests::Command::decode(fields[2]).map_err(io::Error::other)?;
             if !(fields[0] == "q1" && matches!(command, crate::quests::Command::Accept | crate::quests::Command::Claim)
-                || fields[0] == "q3" && matches!(command, crate::quests::Command::AcceptSupplies)) {
+                || fields[0] == "q3" && matches!(command, crate::quests::Command::AcceptSupplies)
+                || fields[0] == "q4" && matches!(command, crate::quests::Command::AcceptPotion | crate::quests::Command::ClaimPotion | crate::quests::Command::AcceptJourney | crate::quests::Command::ClaimJourney)) {
                 return Err(invalid("quest command does not match its journal revision"));
             }
             let character = records
@@ -1366,7 +1392,17 @@ fn decode_journal_collect(
             character.progression = progression;
             continue;
         }
-        if fields.len() == 3 && matches!(fields[0], "l1" | "l2" | "p1" | "p2" | "r2") {
+        if fields.len() == 4 && fields[0] == "p3" {
+            let id = fields[1].parse::<u64>().map_err(|_| invalid("Invalid travel lesson owner"))?;
+            let portal = u64::from_str_radix(fields[2], 16).map_err(|_| invalid("Invalid training portal identity"))?;
+            if !crate::quests::is_training_portal(portal) { return Err(invalid("Travel lesson portal is not enabled")); }
+            let placement = decode_placement(fields[3])?;
+            let character = records.get_mut(&id).filter(|c| !c.deleted && c.progression.alive()).ok_or_else(|| invalid("Unavailable travel lesson owner"))?;
+            character.quests = character.quests.apply(&crate::quests::Command::Travelled).map_err(io::Error::other)?;
+            relocations.insert(id, (revision, placement));
+            continue;
+        }
+        if fields.len() == 3 && matches!(fields[0], "l1" | "l2" | "l3" | "p1" | "p2" | "r2") {
             let id = fields[1]
                 .parse::<u64>()
                 .map_err(|_| invalid("invalid lifestone character"))?;
@@ -1375,12 +1411,13 @@ fn decode_journal_collect(
                 .get_mut(&id)
                 .filter(|character| !character.deleted)
                 .ok_or_else(|| invalid("unavailable lifestone character"))?;
-            if matches!(fields[0], "l1" | "l2") {
+            if matches!(fields[0], "l1" | "l2" | "l3") {
                 if !character.progression.alive() {
                     return Err(invalid("dead character binding"));
                 }
+                if fields[0] == "l3" { character.quests = character.quests.apply(&crate::quests::Command::BoundLifestone).map_err(io::Error::other)?; }
                 character.binding = Some(placement);
-                if fields[0] == "l2" {
+                if matches!(fields[0], "l2" | "l3") {
                     character.skills = character
                         .skills
                         .with_lifestone_recall(
@@ -1628,7 +1665,7 @@ fn decode_journal_collect(
             character.progression = progression;
             continue;
         }
-        if fields.len() == 4 && matches!(fields[0], "a1" | "a2") {
+        if fields.len() == 4 && matches!(fields[0], "a1" | "a2" | "a3") {
             let id = fields[1]
                 .parse::<u64>()
                 .map_err(|_| invalid("invalid transaction owner"))?;
@@ -1661,6 +1698,10 @@ fn decode_journal_collect(
             if fields[0] == "a2" {
                 if !character.progression.alive() { return Err(invalid("Dead supply exchange owner")); }
                 character.quests = crate::quests::validate_supplies_exchange(&character.quests, &character.inventory, &items, &changes, first.ok_or_else(|| invalid("Missing supply output identity"))?)?;
+            }
+            if fields[0] == "a3" {
+                if !character.progression.alive() { return Err(invalid("Dead practice craft owner")); }
+                character.quests = crate::quests::validate_practice_craft(&character.quests, &character.inventory, &items, &changes, first.ok_or_else(|| invalid("Missing craft output identity"))?)?;
             }
             character.inventory = inventory;
             character.progression = progression;

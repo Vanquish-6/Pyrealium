@@ -220,3 +220,15 @@ use passwords of 12-128 characters and the local account service started by
 `emulator/Start-Server.ps1`. See [the launcher guide](launcher/README.md).
 These changes are compile-checked; fresh native deletion and password sign-in
 acceptance remain pending.
+
+### Native training dialogue and remaining lessons
+
+Mentors now open the build-7148 native text window with an OK button. The
+authored training chain for Human, Lugian and Tumerok is Training Grounds,
+Field Supplies, Potion Practice, then A Safe Journey. Crafting, binding and
+portal objectives are credited by the corresponding server transactions;
+quest rewards are once-only and all four journal entries restore from saves.
+See [the training progression guide](emulator/README.md). This is development
+content; original racial quest scripts and a generic branching conversation
+protocol have not been recovered. Compile/build/startup checks do not establish
+fresh native rendering or a completed per-race player walkthrough.

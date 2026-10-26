@@ -534,3 +534,32 @@ and mentor dialogue openings are limited to one per second per session. Shop
 interactions keep their dedicated shop panel. The retained quest captures and
 7148 code do not establish a generic branching-choice response protocol.
 Native window rendering and mouse-look restoration require player acceptance.
+
+### Four-lesson training progression for every supported race
+
+Use a mentor after each completed lesson to claim its reward, then use the
+mentor again to accept the next lesson. Human, Lugian and Tumerok characters
+share this explicit authored progression:
+
+1. **Training Grounds**: defeat three Idol Spawn, then claim 120 XP and 10 gold.
+2. **Field Supplies**: deliver one Mucor Mushroom and a full 100-unit Tallow
+   bundle for a health potion, 80 XP and 6 gold.
+3. **Potion Practice**: after acceptance, craft a health or vigor potion through
+   the crafting panel, then claim 80 XP and 8 gold. A bought or granted potion
+   does not count; the crafted potion remains yours.
+4. **A Safe Journey**: after acceptance, bind or rebind a lifestone, use an
+   authored training portal, then speak to a mentor at the destination for
+   80 XP and 10 gold. Binding before acceptance and ordinary movement/recall
+   do not complete the lesson.
+
+The new `q4` revision saves lesson acceptance and once-only claims. `a3` saves
+a canonical two-ingredient crafting exchange with its objective credit; replay
+revalidates the ingredients, output and allocation. `l3` saves a lifestone bind,
+recall skill and travel-lesson credit together, including rebinding the same
+stone. `p3` saves a recognized training portal movement with travel credit.
+Historical record meanings and rewards are unchanged. All four journal entries
+restore from the save; skill-credit refresh accompanies level-changing rewards.
+
+These four lessons are development content, not recovered original racial
+quest scripts. Source compilation is distinct from native crafting/window,
+quest journal, collision and complete per-race player acceptance.

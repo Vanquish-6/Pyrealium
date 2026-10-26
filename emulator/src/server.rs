@@ -338,14 +338,17 @@ fn use_portal(
         return Err(invalid("Move within four meters of the portal."));
     }
     let prepared = prepare_forced_move(peer, character, route.destination, scene, bootstrap)?;
-    let events = vec![
+    let mut events = vec![
         crate::ui::portal_used(character, target, route.destination, distance.sqrt() as f32)
             .map_err(other)?,
         prepared.wire,
         script::private_call(script::COMBAT_STATE, &script::integer(0)).map_err(other)?,
     ];
+    if saved.quests.journey_phase() == 2 && crate::quests::is_training_portal(target) {
+        events.extend(saved.quests.apply(&crate::quests::Command::Travelled).map_err(other)?.updates().map_err(other)?);
+    }
     peer.validate_scene_batch(&events)?;
-    store.relocate(&peer.session.account, character, route.destination)?;
+    store.relocate_training_portal(&peer.session.account, character, route.destination, target)?;
     if let Some(runtime) = encounters {
         runtime.stop(character);
     }
@@ -829,8 +832,12 @@ fn quest_action(
         "" | "status" => None,
         "start" => Some(crate::quests::Command::Accept),
         "supplies" => Some(crate::quests::Command::AcceptSupplies),
+        "potion" => Some(crate::quests::Command::AcceptPotion),
+        "potion claim" => Some(crate::quests::Command::ClaimPotion),
+        "journey" => Some(crate::quests::Command::AcceptJourney),
+        "journey claim" => Some(crate::quests::Command::ClaimJourney),
         "claim" => Some(crate::quests::Command::Claim),
-        _ => return Err(invalid("Use @quest, @quest start, @quest supplies, or @quest claim.")),
+        _ => return Err(invalid("Use @quest for status; start, claim, supplies, potion, potion claim, journey or journey claim for lessons.")),
     };
     if command.is_some() && (!saved.progression.alive() || peer.combat) {
         return Err(invalid(
@@ -1063,13 +1070,13 @@ fn item_service_transaction(
     scene: &mut crate::scene::Scene,
     metadata: &BTreeMap<u32, Option<crate::inventory_request::Metadata>>,
 ) -> io::Result<Vec<crate::scene::Delivery>> {
-    item_service_transaction_quest(peer, character, items, changes, completion, store, scene, metadata, false)
+    item_service_transaction_quest(peer, character, items, changes, completion, store, scene, metadata, false, false)
 }
 fn item_service_transaction_quest(
     peer: &mut Peer, character: u64,
     items: &[crate::inventory::Command], changes: &[crate::progression::Command],
     mut completion: Vec<Vec<u8>>, store: &mut Store, scene: &mut crate::scene::Scene,
-    metadata: &BTreeMap<u32, Option<crate::inventory_request::Metadata>>, supplies: bool,
+    metadata: &BTreeMap<u32, Option<crate::inventory_request::Metadata>>, supplies: bool, practice: bool,
 ) -> io::Result<Vec<crate::scene::Delivery>> {
     let saved = &store.characters[&character];
     if !scene.can_observe(character, character) || !saved.progression.alive() || peer.combat {
@@ -1146,8 +1153,13 @@ fn item_service_transaction_quest(
         let next = crate::quests::validate_supplies_exchange(&saved.quests, &saved.inventory, items, changes, first.ok_or_else(|| invalid("Missing supply reward identity"))?)?;
         events.extend(next.updates().map_err(other)?);
     }
+    if practice {
+        let next = crate::quests::validate_practice_craft(&saved.quests, &saved.inventory, items, changes, first.ok_or_else(|| invalid("Missing practice craft output identity"))?)?;
+        events.extend(next.updates().map_err(other)?);
+        events.push(script::chat(&next.potion_guidance(), 1).map_err(other)?);
+    }
     peer.validate_scene_batch(&events)?;
-    store.player_transaction_quest(&peer.session.account, character, items, changes, supplies)?;
+    store.player_transaction_quest(&peer.session.account, character, items, changes, supplies, practice)?;
     for item in removed {
         scene.inventory_removed(character, item).map_err(other)?;
     }
@@ -1300,6 +1312,18 @@ fn use_training_mentor(
     }
     peer.admit_npc_dialogue(now)?;
     let book = &store.characters[&character].quests;
+    if book.journey_phase() != 0 {
+        return quest_action(peer, character, if book.journey_phase() == 3 { "journey claim" } else { "status" }, store, scene, Some(target));
+    }
+    if book.potion_phase() == 3 {
+        return quest_action(peer, character, "journey", store, scene, Some(target));
+    }
+    if book.potion_phase() != 0 {
+        return quest_action(peer, character, if book.potion_phase() == 2 { "potion claim" } else { "status" }, store, scene, Some(target));
+    }
+    if book.supplies() == Some(true) {
+        return quest_action(peer, character, "potion", store, scene, Some(target));
+    }
     if book.get().is_some_and(|state| state.claimed) {
         if book.supplies().is_none() {
             return quest_action(peer, character, "supplies", store, scene, Some(target));
@@ -1309,7 +1333,7 @@ fn use_training_mentor(
                 let changes = crate::quests::rewards(&crate::quests::Command::ClaimSupplies);
                 let next = book.apply(&crate::quests::Command::ClaimSupplies).map_err(other)?;
                 let events = mentor_interaction_events(character, target, scene, &next.guidance())?;
-                return item_service_transaction_quest(peer, character, &items, &changes, events, store, scene, metadata, true);
+                return item_service_transaction_quest(peer, character, &items, &changes, events, store, scene, metadata, true, false);
             }
         }
     }
@@ -1472,8 +1496,8 @@ fn craft_item(
         )
         .map_err(other)?,
     ];
-    let updates =
-        item_service_transaction(peer, character, &items, &[], events, store, scene, metadata)?;
+    let practice = saved.quests.potion_phase() == 1;
+    let updates = item_service_transaction_quest(peer, character, &items, &[], events, store, scene, metadata, false, practice)?;
     peer.last_inventory_ms = Some(now);
     Ok(updates)
 }
@@ -2909,7 +2933,10 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                                 .map_or(1, |request| request.race),
                                                         )
                                                         .map_err(other)?;
-                                                    let events = vec![crate::ui::skill_update(crate::skills::LIFESTONE_RECALL,skills.get(crate::skills::LIFESTONE_RECALL).unwrap()).map_err(other)?,crate::ui::lifestone_bound(character,request.item,player).map_err(other)?,script::chat("You are bound to this lifestone. Recall is available in your skill list; @recall also returns under development travel rules.",1).map_err(other)?];
+                                                    let mut events = vec![crate::ui::skill_update(crate::skills::LIFESTONE_RECALL,skills.get(crate::skills::LIFESTONE_RECALL).unwrap()).map_err(other)?,crate::ui::lifestone_bound(character,request.item,player).map_err(other)?,script::chat("You are bound to this lifestone. Recall is available in your skill list; @recall also returns under development travel rules.",1).map_err(other)?];
+                                                    if saved.quests.journey_phase() == 1 {
+                                                        events.extend(saved.quests.apply(&crate::quests::Command::BoundLifestone).map_err(other)?.updates().map_err(other)?);
+                                                    }
                                                     peer.validate_scene_batch(&events)?;
                                                     store.bind_lifestone(
                                                         &peer.session.account,

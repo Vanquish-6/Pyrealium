@@ -14,7 +14,7 @@ pub fn greeting(race: u32, book: &Book) -> String {
 }
 pub fn topic(value: &str, race: u32, book: &Book) -> Option<String> {
     Some(match value.trim().to_ascii_lowercase().as_str() {
-        "" | "help" => "I can help with gear, combat, healing, supplies, crafting and travel. Ask @mentor followed by one of those topics. Use me normally to accept the next lesson or deliver a completed objective. Your journal keeps both lessons across logins.".into(),
+        "" | "help" => "I can help with gear, combat, healing, supplies, crafting and travel. Ask @mentor followed by one of those topics. Use me normally to accept the next lesson or deliver a completed objective. Your journal keeps all four lessons across logins.".into(),
         "quest" | "quests" => book.guidance(),
         "gear" => format!("Your {} starter weapons are in your bag and your starter clothing is already worn. Drag a weapon to its equipment slot, or use it from your bag. Drag it back into your bag to unequip. Keep your racial starter gear; the quartermaster also sells a development training weapon.", race_name(race)),
         "combat" => "Equip a starter weapon, select an Idol Spawn, and use your attack or a trained starter attack skill. Stay in range and watch your health and vigor. Defeat three Idol Spawn for Training Grounds, leave combat, then use me to claim the reward.".into(),

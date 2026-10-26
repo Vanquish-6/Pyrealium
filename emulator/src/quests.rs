@@ -18,6 +18,8 @@ pub const REWARD_GOLD: u32 = 10;
 pub const SUPPLIES_QUEST: u32 = 0x4000ff02;
 pub const SUPPLIES_XP: u64 = 80;
 pub const SUPPLIES_GOLD: u32 = 6;
+pub const POTION_QUEST: u32 = 0x4000ff03;
+pub const JOURNEY_QUEST: u32 = 0x4000ff04;
 pub fn rewards(command: &Command) -> Vec<crate::progression::Command> {
     if matches!(command, Command::Claim) {
         vec![
@@ -26,6 +28,8 @@ pub fn rewards(command: &Command) -> Vec<crate::progression::Command> {
         ]
     } else if matches!(command, Command::ClaimSupplies) {
         vec![crate::progression::Command::AwardXp(SUPPLIES_XP), crate::progression::Command::AwardGold(SUPPLIES_GOLD)]
+    } else if matches!(command, Command::ClaimPotion | Command::ClaimJourney) {
+        vec![crate::progression::Command::AwardXp(80), crate::progression::Command::AwardGold(if matches!(command, Command::ClaimPotion) { 8 } else { 10 })]
     } else {
         Vec::new()
     }
@@ -44,6 +48,8 @@ pub struct Progress {
 pub struct Book {
     training: Option<Progress>,
     supplies: Option<bool>,
+    potion: u8, // 0 absent, 1 accepted, 2 crafted, 3 rewarded
+    journey: u8, // 0 absent, 1 accepted, 2 bound, 3 travelled, 4 rewarded
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -53,6 +59,13 @@ pub enum Command {
     Claim,
     AcceptSupplies,
     ClaimSupplies,
+    AcceptPotion,
+    CraftedPotion,
+    ClaimPotion,
+    AcceptJourney,
+    BoundLifestone,
+    Travelled,
+    ClaimJourney,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -89,6 +102,8 @@ impl Command {
             Self::Claim => "c".into(),
             Self::AcceptSupplies => "s.a".into(),
             Self::ClaimSupplies => "s.c".into(),
+            Self::AcceptPotion => "p.a".into(), Self::CraftedPotion => "p.f".into(), Self::ClaimPotion => "p.c".into(),
+            Self::AcceptJourney => "j.a".into(), Self::BoundLifestone => "j.b".into(), Self::Travelled => "j.t".into(), Self::ClaimJourney => "j.c".into(),
         }
     }
     pub fn decode(text: &str) -> Result<Self, QuestError> {
@@ -97,6 +112,8 @@ impl Command {
             "c" => Ok(Self::Claim),
             "s.a" => Ok(Self::AcceptSupplies),
             "s.c" => Ok(Self::ClaimSupplies),
+            "p.a" => Ok(Self::AcceptPotion), "p.f" => Ok(Self::CraftedPotion), "p.c" => Ok(Self::ClaimPotion),
+            "j.a" => Ok(Self::AcceptJourney), "j.b" => Ok(Self::BoundLifestone), "j.t" => Ok(Self::Travelled), "j.c" => Ok(Self::ClaimJourney),
             _ => {
                 let hex = text.strip_prefix("k,").ok_or(QuestError::InvalidRecord)?;
                 if hex.len() != 8 || !hex.bytes().all(|value| value.is_ascii_hexdigit()) {
@@ -119,6 +136,8 @@ impl Book {
     /// Shared player guidance for mentor speech, quest commands and the journal.
     /// The quest state and immutable rewards remain the persisted authored profile.
     pub fn guidance(&self) -> String {
+        if self.journey != 0 { return self.journey_guidance(); }
+        if self.potion != 0 { return self.potion_guidance(); }
         if self.supplies.is_some() { return self.supplies_guidance(); }
         match self.training {
             None => "Speak to a training mentor to begin Training Grounds, or use @quest start.".into(),
@@ -146,6 +165,30 @@ impl Book {
         }
         let mut next = self.clone();
         match command {
+            Command::AcceptPotion => {
+                if self.supplies != Some(true) { return Err(QuestError::NotReady); }
+                if self.potion != 0 { return Err(QuestError::AlreadyAccepted); }
+                next.potion = 1;
+            }
+            Command::CraftedPotion => {
+                if self.potion != 1 { return Err(QuestError::NotReady); } next.potion = 2;
+            }
+            Command::ClaimPotion => {
+                if self.potion != 2 { return Err(if self.potion == 3 { QuestError::AlreadyCompleted } else { QuestError::NotReady }); } next.potion = 3;
+            }
+            Command::AcceptJourney => {
+                if self.potion != 3 { return Err(QuestError::NotReady); }
+                if self.journey != 0 { return Err(QuestError::AlreadyAccepted); } next.journey = 1;
+            }
+            Command::BoundLifestone => {
+                if self.journey != 1 { return Err(QuestError::NotReady); } next.journey = 2;
+            }
+            Command::Travelled => {
+                if self.journey != 2 { return Err(QuestError::NotReady); } next.journey = 3;
+            }
+            Command::ClaimJourney => {
+                if self.journey != 3 { return Err(if self.journey == 4 { QuestError::AlreadyCompleted } else { QuestError::NotReady }); } next.journey = 4;
+            }
             Command::AcceptSupplies => {
                 if !self.training.is_some_and(|state| state.claimed) { return Err(QuestError::NotReady); }
                 if self.supplies.is_some() { return Err(QuestError::AlreadyAccepted); }
@@ -211,11 +254,13 @@ impl Book {
     /// The gmQuestInfoList argument used by UI_Load for saved journal restoration.
     pub fn list_graph(&self) -> Result<Vec<u8>, WorldError> {
         let mut payload = Vec::new();
-        word(&mut payload, u32::from(self.training.is_some()) + u32::from(self.supplies.is_some()));
+        word(&mut payload, u32::from(self.training.is_some()) + u32::from(self.supplies.is_some()) + u32::from(self.potion != 0) + u32::from(self.journey != 0));
         if let Some(state) = self.training {
             payload.extend(info_payload(state, false)?);
         }
         if let Some(claimed) = self.supplies { payload.extend(supplies_payload(claimed, false)?); }
+        if self.potion != 0 { payload.extend(self.lesson_payload(false, false)?); }
+        if self.journey != 0 { payload.extend(self.lesson_payload(true, false)?); }
         Ok(native_graph(0xa1, &payload))
     }
 }
@@ -258,7 +303,7 @@ fn info_payload(state: Progress, play_fx: bool) -> Result<Vec<u8>, WorldError> {
     word(&mut bytes, ICON);
     word(&mut bytes, status(state));
     word(&mut bytes, if state.claimed { 0 } else { 1 });
-    let entry = Book { training: Some(state), supplies: None }.guidance();
+    let entry = Book { training: Some(state), ..Book::default() }.guidance();
     bytes.extend(world::literal_name(&entry)?);
     word(&mut bytes, 1); // Authored challenge level.
     bytes.extend((-1.0f64).to_le_bytes()); // Unset bestowal timestamp, native Clear sentinel.
@@ -274,7 +319,7 @@ impl Book {
     pub fn supplies(&self) -> Option<bool> { self.supplies }
     pub fn supplies_guidance(&self) -> String {
         if self.supplies == Some(true) {
-            "Field Supplies complete. You received a health potion, 80 experience and 6 gold. Use the crafting panel to combine a Mucor Mushroom and 100 Tallow into a health or vigor potion. The outdoor hub has portals back to each racial start.".into()
+            "Field Supplies complete. You received a health potion, 80 experience and 6 gold. Use the crafting panel to combine a Mucor Mushroom and 100 Tallow into a health or vigor potion. Speak to a mentor again to begin Potion Practice.".into()
         } else {
             "Field Supplies: bring one Mucor Mushroom and one full 100-unit Tallow bundle to a training mentor. Buy them from the quartermaster for 2 gold each and keep them in your bag. Your reward is a health potion, 80 experience and 6 gold.".into()
         }
@@ -288,6 +333,15 @@ impl Book {
             args.extend(script::integer(if claimed { COMPLETED } else { UNDERWAY }));
             events.push(script::private_call(UPDATE, &args)?);
         }
+        for journey in [false, true] {
+            if if journey { self.journey != 0 } else { self.potion != 0 } {
+                let mut args = script::integer(0);
+                args.extend(native_graph(0xa0, &self.lesson_payload(journey, true)?));
+                let claimed = if journey { self.journey == 4 } else { self.potion == 3 };
+                args.extend(script::integer(if claimed { COMPLETED } else { UNDERWAY }));
+                events.push(script::private_call(UPDATE, &args)?);
+            }
+        }
         Ok(events)
     }
 }
@@ -299,7 +353,7 @@ fn supplies_payload(claimed: bool, play_fx: bool) -> Result<Vec<u8>, WorldError>
     word(&mut bytes, ICON);
     word(&mut bytes, if claimed { COMPLETED } else { UNDERWAY });
     word(&mut bytes, u32::from(!claimed));
-    bytes.extend(world::literal_name(&Book { training: None, supplies: Some(claimed) }.supplies_guidance())?);
+    bytes.extend(world::literal_name(&Book { supplies: Some(claimed), ..Book::default() }.supplies_guidance())?);
     word(&mut bytes, 1);
     bytes.extend((-1.0f64).to_le_bytes()); bytes.extend((-1.0f64).to_le_bytes());
     word(&mut bytes, 0); bytes.extend(0f64.to_le_bytes()); bytes.extend(0f64.to_le_bytes());
@@ -330,4 +384,54 @@ pub fn validate_supplies_exchange(book: &Book, bag: &crate::inventory::Inventory
         return Err(io::Error::other("Invalid Field Supplies exchange."));
     }
     Ok(next)
+}
+
+impl Book {
+    pub fn potion_phase(&self) -> u8 { self.potion }
+    pub fn journey_phase(&self) -> u8 { self.journey }
+    pub fn potion_guidance(&self) -> String {
+        match self.potion {
+            2 => "Potion Practice: you crafted a potion. Return to a training mentor for 80 experience and 8 gold. You keep your potion.".into(),
+            3 => "Potion Practice complete. You received 80 experience and 8 gold. Speak to a mentor again to begin A Safe Journey.".into(),
+            _ => "Potion Practice: buy a Mucor Mushroom and a 100-unit Tallow bundle, then use the crafting panel to create a health or vigor potion. Bought potions do not count. Return to a mentor after crafting for 80 experience and 8 gold.".into(),
+        }
+    }
+    pub fn journey_guidance(&self) -> String {
+        match self.journey {
+            2 => "A Safe Journey: your lifestone is bound. Leave combat and use a training portal, then speak to a training mentor at your destination.".into(),
+            3 => "A Safe Journey: you bound a lifestone and used a training portal. Speak to a training mentor for 80 experience and 10 gold.".into(),
+            4 => "Training complete! You finished combat, supplies, potion crafting and safe travel. You received the final 80 experience and 10 gold. The outdoor hub connects all three racial starts; its mentors and quartermasters remain available.".into(),
+            _ => "A Safe Journey: use a lifestone to bind it, then use a training portal. Leave combat before both actions. Speak to a mentor at your destination for 80 experience and 10 gold. Rebind now even if you bound a lifestone before accepting this lesson.".into(),
+        }
+    }
+    fn lesson_payload(&self, journey: bool, play_fx: bool) -> Result<Vec<u8>, WorldError> {
+        let (id, name, text, claimed) = if journey {
+            (JOURNEY_QUEST, "A Safe Journey", self.journey_guidance(), self.journey == 4)
+        } else { (POTION_QUEST, "Potion Practice", self.potion_guidance(), self.potion == 3) };
+        let mut bytes = Vec::new(); word(&mut bytes, id);
+        bytes.extend(world::literal_name(name)?); bytes.extend(world::literal_name(&text)?);
+        word(&mut bytes, ICON); word(&mut bytes, if claimed { COMPLETED } else { UNDERWAY });
+        word(&mut bytes, u32::from(!claimed)); bytes.extend(world::literal_name(&text)?); word(&mut bytes, 1);
+        bytes.extend((-1.0f64).to_le_bytes()); bytes.extend((-1.0f64).to_le_bytes()); word(&mut bytes, 0);
+        bytes.extend(0f64.to_le_bytes()); bytes.extend(0f64.to_le_bytes()); word(&mut bytes, u32::from(play_fx));
+        Ok(bytes)
+    }
+}
+pub fn is_training_portal(id: u64) -> bool {
+    matches!(id, 0x8140000000030002 | 0x8140000000030004 | 0x8140000000030005 | 0x8140000000030022 | 0x8140000000030025 | 0x8140000000030030 | 0x8140000000030031)
+}
+/// The a3 revision credits only a genuine canonical crafting exchange. Shop
+/// purchases, potion grants and reward exchanges cannot advance this lesson.
+pub fn validate_practice_craft(book: &Book, bag: &crate::inventory::Inventory, items: &[crate::inventory::Command], changes: &[crate::progression::Command], first: u64) -> io::Result<Book> {
+    use crate::inventory::Command as ItemCommand;
+    let bad = || io::Error::other("Invalid Potion Practice craft transaction.");
+    let [ItemCommand::ConsumeDense { item: mushroom }, ItemCommand::ConsumeStackDense { item: tallow, quantity }, ItemCommand::Grant(output)] = items else { return Err(bad()); };
+    if *quantity != crate::crafting::TALLOW_QUANTITY || !changes.is_empty() { return Err(bad()); }
+    let recipe = match output.definition { crate::crafting::HEALTH_OUTPUT => crate::crafting::HEALTH_RECIPE, crate::crafting::VIGOR_OUTPUT => crate::crafting::VIGOR_RECIPE, _ => return Err(bad()) };
+    let request = crate::crafting::ExecuteRequest { primary: *mushroom, ingredients: std::collections::BTreeMap::from([(1, *mushroom), (2, *tallow)]), spinner: 0, recipe };
+    request.require_inputs(bag, true).map_err(|_| bad())?;
+    let candidate = bag.apply(&items[0]).and_then(|bag| bag.apply(&items[1])).map_err(|_| bad())?;
+    let expected = crate::crafting::output(recipe, first, candidate.free_slot().ok_or_else(bad)?).ok_or_else(bad)?;
+    if output != &expected { return Err(bad()); }
+    book.apply(&Command::CraftedPotion).map_err(io::Error::other)
 }
