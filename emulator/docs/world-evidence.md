@@ -1359,3 +1359,43 @@ unknown-bit rejection remains for other definitions. Physics records are pinned
 as well. Held starters initialize their known idle mode and scale before the
 parent block; the Human sword keeps its captured/DAT scale 0.8, other starters
 1.0. The stamped parent reader validates the same definition/visual/scale tuple.
+
+## Player sword auto-attack presentation (2026-10-26)
+
+Player report: auto-attack damages the target but no sword swing is visible,
+while some skill animations play. The current sword-definition allowlist already
+contains both the legacy training sword and racial starter swords. The repair
+therefore targets motion dispatch, not damage, loot, range or reward rules.
+
+`Peer::scene_ordered` omitted DoMode 10082 while including DoBehavior 1007f.
+Native CEventQueue::ProcessNetBlob 00494a00 defers unordered type 3 with PostEvent,
+whereas ordered type 1 can dispatch immediately through 00494720. A separately
+sent swing could therefore run before its stance. BehaviorTracker::DoBehavior
+0068dfc0 silently rejects unavailable mode/behavior combinations. DoMode now uses
+the same ordered scene stream as the attack presentation. Identical repeated
+DoMode is not asserted to reset the animation: ModeTracker::DoMode 0068b450
+already ignores an unchanged desired mode with context zero.
+
+Retained `Packets/combat/brief.fight.2.elog` ordinals 47/65 contain attacker-owned
+100a8 basic-attack stories, flags 36 hex, with behavior parameters 605 hex:
+behavior 4100008b, dynamic time scale, propagate 1 and send-event 0. The cleaned
+Fight capture `AC2_KampfLog_MitKampfbeginn_und_mob_in_oute_range.elog` contains
+Melee_Auto1 41000089 in that same profile (message SHA256
+37b717b6cabadfb30d515adba200c0d0cdcf0d1c8630e5d2bc139b00e9bc5d6c).
+Captured skill IDs, contexts, timestamps and dynamic speeds are not reused.
+
+The player swing now emits a fresh 48-byte attacker-owned PhysicsStory: flags
+26 hex (attacker, behavior, basic attack), BehaviorParams 601 hex (behavior,
+propagate and send-event), Melee_Auto1, propagate 1, send-event 0 and zero hooks.
+PhysicsStory::StreamPack 006ae550 allows omitted skill/context fields.
+BehaviorParams::SetDefaults 006795b0 supplies time scale 1.0. IsNull 006adb60
+accepts a zero-hook story with a valid behavior; StoryManager::DoStory 005153b0
+assigns a fresh behavior context and runs it, while DoCurrentStoryHooks 005152e0
+safely returns for no hooks. This supplies actor-side presentation without
+duplicating the existing victim damage story or server damage transaction.
+Monster DoBehavior and other skill effects keep their existing routes.
+
+Scene::broadcast includes the owner as well as nearby observers. DoMode,
+DoBehavior and DoStory receive handlers have no local-player exclusion. These
+source/capture findings and compilation are not native playback acceptance; no
+gameplay tests or automated game-client launches were performed.

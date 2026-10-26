@@ -78,6 +78,21 @@ pub fn mode(owner: u64, instance: u16, stamp: u16, fighting: bool) -> Result<Vec
     Ok(wire)
 }
 
+/// Player basic-attack presentation. Captured sword attacks use an attacker
+/// PhysicsStory, whose native StoryManager creates a fresh behavior context.
+/// Damage remains in the existing authoritative encounter/victim update path.
+pub fn basic_attack(owner: u64, instance: u16, stamp: u16) -> Result<Vec<u8>, WorldError> {
+    let mut wire = prefix(DO_STORY, owner, instance, stamp)?;
+    wire.extend(0x26u32.to_le_bytes()); // Attacker, behavior, basic-attack flag.
+    wire.extend(owner.to_le_bytes());
+    wire.extend(0x601u32.to_le_bytes()); // Behavior, propagate, send-event.
+    wire.extend(MELEE_AUTO.to_le_bytes());
+    wire.extend(1u32.to_le_bytes()); // Propagate to the held weapon.
+    wire.extend(0u32.to_le_bytes()); // No interpreted completion callback.
+    wire.extend(0u32.to_le_bytes()); // No duplicated damage hooks.
+    Ok(wire)
+}
+
 pub fn swing(owner: u64, instance: u16, stamp: u16) -> Result<Vec<u8>, WorldError> {
     let mut wire = prefix(DO_BEHAVIOR, owner, instance, stamp)?;
     wire.extend(1u32.to_le_bytes()); // Only mBehaviorID; native defaults for all other fields.

@@ -412,6 +412,10 @@ cache advances, so a busy connection can retry without silently missing a change
 `@g MESSAGE` sends group chat. Original native group-chat routing, shared rewards
 and persistent groups are not implemented. Fresh two-client UI acceptance is pending.
 
+Sword auto-attack now sends an attacker-owned combat story and orders its stance
+change before the swing. The story adds no damage hooks; original combat timing
+and native animation acceptance remain incomplete.
+
 Queued player attacks are cancelled on disconnect or session replacement, with
 attack cooldowns retained. Stale socket cleanup cannot remove a newer session's
 avatar. If a queued strike loses its target or range, the player receives a

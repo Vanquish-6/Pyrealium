@@ -88,7 +88,7 @@ impl Peer {
             matches!(
                 u32::from_le_bytes(opcode.try_into().unwrap()),
                 0x10058 | 0x100c2 | 0x10069
-                    ..=0x10076 | 0x100d4 | 0x100d5 | 0x10066 | 0x100a8 | crate::emotes::EVENT
+                    ..=0x10076 | 0x100d4 | 0x100d5 | 0x10066 | 0x100a8 | 0x10082 | crate::emotes::EVENT
             )
         })
     }
@@ -645,7 +645,7 @@ fn training_combat_visual(
         let (after, stamp) = next.next_visual(saved.instance).map_err(other)?;
         next = after;
         last_stamp = stamp;
-        events.push(crate::combat_visual::swing(character, saved.instance, stamp).map_err(other)?);
+        events.push(crate::combat_visual::basic_attack(character, saved.instance, stamp).map_err(other)?);
     }
     peer.validate_scene_batch(&events)?;
     let mut deliveries = Vec::new();
