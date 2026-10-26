@@ -27,9 +27,9 @@ are authored development policies; they do not establish original AC2 parity.
   loopback-only developer account allowlist.
 - Original-binary-checked ISAAC checksums, bounded reliable delivery, reassembly,
   duplicate suppression, exact-byte retries and shared ordered queues.
-- Human character creation fields retained in a checksummed journal, selection,
-  ownership checks, deletion tombstones and offline restoration. Appearance uses
-  the supported default human bodies; arbitrary customization is not rendered yet.
+- Human, Lugian and Tumerok creation choices retained in a checksummed journal,
+  with racial bodies and creation clothing aspects. Ownership checks, deletion
+  tombstones and offline restoration are separate from full character parity.
 - Experimental DAT-backed world entry, saved placement, increasing instance
   stamps and return to character selection.
 - Movement and head-look decoding, replay/stamp rejection, cell-indexed player

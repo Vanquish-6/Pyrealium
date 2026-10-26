@@ -1351,3 +1351,11 @@ Selector 4 has static native/DAT proof, without a retained location-4 capture.
 The new selector-3 path is limited to the Tumerok body and checked starter
 definition. Per-weapon combat animations and native runtime acceptance remain
 separate; no gameplay tests or automated client launches were performed.
+
+Starter asset loading also admits the legacy description bit 00800000 only
+when the entire qualities record matches its frozen starter fingerprint. Native
+gmWeenieDesc::StreamPack 006037c0 assigns no payload to that bit; the general
+unknown-bit rejection remains for other definitions. Physics records are pinned
+as well. Held starters initialize their known idle mode and scale before the
+parent block; the Human sword keeps its captured/DAT scale 0.8, other starters
+1.0. The stamped parent reader validates the same definition/visual/scale tuple.
