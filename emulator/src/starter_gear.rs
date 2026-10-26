@@ -41,6 +41,11 @@ pub fn is_weapon(definition: u32) -> bool {
 pub fn is_sword(definition: u32) -> bool {
     matches!(definition, 0x470007ee | 0x470007f5 | 0x47000809)
 }
+pub(crate) fn hand_scale(definition: u32, visual: u32) -> Option<f32> {
+    if definition == crate::training_kit::DEFINITION && visual == 0x1f000056 { return Some(1.0); }
+    PROFILES.iter().find(|profile| profile.definition == definition && profile.visual == visual && profile.worn == 0)
+        .map(|profile| if profile.definition == 0x470007ee { 0.8 } else { 1.0 })
+}
 pub(crate) fn quality_matches(definition: u32, bytes: &[u8]) -> bool {
     PROFILES.iter().any(|profile| profile.definition == definition && fingerprint(bytes) == profile.qualities_hash)
 }

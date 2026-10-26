@@ -640,8 +640,8 @@ pub fn create_hand_item(
         return Err(WorldError::InvalidValue);
     }
     let mut bytes = create_inventory_item(item, owner, instance)?;
-    let initialized =
-        item.definition == crate::training_kit::DEFINITION && item.visual == 0x1f000056;
+    let scale = crate::starter_gear::hand_scale(item.definition, item.visual);
+    let initialized = scale.is_some();
     bytes[20..24].copy_from_slice(&(if initialized { 0xa2u32 } else { 0x20 }).to_le_bytes());
     let mut parent = Vec::new();
     if initialized {
@@ -650,7 +650,7 @@ pub fn create_hand_item(
         parent.extend(0x40000001u32.to_le_bytes());
         parent.extend(1u32.to_le_bytes());
         parent.extend(0x4000000au32.to_le_bytes());
-        parent.extend(1f32.to_le_bytes());
+        parent.extend(scale.unwrap().to_le_bytes());
         parent.extend(0f32.to_le_bytes());
     }
     parent.extend(owner.to_le_bytes());
@@ -671,14 +671,14 @@ pub(crate) fn hand_parent(spawn: &[u8]) -> Result<(u64, u16), WorldError> {
     let offset = match (flags, spawn.len()) {
         (0x20, 72) => 28,
         (0xa2, 92) => {
-            let expected: Vec<u8> = [0x40000001u32, 1, 0x4000000a, 1f32.to_bits(), 0]
+            let definition = u32::from_le_bytes(spawn[76..80].try_into().unwrap());
+            let visual = u32::from_le_bytes(spawn[16..20].try_into().unwrap());
+            let scale = crate::starter_gear::hand_scale(definition, visual).ok_or(WorldError::InvalidValue)?;
+            let expected: Vec<u8> = [0x40000001u32, 1, 0x4000000a, scale.to_bits(), 0]
                 .into_iter()
                 .flat_map(u32::to_le_bytes)
                 .collect();
-            if spawn[28..48] != expected
-                || spawn[16..20] != 0x1f000056u32.to_le_bytes()
-                || spawn[76..80] != crate::training_kit::DEFINITION.to_le_bytes()
-            {
+            if spawn[28..48] != expected {
                 return Err(WorldError::InvalidValue);
             }
             48
