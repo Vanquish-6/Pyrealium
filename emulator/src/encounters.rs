@@ -445,6 +445,16 @@ impl Encounters {
                     self.range,
                 )
             {
+                if alive {
+                    events.push(Event::Note {
+                        player,
+                        text: if available {
+                            "Attack stopped: move closer to your target."
+                        } else {
+                            "Attack stopped: your target is no longer available."
+                        }.into(),
+                    });
+                }
                 self.stopped(player, &mut events);
                 continue;
             }

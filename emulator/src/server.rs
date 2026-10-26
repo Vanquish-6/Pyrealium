@@ -1933,8 +1933,13 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                             if let Phase::Entering { character } | Phase::InWorld { character } =
                                 previous.session.phase
                             {
-                                active_characters.remove(&character);
-                                deliveries.extend(scene.remove(character));
+                                if active_characters.get(&character) == Some(&addr) {
+                                    active_characters.remove(&character);
+                                    if let Some(runtime) = &mut encounters {
+                                        runtime.stop(character);
+                                    }
+                                    deliveries.extend(scene.remove(character));
+                                }
                             }
                         }
                         counters.logins += 1;
@@ -4579,8 +4584,13 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                 if let Phase::Entering { character } | Phase::InWorld { character } =
                     peer.session.phase
                 {
-                    active_characters.remove(&character);
-                    departures.extend(scene.remove(character));
+                    if active_characters.get(&character) == Some(&addr) {
+                        active_characters.remove(&character);
+                        if let Some(runtime) = &mut encounters {
+                            runtime.stop(character);
+                        }
+                        departures.extend(scene.remove(character));
+                    }
                 }
             }
         }
