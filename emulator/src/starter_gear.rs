@@ -41,6 +41,12 @@ pub fn is_weapon(definition: u32) -> bool {
 pub fn is_sword(definition: u32) -> bool {
     matches!(definition, 0x470007ee | 0x470007f5 | 0x47000809)
 }
+pub(crate) fn quality_matches(definition: u32, bytes: &[u8]) -> bool {
+    PROFILES.iter().any(|profile| profile.definition == definition && fingerprint(bytes) == profile.qualities_hash)
+}
+pub(crate) fn physical_matches(definition: u32, bytes: &[u8]) -> bool {
+    PROFILES.iter().any(|profile| profile.definition == definition && fingerprint(bytes) == profile.physical_hash)
+}
 pub fn validate(portal: &mut Dat) -> io::Result<BTreeMap<u32, Metadata>> {
     let mut metadata = BTreeMap::new();
     for profile in PROFILES {

@@ -245,6 +245,10 @@ impl Metadata {
         }
         let did = 0x81000000 | (definition & 0xffffff);
         let bytes = portal.read(did)?;
+        let starter = crate::starter_gear::is_apparel(definition) || crate::starter_gear::is_weapon(definition);
+        if starter && !crate::starter_gear::quality_matches(definition, &bytes) {
+            return Err(invalid());
+        }
         if bytes.len() > 65536 {
             return Err(invalid());
         }
@@ -334,7 +338,10 @@ impl Metadata {
             | 0x100000
             | 0x8000000
             | 0x10000000;
-        if desc & !DESC_BITS != 0 {
+        // Pinned starter records retain 0x800000, which has no payload in
+        // native gmWeenieDesc::StreamPack 006037c0. Do not relax other records.
+        let allowed = DESC_BITS | if starter { 0x800000 } else { 0 };
+        if desc & !allowed != 0 {
             return Err(invalid());
         }
         let mut integers = std::collections::BTreeMap::new();
@@ -389,6 +396,9 @@ impl Metadata {
         }
         portal.read(icon)?;
         portal.read(physical)?;
+        if starter && !crate::starter_gear::physical_matches(definition, &portal.read(physical)?) {
+            return Err(invalid());
+        }
         let equipment = (|| {
             Some(Equipment {
                 valid: *integers.get(&0x113)?,
