@@ -9,15 +9,19 @@ $data = Join-Path $root 'data'
 $settingsPath = Join-Path $env:LOCALAPPDATA 'Pyrealium\launcher.xml'
 $install = "C:\Asheron's Call 2"
 
+# Newest built server; $null when none exists or the source is newer than every build.
 function Find-Server {
-    foreach ($path in @(
-            (Join-Path $root 'target\debug\pyrealium.exe'),
-            (Join-Path $root 'target\release\pyrealium.exe'),
-            (Join-Path $root 'target\local-build\release\pyrealium.exe')
-        )) {
-        if (Test-Path -LiteralPath $path -PathType Leaf) { return $path }
-    }
-    return $null
+    $builds = @(
+        (Join-Path $root 'target\release\pyrealium.exe'),
+        (Join-Path $root 'target\local-build\release\pyrealium.exe'),
+        (Join-Path $root 'target\debug\pyrealium.exe')
+    ) | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | ForEach-Object { Get-Item -LiteralPath $_ } |
+        Sort-Object LastWriteTime -Descending
+    if (-not $builds) { return $null }
+    $source = Get-ChildItem -LiteralPath (Join-Path $root 'src'), (Join-Path $root 'content') -Recurse -File |
+        Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if ($source -and $source.LastWriteTime -gt $builds[0].LastWriteTime) { return $null }
+    return $builds[0].FullName
 }
 
 $account = 'local'
@@ -59,24 +63,44 @@ if (-not $game) {
     if ($LASTEXITCODE -ne 0) { throw 'The skill panel compatibility repair failed.' }
 }
 
-$running = @(Get-CimInstance -ClassName Win32_Process -Filter "Name = 'pyrealium.exe'" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -match '\bserve(?:-training|-world)?\s' })
-if ($running.Count -gt 0) {
-    Write-Host 'The server is already running. Leave it open and click Enter Dereth.'
-    exit 0
-}
-if (Test-Path -LiteralPath (Join-Path $data 'server.lock')) {
-    Remove-Item -LiteralPath (Join-Path $data 'server.lock')
-}
-
 $server = Find-Server
 if (-not $server) {
-    Write-Host 'Building the server.'
+    Write-Host 'Building the latest server.'
     Push-Location $root
     try {
-        & cargo build --release --target-dir (Join-Path $root 'target\local-build')
+        & cargo build --release
         if ($LASTEXITCODE -ne 0) { throw 'Server build failed.' }
     } finally { Pop-Location }
-    $server = Join-Path $root 'target\local-build\release\pyrealium.exe'
+    $server = Join-Path $root 'target\release\pyrealium.exe'
+}
+
+$processes = @(Get-CimInstance -ClassName Win32_Process -Filter "Name = 'pyrealium.exe'" -ErrorAction SilentlyContinue)
+$running = @($processes | Where-Object { $_.CommandLine -match '\bserve(?:-training|-world)?\s' })
+if ($running.Count -gt 0) {
+    $current = $running | Where-Object { $_.ExecutablePath -eq $server }
+    if ($current) {
+        Write-Host 'The latest server is already running. Leave it open and click Enter Dereth.'
+        exit 0
+    }
+    Write-Host 'Replacing the older running server with the latest build.'
+    & $running[0].ExecutablePath stop --data $data --seconds 20 2>$null
+    $accounts = Join-Path $data 'auth'
+    if (Test-Path -LiteralPath (Join-Path $accounts 'accounts.lock')) {
+        & $running[0].ExecutablePath account-stop --auth-data $accounts --seconds 20 2>$null
+    }
+    foreach ($process in $processes) {
+        if ($process.CommandLine -match '\b(serve(?:-training|-world)?|account-web)\s') {
+            Stop-Process -Id $process.ProcessId -Force -ErrorAction SilentlyContinue
+        }
+    }
+    Start-Sleep -Milliseconds 500
+}
+$stale = @(Join-Path $data 'server.lock')
+$accountsRunning = @(Get-CimInstance -ClassName Win32_Process -Filter "Name = 'pyrealium.exe'" -ErrorAction SilentlyContinue |
+    Where-Object { $_.CommandLine -match '\baccount-web\s' }).Count -gt 0
+if (-not $accountsRunning) { $stale += Join-Path $data 'auth\accounts.lock' }
+foreach ($lock in $stale) {
+    if (Test-Path -LiteralPath $lock) { Remove-Item -LiteralPath $lock }
 }
 
 Write-Host ''
