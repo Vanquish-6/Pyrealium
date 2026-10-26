@@ -52,6 +52,7 @@ struct Peer {
     last_examine_ms: Option<u64>,
     last_world_use_ms: Option<u64>,
     merchant_open_ms: Option<u64>,
+    last_shop_refresh_ms: Option<u64>,
     native_shop: Option<crate::merchants::Shop>,
     unhandled_scripts: BTreeSet<u32>,
     scene_outbox: VecDeque<(Arc<[u8]>, bool)>,
@@ -1923,6 +1924,7 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                 last_examine_ms: None,
                                 last_world_use_ms: None,
                                 merchant_open_ms: None,
+                                last_shop_refresh_ms: None,
                                 native_shop: None,
                                 unhandled_scripts: BTreeSet::new(),
                                 scene_outbox: VecDeque::new(),
@@ -2274,7 +2276,7 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                         }
                                         script::Request::MerchantRefresh(merchant) => {
                                             let result = (|| -> io::Result<()> {
-                                                if peer.last_inventory_ms.is_some_and(|last| now_ms.saturating_sub(last) < 100) {
+                                                if peer.last_shop_refresh_ms.is_some_and(|last| now_ms.saturating_sub(last) < 100) {
                                                     return Err(invalid("Wait briefly before refreshing the shop."));
                                                 }
                                                 if peer.combat
@@ -2291,7 +2293,7 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                                     .ok_or_else(|| invalid("Merchant catalog is not enabled."))?;
                                                 peer.queue_ordered_batch(vec![shop.refresh(catalog).map_err(other)?])?;
                                                 peer.merchant_open_ms = Some(now_ms);
-                                                peer.last_inventory_ms = Some(now_ms);
+                                                peer.last_shop_refresh_ms = Some(now_ms);
                                                 Ok(())
                                             })();
                                             if let Err(error) = result {
@@ -4726,6 +4728,7 @@ mod tests {
             last_examine_ms: None,
             last_world_use_ms: None,
             merchant_open_ms: None,
+            last_shop_refresh_ms: None,
             native_shop: None,
             unhandled_scripts: BTreeSet::new(),
             scene_outbox: VecDeque::new(),
