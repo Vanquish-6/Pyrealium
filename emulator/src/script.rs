@@ -22,6 +22,7 @@ pub enum Request {
     MerchantSell(crate::merchants::SellRequest),
     MerchantBuy(crate::merchants::BuyRequest),
     MerchantClose(u64),
+    MerchantRefresh(u64),
     MerchantConsignment(u64),
     ExamineClear,
     CraftValidate(crate::crafting::ValidateRequest),
@@ -129,12 +130,16 @@ pub fn decode(function: u32, bytes: &[u8]) -> Result<Request, WorldError> {
             r.pos = bytes.len();
             Request::MerchantSell(request)
         }
-        crate::merchants::LEAVE => {
+        crate::merchants::LEAVE | 0xb83a0066 => {
             let merchant = r.iid()?;
             if [0, u64::MAX].contains(&merchant) {
                 return Err(WorldError::InvalidValue);
             }
-            Request::MerchantClose(merchant)
+            if function == 0xb83a0066 {
+                Request::MerchantRefresh(merchant)
+            } else {
+                Request::MerchantClose(merchant)
+            }
         }
         crate::merchants::BUY => {
             let request = crate::merchants::BuyRequest::decode(bytes)?;

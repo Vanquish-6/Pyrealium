@@ -1229,3 +1229,22 @@ local placement is preserved separately and can be combined in the runtime
 manifest without replacing the base content. No test suite or automated client
 run was performed. The source/data causes are established; actual portal display,
 travel and broader population still require fresh matching-client observation.
+
+## Native merchant refresh (2026-10-26)
+
+The client request `b83a0066` contains exactly one tagged merchant IID (12
+argument bytes). Matching build-7148 WLib `56000005`, SHA-256
+`b402b04a6ef587e83145524ad8612c66e6a16d3a710fc7addeb78e8df22ba21d`,
+resolves outbound stub `b83a0067` at opcode offset `1030e8` and its active-store
+caller `b832000c` at `11ca70`. The caller marks the store pending before sending.
+The cleaned capture `Npc interaction/händelr_gilden_schatzmeister_quitungs_kauf.elog`
+corroborates that request between `b83a002a` refresh responses carrying the same
+merchant IID. Capture client identity is unknown. Native endpoint corroboration
+is `gCM_Store::CallEFun_SendNotice_UpdateStore` at `00467c20` and
+`gmShopUI::RecvNotice_UpdateStore` at `0041e8d0`.
+
+The server reuses its existing catalog/offer identities and `Shop::refresh`; no
+item or currency transaction occurs. It rechecks a matching unexpired shop,
+visibility/trade distance, living/out-of-combat state and a 100 ms action limit.
+Only successful queue admission extends the shop deadline. Compilation is
+separate from native UI acceptance; no gameplay tests were run.
