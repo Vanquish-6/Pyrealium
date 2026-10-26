@@ -103,6 +103,22 @@ impl Book {
     pub fn get(&self) -> Option<&Progress> {
         self.training.as_ref()
     }
+    /// Shared player guidance for mentor speech, quest commands and the journal.
+    /// The quest state and immutable rewards remain the persisted authored profile.
+    pub fn guidance(&self) -> String {
+        match self.training {
+            None => "Speak to a training mentor to begin Training Grounds, or use @quest start.".into(),
+            Some(progress) if progress.claimed => format!(
+                "Training complete. You received {REWARD_XP} experience and {REWARD_GOLD} gold. The quartermaster sells potions and crafting supplies."
+            ),
+            Some(progress) if progress.killed == GOAL => format!(
+                "Training creatures defeated: {GOAL}/{GOAL}. Leave combat and speak to a training mentor for {REWARD_XP} experience and {REWARD_GOLD} gold, or use @quest claim."
+            ),
+            Some(progress) => format!(
+                "Training creatures defeated: {}/{GOAL}. Equip a starter weapon from your bag and defeat Idol Spawn. Return to a training mentor after {GOAL} kills.", progress.killed
+            ),
+        }
+    }
     pub fn ready(&self) -> bool {
         self.training
             .is_some_and(|state| state.killed == GOAL && !state.claimed)
@@ -215,13 +231,7 @@ fn info_payload(state: Progress, play_fx: bool) -> Result<Vec<u8>, WorldError> {
     word(&mut bytes, ICON);
     word(&mut bytes, status(state));
     word(&mut bytes, if state.claimed { 0 } else { 1 });
-    let entry = if state.claimed {
-        "Training complete. You claimed the reward.".into()
-    } else if state.killed == GOAL {
-        "Training creatures defeated: 3/3. Speak to a training mentor to receive your reward, or use @quest claim.".into()
-    } else {
-        format!("Training creatures defeated: {}/3.", state.killed)
-    };
+    let entry = Book { training: Some(state) }.guidance();
     bytes.extend(world::literal_name(&entry)?);
     word(&mut bytes, 1); // Authored challenge level.
     bytes.extend((-1.0f64).to_le_bytes()); // Unset bestowal timestamp, native Clear sentinel.

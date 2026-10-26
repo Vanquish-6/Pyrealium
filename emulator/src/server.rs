@@ -827,21 +827,7 @@ fn quest_action(
             state = state.apply(&reward).map_err(io::Error::other)?;
         }
     }
-    let text = match quests.get() {
-        None => "Type @quest start to accept the training quest.".into(),
-        Some(progress) if progress.claimed => {
-            "Training complete. The 120 XP and 10 gold reward has been claimed.".into()
-        }
-        Some(progress) if progress.killed == crate::quests::GOAL => {
-            "Training objective complete. Leave combat and type @quest claim for your reward."
-                .into()
-        }
-        Some(progress) => format!(
-            "Training creatures defeated: {}/{}. Progress is shown in your quest journal.",
-            progress.killed,
-            crate::quests::GOAL
-        ),
-    };
+    let text = quests.guidance();
     let mut events = match speaker {
         Some(speaker) => {
             npc_interaction_events(character, speaker, scene, "Pectar, Training Master", &text)?
@@ -4448,7 +4434,7 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                             data: book.update().map_err(other)?.into(),
                         });
                         if book.ready() {
-                            updates.push(crate::scene::Delivery {recipient:player,data:script::chat("Training objective complete. Leave combat and type @quest claim for your reward.",1).map_err(other)?.into()});
+                            updates.push(crate::scene::Delivery {recipient:player,data:script::chat(&book.guidance(),1).map_err(other)?.into()});
                         }
                     }
                     crate::encounters::Event::Health { actor, health } => {
