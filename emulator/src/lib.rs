@@ -3,6 +3,7 @@
 pub mod abilities;
 pub mod account_web;
 pub mod allegiance;
+pub mod appearance;
 pub mod auth;
 pub mod bootstrap;
 pub mod combat_visual;

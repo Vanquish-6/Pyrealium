@@ -16,6 +16,8 @@ pub struct Body {
     pub placement: Placement,
     instance: u16,
     spawn: Vec<u8>,
+    /// Start of PhysicsDesc: 12 + the VisualDesc length.
+    physics: usize,
     position_offset: usize,
     ready: bool,
     public_stats: BTreeMap<(u32, u32), (u32, Arc<[u8]>)>,
@@ -33,19 +35,24 @@ impl Body {
         {
             return Err(WorldError::InvalidValue);
         }
-        let instance = u16::from_le_bytes(spawn[24..26].try_into().unwrap());
+        let physics = 12 + crate::appearance::visual_len(&spawn[12..]).ok_or(WorldError::InvalidValue)?;
+        if spawn.len() < physics + 8 {
+            return Err(WorldError::InvalidValue);
+        }
+        let instance = u16::from_le_bytes(spawn[physics + 4..physics + 6].try_into().unwrap());
         if instance == 0 {
             return Err(WorldError::InvalidValue);
         }
         // Generated native subsets place optional mode/slider data before
         // Position. Never overwrite those fields using a fixed cell offset.
-        let flags = u32::from_le_bytes(spawn[20..24].try_into().unwrap());
-        let position_offset = match flags {
-            0x8000 => 28,
-            0x8080 => 32,
-            0x8082 => 48,
-            _ => return Err(WorldError::InvalidValue),
-        };
+        let flags = u32::from_le_bytes(spawn[physics..physics + 4].try_into().unwrap());
+        let position_offset = physics
+            + match flags {
+                0x8000 => 8,
+                0x8080 => 12,
+                0x8082 => 28,
+                _ => return Err(WorldError::InvalidValue),
+            };
         if spawn.len() < position_offset + 32 {
             return Err(WorldError::InvalidValue);
         }
@@ -54,6 +61,7 @@ impl Body {
             placement,
             instance,
             spawn,
+            physics,
             position_offset,
             ready: false,
             public_stats: BTreeMap::new(),
@@ -219,9 +227,10 @@ impl Scene {
             .get_mut(&owner)
             .filter(|body| body.ready)
             .ok_or(WorldError::InvalidValue)?;
-        if body.position_offset >= 32 {
-            body.spawn[26..28].copy_from_slice(&stamp.to_le_bytes());
-            body.spawn[28..32].copy_from_slice(
+        if body.position_offset >= body.physics + 12 {
+            let p = body.physics;
+            body.spawn[p + 6..p + 8].copy_from_slice(&stamp.to_le_bytes());
+            body.spawn[p + 8..p + 12].copy_from_slice(
                 &(if fighting {
                     crate::combat_visual::ONE_HAND
                 } else {
@@ -239,10 +248,11 @@ impl Scene {
             .get_mut(&owner)
             .filter(|body| body.ready)
             .ok_or(WorldError::InvalidValue)?;
-        if stamp == 0 || body.spawn.len() < 28 {
+        if stamp == 0 {
             return Err(WorldError::InvalidValue);
         }
-        body.spawn[26..28].copy_from_slice(&stamp.to_le_bytes());
+        let p = body.physics;
+        body.spawn[p + 6..p + 8].copy_from_slice(&stamp.to_le_bytes());
         Ok(())
     }
     pub fn inventory_instance(&self, owner: u64, item: u64) -> Result<u16, WorldError> {

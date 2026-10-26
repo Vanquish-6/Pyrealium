@@ -284,6 +284,8 @@ pub struct SelectionCharacter {
     pub seconds_greyed_out: u32,
     /// Must refer to a valid VisualDesc in the matching client's DATs.
     pub parent_visual_did: u32,
+    /// Complete VisualDesc with appearance overrides; otherwise parent-only.
+    pub appearance: Option<Vec<u8>>,
 }
 
 fn pack_identity(bytes: &mut Vec<u8>, character: &SelectionCharacter) -> Result<(), WorldError> {
@@ -295,8 +297,13 @@ fn pack_identity(bytes: &mut Vec<u8>, character: &SelectionCharacter) -> Result<
     let utf16: Vec<u8> = units.iter().flat_map(|unit| unit.to_le_bytes()).collect();
     pack_string(bytes, &utf16, units.len())?;
     bytes.extend(character.seconds_greyed_out.to_le_bytes());
-    bytes.extend(2_u32.to_le_bytes());
-    bytes.extend(character.parent_visual_did.to_le_bytes());
+    match &character.appearance {
+        Some(visual) => bytes.extend_from_slice(visual),
+        None => {
+            bytes.extend(2_u32.to_le_bytes());
+            bytes.extend(character.parent_visual_did.to_le_bytes());
+        }
+    }
     Ok(())
 }
 
@@ -525,7 +532,7 @@ pub fn create_stationary_object_with_scale(
     // (0067d000). PhysicsDesc's zero default would replace that initial mode.
     let mentor_appearance = object.parent_visual_did == 0x1f000deb;
     let player_appearance = object.entity_did == crate::bootstrap::PLAYER_ENTITY
-        && matches!(object.parent_visual_did, 0x1f000023 | 0x1f000024);
+        && crate::appearance::is_player_visual(object.parent_visual_did);
     bytes.extend(
         if standing_appearance {
             0x8082_u32
@@ -903,6 +910,7 @@ mod tests {
                 name: "A".into(),
                 seconds_greyed_out: 0,
                 parent_visual_did: 0x01020304,
+                appearance: None,
             }],
         )
         .unwrap();

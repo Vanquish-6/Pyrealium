@@ -584,6 +584,7 @@ fn selection_list(
                     name: c.name.clone(),
                     seconds_greyed_out: 0,
                     parent_visual_did: visual.unwrap(),
+                    appearance: None,
                 })
             }
         })
@@ -1993,6 +1994,7 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                     name: c.name.clone(),
                                     seconds_greyed_out: 0,
                                     parent_visual_did: did,
+                                    appearance: None,
                                 })
                                 .collect();
                             world::character_set(peer.session.account.as_bytes(), 5, &selection)
@@ -3833,7 +3835,7 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                             {
                                                 Ok(character) => {
                                                     eprintln!(
-                                                        "created character id={} with persisted native choices; default human appearance profile",
+                                                        "created character id={} with persisted native choices; racial appearance profile",
                                                         character.id
                                                     );
                                                     world::confirm_character_creation(
@@ -3912,7 +3914,7 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                             {
                                                 let placement = store
                                                     .placement(character_id)
-                                                    .unwrap_or(Placement::HUMAN_START);
+                                                    .unwrap_or(profile.start(&request));
                                                 if !profile.contains_cell(placement.cell) {
                                                     return Err(invalid(
                                                         "saved placement references unavailable cell",

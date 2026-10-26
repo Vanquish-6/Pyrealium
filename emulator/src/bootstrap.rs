@@ -1,4 +1,4 @@
-//! Local human-body bootstrap, grounded in installed DAT records.
+//! Local Human/Lugian/Tumerok bootstrap, grounded in installed DAT records.
 //! Appearance overrides and gameplay simulation remain separate from world loading.
 use crate::{
     dat::Dat,
@@ -26,6 +26,14 @@ fn fingerprint(data: &[u8]) -> u64 {
 fn invalid(message: &str) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, message)
 }
+/// Start areas are the creation screen's choice; each race still starts at its own point.
+fn supported(request: &CharacterCreationRequest) -> bool {
+    request.entity_did >> 24 == 0x47
+        && matches!(request.start_area, 0 | 0x40000001..=0x40000010)
+        && request.class <= 0xff
+        && crate::appearance::body(request.race, request.sex)
+            .is_some_and(|body| body.visual_desc(&request.physical_values).is_ok())
+}
 impl Bootstrap {
     /// Native 7148 cannot consume the original installed 7230 DATs'
     /// GameplayOptionsProfile's 0x2000 field in WState 7100110F: it mistakes
@@ -44,15 +52,13 @@ impl Bootstrap {
             (0xc0b0230d626998c2, 0x83c30e31275ab0e3) => "7148",
             _ => return Err(invalid("unrecognized or mixed player script-state layouts")),
         };
-        for id in [
-            PLAYER_ENTITY,
-            0x0f000000,
-            0x470000cd,
-            0x470000ce,
-            0x1f000023,
-            0x1f000024,
-        ] {
+        for id in [PLAYER_ENTITY, 0x0f000000] {
             portal.read(id)?;
+        }
+        for body in crate::appearance::bodies() {
+            for id in body.records() {
+                portal.read(id)?;
+            }
         }
         let qualities = portal.read(0x8100110f)?;
         // Narrow known layout: never apply offsets to an unrecognized record.
@@ -74,7 +80,9 @@ impl Bootstrap {
             }
         }
         let mut cells = Dat::open(directory.join("cell_1.dat"))?;
-        cells.read(0x02990109)?;
+        for body in crate::appearance::bodies() {
+            cells.read(crate::dat::world_cell_record(body.start.cell)?)?;
+        }
         Ok(Self {
             qualities,
             client_version,
@@ -82,22 +90,27 @@ impl Bootstrap {
             validated_cells: std::collections::BTreeSet::new(),
         })
     }
+    /// Human, Lugian and Tumerok of either sex with valid appearance choices.
+    /// The requested entity is ignored; every avatar uses PLAYER_ENTITY.
     pub fn supports(&self, request: &CharacterCreationRequest) -> bool {
-        request.entity_did == PLAYER_ENTITY
-            && request.race == 1
-            && matches!(request.sex, 0x1000 | 0x2000)
-            && matches!(request.start_area, 0 | 0x40000001)
+        supported(request)
+    }
+    fn body(request: &CharacterCreationRequest) -> &'static crate::appearance::Body {
+        crate::appearance::body(request.race, request.sex)
+            .expect("caller checked supports()")
+    }
+    /// The race's start point for a new character.
+    pub fn start(&self, request: &CharacterCreationRequest) -> crate::movement::Placement {
+        Self::body(request).start
     }
     pub fn selection(&self, id: u64, request: &CharacterCreationRequest) -> SelectionCharacter {
+        let body = Self::body(request);
         SelectionCharacter {
             id,
             name: request.name.clone(),
             seconds_greyed_out: 0,
-            parent_visual_did: if request.sex == 0x2000 {
-                0x1f000024
-            } else {
-                0x1f000023
-            },
+            parent_visual_did: body.visual,
+            appearance: body.visual_desc(&request.physical_values).ok(),
         }
     }
     fn weenie_description(&self, name: &str) -> Result<Vec<u8>, world::WorldError> {
@@ -113,7 +126,7 @@ impl Bootstrap {
         id: u64,
         request: &CharacterCreationRequest,
     ) -> Result<[Vec<u8>; 3], world::WorldError> {
-        self.events_at(id, request, crate::movement::Placement::HUMAN_START, 1)
+        self.events_at(id, request, self.start(request), 1)
     }
     pub fn contains_cell(&mut self, cell: u32) -> bool {
         if self.validated_cells.contains(&cell) {
@@ -158,7 +171,7 @@ impl Bootstrap {
             return Err(world::WorldError::InvalidValue);
         }
         let selection = self.selection(id, request);
-        // Authored human_start_position1, present in installed cell_1.dat.
+        let body = Self::body(request);
         let mut object = world::create_stationary_object(&StationaryObject {
             character_id: id,
             parent_visual_did: selection.parent_visual_did,
@@ -170,6 +183,11 @@ impl Bootstrap {
             visual_ordering_stamp: 0,
             timestamps: [0; 4],
         })?;
+        // Replace the parent-only VisualDesc (flags 2 + DID, bytes 12..20) with
+        // the full appearance, as the retail CreateObject carried it.
+        if let Some(visual) = &selection.appearance {
+            object.splice(12..20, visual.iter().copied());
+        }
         object.truncate(object.len() - 8);
         let description = self.weenie_description(&request.name)?;
         object.extend_from_slice(&description);
@@ -191,6 +209,11 @@ impl Bootstrap {
         for (key, value) in progression.int_stats() {
             ints.insert(key, value);
         }
+        // Species, Sex and Class (gmintstats 0x122..0x124), as in the retail
+        // new-character PlayerDesc.
+        ints.insert(0x122, request.race);
+        ints.insert(0x123, request.sex);
+        ints.insert(0x124, request.class);
         player.extend((ints.len() as u32).to_le_bytes());
         // PHashTable::StreamPack 00517fd0 encodes the bucket-size index in
         // the high byte (zero here => 11 buckets, client table 00a7b140).
@@ -219,14 +242,7 @@ impl Bootstrap {
             player.extend(value.to_le_bytes());
         }
         player.extend_from_slice(&self.qualities[180..200]);
-        player.extend(
-            (if request.sex == 0x2000 {
-                0x470000ceu32
-            } else {
-                0x470000cdu32
-            })
-            .to_le_bytes(),
-        );
+        player.extend(body.entity.to_le_bytes());
         player.extend(2u32.to_le_bytes());
         for (key, value) in [
             (0x12cu32, progression.xp),
