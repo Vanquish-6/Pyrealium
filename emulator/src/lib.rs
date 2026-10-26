@@ -36,6 +36,7 @@ pub mod skills;
 pub mod starter_gear;
 pub mod state;
 pub mod store;
+pub mod training_dialogue;
 pub mod training_kit;
 pub mod transport;
 pub mod ui;

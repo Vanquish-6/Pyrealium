@@ -502,3 +502,21 @@ This profile is authored development content, not an original AC2 quest.
 Source compilation passed; native journal, speech and turn-in acceptance remain
 pending. Old executables cannot read the new records; preserve the updated build
 when reopening a store that has accepted the follow-up quest.
+
+### Training conversations and racial round trips
+
+Use a training mentor normally to progress the two authored lessons. Nearby
+players may ask `@mentor help`, `gear`, `combat`, `healing`, `supplies`,
+`crafting`, `travel` or `quests` for native NPC speech. Topic requests require
+a visible mentor in the same cell within four metres and a living player out
+of combat. This uses the supported native speech/use-completion presentation;
+a branching dialogue-choice window is not implemented.
+
+Human, Lugian and Tumerok starting hubs now each have three simultaneous Idol
+Spawn practice targets, a mentor, a quartermaster and a lifestone. The Lugian
+start remains the supported Linvak Tukal fallback, not the absent original
+Lugian dungeon. The shared outdoor hub now has return routes to the Tumerok
+and Lugian starts as well as the existing Human return. Examine these portals
+for destination-specific names. The added placements share the known start
+anchor elevation; collision, attack reach and native presentation need player
+acceptance before the full area can be called verified playable.

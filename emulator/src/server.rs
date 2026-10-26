@@ -553,6 +553,16 @@ fn examine_target(
         if let Some((health, maximum)) = object.stat(0x102).zip(object.stat(0x107)) {
             lines.push(format!("Health: {health} / {maximum}"));
         }
+        if object.entity == TRAINING_MENTOR_ENTITY {
+            lines.push("Use to accept training lessons, check progress or deliver supplies.".into());
+            lines.push("Nearby conversation topics: @mentor help, gear, combat, healing, supplies, crafting, travel.".into());
+        } else if object.entity == crate::merchants::MERCHANT_ENTITY {
+            lines.push("Use to trade. Mucor Mushrooms and Tallow bundles each cost 2 gold.".into());
+        }
+        if let Some(name) = crate::training_dialogue::portal_name(target) {
+            lines.push("Use while alive and out of combat, within four metres.".into());
+            return examination::response(target, Name::Literal(name.into()), &lines).map_err(other);
+        }
         return examination::response(target, names.get(object.entity, "Object"), &lines)
             .map_err(other);
     }
@@ -831,7 +841,8 @@ fn quest_action(
     let text = quests.guidance();
     let mut events = match speaker {
         Some(speaker) => {
-            npc_interaction_events(character, speaker, scene, "Pectar, Training Master", &text)?
+            let race = saved.creation.as_ref().map_or(1, |request| request.race);
+            npc_interaction_events(character, speaker, scene, "Pectar, Training Master", &crate::training_dialogue::greeting(race, &quests))?
         }
         None => vec![script::chat(&text, 1).map_err(other)?],
     };
@@ -1209,7 +1220,7 @@ fn group_publish(
 
 // Explicit development services assigned to these DAT-backed NPC types.
 // Placements are discovered from the live scene, not a fixed list of IIDs.
-const TRAINING_MENTOR_ENTITY: u32 = 0x47001699;
+const TRAINING_MENTOR_ENTITY: u32 = crate::training_dialogue::MENTOR_ENTITY;
 
 fn npc_interaction_events(
     owner: u64,
@@ -3585,6 +3596,21 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                                 );
                                                             }
                                                         }
+                                                        return Ok(replies);
+                                                    }
+                                                    if words.first().is_some_and(|word| word.eq_ignore_ascii_case("@mentor")) && config.initialize_ui && config.training_kit {
+                                                        peer.last_chat_ms = Some(now_ms);
+                                                        let result = (|| -> io::Result<()> {
+                                                            let saved = &store.characters[&character];
+                                                            if peer.combat || !saved.progression.alive() { return Err(invalid("Speak to a mentor while alive and out of combat.")); }
+                                                            let mentor = scene.nearby_service(character, TRAINING_MENTOR_ENTITY, None).ok_or_else(|| invalid("Move within four metres of a training mentor."))?;
+                                                            let race = saved.creation.as_ref().map_or(1, |request| request.race);
+                                                            let text = crate::training_dialogue::topic(&words[1..].join(" "), race, &saved.quests).ok_or_else(|| invalid("Ask @mentor help, gear, combat, healing, supplies, crafting, travel or quests."))?;
+                                                            let events = npc_interaction_events(character, mentor, &scene, "Pectar, Training Master", &text)?;
+                                                            peer.queue_ordered_batch(events)?;
+                                                            Ok(())
+                                                        })();
+                                                        if let Err(error) = result { replies.extend(peer.send_event(&script::chat(&error.to_string(), 1).map_err(other)?, now)?); }
                                                         return Ok(replies);
                                                     }
                                                     if words.first().is_some_and(|word| {
