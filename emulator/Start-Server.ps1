@@ -64,20 +64,13 @@ if (-not $game) {
 }
 
 $server = Find-Server
-if (-not $server) {
-    Write-Host 'Building the latest server.'
-    Push-Location $root
-    try {
-        & cargo build --release
-        if ($LASTEXITCODE -ne 0) { throw 'Server build failed.' }
-    } finally { Pop-Location }
-    $server = Join-Path $root 'target\release\pyrealium.exe'
-}
-
 $processes = @(Get-CimInstance -ClassName Win32_Process -Filter "Name = 'pyrealium.exe'" -ErrorAction SilentlyContinue)
 $running = @($processes | Where-Object { $_.CommandLine -match '\bserve(?:-training|-world)?\s' })
 if ($running.Count -gt 0) {
-    $current = $running | Where-Object { $_.ExecutablePath -eq $server }
+    # A running server locks its executable, so it must stop before any rebuild.
+    $current = $server -and ($running | Where-Object {
+        $_.ExecutablePath -eq $server -and $_.CreationDate -gt (Get-Item -LiteralPath $server).LastWriteTime
+    })
     if ($current) {
         Write-Host 'The latest server is already running. Leave it open and click Enter Dereth.'
         exit 0
@@ -94,6 +87,15 @@ if ($running.Count -gt 0) {
         }
     }
     Start-Sleep -Milliseconds 500
+}
+if (-not $server) {
+    Write-Host 'Building the latest server.'
+    Push-Location $root
+    try {
+        & cargo build --release
+        if ($LASTEXITCODE -ne 0) { throw 'Server build failed.' }
+    } finally { Pop-Location }
+    $server = Join-Path $root 'target\release\pyrealium.exe'
 }
 $stale = @(Join-Path $data 'server.lock')
 $accountsRunning = @(Get-CimInstance -ClassName Win32_Process -Filter "Name = 'pyrealium.exe'" -ErrorAction SilentlyContinue |

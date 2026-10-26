@@ -436,8 +436,12 @@ impl Encounters {
             let entity = u32::from_str_radix(line, 16).map_err(|_| invalid("creature entity"))?;
             rules.entry(entity).or_insert(starter);
         }
+        // The mentor's entity is a unique quest monster record (AI_UniqueMonster,
+        // NPC_IsGroupMonster); placed as a service NPC it must never fight.
+        let service = [crate::training_dialogue::MENTOR_ENTITY, crate::merchants::MERCHANT_ENTITY];
         let actors = content
             .objects()
+            .filter(|object| !service.contains(&object.entity))
             .filter_map(|object| {
                 rules.get(&object.entity).map(|&rule| {
                     (
