@@ -569,6 +569,58 @@ pub fn create_stationary_object_with_scale(
     Ok(bytes)
 }
 
+pub const CORPSE_ENTITY: u32 = 0x47001109;
+pub const CORPSE_VISUAL: u32 = 0x1f000036;
+const CORPSE_MODE: u32 = 0x41000003;
+const DEATH_SLIDER: u32 = 0x4000001d;
+
+/// Creature corpse following the retail creation in
+/// `combat/brieft.fight.and.loot.elog`: entity 47001109, visual 1f000036,
+/// mode 41000003 and sliders 4000000a=1.0 / 4000001d=4.0. The capture's newer
+/// physics FX list (flag 0x200) and extra weenie fields are omitted; only the
+/// 7148-known mode/slider physics subset and the weenie type, entity and
+/// literal name are packed, in gmWeenieDesc::StreamPack order (006037c0).
+pub fn create_corpse(
+    id: u64,
+    cell: u32,
+    position: [f32; 3],
+    orientation: [f32; 4],
+    name: &str,
+) -> Result<Vec<u8>, WorldError> {
+    let norm: f32 = orientation.iter().map(|v| v * v).sum();
+    if id == 0
+        || cell == 0
+        || position.iter().chain(orientation.iter()).any(|v| !v.is_finite())
+        || (norm - 1.0).abs() > 0.01
+    {
+        return Err(WorldError::InvalidValue);
+    }
+    let mut bytes = CREATE_OBJECT.to_le_bytes().to_vec();
+    bytes.extend(id.to_le_bytes());
+    bytes.extend(2_u32.to_le_bytes());
+    bytes.extend(CORPSE_VISUAL.to_le_bytes());
+    bytes.extend(0x8082_u32.to_le_bytes());
+    bytes.extend(1_u16.to_le_bytes());
+    bytes.extend(0_u16.to_le_bytes());
+    bytes.extend(CORPSE_MODE.to_le_bytes());
+    bytes.extend(2_u32.to_le_bytes());
+    for (slider, value) in [(0x4000000a_u32, 1.0_f32), (DEATH_SLIDER, 4.0)] {
+        bytes.extend(slider.to_le_bytes());
+        bytes.extend(value.to_le_bytes());
+        bytes.extend(0.0_f32.to_le_bytes());
+    }
+    bytes.extend(cell.to_le_bytes());
+    for value in position.iter().chain(orientation.iter()) {
+        bytes.extend(value.to_le_bytes());
+    }
+    bytes.extend([0; 8]);
+    bytes.extend(0x0200_0005_u32.to_le_bytes());
+    bytes.extend(0x182_u32.to_le_bytes());
+    bytes.extend(CORPSE_ENTITY.to_le_bytes());
+    bytes.extend(literal_name(name)?);
+    Ok(bytes)
+}
+
 /// Empty CBaseQualities: present-table mask 0, uncategorized DBObj DID.
 /// The receiver requires an existing player object. This carries no player stats,
 /// abilities or inventory and MUST NOT be treated as complete gameplay state.

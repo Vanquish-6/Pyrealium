@@ -553,6 +553,51 @@ impl Scene {
             })
             .collect())
     }
+    pub fn move_content(
+        &mut self,
+        id: u64,
+        placement: Placement,
+        motion: u32,
+        time: f64,
+    ) -> std::io::Result<Vec<Delivery>> {
+        let data = self.content.move_object(id, placement, motion, time)?;
+        Ok(self
+            .neighbor_ids(placement.cell, 0)
+            .map(|recipient| Delivery {
+                recipient,
+                data: data.clone(),
+            })
+            .collect())
+    }
+    /// Create a corpse where creature `of` currently stands.
+    pub fn spawn_corpse(&mut self, id: u64, of: u64, name: &str) -> std::io::Result<Vec<Delivery>> {
+        let object = self
+            .content
+            .object(of)
+            .ok_or_else(|| std::io::Error::other("corpse source creature unknown"))?;
+        let (placement, orientation) = (object.placement, object.orientation());
+        let spawn = crate::world::create_corpse(id, placement.cell, placement.coordinates, orientation, name)
+            .map_err(|error| std::io::Error::other(format!("corpse: {error}")))?;
+        let data: Arc<[u8]> = spawn.clone().into();
+        self.content.insert_corpse(id, placement, orientation, spawn)?;
+        Ok(self
+            .neighbor_ids(placement.cell, 0)
+            .map(|recipient| Delivery {
+                recipient,
+                data: data.clone(),
+            })
+            .collect())
+    }
+    pub fn remove_corpse(&mut self, id: u64) -> std::io::Result<Vec<Delivery>> {
+        let (cell, data) = self.content.remove_corpse(id)?;
+        Ok(self
+            .neighbor_ids(cell, 0)
+            .map(|recipient| Delivery {
+                recipient,
+                data: data.clone(),
+            })
+            .collect())
+    }
     pub fn respawn_content(&mut self, id: u64) -> std::io::Result<Vec<Delivery>> {
         self.content.respawn(id)?;
         let object = self.content.object(id).unwrap();

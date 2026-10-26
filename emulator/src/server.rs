@@ -605,6 +605,14 @@ fn examine_target(
         return examination::response(target, names.get(definition, "Item"), &[]).map_err(other);
     }
     if let Some(object) = scene.examination_content(character, target) {
+        if object.entity == crate::world::CORPSE_ENTITY {
+            return examination::response(
+                target,
+                Name::Literal("Creature Corpse".into()),
+                &["Use it within four metres to collect its loot. Only the one who defeated the creature may loot it.".into()],
+            )
+            .map_err(other);
+        }
         let mut lines = Vec::new();
         if let Some((health, maximum)) = object.stat(0x102).zip(object.stat(0x107)) {
             lines.push(format!("Health: {health} / {maximum}"));
@@ -1379,6 +1387,91 @@ fn npc_interaction_events(
     ])
 }
 
+fn loot_text(loot: &crate::encounters::Loot) -> String {
+    let item = loot.item.map(|stock| match stock {
+        crate::merchants::Stock::Potion => "a health potion",
+        crate::merchants::Stock::Weapon => "a training weapon",
+        crate::merchants::Stock::Mucor => "a Mucor Mushroom",
+        crate::merchants::Stock::Tallow => "a Tallow bundle",
+    });
+    match (loot.gold, item) {
+        (0, None) => "nothing".into(),
+        (0, Some(item)) => item.into(),
+        (gold, None) => format!("{gold} gold"),
+        (gold, Some(item)) => format!("{gold} gold and {item}"),
+    }
+}
+
+/// Using a corpse collects everything it holds ("Loot All"); the retail
+/// container window protocol is not reproduced. Only the killer may loot.
+#[allow(clippy::too_many_arguments)]
+fn loot_corpse(
+    peer: &mut Peer,
+    character: u64,
+    corpse: u64,
+    store: &mut Store,
+    scene: &mut crate::scene::Scene,
+    encounters: &mut Option<crate::encounters::Encounters>,
+    metadata: &BTreeMap<u32, Option<crate::inventory_request::Metadata>>,
+) -> io::Result<Vec<crate::scene::Delivery>> {
+    let runtime = encounters
+        .as_mut()
+        .ok_or_else(|| invalid("Creature loot is not enabled on this server."))?;
+    let held = runtime
+        .corpse(corpse)
+        .ok_or_else(|| invalid("There is nothing left on this corpse."))?;
+    if held.killer != character {
+        return Err(invalid("This corpse belongs to the adventurer who defeated it."));
+    }
+    let loot = held.loot;
+    let player = scene
+        .player_placement(character)
+        .ok_or_else(|| invalid("Player is not ready."))?;
+    let at = scene
+        .content_placement(corpse)
+        .ok_or_else(|| invalid("That corpse is no longer here."))?;
+    let distance = player
+        .coordinates
+        .iter()
+        .zip(at.coordinates)
+        .map(|(a, b)| (a - b).powi(2))
+        .sum::<f32>()
+        .sqrt();
+    if player.cell != at.cell || distance > 4.0 {
+        return Err(invalid("Move within four metres of the corpse."));
+    }
+    let saved = &store.characters[&character];
+    let mut items = Vec::new();
+    let mut taken = crate::encounters::Loot { gold: loot.gold, item: None };
+    if let Some(stock) = loot.item {
+        if let Some(slot) = saved.inventory.free_slot().filter(|_| saved.inventory.dense_bags()) {
+            items.push(crate::inventory::Command::Grant(stock.item(store.next_item_id()?, slot)));
+            taken.item = Some(stock);
+        }
+    }
+    let changes = if loot.gold > 0 {
+        vec![crate::progression::Command::AwardGold(loot.gold)]
+    } else {
+        Vec::new()
+    };
+    let mut completion = vec![crate::interaction::success(character, corpse, player, distance).map_err(other)?];
+    let mut text = format!("You loot {}.", loot_text(&taken));
+    if taken.item != loot.item {
+        text.push_str(" Your bag is full; the rest stays on the corpse.");
+    }
+    completion.push(script::chat(&text, 1).map_err(other)?);
+    let mut updates = if items.is_empty() && changes.is_empty() {
+        peer.queue_ordered_batch(completion)?;
+        Vec::new()
+    } else {
+        item_service_transaction(peer, character, &items, &changes, completion, store, scene, metadata)?
+    };
+    if runtime.looted(corpse, loot.gold > 0, taken.item.is_some()) {
+        updates.extend(scene.remove_corpse(corpse)?);
+    }
+    Ok(updates)
+}
+
 fn mentor_interaction_events(owner: u64, target: u64, scene: &crate::scene::Scene, text: &str) -> io::Result<Vec<Vec<u8>>> {
     let mut events = npc_interaction_events(owner, target, scene, "Pectar, Training Master", text)?;
     events.push(crate::interaction::dialogue("Pectar, Training Master", text).map_err(other)?);
@@ -1805,6 +1898,16 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
         .transpose()?;
     if config.training_kit {
         if let Some(runtime) = &mut encounters {
+            let directory = config
+                .game_data
+                .as_deref()
+                .ok_or_else(|| invalid("creature loot requires --game-data"))?;
+            let mut portal = crate::dat::Dat::open(directory.join("portal.dat"))?;
+            for did in [crate::world::CORPSE_ENTITY, crate::world::CORPSE_VISUAL] {
+                portal
+                    .read(did)
+                    .map_err(|error| invalid(&format!("corpse asset {did:#010x}: {error}")))?;
+            }
             runtime.enable_training_loot();
         }
     }
@@ -2947,6 +3050,30 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                             }
                                         }
                                         script::Request::UseObject(request) => {
+                                            if request.item >> 44 == crate::encounters::CORPSE_NAMESPACE >> 44 {
+                                                if request.owner != character {
+                                                    return Err(invalid("Corpse use owner mismatch."));
+                                                }
+                                                match loot_corpse(
+                                                    peer,
+                                                    character,
+                                                    request.item,
+                                                    &mut store,
+                                                    &mut scene,
+                                                    &mut encounters,
+                                                    &inventory_metadata,
+                                                ) {
+                                                    Ok(updates) => deliveries.extend(updates),
+                                                    Err(error) => replies.extend(
+                                                        peer.send_event(
+                                                            &script::chat(&error.to_string(), 1)
+                                                                .map_err(other)?,
+                                                            now,
+                                                        )?,
+                                                    ),
+                                                }
+                                                return Ok(replies);
+                                            }
                                             let service_entity = scene.examination_content(character, request.item)
                                                 .map(|object| object.entity);
                                             if service_entity == Some(TRAINING_MENTOR_ENTITY)
@@ -4733,41 +4860,58 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                             }
                         }
                     }
-                    crate::encounters::Event::Item {
-                        player,
-                        item,
-                        instance,
-                    } => {
-                        let metadata = inventory_metadata
-                            .get(&item.definition)
-                            .and_then(|entry| *entry)
-                            .ok_or_else(|| {
-                                invalid("Encounter item metadata was not initialized")
-                            })?;
-                        let spawn =
-                            world::create_inventory_item(&item, player, instance).map_err(other)?;
-                        let acquired = crate::item_services::acquired(player, &item, metadata)
-                            .map_err(other)?;
-                        scene
-                            .inventory_granted(player, item.id, instance)
-                            .map_err(other)?;
-                        updates.push(crate::scene::Delivery {
-                            recipient: player,
-                            data: spawn.into(),
-                        });
-                        updates.push(crate::scene::Delivery {
-                            recipient: player,
-                            data: acquired.into(),
-                        });
-                        updates.push(crate::scene::Delivery {
-                            recipient: player,
-                            data: script::chat(
-                                "Training reward: a health potion was placed in your bag.",
-                                1,
-                            )
-                            .map_err(other)?
-                            .into(),
-                        });
+                    crate::encounters::Event::Move {
+                        actor,
+                        placement,
+                        motion,
+                    } => match scene.move_content(actor, placement, motion, now_ms as f64 / 1000.0) {
+                        Ok(deliveries) => updates.extend(deliveries),
+                        Err(error) => {
+                            let reason = format!("Creature movement {actor:#x}: {error}");
+                            if diagnosed_application_errors.len() < 32
+                                && diagnosed_application_errors.insert(reason.clone())
+                            {
+                                eprintln!("{reason}");
+                            }
+                        }
+                    },
+                    crate::encounters::Event::Corpse { id, creature, killer } => {
+                        match scene.spawn_corpse(id, creature, "Creature Corpse") {
+                            Ok(deliveries) => updates.extend(deliveries),
+                            Err(error) => {
+                                // No room for a corpse: hand the gold straight to the killer.
+                                let gold = runtime.discard_corpse(id).map_or(0, |corpse| corpse.loot.gold);
+                                if let Some(saved) = store.characters.get(&killer).filter(|c| !c.deleted) {
+                                    let account = saved.account.clone();
+                                    let previous = saved.progression.clone();
+                                    if gold > 0 {
+                                        store.progression_batch(
+                                            &account,
+                                            killer,
+                                            &[crate::progression::Command::AwardGold(gold)],
+                                        )?;
+                                    }
+                                    let state = store.characters[&killer].progression.clone();
+                                    for wire in state.private_changes(&previous) {
+                                        updates.push(crate::scene::Delivery { recipient: killer, data: wire.into() });
+                                    }
+                                    updates.push(crate::scene::Delivery {
+                                        recipient: killer,
+                                        data: script::chat(
+                                            &format!("No corpse could be left here ({error}). You collect {gold} gold."),
+                                            1,
+                                        )
+                                        .map_err(other)?
+                                        .into(),
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    crate::encounters::Event::CorpseExpired(id) => {
+                        if let Ok(deliveries) = scene.remove_corpse(id) {
+                            updates.extend(deliveries);
+                        }
                     }
                     crate::encounters::Event::Quest { player, book } => {
                         updates.push(crate::scene::Delivery {

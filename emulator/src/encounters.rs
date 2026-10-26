@@ -1,7 +1,16 @@
-//! Deterministic development encounters. Rules are explicit server-authored data.
-//! This module does not claim original combat balance, collision or animation parity.
+//! Server-run encounters: creature AI, combat resolution, corpses and loot.
+//!
+//! Creature stats come from portal.dat (`content/creature-combat.tsv`) unless an
+//! authored development row overrides them. Hit, damage and armor rolls are in
+//! `combat.rs`. Creatures acquire players inside their DAT perception radius,
+//! chase in a straight line inside their own cell at the observed retail cadence
+//! (`tools/survey_server_motion.py`), and return home past their homesick
+//! radius, following the 2012 `Monster.DecisionTree`. There is no pathfinding,
+//! collision or line-of-sight test. Loot tables are authored.
 use crate::{
+    combat::{self, Dice, School},
     content::Content,
+    merchants::Stock,
     movement::Placement,
     progression::{Command, Progression},
     scene::Scene,
@@ -26,7 +35,30 @@ struct Rule {
     respawn: u64,
     xp: u64,
     gold: u32,
+    variance: f32,
+    attack: u32,
+    defense: u32,
+    /// 0 = only fights back when attacked.
+    perception: f32,
+    homesick: f32,
 }
+/// Authored profile for rows without DAT combat data: level 1 ratings,
+/// retaliation only, a short leash.
+const AUTHORED_VARIANCE: f32 = 0.2;
+const AUTHORED_RATING: u32 = 8;
+const AUTHORED_HOMESICK: f32 = 20.0;
+/// `Monster` constructor default when the record has no AI_HomesickRadius.
+const DEFAULT_HOMESICK: f32 = 60.0;
+/// Authored spread on player weapon hits; no player weapon damage table is recovered.
+const PLAYER_VARIANCE: f32 = 0.2;
+const MOVE_MS: u64 = 300;
+/// Retail chasers in `large.combat.elog` covered about 6.6 m/s; slightly slower here.
+const CHASE_SPEED: f32 = 5.0;
+const RUN_MOTION: u32 = 0x7ffe7f;
+const STAND_MOTION: u32 = 0x7f7f7f;
+const CORPSE_MS: u64 = 120_000;
+const MAX_CORPSES: usize = 256;
+pub const CORPSE_NAMESPACE: u64 = 0x8140_f000_0000_0000;
 struct Actor {
     entity: u32,
     rule: Rule,
@@ -35,6 +67,25 @@ struct Actor {
     next_attack: u64,
     respawn_at: Option<u64>,
     despawn_at: Option<u64>,
+    home: Placement,
+    next_move: u64,
+    moving: bool,
+    returning: bool,
+    /// Killer and loot waiting for the corpse to appear.
+    remains: Option<(u64, Loot)>,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Loot {
+    pub gold: u32,
+    pub item: Option<Stock>,
+}
+pub struct Corpse {
+    pub killer: u64,
+    pub loot: Loot,
+    expires: u64,
+}
+fn distance(a: [f32; 3], b: [f32; 3]) -> f32 {
+    a.iter().zip(b).map(|(a, b)| (a - b) * (a - b)).sum::<f32>().sqrt()
 }
 #[derive(Clone, Copy)]
 struct Attack {
@@ -107,11 +158,19 @@ pub enum Event {
         attacker: u64,
         health_change: i32,
     },
-    Item {
-        player: u64,
-        item: crate::inventory::Item,
-        instance: u16,
+    /// Same-cell creature movement; `motion` is the native low 24-bit motion vector.
+    Move {
+        actor: u64,
+        placement: Placement,
+        motion: u32,
     },
+    /// Create corpse `id` where `creature` stands; only `killer` may loot it.
+    Corpse {
+        id: u64,
+        creature: u64,
+        killer: u64,
+    },
+    CorpseExpired(u64),
     Quest {
         player: u64,
         book: crate::quests::Book,
@@ -153,6 +212,9 @@ pub struct Encounters {
     burns: Vec<Burn>,
     mends: Vec<Mend>,
     regen: BTreeMap<u64, (Regen, u64)>,
+    dice: Dice,
+    corpses: BTreeMap<u64, Corpse>,
+    next_corpse: u64,
 }
 fn in_range(a: Option<Placement>, b: Option<Placement>, range: f32) -> bool {
     a.zip(b).is_some_and(|(a, b)| {
@@ -236,6 +298,11 @@ impl Encounters {
                         respawn: number(6)?,
                         xp: number(7)?,
                         gold: small(8)?,
+                        variance: AUTHORED_VARIANCE,
+                        attack: AUTHORED_RATING,
+                        defense: AUTHORED_RATING,
+                        perception: 0.0,
+                        homesick: AUTHORED_HOMESICK,
                     };
                     if entity >> 24 != 0x47
                         || rule.health == 0
@@ -277,9 +344,16 @@ impl Encounters {
                 continue;
             }
             let f: Vec<_> = line.split('\t').collect();
-            if f.len() != 7 {
+            if f.len() != 13 {
                 return Err(invalid("creature combat field count"));
             }
+            let real = |i: usize, max: f32| -> io::Result<f32> {
+                let value: f32 = f[i].parse().map_err(|_| invalid("creature combat decimal"))?;
+                if !value.is_finite() || !(0.0..=max).contains(&value) {
+                    return Err(invalid("creature combat decimal bounds"));
+                }
+                Ok(value)
+            };
             let entity = u32::from_str_radix(f[0], 16).map_err(|_| invalid("creature combat entity"))?;
             let number = |i: usize| {
                 f[i].parse::<u64>()
@@ -296,7 +370,16 @@ impl Encounters {
             }
             let armor = small(4)?;
             let xp = number(5)?;
+            let level = small(6)?;
+            let variance = real(7, 1.0)?;
+            let attack = small(8)?;
+            let defense = small(9)?;
+            let perception = real(10, 500.0)?;
+            let homesick = real(11, 500.0)?;
             if entity >> 24 != 0x47
+                || level > 1000
+                || attack > 1_000_000
+                || defense > 1_000_000
                 || health == 0
                 || health > 5_000_000
                 || damage == 0
@@ -315,7 +398,14 @@ impl Encounters {
                 range: 3.0,
                 respawn: 30_000,
                 xp,
-                gold: 2,
+                // Authored: no creature gold table is recovered.
+                gold: 2 + level / 2,
+                variance,
+                // A record without combat skills keeps its level-equivalent rating.
+                attack: if attack == 0 { level.max(1) * 8 } else { attack },
+                defense: if defense == 0 { level.max(1) * 8 } else { defense },
+                perception,
+                homesick: if homesick > 0.0 { homesick } else { DEFAULT_HOMESICK },
             };
             if rules.contains_key(&entity) {
                 continue;
@@ -333,6 +423,11 @@ impl Encounters {
             respawn: 30_000,
             xp: 40,
             gold: 2,
+            variance: AUTHORED_VARIANCE,
+            attack: AUTHORED_RATING,
+            defense: AUTHORED_RATING,
+            perception: 0.0,
+            homesick: AUTHORED_HOMESICK,
         };
         for line in include_str!("../content/creature-entities.txt").lines() {
             if line.is_empty() || line.starts_with('#') || line.starts_with("pyrealium-") {
@@ -355,6 +450,11 @@ impl Encounters {
                             next_attack: 0,
                             respawn_at: None,
                             despawn_at: None,
+                            home: object.placement,
+                            next_move: 0,
+                            moving: false,
+                            returning: false,
+                            remains: None,
                         },
                     )
                 })
@@ -380,7 +480,66 @@ impl Encounters {
             burns: Vec::new(),
             mends: Vec::new(),
             regen: BTreeMap::new(),
+            dice: Dice::seeded(),
+            corpses: BTreeMap::new(),
+            next_corpse: CORPSE_NAMESPACE | 1,
         })
+    }
+    pub fn corpse(&self, id: u64) -> Option<&Corpse> {
+        self.corpses.get(&id)
+    }
+    /// Record what the killer collected; an emptied corpse is removed.
+    /// Returns true when the corpse should be destroyed.
+    pub fn looted(&mut self, id: u64, took_gold: bool, took_item: bool) -> bool {
+        let Some(corpse) = self.corpses.get_mut(&id) else {
+            return false;
+        };
+        if took_gold {
+            corpse.loot.gold = 0;
+        }
+        if took_item {
+            corpse.loot.item = None;
+        }
+        if corpse.loot.gold == 0 && corpse.loot.item.is_none() {
+            self.corpses.remove(&id);
+            return true;
+        }
+        false
+    }
+    /// The corpse could not be created; hand back its loot.
+    pub fn discard_corpse(&mut self, id: u64) -> Option<Corpse> {
+        self.corpses.remove(&id)
+    }
+    /// Authored drop table; the DAT loot profiles reference an unrecovered
+    /// treasure system. Items are the validated training stock.
+    fn roll_loot(&mut self, rule: &Rule) -> Loot {
+        let roll = self.dice.unit();
+        let item = if roll < 0.30 {
+            Some(Stock::Potion)
+        } else if roll < 0.45 {
+            Some(Stock::Mucor)
+        } else if roll < 0.55 {
+            Some(Stock::Tallow)
+        } else {
+            None
+        };
+        Loot { gold: rule.gold, item }
+    }
+    /// Despawn a defeated creature, leaving its corpse first.
+    fn bury(&mut self, id: u64, now: u64, events: &mut Vec<Event>) {
+        if let Some((killer, loot)) = self.actors.get_mut(&id).and_then(|actor| actor.remains.take()) {
+            if self.corpses.len() >= MAX_CORPSES {
+                if let Some((&oldest, _)) = self.corpses.iter().min_by_key(|(_, corpse)| corpse.expires) {
+                    self.corpses.remove(&oldest);
+                    events.push(Event::CorpseExpired(oldest));
+                }
+            }
+            let corpse = self.next_corpse;
+            self.next_corpse = CORPSE_NAMESPACE | ((self.next_corpse + 1) & 0x0fff_ffff_ffff);
+            self.corpses.insert(corpse, Corpse { killer, loot, expires: now.saturating_add(CORPSE_MS) });
+            events.push(Event::Corpse { id: corpse, creature: id, killer });
+        }
+        events.push(Event::Despawn(id));
     }
     pub fn initial_health(&self) -> impl Iterator<Item = (u64, u32)> + '_ {
         self.actors
@@ -577,14 +736,27 @@ impl Encounters {
                 self.stopped(player, &mut events);
                 continue;
             }
-            let actor = &self.actors[&attack.target];
+            let (defense, armor, health) = {
+                let actor = &self.actors[&attack.target];
+                (actor.rule.defense, actor.rule.armor, actor.health)
+            };
+            let character = &store.characters[&player];
+            let level = character.progression.level().number;
+            let rating = if attack.strike.is_some() {
+                [School::Melee, School::Missile, School::Magic]
+                    .into_iter()
+                    .map(|school| combat::player_attack(level, &character.skills, school))
+                    .max()
+                    .unwrap_or(0)
+            } else {
+                combat::player_attack(level, &character.skills, School::Melee)
+            };
+            let hit = self.dice.roll(combat::hit_chance(rating, defense));
             let damage = attack
                 .strike
                 .map_or(self.damage, |strike| self.damage.saturating_add(strike.bonus));
-            let dealt = damage
-                .saturating_sub(actor.rule.armor)
-                .max(1)
-                .min(actor.health);
+            let raw = combat::natural_damage(damage, PLAYER_VARIANCE, &mut self.dice);
+            let dealt = combat::mitigate(raw, armor, &mut self.dice).min(health);
             // A skill drains up to its cost; it only needs the retail minimum of 1.
             let cost = match attack.strike {
                 Some(strike) => strike
@@ -600,7 +772,20 @@ impl Encounters {
                 self.stopped(player, &mut events);
                 continue;
             }
-            if !self.land(player, attack.target, dealt, cost, true, now, scene, store, &mut events)? {
+            if !hit {
+                if attack.strike.is_some() && cost > 0 {
+                    let account = store.characters[&player].account.clone();
+                    let previous = store.characters[&player].progression.clone();
+                    store.progression_batch(&account, player, &[Command::SpendVigor(cost)])?;
+                    events.push(Event::Owner {
+                        player,
+                        previous,
+                        state: store.characters[&player].progression.clone(),
+                    });
+                }
+                self.provoke(attack.target, player, now, &mut events);
+                events.push(Event::Note { player, text: "You miss.".into() });
+            } else if !self.land(player, attack.target, dealt, cost, true, now, store, &mut events)? {
                 self.stopped(player, &mut events);
                 continue;
             }
@@ -613,7 +798,7 @@ impl Encounters {
                 player,
                 behavior: attack.strike.map(|strike| strike.behavior).filter(|&b| b != 0),
             });
-            if let Some(strike) = attack.strike {
+            if let Some(strike) = attack.strike.filter(|_| hit) {
                 if strike.fx != 0 {
                     events.push(Event::Fx {
                         target: attack.target,
@@ -642,11 +827,31 @@ impl Encounters {
                 resumed.strike = None;
             }
         }
-        self.tick_burns(now, scene, store, &mut events)?;
+        let active: Vec<u64> = active.collect();
+        self.tick_burns(now, store, &mut events)?;
         self.tick_mends(now, scene, store, &mut events)?;
-        self.tick_creatures(now, scene, store, &mut events)?;
-        self.tick_regen(now, scene, store, active, &mut events)?;
+        self.tick_creatures(now, scene, store, &active, &mut events)?;
+        self.tick_regen(now, scene, store, active.into_iter(), &mut events)?;
+        let expired: Vec<u64> = self
+            .corpses
+            .iter()
+            .filter(|(_, corpse)| corpse.expires <= now)
+            .map(|(&id, _)| id)
+            .collect();
+        for id in expired {
+            self.corpses.remove(&id);
+            events.push(Event::CorpseExpired(id));
+        }
         Ok(events)
+    }
+    /// An attacked creature without a target turns on its attacker.
+    fn provoke(&mut self, creature: u64, player: u64, now: u64, events: &mut Vec<Event>) {
+        if let Some(actor) = self.actors.get_mut(&creature).filter(|actor| actor.health > 0 && actor.target.is_none()) {
+            actor.target = Some(player);
+            actor.returning = false;
+            actor.next_attack = now.saturating_add(actor.rule.interval);
+            events.push(Event::IdolVisual(creature, crate::combat_visual::IdolAction::Combat));
+        }
     }
 
     /// Settle one hit by `player` on creature `target`: payment, rewards, quest
@@ -661,7 +866,6 @@ impl Encounters {
         cost: u32,
         direct: bool,
         now: u64,
-        scene: &Scene,
         store: &mut Store,
         events: &mut Vec<Event>,
     ) -> io::Result<bool> {
@@ -681,7 +885,8 @@ impl Encounters {
         if killed && actor.rule.xp > 0 {
             commands.push(Command::AwardXp(actor.rule.xp));
         }
-        if killed && actor.rule.gold > 0 {
+        // With loot enabled the gold waits in the corpse instead.
+        if killed && actor.rule.gold > 0 && !self.training_loot {
             commands.push(Command::AwardGold(actor.rule.gold));
         }
         let candidate = commands
@@ -698,47 +903,13 @@ impl Encounters {
             let account = character.account.clone();
             let previous = character.progression.clone();
             let previous_quests = character.quests.clone();
-            let loot = if direct && killed && self.training_loot {
-                character
-                    .inventory
-                    .free_slot()
-                    .filter(|_| character.inventory.dense_bags())
-                    .and_then(|slot| {
-                        store
-                            .next_item_id()
-                            .ok()
-                            .map(|id| crate::item_services::potion(id, slot))
-                    })
-                    .and_then(|item| {
-                        scene
-                            .admit_inventory_grant(player, item.id)
-                            .ok()
-                            .map(|instance| (item, instance))
-                    })
-            } else {
-                None
-            };
-            if let Some((item, instance)) = &loot {
-                store.encounter_transaction(
-                    &account,
-                    player,
-                    actor.entity,
-                    &[crate::inventory::Command::Grant(item.clone())],
-                    &commands,
-                )?;
-                events.push(Event::Item {
-                    player,
-                    item: item.clone(),
-                    instance: *instance,
-                });
-            } else if killed {
+            if killed && !commands.is_empty() {
                 store.encounter_reward(&account, player, actor.entity, &commands)?;
             } else if !commands.is_empty() {
                 store.progression_batch(&account, player, &commands)?;
             }
-            if killed && self.training_loot && loot.is_none() {
-                events.push(Event::Note {player,text:"No training potion was granted: make room in your bag. XP, gold and quest credit are saved.".into()});
-            }
+            let rule = actor.rule;
+            let loot = (killed && self.training_loot).then(|| self.roll_loot(&rule));
             if store.characters[&player].quests != previous_quests {
                 events.push(Event::Quest {
                     player,
@@ -773,24 +944,26 @@ impl Encounters {
             });
             if killed {
                 actor.target = None;
+                actor.moving = false;
                 actor.respawn_at = Some(now.saturating_add(actor.rule.respawn));
+                actor.remains = loot.map(|loot| (player, loot));
                 events.push(Event::Note {
                     player,
-                    text: format!(
-                        "Creature defeated. Earned {} XP and {} gold.",
-                        actor.rule.xp, actor.rule.gold
-                    ),
+                    text: if loot.is_some() {
+                        format!("Creature defeated. Earned {} XP. Use its corpse to collect the loot.", actor.rule.xp)
+                    } else {
+                        format!("Creature defeated. Earned {} XP and {} gold.", actor.rule.xp, actor.rule.gold)
+                    },
                 });
                 if actor.entity == crate::quests::TARGET_ENTITY {
                     events.push(Event::IdolVisual(
                         target,
                         crate::combat_visual::IdolAction::Death,
                     ));
-                    // Authored presentation grace; rewards and attack authority
-                    // are already settled. This is not a lootable corpse.
+                    // Death presentation grace; the corpse replaces it afterwards.
                     actor.despawn_at = Some(now.saturating_add(1500.min(actor.rule.respawn)));
                 } else {
-                    events.push(Event::Despawn(target));
+                    self.bury(target, now, events);
                 }
                 self.burns.retain(|burn| burn.target != target);
                 let stopped = self
@@ -804,6 +977,7 @@ impl Encounters {
                 }
             } else if actor.target.is_none() {
                 actor.target = Some(player);
+                actor.returning = false;
                 actor.next_attack = now.saturating_add(actor.rule.interval);
                 events.push(Event::IdolVisual(
                     target,
@@ -817,7 +991,6 @@ impl Encounters {
     fn tick_burns(
         &mut self,
         now: u64,
-        scene: &Scene,
         store: &mut Store,
         events: &mut Vec<Event>,
     ) -> io::Result<()> {
@@ -831,7 +1004,7 @@ impl Encounters {
             };
             let alive = self.actors.get(&target).is_some_and(|actor| actor.health > 0);
             if alive {
-                self.land(source, target, per_tick, 0, false, now, scene, store, events)?;
+                self.land(source, target, per_tick, 0, false, now, store, events)?;
             }
             if let Some(burn) = self.burns.get_mut(index) {
                 burn.next = burn.next.saturating_add(burn.period);
@@ -910,18 +1083,24 @@ impl Encounters {
         now: u64,
         scene: &Scene,
         store: &mut Store,
+        active: &[u64],
         events: &mut Vec<Event>,
     ) -> io::Result<()> {
-        for (&id, actor) in &mut self.actors {
+        let ids: Vec<u64> = self.actors.keys().copied().collect();
+        for id in ids {
+            let actor = self.actors.get_mut(&id).unwrap();
             if actor.health == 0 {
                 if actor.despawn_at.is_some_and(|until| now >= until) {
                     actor.despawn_at = None;
-                    events.push(Event::Despawn(id));
+                    self.bury(id, now, events);
+                    continue;
                 }
                 if actor.respawn_at.is_some_and(|until| now >= until) {
                     actor.health = actor.rule.health;
                     actor.respawn_at = None;
                     actor.target = None;
+                    actor.returning = false;
+                    actor.moving = false;
                     events.push(Event::Respawn {
                         actor: id,
                         health: actor.health,
@@ -929,60 +1108,116 @@ impl Encounters {
                 }
                 continue;
             }
-            let Some(mut target) = actor.target else {
+            let Some(position) = scene.content_placement(id) else {
                 continue;
             };
-            let eligible = |player| {
+            let home = actor.home;
+            let rule = actor.rule;
+            // Alive, standing in this creature's cell and not past its leash.
+            let pursuable = |player: u64| {
                 store
                     .characters
                     .get(&player)
                     .is_some_and(|c| !c.deleted && c.progression.alive())
-                    && in_range(
-                        scene.player_placement(player),
-                        scene.content_placement(id),
-                        actor.rule.range,
-                    )
+                    && scene.player_placement(player).is_some_and(|p| {
+                        p.cell == position.cell
+                            && distance(p.coordinates, home.coordinates) <= rule.homesick
+                    })
             };
-            if !eligible(target) {
-                if let Some((&other, _)) = self
+            if let Some(target) = actor.target.filter(|&target| !pursuable(target)) {
+                let next = self
                     .attacks
                     .iter()
-                    .find(|(player, attack)| attack.target == id && eligible(**player))
-                {
-                    target = other;
-                    actor.target = Some(other);
-                    actor.next_attack = now.saturating_add(actor.rule.interval);
-                } else {
-                    actor.target = None;
-                    events.push(Event::IdolVisual(
-                        id,
-                        crate::combat_visual::IdolAction::Peace,
-                    ));
-                    if actor.health != actor.rule.health {
-                        actor.health = actor.rule.health;
-                        events.push(Event::Health {
-                            actor: id,
-                            health: actor.health,
-                        });
+                    .find(|(player, attack)| attack.target == id && **player != target && pursuable(**player))
+                    .map(|(&player, _)| player);
+                let actor = self.actors.get_mut(&id).unwrap();
+                actor.target = next;
+                actor.next_attack = now.saturating_add(rule.interval);
+                if next.is_none() {
+                    actor.returning = true;
+                    events.push(Event::IdolVisual(id, crate::combat_visual::IdolAction::Peace));
+                    if actor.health != rule.health {
+                        actor.health = rule.health;
+                        events.push(Event::Health { actor: id, health: actor.health });
                     }
-                    continue;
                 }
             }
-            if now < actor.next_attack {
+            let actor = self.actors.get_mut(&id).unwrap();
+            if actor.target.is_none() && !actor.returning && rule.perception > 0.0 {
+                let noticed = active
+                    .iter()
+                    .copied()
+                    .filter(|&player| pursuable(player))
+                    .filter_map(|player| {
+                        let at = scene.player_placement(player)?;
+                        let gap = distance(at.coordinates, position.coordinates);
+                        (gap <= rule.perception).then_some((gap, player))
+                    })
+                    .min_by(|a, b| a.0.total_cmp(&b.0))
+                    .map(|(_, player)| player);
+                if let Some(player) = noticed {
+                    actor.target = Some(player);
+                    actor.next_attack = now.saturating_add(rule.interval);
+                    events.push(Event::IdolVisual(id, crate::combat_visual::IdolAction::Combat));
+                    events.push(Event::Note { player, text: "A creature attacks you!".into() });
+                }
+            }
+            let chase = actor.target.and_then(|target| scene.player_placement(target));
+            let goal = chase.or_else(|| actor.returning.then_some(home));
+            if let Some(goal) = goal.filter(|_| now >= actor.next_move) {
+                let stop = if chase.is_some() { (rule.range * 0.8).max(0.5) } else { 0.0 };
+                let gap = distance(position.coordinates, goal.coordinates);
+                let heading = combat::heading(position.coordinates, goal.coordinates).unwrap_or(position.heading);
+                if gap > stop + 0.05 {
+                    let step = (CHASE_SPEED * MOVE_MS as f32 / 1000.0).min(gap - stop);
+                    let fraction = step / gap;
+                    let coordinates = std::array::from_fn(|i| {
+                        position.coordinates[i] + (goal.coordinates[i] - position.coordinates[i]) * fraction
+                    });
+                    actor.moving = true;
+                    actor.next_move = now.saturating_add(MOVE_MS);
+                    events.push(Event::Move {
+                        actor: id,
+                        placement: Placement { cell: position.cell, coordinates, heading },
+                        motion: RUN_MOTION,
+                    });
+                } else {
+                    if actor.moving {
+                        actor.moving = false;
+                        events.push(Event::Move {
+                            actor: id,
+                            placement: Placement { heading, ..position },
+                            motion: STAND_MOTION,
+                        });
+                    }
+                    if chase.is_none() {
+                        actor.returning = false;
+                    }
+                }
+            }
+            let Some(target) = actor.target else {
+                continue;
+            };
+            if now < actor.next_attack
+                || !in_range(scene.player_placement(target), Some(position), rule.range)
+            {
                 continue;
             }
-            let account = store.characters[&target].account.clone();
-            let previous = store.characters[&target].progression.clone();
-            // ArmorRating from Pyreal_DB_Insert_PlayerLevelData.sql. At least 1
-            // damage remains so a hit is still a hit.
-            let armor = previous.level().armor;
-            let dealt = actor.rule.damage.saturating_sub(armor).max(1);
+            actor.next_attack = now.saturating_add(rule.interval);
+            events.push(Event::IdolVisual(id, crate::combat_visual::IdolAction::Swing));
+            let character = &store.characters[&target];
+            let level = character.progression.level();
+            let defense = combat::player_defense(level.number, &character.skills, School::Melee);
+            if !self.dice.roll(combat::hit_chance(rule.attack, defense)) {
+                events.push(Event::Note { player: target, text: "The creature misses you.".into() });
+                continue;
+            }
+            let account = character.account.clone();
+            let previous = character.progression.clone();
+            // Level-table ArmorRating, as Player.ArmorRating caps it in the 2012 server.
+            let raw = combat::natural_damage(rule.damage, rule.variance, &mut self.dice);
+            let dealt = combat::mitigate(raw, level.armor, &mut self.dice);
             store.progression_command(&account, target, Command::Damage(dealt))?;
-            actor.next_attack = now.saturating_add(actor.rule.interval);
-            events.push(Event::IdolVisual(
-                id,
-                crate::combat_visual::IdolAction::Swing,
-            ));
             if let Ok(damage) = i32::try_from(dealt) {
                 events.push(Event::Hit {
                     victim: target,

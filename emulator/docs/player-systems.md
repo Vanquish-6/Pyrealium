@@ -898,3 +898,78 @@ unaffiliated constructor profile through 8203002e. All nullable 1b5 references
 remain absent; native 0043d790 selects the no-allegiance state rather than
 traversing a made-up hierarchy. The package layout is checked at startup.
 Swearing, patronage and allegiance XP remain unimplemented.
+
+## Creature AI, combat formula, corpses and loot (2026-10-26)
+
+`tools/import_creature_combat.py` now writes `pyrealium-creature-combat-v2`.
+Besides health, natural damage, armor, XP and level it exports natural damage
+variance (`AICombat_NaturalVariance` 41000185), attack and defense ratings (the
+highest `NPC_StartingSkillN` level among magic/melee/missile attack 1/7/c and
+defense 2/8/d), `AI_PerceptionRadius` (4100017a), `AI_HomesickRadius`
+(41000178) and `NPC_DamageType` (410002f9). 152 of 192 creature records have
+combat data. The training Idol's retail record, for example, has 117 damage at
+0.3 variance, 412 attack and 289 defense; the authored training row still
+overrides it so level-one characters can win.
+
+### Combat resolution (`src/combat.rs`)
+
+Ported from the 2012 world server:
+
+- Creature damage rolls `Random.Next(damage - damage * variance, damage)`
+  (`Monster.DecisionTree`).
+- Armor subtracts from every hit; a result below 25% of the raw hit becomes a
+  random 1 to 25% (`Living.ModifyHealth`). Players use their level-table armor.
+- Player attack is level x 8 plus 2.4/4.4/6.4 per rank of the school's
+  Master/Grandmaster/Paragon skill; defense uses 2/4/6
+  (`Player.CalculateAttackDefenseRatings`). The 7148 catalog uses the same skill
+  IDs (melee a/9/b, missile f/e/10, magic 4/3/5). Auto-attacks use melee;
+  skill strikes use the best school.
+
+Authored, because no source contains the original: the hit-chance curve
+(0.75 + 0.5 x (attack - defense) / (attack + defense), clamped to 5..95%) and
+a 20% spread on player hits. Misses still play the swing and spend a skill's
+vigor, but apply no burn or FX. Damage types are imported but not applied:
+neither the DAT creature records nor the legacy server define player
+resistances, so there is nothing to resist with yet.
+
+### Movement and aggression
+
+Creatures with a DAT perception radius attack the nearest living player inside
+it. Authored and starter rows (including the training Idols) only fight back.
+A creature with a target runs toward it at 5 m/s, stopping at 80% of its attack
+range, and sends native server position updates (`0x10086`) every 300 ms with
+forward motion `7ffe7f` and contact flag 4. It sends `7f7f7f` when it stops.
+These values follow 16,534 retail updates surveyed by
+`tools/survey_server_motion.py`, where chasing monsters moved about 6.6 m/s at
+a 0.3 s cadence. A creature drops its target when the player dies, leaves its
+cell, or goes beyond the homesick radius measured from its spawn point (DAT
+value, legacy default 60 m, authored rows 20 m). It then walks home with full
+health and ignores players until it arrives. The cached CreateObject follows
+the creature, so late observers see it where it stands, and respawn restores
+the original placement. Movement stays inside the creature's own cell, in a
+straight line, with no pathfinding, collision or line-of-sight test.
+
+### Corpses and loot
+
+With the training kit enabled, a kill awards XP immediately and leaves the
+gold, plus an authored item roll, on a corpse. The roll is 30% health potion,
+15% Mucor Mushroom, 10% Tallow bundle, otherwise nothing. DAT creatures carry
+2 + level/2 gold; the DAT `NPC_DeathLootProfile` references an unrecovered
+treasure system, so it is not used. The corpse appears as the creature
+despawns (after the Idol's death animation). It follows the retail creation in
+`combat/brieft.fight.and.loot.elog`: entity 47001109, visual 1f000036, mode
+41000003, sliders 4000000a=1.0 and 4000001d=4.0. The capture's newer physics FX
+list and extra weenie fields are left out; only the 7148-known mode/slider
+physics subset and a literal "Creature Corpse" name are packed. Startup reads
+both corpse DIDs before enabling loot.
+
+Using the corpse within four metres collects everything at once through the
+normal atomic item transaction: one item plus the gold, with use completion
+`82160021`. The retail container window and its `820e0068` requests are not
+reproduced. Only the killer may loot. A full bag leaves the item on the corpse.
+Corpses expire after two minutes; at most 256 exist, and the oldest is removed
+first. If a cell has no room for one, the gold goes straight to the killer.
+Corpse loot is held in memory only and does not survive a server restart.
+
+Compiled and type-checked only. No tests, native client checks or
+running-server replacement were performed.

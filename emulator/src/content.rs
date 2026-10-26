@@ -29,8 +29,38 @@ pub struct Object {
     instance: u16,
     visual_stamp: u16,
     stats: BTreeMap<u32, (u32, Arc<[u8]>)>,
+    home: (Placement, [f32; 4]),
+    position_stamp: u16,
+    dynamic: bool,
+}
+/// Start of Position in a generated stationary CreateObject, by physics flags.
+fn position_offset(spawn: &[u8]) -> Option<usize> {
+    match u32::from_le_bytes(spawn.get(20..24)?.try_into().ok()?) {
+        0x8000 => Some(28),
+        0x8080 => Some(32),
+        0x8082 => Some(48),
+        _ => None,
+    }
+    .filter(|offset| spawn.len() >= offset + 32)
+}
+fn write_position(spawn: &mut [u8], offset: usize, placement: Placement, orientation: [f32; 4]) {
+    for (i, value) in placement.coordinates.iter().chain(orientation.iter()).enumerate() {
+        spawn[offset + 4 + i * 4..offset + 8 + i * 4].copy_from_slice(&value.to_le_bytes());
+    }
 }
 impl Object {
+    /// Current quaternion from the cached CreateObject (w, x, y, z).
+    pub fn orientation(&self) -> [f32; 4] {
+        position_offset(&self.spawn).map_or(self.home.1, |offset| {
+            std::array::from_fn(|i| {
+                let at = offset + 16 + i * 4;
+                f32::from_le_bytes(self.spawn[at..at + 4].try_into().unwrap())
+            })
+        })
+    }
+    pub fn home(&self) -> Placement {
+        self.home.0
+    }
     pub fn stat(&self, key: u32) -> Option<u32> {
         self.stats.get(&key).map(|(value, _)| *value)
     }
@@ -212,12 +242,92 @@ impl Content {
         object.visual_stamp = stamp;
         Ok(wire.into())
     }
+    /// Same-cell server movement. Updates the cached CreateObject for late
+    /// observers and returns the native server position update (0x10086).
+    pub fn move_object(&mut self, id: u64, placement: Placement, motion: u32, time: f64) -> io::Result<Arc<[u8]>> {
+        let object = self
+            .objects
+            .get_mut(&id)
+            .filter(|object| object.active && !object.dynamic)
+            .ok_or_else(|| invalid("content object not movable"))?;
+        if placement.cell != object.placement.cell || !placement.valid() {
+            return Err(invalid("content movement must stay inside its cell"));
+        }
+        let offset = position_offset(&object.spawn).ok_or_else(|| invalid("unsupported content physics layout"))?;
+        let update = crate::movement::ClientPosition {
+            time,
+            placement,
+            motion: (u32::from(placement.heading) << 24) | (motion & 0x00ff_ffff),
+            cancel_moveto: false,
+            stamps: [object.instance, 0, 0, 0],
+            jump_velocity: None,
+        };
+        let stamp = object.position_stamp.wrapping_add(1);
+        let wire = crate::movement::server_position(id, object.instance, stamp, &update)
+            .map_err(|error| invalid(format!("content movement: {error}")))?;
+        write_position(Arc::make_mut(&mut object.spawn), offset, placement, placement.orientation());
+        object.placement = placement;
+        object.position_stamp = stamp;
+        Ok(wire.into())
+    }
+    /// Add a runtime corpse to its cell. The caller has built a valid spawn.
+    pub fn insert_corpse(&mut self, id: u64, placement: Placement, orientation: [f32; 4], spawn: Vec<u8>) -> io::Result<()> {
+        if self.objects.contains_key(&id) || self.objects.len() >= MAX_OBJECTS {
+            return Err(invalid("corpse identity or object capacity"));
+        }
+        let cell_ids = self.cells.entry(placement.cell).or_default();
+        if cell_ids.len() >= MAX_CELL_OBJECTS {
+            return Err(invalid("this area cannot hold more objects"));
+        }
+        let mut destroy = 0x100c2u32.to_le_bytes().to_vec();
+        destroy.extend(id.to_le_bytes());
+        destroy.extend(1u16.to_le_bytes());
+        destroy.extend(0u16.to_le_bytes());
+        let at = cell_ids.partition_point(|&other| other < id);
+        cell_ids.insert(at, id);
+        self.objects.insert(id, Object {
+            id,
+            entity: world::CORPSE_ENTITY,
+            placement,
+            spawn: spawn.into(),
+            destroy: destroy.into(),
+            active: true,
+            instance: 1,
+            visual_stamp: 0,
+            stats: BTreeMap::new(),
+            home: (placement, orientation),
+            position_stamp: 0,
+            dynamic: true,
+        });
+        Ok(())
+    }
+    /// Remove a runtime corpse, returning its DestroyObject.
+    pub fn remove_corpse(&mut self, id: u64) -> io::Result<(u32, Arc<[u8]>)> {
+        if !self.objects.get(&id).is_some_and(|object| object.dynamic) {
+            return Err(invalid("not a runtime corpse"));
+        }
+        let object = self.objects.remove(&id).unwrap();
+        if let Some(ids) = self.cells.get_mut(&object.placement.cell) {
+            ids.retain(|&other| other != id);
+            if ids.is_empty() {
+                self.cells.remove(&object.placement.cell);
+            }
+        }
+        Ok((object.placement.cell, object.destroy))
+    }
     pub fn respawn(&mut self, id: u64) -> io::Result<()> {
         let object = self
             .objects
             .get_mut(&id)
-            .filter(|object| !object.active)
+            .filter(|object| !object.active && !object.dynamic)
             .ok_or_else(|| invalid("content object already active"))?;
+        if object.placement != object.home.0 {
+            if let Some(offset) = position_offset(&object.spawn) {
+                write_position(Arc::make_mut(&mut object.spawn), offset, object.home.0, object.home.1);
+            }
+            object.placement = object.home.0;
+        }
+        object.position_stamp = 0;
         object.instance = object
             .instance
             .checked_add(1)
@@ -418,6 +528,9 @@ impl Content {
                     instance: 1,
                     visual_stamp: 0,
                     stats: BTreeMap::new(),
+                    home: (placement, orientation),
+                    position_stamp: 0,
+                    dynamic: false,
                 },
             );
             cell_ids.push(id);

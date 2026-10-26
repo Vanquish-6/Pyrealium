@@ -22,6 +22,18 @@ NATURAL_TIME = 0x41000187
 ARMOR = 0x410000DE
 DEATH_XP = 0x41000172
 LEVEL = 0x41000173
+HOMESICK = 0x41000178
+PERCEPTION = 0x4100017A
+DAMAGE_TYPE = 0x410002F9
+# NPC_StartingSkill1..20 and NPC_StartingSkill1Level..20Level (EmpPropNames).
+SKILL_TYPES = [0x410001BA, 0x410001BC, 0x410001BE, 0x410001C0, 0x410001C2,
+               0x410001D3, 0x410001D5, 0x410001D7, 0x410001D9, 0x410001DB,
+               0x410001E0, 0x410001E2, 0x410001E4, 0x410001E6, 0x410001E8,
+               0x410001EA, 0x410001EC, 0x410001EE, 0x410001F0, 0x410001F2]
+SKILL_LEVELS = list(range(0x410001F4, 0x41000208))
+# SkillList: magic/melee/missile attack and defense.
+ATTACK_SKILLS = {0x1, 0x7, 0xC}
+DEFENSE_SKILLS = {0x2, 0x8, 0xD}
 
 BOOL, INTEGER, FLOAT = 0x40000001, 0x40000002, 0x40000003
 VECTOR, COLOR, STRING = 0x40000004, 0x40000005, 0x40000006
@@ -163,6 +175,14 @@ def read_entity(archive, types, entity, stack=None):
                 values["xp"] = reader.u64()
             elif token == LEVEL:
                 values["level"] = reader.u32()
+            elif token in (HOMESICK, PERCEPTION) and kind == FLOAT:
+                values["homesick" if token == HOMESICK else "perception"] = reader.f32()
+            elif token == DAMAGE_TYPE:
+                values["damage_type"] = reader.u32()
+            elif token in SKILL_TYPES:
+                values.setdefault("skills", {})[SKILL_TYPES.index(token)] = reader.u32()
+            elif token in SKILL_LEVELS:
+                values.setdefault("skill_levels", {})[SKILL_LEVELS.index(token)] = reader.u32()
             else:
                 reader.skip_value(kind)
     return values
@@ -200,17 +220,28 @@ def main():
             damage = values.get("damage") or 0
             if health <= 0 or damage <= 0:
                 continue
+            skills = values.get("skills", {})
+            levels = values.get("skill_levels", {})
+            rating = lambda kinds: max((levels.get(slot, 0) for slot, skill in skills.items() if skill in kinds), default=0)
+            variance = values.get("variance")
+            if variance is None or not 0 <= variance <= 1:
+                variance = 0.0
+            radius = lambda key: round(values[key], 2) if values.get(key) and 0 < values[key] <= 500 else 0
             rows.append((
                 entity, health, damage,
                 interval_ms(values["time"]) if values.get("time") else 0,
                 values.get("armor") or 0, values.get("xp") or 0, values.get("level") or 0,
+                round(variance, 4), rating(ATTACK_SKILLS), rating(DEFENSE_SKILLS),
+                radius("perception"), radius("homesick"), values.get("damage_type") or 0,
             ))
     lines = [
-        "pyrealium-creature-combat-v1",
-        "# Health, natural damage, armor, death XP, and level from portal.dat entity records.",
-        "# interval_ms is natural weapon time when the record has one, otherwise 0.",
+        "pyrealium-creature-combat-v2",
+        "# Health, natural damage and variance, armor, death XP, level, attack/defense",
+        "# skill levels, AI perception/homesick radii and damage type from portal.dat",
+        "# entity records (inherited parents merged). interval_ms is natural weapon time",
+        "# when present, otherwise 0. Radii of 0 mean the record had none.",
         "# Gold and attack range are not these fields.",
-        "# entity health damage interval_ms armor xp level",
+        "# entity health damage interval_ms armor xp level variance attack defense perception homesick damage_type",
     ]
     for row in rows:
         lines.append("\t".join(str(item) if index else f"{item:08x}" for index, item in enumerate(row)))

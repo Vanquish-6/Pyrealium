@@ -6,6 +6,7 @@ pub mod allegiance;
 pub mod appearance;
 pub mod auth;
 pub mod bootstrap;
+pub mod combat;
 pub mod combat_visual;
 pub mod content;
 pub mod crafting;
