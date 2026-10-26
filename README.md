@@ -213,6 +213,8 @@ restoration are not implemented. The server prepares the complete reliable respo
 before writing the deletion, retaining the owned, inactive-character checks.
 
 The Windows launcher provides **Password** and **Create Account** controls.
+**Create Account** opens a separate username/password/confirmation form, with
+requirements and request errors displayed inside the form.
 Use `local` with a blank password for existing local characters. New identities
 use passwords of 12-128 characters and the local account service started by
 `emulator/Start-Server.ps1`. See [the launcher guide](launcher/README.md).

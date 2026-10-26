@@ -60,6 +60,8 @@ internal static class AccountLogin {
                 if (code == 409) throw new InvalidOperationException("That account name is already in use or reserved.");
                 if (code == 429) throw new InvalidOperationException("Too many attempts. Wait a minute and try again.");
                 if (code == 400) throw new InvalidOperationException("Use an available account name and a password of 12-128 characters.");
+                if (code == 503) throw new InvalidOperationException("The account service could not complete the request. Please try again; if it continues, its server log needs checking.");
+                throw new InvalidOperationException("The account service rejected the request (HTTP " + code + "). Check its address in Settings.");
             }
             throw new InvalidOperationException("Could not reach the account service. Check its address in Settings and that it is running.");
         } finally { Array.Clear(body, 0, body.Length); }

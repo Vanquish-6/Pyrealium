@@ -215,28 +215,15 @@ internal sealed class LauncherWindow : Form {
         catch (Exception ex) { status.Text = "Could not start the client: " + ex.Message; }
         finally { password.Clear(); connect.Enabled = true; register.Enabled = true; }
     }
-    private async void Register(object sender, EventArgs args) {
-        var s = new Settings { Account = account.Text.Trim().ToLowerInvariant(), Host = host.Text.Trim(), Port = (int)port.Value, AccountsUrl = accountsUrl.Text.Trim() };
-        string error = Launcher.ValidateConnection(s);
-        if (error != null) { status.Text = error; return; }
-        if (password.Text.Length < 12) { status.Text = "Enter a new account name and a password of 12-128 characters first."; return; }
-        using (var dialog = new Form { Text = "Confirm new account password", ClientSize = new Size(370, 135), FormBorderStyle = FormBorderStyle.FixedDialog, StartPosition = FormStartPosition.CenterParent, MinimizeBox = false, MaximizeBox = false, BackColor = Theme.Panel, ForeColor = Theme.Parchment }) {
-            var label = new Label { Text = "Re-enter the password for " + s.Account, Left = 15, Top = 15, Width = 340 };
-            var confirm = new TextBox { Left = 15, Top = 43, Width = 340, UseSystemPasswordChar = true, MaxLength = 128 };
-            var ok = new Button { Text = "Create account", Left = 225, Top = 85, Width = 130, DialogResult = DialogResult.OK };
-            dialog.Controls.Add(label); dialog.Controls.Add(confirm); dialog.Controls.Add(ok); dialog.AcceptButton = ok;
-            if (dialog.ShowDialog(this) != DialogResult.OK) return;
-            if (confirm.Text != password.Text) { status.Text = "Passwords did not match. Try again."; return; }
-            confirm.Clear();
+    private void Register(object sender, EventArgs args) {
+        using (var dialog = new AccountRegistration(accountsUrl.Text.Trim(), account.Text.Trim())) {
+            if (dialog.ShowDialog(this) == DialogResult.OK) {
+                account.Text = dialog.AccountName;
+                password.Clear();
+                status.ForeColor = Theme.Accent;
+                status.Text = "Account created. Enter its password above and click Enter Dereth.";
+            }
         }
-        connect.Enabled = false; register.Enabled = false;
-        try {
-            string secret = password.Text; status.Text = "Creating your account...";
-            await Task.Run(delegate { AccountLogin.Register(s, secret); });
-            account.Text = s.Account; status.ForeColor = Theme.Accent;
-            status.Text = "Account created. Enter your password and click Enter Dereth.";
-        } catch (Exception ex) { status.ForeColor = Theme.Gold; status.Text = ex.Message; }
-        finally { password.Clear(); connect.Enabled = true; register.Enabled = true; }
     }
 
 }

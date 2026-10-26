@@ -9,7 +9,7 @@ $executable = Join-Path $output 'PyrealiumLauncher.exe'
 $resources = @('legions-portal.png', 'dereth.png', 'legions-cover.png') | ForEach-Object {
     '/resource:' + (Join-Path $PSScriptRoot "assets/$_") + ',Pyrealium.' + $_
 }
-& $compiler /nologo /target:winexe /platform:anycpu /optimize+ /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.Web.Extensions.dll "/out:$executable" @resources (Join-Path $PSScriptRoot 'Launcher.cs') (Join-Path $PSScriptRoot 'LauncherWindow.cs') (Join-Path $PSScriptRoot 'AccountLogin.cs')
+& $compiler /nologo /target:winexe /platform:anycpu /optimize+ /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.Web.Extensions.dll "/out:$executable" @resources (Join-Path $PSScriptRoot 'Launcher.cs') (Join-Path $PSScriptRoot 'LauncherWindow.cs') (Join-Path $PSScriptRoot 'AccountLogin.cs') (Join-Path $PSScriptRoot 'AccountRegistration.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Launcher compilation failed.' }
 if ($RunChecks) {
 $report = Join-Path $output 'self-test.txt'

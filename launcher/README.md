@@ -31,7 +31,7 @@ contains no game binaries or DATs. The ZIP is generated locally, not committed.
 ## Connect
 
 1. Start the emulator separately. The launcher does not start a server.
-2. For your existing characters, use `local` with a blank password. For a new identity, enter a new account name and a password of 12-128 characters, then click **Create Account**. Re-enter the password to sign in.
+2. For your existing characters, use `local` with a blank password. For a new identity, click **Create Account** to open the registration form. Choose a username, enter a password of 12-128 characters and confirm it. After creation, enter that password on Play to sign in.
 3. Open **Settings** and choose the game-data folder and, separately, the recovered **7148** executable.
 4. Return to **Play** and click **Enter Dereth**. Review any Windows Run prompt yourself.
 
