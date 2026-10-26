@@ -146,7 +146,6 @@ impl Store {
             .filter(|character| character.account == account && !character.deleted)
             .ok_or_else(|| invalid("starter gear character not owned"))?;
         if character.starter_gear { return Ok(false); }
-        if !character.progression.alive() { return Err(invalid("Starter gear requires a living character.")); }
         let request = character.creation.as_ref().ok_or_else(|| invalid("Starter gear needs a saved creation profile."))?;
         let first = self.next_item_id()?;
         let next = crate::starter_gear::candidate(request, &character.inventory, first)?;
@@ -1421,7 +1420,7 @@ fn decode_journal_collect(
                 .unwrap_or(crate::inventory::ITEM_NAMESPACE);
             if high.checked_add(1) != Some(first) { return Err(invalid("nonsequential starter identity")); }
             let character = records.get_mut(&id)
-                .filter(|character| !character.deleted && !character.starter_gear && character.progression.alive())
+                .filter(|character| !character.deleted && !character.starter_gear)
                 .ok_or_else(|| invalid("invalid repeated starter grant"))?;
             let request = character.creation.as_ref().ok_or_else(|| invalid("starter grant without creation"))?;
             character.inventory = crate::starter_gear::candidate(request, &character.inventory, first)?;
