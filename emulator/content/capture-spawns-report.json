@@ -1,7 +1,7 @@
 {
   "captures": 773,
-  "accepted_before_dedupe": 27808,
-  "added": 27300,
+  "accepted_before_dedupe": 22930,
+  "added": 22422,
   "skipped": {
     "already-placed": 508
   },
@@ -49,16 +49,18 @@
     {
       "file": "ac2_mobspawn_player_figth_und_move.elog",
       "sha256": "6431a55321ac65a012839b1c5264f4a2b34433ab17b1b738f41f4d18fea74cd1",
-      "accepted": 7,
+      "accepted": 4,
       "rejected": {
+        "captured-corpse": 3,
         "unsupported-or-unplaced-physics": 1
       }
     },
     {
       "file": "mob_die.elog",
       "sha256": "b40397f3858b75775c7e644ba8c06376bea4ec2799faefdd0b332dec2a95a62a",
-      "accepted": 2,
+      "accepted": 1,
       "rejected": {
+        "captured-corpse": 1,
         "unsupported-or-unplaced-physics": 1
       }
     },
@@ -300,15 +302,18 @@
     {
       "file": "heroes.dungeon.1.portal.1.elog",
       "sha256": "857fe1090ac1885bfe2cfcbf52efc47e062cb726c736d7a986595cb22c756106",
-      "accepted": 12,
-      "rejected": {}
+      "accepted": 7,
+      "rejected": {
+        "captured-corpse": 5
+      }
     },
     {
       "file": "heroes.dungeon.1.portal.2.elog",
       "sha256": "773f6b559f47c4ef156752e8ed973121914a93bb9569d0f3cabb0c356ab0ed3d",
       "accepted": 0,
       "rejected": {
-        "same-entity-within-4m": 12
+        "captured-corpse": 5,
+        "same-entity-within-4m": 7
       }
     },
     {
@@ -320,8 +325,10 @@
     {
       "file": "rustwater.redute.portal.at.gate.of.madness.elog",
       "sha256": "504925759265522a13870633ca54b141dae141a5a0c474f0bbe44cb352dac697",
-      "accepted": 11,
-      "rejected": {}
+      "accepted": 8,
+      "rejected": {
+        "captured-corpse": 3
+      }
     },
     {
       "file": "rustwater.redute.portal.back.to.rustwater.elog",
@@ -364,8 +371,10 @@
     {
       "file": "kydi.water.temple.entrance.portal.elog",
       "sha256": "23e33e5eace966424f5d50c13e00dd228313f0a1074906de9cf6abe0aa33279c",
-      "accepted": 6,
-      "rejected": {}
+      "accepted": 4,
+      "rejected": {
+        "captured-corpse": 2
+      }
     },
     {
       "file": "lumari.ghost.mines.closing.door.elog",
@@ -376,8 +385,10 @@
     {
       "file": "lumari.ghost.mines.entrance.portal.elog",
       "sha256": "70d291cb1752edc53176bdb40ce65c5dfabe9cdde21e5115b36e2e52e96daa44",
-      "accepted": 3,
-      "rejected": {}
+      "accepted": 1,
+      "rejected": {
+        "captured-corpse": 2
+      }
     },
     {
       "file": "lumari.ghost.mines.nonlocked.doors.opening.elog",
@@ -440,26 +451,34 @@
     {
       "file": "crone.laboratories.elog",
       "sha256": "57251846685b3b180af67f974221c3d4fd1c692ead5af8b8f67c9661a4ff42d8",
-      "accepted": 11,
-      "rejected": {}
+      "accepted": 6,
+      "rejected": {
+        "captured-corpse": 5
+      }
     },
     {
       "file": "dungeon.of.the.ancients_in.lake_lower.catacombs.elog",
       "sha256": "32ba76566221557d02afc870d40f49dab716cfed55d2c5b310ab272aea736d4c",
-      "accepted": 6,
-      "rejected": {}
+      "accepted": 4,
+      "rejected": {
+        "captured-corpse": 2
+      }
     },
     {
       "file": "dungeon.of.the.ancients_in.lake_outer.catacombs.elog",
       "sha256": "93582f53b9d0d90f9eee0fb2a00cea6ed2cd1e4a8a5e3a6f1e07f963fb51069a",
-      "accepted": 2,
-      "rejected": {}
+      "accepted": 1,
+      "rejected": {
+        "captured-corpse": 1
+      }
     },
     {
       "file": "dungeon.of.the.ancients_in.lake_upper.catacombs.elog",
       "sha256": "49f5e46e56165e8076e307c59e3d71abacc6f6a49dfdfa31040c68bf76a0b78e",
-      "accepted": 4,
-      "rejected": {}
+      "accepted": 2,
+      "rejected": {
+        "captured-corpse": 2
+      }
     },
     {
       "file": "final.filinus.nexus.entrance.portal.elog",
@@ -586,14 +605,18 @@
     {
       "file": "ac2_linvak_gevoth_entrance.portal.elog",
       "sha256": "db53542d9b73bd151d7a1d624cb649a0f3cc5824684d04049c1f85cef7f54152",
-      "accepted": 40,
-      "rejected": {}
+      "accepted": 38,
+      "rejected": {
+        "captured-corpse": 2
+      }
     },
     {
       "file": "ac2_linvak_gevoth_shardroom_exitportal.elog",
       "sha256": "8dab5bb9d4a195c8209be30ee964e3f96fb5835c95090cd5f4935a3d4176f92f",
-      "accepted": 3,
-      "rejected": {}
+      "accepted": 2,
+      "rejected": {
+        "captured-corpse": 1
+      }
     },
     {
       "file": "ac2_linvak_gevoth_vault_vestibul_port.elog",
@@ -604,8 +627,10 @@
     {
       "file": "ac2_linvak_malthabbor_entrance.portal.elog",
       "sha256": "7c6129b9e2fc07545e3b672bf524a47f2bbf09368acc9c0e2799a1419cb4e2d4",
-      "accepted": 2,
-      "rejected": {}
+      "accepted": 0,
+      "rejected": {
+        "captured-corpse": 2
+      }
     },
     {
       "file": "ac2_linvak_malthabbor_shardroom_exitportal.elog",
@@ -628,14 +653,18 @@
     {
       "file": "ac2_linvak_nepeth_entrance.portal.elog",
       "sha256": "f7321f52b8694f1f04978e35556b99ca46ed2e7690da1f15ef9a6ffc0fa48076",
-      "accepted": 40,
-      "rejected": {}
+      "accepted": 37,
+      "rejected": {
+        "captured-corpse": 3
+      }
     },
     {
       "file": "ac2_linvak_nepeth_portal_to_second_island.elog",
       "sha256": "7a709989ccd1889aa69d813d918474166815cbb8879eb354a07c1ff878f67c3d",
-      "accepted": 40,
-      "rejected": {}
+      "accepted": 39,
+      "rejected": {
+        "captured-corpse": 1
+      }
     },
     {
       "file": "ac2_linvak_nepeth_portal_to_upper_island.elog",
@@ -670,8 +699,10 @@
     {
       "file": "ac2_Linvak_oradi_distant.platform.portal.elog",
       "sha256": "330564cc3bad1a435f71a3762e67b27b0a5f67a72be1c894ae27ec1b8b275a24",
-      "accepted": 41,
-      "rejected": {}
+      "accepted": 39,
+      "rejected": {
+        "captured-corpse": 2
+      }
     },
     {
       "file": "ac2_Linvak_oradi_entrance.portal.elog",
@@ -738,14 +769,18 @@
     {
       "file": "ac2_Linvak_thusik_vault_Vestibul.bossroom.portal.elog",
       "sha256": "7c1b2ea9e9c522bf4c4ec898a5a6b0bb07b9b9e2919a7feee077deea2f155400",
-      "accepted": 3,
-      "rejected": {}
+      "accepted": 2,
+      "rejected": {
+        "captured-corpse": 1
+      }
     },
     {
       "file": "ac2_linvak_winterhollows_entrance.portal.elog",
       "sha256": "0016fc248fbe0e74b92f61309e19bba623ee7fc3bb9499763e127c7439b87d38",
-      "accepted": 3,
-      "rejected": {}
+      "accepted": 1,
+      "rejected": {
+        "captured-corpse": 2
+      }
     },
     {
       "file": "ac2_linvak_winterhollows_shardroom.exit.portal.elog",
@@ -768,8 +803,10 @@
     {
       "file": "ac2_omishan_ariaki_entrance.portal.elog",
       "sha256": "76beadfb8c4bdd29d444565f1f52cd3046ee0957eb8284986362463a334a1ab3",
-      "accepted": 25,
-      "rejected": {}
+      "accepted": 24,
+      "rejected": {
+        "captured-corpse": 1
+      }
     },
     {
       "file": "ac2_omishan_ariaki_porting.out.elog",
@@ -892,8 +929,10 @@
     {
       "file": "ac2_omishan_tou-tou_porting.in.elog",
       "sha256": "2c697ec51692c481f50e9d9cb7eef261688cc5f2e5d62d764e7ffdf480c0d81f",
-      "accepted": 32,
-      "rejected": {}
+      "accepted": 31,
+      "rejected": {
+        "captured-corpse": 1
+      }
     },
     {
       "file": "ac2_omishan_tou-tou_porting.out.elog",
@@ -936,8 +975,10 @@
     {
       "file": "ac2_omishan_vesayan_vault_vestibul_portal.elog",
       "sha256": "afb22c72575e037e70d338071bf62ccd3be8206b02f6a0bbe8d77889a1c67371",
-      "accepted": 1,
-      "rejected": {}
+      "accepted": 0,
+      "rejected": {
+        "captured-corpse": 1
+      }
     },
     {
       "file": "arwic.vault.bossroom.portal.elog",
@@ -1084,8 +1125,10 @@
     {
       "file": "drudge.citadel.entry.portal.elog",
       "sha256": "bcd0af96bd74432279199c212aee97570da9cf27d044814e95a8bcde9b8d3081",
-      "accepted": 3,
-      "rejected": {}
+      "accepted": 2,
+      "rejected": {
+        "captured-corpse": 1
+      }
     },
     {
       "file": "drudge.citadel.exit.portal.elog",
@@ -1142,8 +1185,9 @@
     {
       "file": "lost.wish.vault.entry.portal.elog",
       "sha256": "20eb9ad72357621c586b364a90259ddd9e51b7d86764f67fcbb0169cd426cb59",
-      "accepted": 46,
+      "accepted": 44,
       "rejected": {
+        "captured-corpse": 2,
         "same-entity-within-4m": 1
       }
     },
@@ -1400,28 +1444,34 @@
     {
       "file": "ac2_pet_combat.elog",
       "sha256": "7adf00ad2fe7a6452ecf421c056d9a67f1ae1950426272fa362d7dc2e2927a76",
-      "accepted": 2,
-      "rejected": {}
+      "accepted": 1,
+      "rejected": {
+        "captured-corpse": 1
+      }
     },
     {
       "file": "brief.fight.1.elog",
       "sha256": "efada595b65c9da3e9263603cab946e169913ca1506231d25fb86a1edfc55e7e",
-      "accepted": 1,
-      "rejected": {}
+      "accepted": 0,
+      "rejected": {
+        "captured-corpse": 1
+      }
     },
     {
       "file": "brief.fight.2.elog",
       "sha256": "9e9da886df7f0dcb1c1a3f24e7fb3d0c76ef2a3bd70d1d4c99c32ae90da550f4",
       "accepted": 0,
       "rejected": {
-        "missing-dat-asset-or-cell": 1
+        "captured-corpse": 1
       }
     },
     {
       "file": "brief.fight.3.elog",
       "sha256": "7fe899716a5da8755809c90b193a560c1a2cf2f0ffda058a2795f664585300de",
-      "accepted": 1,
-      "rejected": {}
+      "accepted": 0,
+      "rejected": {
+        "captured-corpse": 1
+      }
     },
     {
       "file": "brief.fight.with.straw.drudge.elog",
@@ -1432,25 +1482,28 @@
     {
       "file": "brieft.fight.and.loot.elog",
       "sha256": "6841d043e83a71354cb9875ea05792458753a2e3e400210ea2307cbaaf13392e",
-      "accepted": 1,
+      "accepted": 0,
       "rejected": {
+        "captured-corpse": 1,
         "unsupported-or-unplaced-physics": 1
       }
     },
     {
       "file": "combat.log.elog",
       "sha256": "6f8c41f5a54108983d8100916d24587f5d04b2da231e23cf5116e06933f061dc",
-      "accepted": 2,
+      "accepted": 1,
       "rejected": {
+        "captured-corpse": 1,
         "unsupported-or-unplaced-physics": 2
       }
     },
     {
       "file": "combat.log.entering.combat.and.mob.out.of.range.elog",
       "sha256": "d9797cd4f07bdff4058dfba07f1cd8e8a4050c70f79847a3163b870929d6640b",
-      "accepted": 6,
+      "accepted": 5,
       "rejected": {
-        "same-entity-within-4m": 2,
+        "captured-corpse": 2,
+        "same-entity-within-4m": 1,
         "unsupported-or-contained-description": 3
       }
     },
@@ -1463,24 +1516,28 @@
     {
       "file": "combat.onyx.phyntos.wasp.using.skills._leiden-lindern_innere-ruhe_vergiften_natur-hilfe_tollwut_haut-verstaerken_steppengalopp_robuster-machen_zaehigkeit.elog",
       "sha256": "684cd6b3c9e3974d84704c5f03f58c721bfb965a14cd02114cb61399c0cb8ac9",
-      "accepted": 2,
-      "rejected": {}
+      "accepted": 1,
+      "rejected": {
+        "captured-corpse": 1
+      }
     },
     {
       "file": "fight.nest.werfer.elog",
       "sha256": "adfdae26ddfc4d55975f9fa9a8a97618b429d5cc46ea4755cf82c3ad51448639",
-      "accepted": 3,
+      "accepted": 2,
       "rejected": {
+        "captured-corpse": 1,
         "same-entity-within-4m": 4
       }
     },
     {
       "file": "large.combat.elog",
       "sha256": "715bb8c4bb7bbbbd1d54d26694e8973927305ce2632450c87487b188675dccee",
-      "accepted": 20,
+      "accepted": 13,
       "rejected": {
+        "captured-corpse": 10,
         "repeated-observation": 3,
-        "same-entity-within-4m": 4,
+        "same-entity-within-4m": 1,
         "unsupported-or-unplaced-physics": 8,
         "unsupported-visual-description": 6
       }
@@ -1494,8 +1551,9 @@
     {
       "file": "group.combat.buffing.wiping.running.elog",
       "sha256": "c9af73e6e7cf7bf0a04408e1212cfd147cec9345353072a16d666afc9b58fb4c",
-      "accepted": 8,
+      "accepted": 7,
       "rejected": {
+        "captured-corpse": 1,
         "same-entity-within-4m": 3,
         "unsupported-visual-description": 1
       }
@@ -1505,7 +1563,7 @@
       "sha256": "156481615a6d7819f1da479014b48b763d3391d059132ebaf06fc996e6657b9f",
       "accepted": 0,
       "rejected": {
-        "missing-dat-asset-or-cell": 2
+        "captured-corpse": 2
       }
     },
     {
@@ -1525,24 +1583,27 @@
     {
       "file": "player.huge.combat.log.elog",
       "sha256": "cad884e6eda670259255e076b19fb15f33b8cb2403ec0f6b4d3c7e6e36cabcc5",
-      "accepted": 12,
+      "accepted": 8,
       "rejected": {
+        "captured-corpse": 4,
         "unsupported-visual-description": 3
       }
     },
     {
       "file": "player.combat.2.elog",
       "sha256": "2f6b59fed92c047f43dffbe4f89a2f32f7fa5e87439a6a9da0136846098a47e3",
-      "accepted": 2,
+      "accepted": 0,
       "rejected": {
-        "same-entity-within-4m": 4
+        "captured-corpse": 6
       }
     },
     {
       "file": "player.combat.elog",
       "sha256": "bd351118ac29fb90acb8329bc3f311c09c32ddbcd583fc711fc435b2d682f1d4",
-      "accepted": 1,
-      "rejected": {}
+      "accepted": 0,
+      "rejected": {
+        "captured-corpse": 1
+      }
     },
     {
       "file": "creating.group.looting.no.ep.sharing.elog",
@@ -1573,8 +1634,10 @@
     {
       "file": "ac2_mob_die.elog",
       "sha256": "61469039ac780103f6056ceac2d232a053f7199d6cf9fcd19d6174e7751a0565",
-      "accepted": 1,
-      "rejected": {}
+      "accepted": 0,
+      "rejected": {
+        "captured-corpse": 1
+      }
     },
     {
       "file": "ac_loot_all_money_btn.elog",
@@ -1596,8 +1659,9 @@
     {
       "file": "quest.step.begin.brief.fight.item.loot.msgbox.elog",
       "sha256": "a1eeb9fe071bd4d2f1a1a88e699f4ca11445f95cb2701af1136ff637a8321799",
-      "accepted": 1,
+      "accepted": 0,
       "rejected": {
+        "captured-corpse": 1,
         "unsupported-or-unplaced-physics": 1
       }
     },
@@ -1654,16 +1718,19 @@
     {
       "file": "ac2_pet_attack_+_return_command.elog",
       "sha256": "e56abe3d2053975439d6f34aeb4306f1c06687b76f928961ac8a73e52a72e828",
-      "accepted": 1,
+      "accepted": 0,
       "rejected": {
+        "captured-corpse": 1,
         "unsupported-or-unplaced-physics": 1
       }
     },
     {
       "file": "ac2_pet_attack_+_return_command2.elog",
       "sha256": "370cb803fcfdbd003717e14b032f976221f94c8fe51682d47d2b08a0b280ef52",
-      "accepted": 1,
-      "rejected": {}
+      "accepted": 0,
+      "rejected": {
+        "captured-corpse": 1
+      }
     },
     {
       "file": "ac2_pet_changing.pet.modes.1.elog",
@@ -1721,8 +1788,10 @@
     {
       "file": "ac2_pet_return.elog",
       "sha256": "2cde1d6bd2655af0d0c45341df495c91bed9aeaaf471ede18a583b3f7a48e457",
-      "accepted": 1,
-      "rejected": {}
+      "accepted": 0,
+      "rejected": {
+        "captured-corpse": 1
+      }
     },
     {
       "file": "ac2_pet_too.far.away.from.target.elog",
@@ -1930,8 +1999,9 @@
     {
       "file": "AC2_complete_client_start_until_login.elog",
       "sha256": "d2182e7666c27e5a5fd2252fdad732ca9021a72c2e2ed5c05aa8a7a274badcf8",
-      "accepted": 4,
+      "accepted": 3,
       "rejected": {
+        "captured-corpse": 1,
         "non-world-namespace": 1,
         "unsupported-or-unplaced-physics": 50,
         "unsupported-visual-description": 15
@@ -2251,8 +2321,9 @@
       "sha256": "054e8d362c9da63d68b25d320b161d212d22a6bc32c1af4c776308542be3347b",
       "accepted": 0,
       "rejected": {
+        "captured-corpse": 5,
         "non-world-namespace": 4,
-        "same-entity-within-4m": 8
+        "same-entity-within-4m": 3
       }
     },
     {
@@ -2684,9 +2755,9 @@
     {
       "file": "pet.commands.window.opening.closeing.elog",
       "sha256": "5c6b378aacba977c1e464c8814352c234f52fa32bff75e329193f72617619bd5",
-      "accepted": 4,
+      "accepted": 3,
       "rejected": {
-        "same-entity-within-4m": 1
+        "captured-corpse": 2
       }
     },
     {
@@ -2951,7 +3022,8 @@
       "sha256": "0ec0bdab63e23555b132c4322423b9a6f0398b6024a6c14ed538c09f9c3540c9",
       "accepted": 0,
       "rejected": {
-        "same-entity-within-4m": 4
+        "captured-corpse": 1,
+        "same-entity-within-4m": 3
       }
     },
     {
@@ -3249,8 +3321,10 @@
     {
       "file": "porting.into.linvak.weapons.chamber.elog",
       "sha256": "e6e8e13d0be6067c2b0326fbd76cbe9426811fe88256dc425972886f183907da",
-      "accepted": 11,
-      "rejected": {}
+      "accepted": 9,
+      "rejected": {
+        "captured-corpse": 2
+      }
     },
     {
       "file": "quest.completed.1.elog",
@@ -3277,8 +3351,10 @@
     {
       "file": "omishan.kydi.watertemple.entering.combination.accessing.entry.portal.elog",
       "sha256": "173759f496bb6ee8a887eb56e6b7e996c9c825f395d8f2da17f327435e21679e",
-      "accepted": 6,
-      "rejected": {}
+      "accepted": 3,
+      "rejected": {
+        "captured-corpse": 3
+      }
     },
     {
       "file": "planging.batiks.but.not harvesting.elog",
@@ -3419,8 +3495,10 @@
     {
       "file": "quest_die_kabale_des_sclavus_hierophanten_sclavus_hierophanten_tempel_portal_betreten.elog",
       "sha256": "00fdae4238d750dce9b55ffbbb0c4b13ce3a2cf577be2559ce80378b804a0fe5",
-      "accepted": 2,
-      "rejected": {}
+      "accepted": 1,
+      "rejected": {
+        "captured-corpse": 1
+      }
     },
     {
       "file": "selling.items.in.inventory.elog",
@@ -3494,8 +3572,9 @@
     {
       "file": "pkt_2017-1-22_1485083221_log.pcap",
       "sha256": "5a53b1c9ac8c50b0d6cf8aaf318d5efb9e5b4e97121dcf2e199c047b108ae407",
-      "accepted": 24,
+      "accepted": 22,
       "rejected": {
+        "captured-corpse": 2,
         "repeated-observation": 1,
         "same-entity-within-4m": 6,
         "unsupported-or-unplaced-physics": 5
@@ -3548,12 +3627,13 @@
     {
       "file": "pkt_2017-1-22_1485084123_log.pcap",
       "sha256": "83adf15fa4fc58d7e147d50f7d1ffb06daac88f4c6af780f95fe0a5bbe62ef0a",
-      "accepted": 160,
+      "accepted": 128,
       "rejected": {
-        "missing-dat-asset-or-cell": 69,
+        "captured-corpse": 59,
+        "missing-dat-asset-or-cell": 52,
         "non-world-namespace": 15,
         "repeated-observation": 26,
-        "same-entity-within-4m": 45,
+        "same-entity-within-4m": 35,
         "unsupported-or-contained-description": 11,
         "unsupported-or-unplaced-physics": 120,
         "unsupported-visual-description": 22
@@ -3579,8 +3659,9 @@
     {
       "file": "pkt_2017-1-22_1485084263_log.pcap",
       "sha256": "af7d5db9f3ffad19d63f477f08f86871efd051fa9977215a7765ec7442bd5303",
-      "accepted": 16,
+      "accepted": 13,
       "rejected": {
+        "captured-corpse": 3,
         "unsupported-or-unplaced-physics": 8,
         "unsupported-visual-description": 1
       }
@@ -3632,8 +3713,9 @@
       "sha256": "5ea386067234c263392ecde24f97733d8c9a05640ee765f0497d2e4a5370fb68",
       "accepted": 0,
       "rejected": {
-        "missing-dat-asset-or-cell": 5,
-        "same-entity-within-4m": 11,
+        "captured-corpse": 5,
+        "missing-dat-asset-or-cell": 3,
+        "same-entity-within-4m": 8,
         "unsupported-or-unplaced-physics": 8,
         "unsupported-visual-description": 4
       }
@@ -3643,7 +3725,8 @@
       "sha256": "b4b522ec42e49a79017e85430c32bd7931ca99c8e736929d2123478f270cbe89",
       "accepted": 0,
       "rejected": {
-        "missing-dat-asset-or-cell": 5,
+        "captured-corpse": 2,
+        "missing-dat-asset-or-cell": 3,
         "same-entity-within-4m": 1,
         "unsupported-or-contained-description": 1,
         "unsupported-or-unplaced-physics": 2,
@@ -3667,8 +3750,8 @@
       "sha256": "d5141137bd15d383622cbc8d47e18e620b5172a1ebdd0cbf49b3731584a8586b",
       "accepted": 0,
       "rejected": {
-        "missing-dat-asset-or-cell": 1,
-        "same-entity-within-4m": 5,
+        "captured-corpse": 3,
+        "same-entity-within-4m": 3,
         "unsupported-or-unplaced-physics": 2
       }
     },
@@ -3689,7 +3772,8 @@
       "sha256": "22a93e74cb09d5f504d0c3c62258660e510078c9d2663f3a94938484ac844859",
       "accepted": 0,
       "rejected": {
-        "same-entity-within-4m": 4
+        "captured-corpse": 2,
+        "same-entity-within-4m": 2
       }
     },
     {
@@ -3697,10 +3781,11 @@
       "sha256": "89167ce7b7e38941b4f46a0fe06412f0448f36e2dca53f8dd69205d175e8ea64",
       "accepted": 0,
       "rejected": {
-        "missing-dat-asset-or-cell": 36,
+        "captured-corpse": 36,
+        "missing-dat-asset-or-cell": 24,
         "non-world-namespace": 1,
         "repeated-observation": 10,
-        "same-entity-within-4m": 70,
+        "same-entity-within-4m": 46,
         "unsupported-or-contained-description": 2,
         "unsupported-or-unplaced-physics": 18,
         "unsupported-visual-description": 13
@@ -3758,11 +3843,12 @@
     {
       "file": "pkt_2017-1-22_1485087987_log.pcap",
       "sha256": "8c13548a76bc52371c93375245634cedcf34a1cadb95c0a15e9bdd6ab80ba55a",
-      "accepted": 5,
+      "accepted": 4,
       "rejected": {
+        "captured-corpse": 8,
         "non-world-namespace": 1,
         "repeated-observation": 2,
-        "same-entity-within-4m": 36,
+        "same-entity-within-4m": 29,
         "unsupported-or-contained-description": 3,
         "unsupported-or-unplaced-physics": 21
       }
@@ -3787,8 +3873,9 @@
     {
       "file": "pkt_2017-1-22_1485102947_log.pcap",
       "sha256": "e08fc144d4e431b7a27c728a03161300fadbe620a87d3fcd5d98e9d2b1ba7afa",
-      "accepted": 60,
+      "accepted": 55,
       "rejected": {
+        "captured-corpse": 5,
         "non-world-namespace": 1,
         "same-entity-within-4m": 1,
         "unsupported-or-contained-description": 16,
@@ -3850,10 +3937,11 @@
     {
       "file": "pkt_2017-1-22_1485104472_log.pcap",
       "sha256": "2cca7b1fe5e39e92c35e0e1211e9e2143c628027f671b527d45c487951f55189",
-      "accepted": 43,
+      "accepted": 32,
       "rejected": {
+        "captured-corpse": 20,
         "repeated-observation": 7,
-        "same-entity-within-4m": 17,
+        "same-entity-within-4m": 8,
         "unsupported-or-contained-description": 1,
         "unsupported-or-unplaced-physics": 3,
         "unsupported-visual-description": 1
@@ -3862,8 +3950,9 @@
     {
       "file": "pkt_2017-1-22_1485104940_log.pcap",
       "sha256": "38372f4b4161b8d0cb17705d917e1258d92cb616c01a35fa1ee6d5d7f8b678f0",
-      "accepted": 69,
+      "accepted": 68,
       "rejected": {
+        "captured-corpse": 1,
         "missing-dat-asset-or-cell": 11,
         "non-world-namespace": 2,
         "unsupported-or-unplaced-physics": 22
@@ -3872,8 +3961,9 @@
     {
       "file": "pkt_2017-1-22_1485105545_log.pcap",
       "sha256": "1fdbae605c2283485555a21dbfbca870ca205bddf80c19a592389c204dfe25a1",
-      "accepted": 27,
+      "accepted": 19,
       "rejected": {
+        "captured-corpse": 8,
         "non-world-namespace": 1,
         "unsupported-or-unplaced-physics": 11
       }
@@ -3897,13 +3987,14 @@
     {
       "file": "pkt_2017-1-22_1485106933_log.pcap",
       "sha256": "e861d416cc8856565e3a46661902e2fdce7d852446af70eab0f27276cd8f0583",
-      "accepted": 74,
+      "accepted": 57,
       "rejected": {
+        "captured-corpse": 25,
         "missing-dat-asset-or-cell": 1,
         "non-world-namespace": 2,
         "parented-or-contained": 1,
         "repeated-observation": 8,
-        "same-entity-within-4m": 40,
+        "same-entity-within-4m": 32,
         "unsupported-or-contained-description": 4,
         "unsupported-or-unplaced-physics": 30,
         "unsupported-visual-description": 4
@@ -3977,7 +4068,8 @@
       "sha256": "4bddb82da76a49ed3a6179a84369bc0c8372d316b48056967147d698998a64a1",
       "accepted": 0,
       "rejected": {
-        "same-entity-within-4m": 16,
+        "captured-corpse": 3,
+        "same-entity-within-4m": 13,
         "unsupported-or-unplaced-physics": 58,
         "unsupported-visual-description": 10
       }
@@ -4014,9 +4106,9 @@
     {
       "file": "pkt_2017-1-23_1485168999_log.pcap",
       "sha256": "0cd930e13c1b934a6afb178cac2ca047f66d86846228be4b98fdd1c3e45bbf90",
-      "accepted": 26,
+      "accepted": 21,
       "rejected": {
-        "repeated-observation": 1,
+        "captured-corpse": 6,
         "same-entity-within-4m": 5,
         "unsupported-or-contained-description": 2
       }
@@ -4054,10 +4146,11 @@
     {
       "file": "pkt_2017-1-23_1485172891_log.pcap",
       "sha256": "2fc841aee6e85a075e744c046f1893a74911d886a16eabf4be1d6b11ddc545cd",
-      "accepted": 33,
+      "accepted": 31,
       "rejected": {
+        "captured-corpse": 3,
         "missing-dat-asset-or-cell": 1,
-        "same-entity-within-4m": 27,
+        "same-entity-within-4m": 26,
         "unsupported-or-unplaced-physics": 1
       }
     },
@@ -4076,7 +4169,8 @@
       "sha256": "aab5f6fd9ea42034ba2ad788acf755b143e37cb9e06a91780d50cedd3520a56f",
       "accepted": 6,
       "rejected": {
-        "missing-dat-asset-or-cell": 56,
+        "captured-corpse": 23,
+        "missing-dat-asset-or-cell": 33,
         "parented-or-contained": 1,
         "repeated-observation": 3,
         "same-entity-within-4m": 2,
@@ -4113,8 +4207,10 @@
     {
       "file": "pkt_2017-1-23_1485203419_log.pcap",
       "sha256": "28e70ec38ad8ce38422d499a49051e4f8a4adadb3deef282fefe9296258294af",
-      "accepted": 17,
-      "rejected": {}
+      "accepted": 15,
+      "rejected": {
+        "captured-corpse": 2
+      }
     },
     {
       "file": "pkt_2017-1-23_1485206263_log.pcap",
@@ -4127,8 +4223,9 @@
     {
       "file": "pkt_2017-1-23_1485208895_log.pcap",
       "sha256": "5d7f4dc89164688ae192ce6062e17deb22c918abd155ce16fe60e22776df5e5b",
-      "accepted": 16,
+      "accepted": 13,
       "rejected": {
+        "captured-corpse": 3,
         "same-entity-within-4m": 1,
         "unsupported-or-unplaced-physics": 5
       }
@@ -4136,28 +4233,31 @@
     {
       "file": "pkt_2017-1-23_1485209468_log.pcap",
       "sha256": "f215a6c73b2c7f488fd50d464eb8861a877dbb47c906e2d49028b69fa9ffd8a5",
-      "accepted": 36,
+      "accepted": 33,
       "rejected": {
+        "captured-corpse": 4,
         "missing-dat-asset-or-cell": 1,
         "repeated-observation": 1,
-        "same-entity-within-4m": 3,
+        "same-entity-within-4m": 2,
         "unsupported-or-unplaced-physics": 5
       }
     },
     {
       "file": "pkt_2017-1-23_1485210235_log.pcap",
       "sha256": "d9e2397ac8e60b21fc1585a11dc867c45045f447521909b86ca3b322627634cd",
-      "accepted": 20,
+      "accepted": 16,
       "rejected": {
+        "captured-corpse": 4,
         "same-entity-within-4m": 1
       }
     },
     {
       "file": "pkt_2017-1-24_1485248308_log.pcap",
       "sha256": "a3fdcf8d84739714b85b46dc235c7a7e0915e1584e77d9a0d2e50622a2360417",
-      "accepted": 24,
+      "accepted": 18,
       "rejected": {
-        "same-entity-within-4m": 21,
+        "captured-corpse": 16,
+        "same-entity-within-4m": 11,
         "unsupported-or-contained-description": 1,
         "unsupported-or-unplaced-physics": 1
       }
@@ -4165,10 +4265,11 @@
     {
       "file": "pkt_2017-1-24_1485249891_log.pcap",
       "sha256": "ee60d80ef31a8b7bb07a1c2761b92e8e9794760e2e369b76d50df865ee501c16",
-      "accepted": 65,
+      "accepted": 36,
       "rejected": {
-        "repeated-observation": 19,
-        "same-entity-within-4m": 11,
+        "captured-corpse": 38,
+        "repeated-observation": 16,
+        "same-entity-within-4m": 5,
         "unsupported-or-contained-description": 6,
         "unsupported-or-unplaced-physics": 6,
         "unsupported-visual-description": 33
@@ -4177,20 +4278,22 @@
     {
       "file": "pkt_2017-1-24_1485252756_log.pcap",
       "sha256": "3145221b85108e9c5ef62b30056695234497ae29df2a46ee5c23b26ab6596a8b",
-      "accepted": 28,
+      "accepted": 19,
       "rejected": {
+        "captured-corpse": 9,
         "unsupported-or-unplaced-physics": 9
       }
     },
     {
       "file": "pkt_2017-1-24_1485285208_log.pcap",
       "sha256": "1bbee7bc25e9a45f5769a4af742e30ba07b21405d641e6da457d2277f8ea8ad6",
-      "accepted": 68,
+      "accepted": 62,
       "rejected": {
+        "captured-corpse": 25,
         "missing-dat-asset-or-cell": 3,
         "non-world-namespace": 2,
-        "repeated-observation": 122,
-        "same-entity-within-4m": 16,
+        "repeated-observation": 106,
+        "same-entity-within-4m": 13,
         "unsupported-or-unplaced-physics": 16,
         "unsupported-visual-description": 6
       }
@@ -4198,11 +4301,12 @@
     {
       "file": "pkt_2017-1-24_1485286522_log.pcap",
       "sha256": "962ec063da6ace5aa2aad54c2c1599cf155c384b54d1cc78b8a11d05ee79827e",
-      "accepted": 50,
+      "accepted": 48,
       "rejected": {
+        "captured-corpse": 3,
         "non-world-namespace": 1,
         "repeated-observation": 13,
-        "same-entity-within-4m": 3,
+        "same-entity-within-4m": 2,
         "unsupported-or-unplaced-physics": 6
       }
     },
@@ -4226,12 +4330,13 @@
     {
       "file": "pkt_2017-1-25_1485329729_log.pcap",
       "sha256": "7941095ef1f9ab0aa579f0a3d6124336d144daba326f100abf40ef82e78869f1",
-      "accepted": 270,
+      "accepted": 158,
       "rejected": {
+        "captured-corpse": 267,
         "missing-dat-asset-or-cell": 1,
         "non-world-namespace": 3,
-        "repeated-observation": 172,
-        "same-entity-within-4m": 175,
+        "repeated-observation": 80,
+        "same-entity-within-4m": 112,
         "unsupported-or-contained-description": 3,
         "unsupported-or-unplaced-physics": 108
       }
@@ -4239,8 +4344,9 @@
     {
       "file": "pkt_2017-1-25_1485341589_log.pcap",
       "sha256": "0986655f56320d978bafb1642bb44b95cffc1f0d69963289f5185ee757a7c356",
-      "accepted": 354,
+      "accepted": 353,
       "rejected": {
+        "captured-corpse": 1,
         "missing-dat-asset-or-cell": 73,
         "parented-or-contained": 1,
         "repeated-observation": 1,
@@ -4252,9 +4358,10 @@
     {
       "file": "pkt_2017-1-25_1485344411_log.pcap",
       "sha256": "720ccfb82c2af26d67d1511807638bc842669979d420f2a6cdaf6cd13d2581d4",
-      "accepted": 448,
+      "accepted": 443,
       "rejected": {
-        "missing-dat-asset-or-cell": 103,
+        "captured-corpse": 18,
+        "missing-dat-asset-or-cell": 90,
         "non-world-namespace": 5,
         "repeated-observation": 21,
         "same-entity-within-4m": 3,
@@ -4265,11 +4372,12 @@
     {
       "file": "pkt_2017-1-29_1485669974_log.pcap",
       "sha256": "e16c45377636578f834887416ceeb920b196070aba8a62713c865df615763e68",
-      "accepted": 285,
+      "accepted": 278,
       "rejected": {
-        "missing-dat-asset-or-cell": 69,
-        "repeated-observation": 52,
-        "same-entity-within-4m": 40,
+        "captured-corpse": 33,
+        "missing-dat-asset-or-cell": 54,
+        "repeated-observation": 47,
+        "same-entity-within-4m": 34,
         "unsupported-or-contained-description": 1,
         "unsupported-or-unplaced-physics": 141,
         "unsupported-visual-description": 13
@@ -4278,12 +4386,13 @@
     {
       "file": "pkt_2017-1-31_1485862283_log.pcap",
       "sha256": "52649e6958d14cffa04b74765e2d64cb48d90675d3a371e091852f686f3af40e",
-      "accepted": 118,
+      "accepted": 80,
       "rejected": {
-        "missing-dat-asset-or-cell": 33,
+        "captured-corpse": 53,
+        "missing-dat-asset-or-cell": 25,
         "non-world-namespace": 2,
         "repeated-observation": 13,
-        "same-entity-within-4m": 8,
+        "same-entity-within-4m": 1,
         "unsupported-or-contained-description": 32,
         "unsupported-or-unplaced-physics": 53,
         "unsupported-visual-description": 61
@@ -4292,12 +4401,13 @@
     {
       "file": "pkt_2017-1-29_1485762287_log.pcap",
       "sha256": "c5947816f2c00c3d1a8ae9c85252a1678191d707bcfabaea1302c8b52a07ca17",
-      "accepted": 120,
+      "accepted": 102,
       "rejected": {
-        "missing-dat-asset-or-cell": 25,
+        "captured-corpse": 45,
+        "missing-dat-asset-or-cell": 20,
         "non-world-namespace": 5,
-        "repeated-observation": 110,
-        "same-entity-within-4m": 149,
+        "repeated-observation": 103,
+        "same-entity-within-4m": 134,
         "unsupported-or-unplaced-physics": 49,
         "unsupported-visual-description": 27
       }
@@ -4314,8 +4424,9 @@
     {
       "file": "pkt_2017-1-10_1484076912_log.pcap",
       "sha256": "d0f313ed2f72cf1d99750e844c90632db9822970ee515575f34a4509003997af",
-      "accepted": 6,
+      "accepted": 5,
       "rejected": {
+        "captured-corpse": 1,
         "non-world-namespace": 27,
         "repeated-observation": 1,
         "same-entity-within-4m": 4,
@@ -4327,13 +4438,14 @@
     {
       "file": "pkt_2017-1-10_1484095101_log.pcap",
       "sha256": "8ce46e4b9aabe325154647e23da38f46fbe6d45b29307d53e08a476d9bc8af30",
-      "accepted": 662,
+      "accepted": 569,
       "rejected": {
-        "missing-dat-asset-or-cell": 67,
+        "captured-corpse": 142,
+        "missing-dat-asset-or-cell": 60,
         "non-world-namespace": 16,
         "parented-or-contained": 1,
-        "repeated-observation": 465,
-        "same-entity-within-4m": 385,
+        "repeated-observation": 451,
+        "same-entity-within-4m": 357,
         "unsupported-or-contained-description": 21,
         "unsupported-or-unplaced-physics": 213,
         "unsupported-visual-description": 156
@@ -4344,8 +4456,9 @@
       "sha256": "00916f50aa3a4ff188f3439398904ed312c136e6ea668cb75ee7dced6d549f9b",
       "accepted": 1,
       "rejected": {
+        "captured-corpse": 1,
         "non-world-namespace": 2,
-        "same-entity-within-4m": 26,
+        "same-entity-within-4m": 25,
         "unsupported-or-unplaced-physics": 28,
         "unsupported-visual-description": 6
       }
@@ -4353,12 +4466,13 @@
     {
       "file": "pkt_2017-1-10_1484119385_log.pcap",
       "sha256": "6acdb9c2d20ede1a17d02340e2d7ac4de5b7f3e6f8f5a44a191a5d5a8eea7f6a",
-      "accepted": 68,
+      "accepted": 64,
       "rejected": {
+        "captured-corpse": 15,
         "missing-dat-asset-or-cell": 4,
         "non-world-namespace": 4,
-        "repeated-observation": 57,
-        "same-entity-within-4m": 94,
+        "repeated-observation": 50,
+        "same-entity-within-4m": 90,
         "unsupported-or-unplaced-physics": 15,
         "unsupported-visual-description": 2
       }
@@ -4366,13 +4480,14 @@
     {
       "file": "pkt_2017-1-10_1484121002_log.pcap",
       "sha256": "8ca2d69675e39ccb0b49005fa1ebeede20e338c3221fd5ca778969c3fb009875",
-      "accepted": 274,
+      "accepted": 221,
       "rejected": {
+        "captured-corpse": 65,
         "missing-dat-asset-or-cell": 2,
         "non-world-namespace": 6,
         "parented-or-contained": 2,
-        "repeated-observation": 57,
-        "same-entity-within-4m": 48,
+        "repeated-observation": 56,
+        "same-entity-within-4m": 37,
         "unsupported-or-contained-description": 1,
         "unsupported-or-unplaced-physics": 28,
         "unsupported-visual-description": 5
@@ -4381,12 +4496,13 @@
     {
       "file": "pkt_2017-1-11_1484170269_log.pcap",
       "sha256": "195d39d95c28ff81fbe143ec3ee73a869bc75589f6ac4687f87e58b71e9b7e15",
-      "accepted": 207,
+      "accepted": 165,
       "rejected": {
-        "missing-dat-asset-or-cell": 16,
+        "captured-corpse": 60,
+        "missing-dat-asset-or-cell": 14,
         "non-world-namespace": 9,
-        "repeated-observation": 122,
-        "same-entity-within-4m": 149,
+        "repeated-observation": 116,
+        "same-entity-within-4m": 139,
         "unsupported-or-contained-description": 3,
         "unsupported-or-unplaced-physics": 101,
         "unsupported-visual-description": 58
@@ -4395,12 +4511,13 @@
     {
       "file": "pkt_2017-1-11_1484185841_log.pcap",
       "sha256": "53042005e119f52f84a803f9890dfb97a6c122eab03d34cc16dca99ac1341d9d",
-      "accepted": 44,
+      "accepted": 32,
       "rejected": {
+        "captured-corpse": 15,
         "missing-dat-asset-or-cell": 1,
         "non-world-namespace": 6,
         "repeated-observation": 33,
-        "same-entity-within-4m": 54,
+        "same-entity-within-4m": 51,
         "unsupported-or-contained-description": 9,
         "unsupported-or-unplaced-physics": 18,
         "unsupported-visual-description": 16
@@ -4411,8 +4528,9 @@
       "sha256": "b6cdee1a4fa20546b35a731242eb4041b995996e9a28b4a1f5743e5632498f1e",
       "accepted": 1,
       "rejected": {
+        "captured-corpse": 1,
         "non-world-namespace": 2,
-        "same-entity-within-4m": 31,
+        "same-entity-within-4m": 30,
         "unsupported-or-contained-description": 1,
         "unsupported-or-unplaced-physics": 8,
         "unsupported-visual-description": 2
@@ -4436,9 +4554,10 @@
       "sha256": "a17b4e165f63b064723a540fe05da0b574bdb83b5c332de48cddad6414b9c28f",
       "accepted": 2,
       "rejected": {
+        "captured-corpse": 1,
         "non-world-namespace": 13,
         "repeated-observation": 5,
-        "same-entity-within-4m": 12,
+        "same-entity-within-4m": 11,
         "unsupported-or-contained-description": 13,
         "unsupported-or-unplaced-physics": 41,
         "unsupported-visual-description": 18
@@ -4543,9 +4662,10 @@
       "sha256": "06613bebeb4ee3721aaf394753ee6bda3dc567fb6e6e777fa351103b48e35c7b",
       "accepted": 8,
       "rejected": {
+        "captured-corpse": 1,
         "non-world-namespace": 45,
         "repeated-observation": 23,
-        "same-entity-within-4m": 22,
+        "same-entity-within-4m": 21,
         "unsupported-or-contained-description": 35,
         "unsupported-or-unplaced-physics": 133,
         "unsupported-visual-description": 59
@@ -4672,12 +4792,13 @@
     {
       "file": "pkt_2017-1-16_1484598119_log.pcap",
       "sha256": "af33967845dbef79a89a852e2c59fa2b8f6652e3a8564ba671114271fb372f07",
-      "accepted": 264,
+      "accepted": 190,
       "rejected": {
-        "missing-dat-asset-or-cell": 110,
+        "captured-corpse": 125,
+        "missing-dat-asset-or-cell": 93,
         "non-world-namespace": 6,
-        "repeated-observation": 319,
-        "same-entity-within-4m": 360,
+        "repeated-observation": 318,
+        "same-entity-within-4m": 327,
         "unsupported-or-contained-description": 26,
         "unsupported-or-unplaced-physics": 186,
         "unsupported-visual-description": 106
@@ -4717,12 +4838,13 @@
     {
       "file": "pkt_2017-1-18_1484774003_log.pcap",
       "sha256": "9a8b8cc07179fcc2aee7387429608140877af3c1606b37c18669c81874a60333",
-      "accepted": 679,
+      "accepted": 562,
       "rejected": {
-        "missing-dat-asset-or-cell": 135,
+        "captured-corpse": 218,
+        "missing-dat-asset-or-cell": 94,
         "non-world-namespace": 34,
-        "repeated-observation": 492,
-        "same-entity-within-4m": 439,
+        "repeated-observation": 475,
+        "same-entity-within-4m": 396,
         "unsupported-or-contained-description": 29,
         "unsupported-or-unplaced-physics": 302,
         "unsupported-visual-description": 219
@@ -4744,13 +4866,14 @@
     {
       "file": "pkt_2017-1-19_1484860325_log.pcap",
       "sha256": "0a1554569b8f640b2d82e31cd00a38a4b7152d4a689be2b0eaf662f33607482f",
-      "accepted": 741,
+      "accepted": 598,
       "rejected": {
-        "missing-dat-asset-or-cell": 142,
+        "captured-corpse": 252,
+        "missing-dat-asset-or-cell": 94,
         "non-world-namespace": 53,
         "parented-or-contained": 1,
-        "repeated-observation": 293,
-        "same-entity-within-4m": 259,
+        "repeated-observation": 284,
+        "same-entity-within-4m": 207,
         "unsupported-or-contained-description": 20,
         "unsupported-or-unplaced-physics": 255,
         "unsupported-visual-description": 163
@@ -4759,13 +4882,14 @@
     {
       "file": "pkt_2017-1-20_1484948355_log.pcap",
       "sha256": "82e9d74adad685ac787e306b5e064d4f885f0e60da492a347547c3270bd7c40a",
-      "accepted": 787,
+      "accepted": 670,
       "rejected": {
-        "missing-dat-asset-or-cell": 96,
+        "captured-corpse": 210,
+        "missing-dat-asset-or-cell": 67,
         "non-world-namespace": 27,
         "parented-or-contained": 5,
-        "repeated-observation": 513,
-        "same-entity-within-4m": 503,
+        "repeated-observation": 502,
+        "same-entity-within-4m": 450,
         "unsupported-or-contained-description": 15,
         "unsupported-or-unplaced-physics": 233,
         "unsupported-visual-description": 177
@@ -4774,12 +4898,13 @@
     {
       "file": "pkt_2017-1-20_1484979989_log.pcap",
       "sha256": "eebf67d8d1fe1a78ebdfad86f69beec64d33385b599eaba73bbcca1dcf739b27",
-      "accepted": 816,
+      "accepted": 649,
       "rejected": {
+        "captured-corpse": 211,
         "missing-dat-asset-or-cell": 11,
         "parented-or-contained": 2,
-        "repeated-observation": 320,
-        "same-entity-within-4m": 214,
+        "repeated-observation": 317,
+        "same-entity-within-4m": 173,
         "unsupported-or-contained-description": 3,
         "unsupported-or-unplaced-physics": 170,
         "unsupported-visual-description": 146
@@ -4797,8 +4922,9 @@
     {
       "file": "pkt_2017-1-21_1485031156_log.pcap",
       "sha256": "498bd3652b6c9d9bc436b7ca118f711e9348c6fe7e329fefea36d782d2789158",
-      "accepted": 4,
+      "accepted": 3,
       "rejected": {
+        "captured-corpse": 1,
         "non-world-namespace": 62,
         "repeated-observation": 3,
         "same-entity-within-4m": 18,
@@ -4820,13 +4946,14 @@
     {
       "file": "pkt_2017-1-21_1485054260_log.pcap",
       "sha256": "d0b95b07cdc479d08c3ed89af8b8fd79bcd744bb3d2ceb87c84485e8ae7d0003",
-      "accepted": 472,
+      "accepted": 390,
       "rejected": {
+        "captured-corpse": 95,
         "missing-dat-asset-or-cell": 12,
         "non-world-namespace": 48,
         "parented-or-contained": 2,
         "repeated-observation": 130,
-        "same-entity-within-4m": 394,
+        "same-entity-within-4m": 381,
         "unsupported-or-contained-description": 4,
         "unsupported-or-unplaced-physics": 114,
         "unsupported-visual-description": 125
@@ -4835,13 +4962,14 @@
     {
       "file": "pkt_2017-1-22_1485116763_log.pcap",
       "sha256": "22b423b645280563ac57347c7297541fa9c1512b638e7b0e3c58c69d10928354",
-      "accepted": 1064,
+      "accepted": 900,
       "rejected": {
-        "missing-dat-asset-or-cell": 169,
+        "captured-corpse": 271,
+        "missing-dat-asset-or-cell": 112,
         "non-world-namespace": 55,
         "parented-or-contained": 1,
-        "repeated-observation": 877,
-        "same-entity-within-4m": 526,
+        "repeated-observation": 854,
+        "same-entity-within-4m": 499,
         "unsupported-or-contained-description": 5,
         "unsupported-or-unplaced-physics": 310,
         "unsupported-visual-description": 253
@@ -4862,12 +4990,13 @@
     {
       "file": "pkt_2017-1-23_1485209755_log.pcap",
       "sha256": "c993c0690f0eea22d045aa11eaac61b554ce3dcb0db4a997dead6e2b28b0f209",
-      "accepted": 526,
+      "accepted": 415,
       "rejected": {
-        "missing-dat-asset-or-cell": 230,
+        "captured-corpse": 225,
+        "missing-dat-asset-or-cell": 150,
         "non-world-namespace": 62,
-        "repeated-observation": 216,
-        "same-entity-within-4m": 384,
+        "repeated-observation": 214,
+        "same-entity-within-4m": 352,
         "unsupported-or-contained-description": 6,
         "unsupported-or-unplaced-physics": 253,
         "unsupported-visual-description": 88
@@ -4876,13 +5005,14 @@
     {
       "file": "pkt_2017-1-24_1485308826_log.pcap",
       "sha256": "6261ca6fb7c7aac5d565e8a7097c54ed9787c4488d669f8dce28021dbffbd2dc",
-      "accepted": 703,
+      "accepted": 534,
       "rejected": {
-        "missing-dat-asset-or-cell": 53,
+        "captured-corpse": 239,
+        "missing-dat-asset-or-cell": 45,
         "non-world-namespace": 11,
         "parented-or-contained": 2,
-        "repeated-observation": 484,
-        "same-entity-within-4m": 481,
+        "repeated-observation": 457,
+        "same-entity-within-4m": 446,
         "unsupported-or-contained-description": 5,
         "unsupported-or-unplaced-physics": 248,
         "unsupported-visual-description": 173
@@ -4891,12 +5021,13 @@
     {
       "file": "pkt_2017-1-25_1485336630_log.pcap",
       "sha256": "e9bec1bb0d484e17c5d08a4c7c9b4691caf9d9961e44f5bdab420d509d201fd4",
-      "accepted": 56,
+      "accepted": 42,
       "rejected": {
+        "captured-corpse": 25,
         "missing-dat-asset-or-cell": 5,
         "non-world-namespace": 10,
         "repeated-observation": 62,
-        "same-entity-within-4m": 168,
+        "same-entity-within-4m": 157,
         "unsupported-or-contained-description": 1,
         "unsupported-or-unplaced-physics": 31,
         "unsupported-visual-description": 38
@@ -4905,13 +5036,14 @@
     {
       "file": "pkt_2017-1-25_1485393895_log.pcap",
       "sha256": "bdadea1b764898af20d9717153bea0e2d1cb745e3cc3098da8eb9f6f8d717154",
-      "accepted": 393,
+      "accepted": 344,
       "rejected": {
-        "missing-dat-asset-or-cell": 25,
+        "captured-corpse": 69,
+        "missing-dat-asset-or-cell": 21,
         "non-world-namespace": 18,
         "parented-or-contained": 4,
-        "repeated-observation": 275,
-        "same-entity-within-4m": 405,
+        "repeated-observation": 271,
+        "same-entity-within-4m": 393,
         "unsupported-or-contained-description": 3,
         "unsupported-or-unplaced-physics": 141,
         "unsupported-visual-description": 39
@@ -4920,12 +5052,13 @@
     {
       "file": "pkt_2017-1-25_1485404176_log.pcap",
       "sha256": "6d64eac5ba44eeeaa0017cabbb96cc99f335a056842b22e00da2d29a9c05493b",
-      "accepted": 392,
+      "accepted": 370,
       "rejected": {
+        "captured-corpse": 36,
         "missing-dat-asset-or-cell": 922,
         "non-world-namespace": 8,
-        "repeated-observation": 1033,
-        "same-entity-within-4m": 413,
+        "repeated-observation": 1029,
+        "same-entity-within-4m": 403,
         "unsupported-or-contained-description": 2,
         "unsupported-or-unplaced-physics": 49,
         "unsupported-visual-description": 34
@@ -4934,11 +5067,12 @@
     {
       "file": "pkt_2017-1-26_1485420751_log.pcap",
       "sha256": "067c1a5ab066cd7c623bba9d27801165a8ca39be82e9df13635a04ef2b4fbc4f",
-      "accepted": 265,
+      "accepted": 181,
       "rejected": {
+        "captured-corpse": 112,
         "non-world-namespace": 11,
-        "repeated-observation": 181,
-        "same-entity-within-4m": 139,
+        "repeated-observation": 179,
+        "same-entity-within-4m": 113,
         "unsupported-or-contained-description": 3,
         "unsupported-or-unplaced-physics": 116,
         "unsupported-visual-description": 26
@@ -4947,12 +5081,13 @@
     {
       "file": "pkt_2017-1-26_1485478191_log.pcap",
       "sha256": "1eb38662423331fbedb25fa58d6e804f4f08e9f0943ed84cb38fffbe2b95237e",
-      "accepted": 410,
+      "accepted": 330,
       "rejected": {
+        "captured-corpse": 107,
         "missing-dat-asset-or-cell": 17,
         "non-world-namespace": 26,
-        "repeated-observation": 139,
-        "same-entity-within-4m": 338,
+        "repeated-observation": 136,
+        "same-entity-within-4m": 314,
         "unsupported-or-contained-description": 13,
         "unsupported-or-unplaced-physics": 139,
         "unsupported-visual-description": 21
@@ -4961,12 +5096,13 @@
     {
       "file": "pkt_2017-1-27_1485525936_log.pcap",
       "sha256": "993f8fc4aabd598f2c95c23854087a1fb1dde80e666804355aea21e7428c255c",
-      "accepted": 1012,
+      "accepted": 854,
       "rejected": {
-        "missing-dat-asset-or-cell": 123,
+        "captured-corpse": 275,
+        "missing-dat-asset-or-cell": 98,
         "non-world-namespace": 85,
-        "repeated-observation": 836,
-        "same-entity-within-4m": 711,
+        "repeated-observation": 807,
+        "same-entity-within-4m": 648,
         "unsupported-or-contained-description": 40,
         "unsupported-or-unplaced-physics": 417,
         "unsupported-visual-description": 115
@@ -5022,8 +5158,9 @@
       "sha256": "caf9839399b596a43ed673d7e29fc13beac35a1334db7673e640e6e8d7dc7e18",
       "accepted": 9,
       "rejected": {
+        "captured-corpse": 1,
         "non-world-namespace": 7,
-        "same-entity-within-4m": 35,
+        "same-entity-within-4m": 34,
         "unsupported-or-unplaced-physics": 6,
         "unsupported-visual-description": 7
       }
@@ -5031,12 +5168,13 @@
     {
       "file": "pkt_2017-1-10_1484076890_log.pcap",
       "sha256": "7e1437eabf060866adabf07745c47a1227afa13d7a71af4f6c6bef946dc1f793",
-      "accepted": 157,
+      "accepted": 147,
       "rejected": {
+        "captured-corpse": 36,
         "missing-dat-asset-or-cell": 1,
         "non-world-namespace": 6,
-        "repeated-observation": 184,
-        "same-entity-within-4m": 101,
+        "repeated-observation": 161,
+        "same-entity-within-4m": 98,
         "unsupported-or-unplaced-physics": 36,
         "unsupported-visual-description": 3
       }
@@ -5044,12 +5182,13 @@
     {
       "file": "pkt_2017-1-10_1484094662_log.pcap",
       "sha256": "20bb0cacf91d97467ab2b615c71ae8a7f12869342edf7a861c89528b4a4a280d",
-      "accepted": 187,
+      "accepted": 171,
       "rejected": {
+        "captured-corpse": 32,
         "missing-dat-asset-or-cell": 8,
         "non-world-namespace": 73,
-        "repeated-observation": 261,
-        "same-entity-within-4m": 290,
+        "repeated-observation": 249,
+        "same-entity-within-4m": 286,
         "unsupported-or-contained-description": 1,
         "unsupported-or-unplaced-physics": 166,
         "unsupported-visual-description": 46
@@ -5058,11 +5197,12 @@
     {
       "file": "pkt_2017-1-10_1484118147_log.pcap",
       "sha256": "323db4f9e05c7e0a6d2923234a3245b35a79d44a6d87d359aefb903046aba2b2",
-      "accepted": 77,
+      "accepted": 59,
       "rejected": {
+        "captured-corpse": 23,
         "non-world-namespace": 1,
         "repeated-observation": 30,
-        "same-entity-within-4m": 38,
+        "same-entity-within-4m": 33,
         "unsupported-or-unplaced-physics": 36,
         "unsupported-visual-description": 24
       }
@@ -5070,13 +5210,14 @@
     {
       "file": "pkt_2017-1-10_1484119404_log.pcap",
       "sha256": "0437fc7fd878a2316a61e02d79243ab3a59ea3bda26dc6496d0351017480dbcc",
-      "accepted": 246,
+      "accepted": 244,
       "rejected": {
+        "captured-corpse": 80,
         "missing-dat-asset-or-cell": 18,
         "non-world-namespace": 17,
         "parented-or-contained": 4,
-        "repeated-observation": 177,
-        "same-entity-within-4m": 444,
+        "repeated-observation": 170,
+        "same-entity-within-4m": 373,
         "unsupported-or-contained-description": 1,
         "unsupported-or-unplaced-physics": 70,
         "unsupported-visual-description": 48
@@ -5104,12 +5245,13 @@
     {
       "file": "pkt_2017-1-11_1484170256_log.pcap",
       "sha256": "ad7f4848a6e64896132d9bb7667895a306732dc88eb2758740d1046f98c60fac",
-      "accepted": 331,
+      "accepted": 317,
       "rejected": {
+        "captured-corpse": 26,
         "missing-dat-asset-or-cell": 20,
         "non-world-namespace": 26,
-        "repeated-observation": 134,
-        "same-entity-within-4m": 320,
+        "repeated-observation": 132,
+        "same-entity-within-4m": 310,
         "unsupported-or-contained-description": 2,
         "unsupported-or-unplaced-physics": 81,
         "unsupported-visual-description": 22
@@ -5118,13 +5260,14 @@
     {
       "file": "pkt_2017-1-11_1484185778_log.pcap",
       "sha256": "aa4e55e5bba34594bc5f49a5ca3f1bafabe36d89ca4ea4c337d1879b41e09715",
-      "accepted": 497,
+      "accepted": 380,
       "rejected": {
-        "missing-dat-asset-or-cell": 43,
+        "captured-corpse": 220,
+        "missing-dat-asset-or-cell": 35,
         "non-world-namespace": 26,
         "parented-or-contained": 10,
-        "repeated-observation": 420,
-        "same-entity-within-4m": 584,
+        "repeated-observation": 389,
+        "same-entity-within-4m": 520,
         "unsupported-or-contained-description": 4,
         "unsupported-or-unplaced-physics": 226,
         "unsupported-visual-description": 158
@@ -5133,12 +5276,13 @@
     {
       "file": "pkt_2017-1-12_1484260167_log.pcap",
       "sha256": "a47bc99633db7c21ddf00587ed9f9875f576fa6066ade57458009b4b76015e82",
-      "accepted": 674,
+      "accepted": 518,
       "rejected": {
-        "missing-dat-asset-or-cell": 75,
+        "captured-corpse": 216,
+        "missing-dat-asset-or-cell": 59,
         "non-world-namespace": 65,
-        "repeated-observation": 401,
-        "same-entity-within-4m": 451,
+        "repeated-observation": 377,
+        "same-entity-within-4m": 431,
         "unsupported-or-contained-description": 21,
         "unsupported-or-unplaced-physics": 260,
         "unsupported-visual-description": 211
@@ -5147,13 +5291,14 @@
     {
       "file": "pkt_2017-1-12_1484279955_log.pcap",
       "sha256": "32b2d973e6a521e82f1e2fdb65afc40fe48735b9688bb0e092e11cc94b7e1485",
-      "accepted": 297,
+      "accepted": 240,
       "rejected": {
-        "missing-dat-asset-or-cell": 40,
+        "captured-corpse": 104,
+        "missing-dat-asset-or-cell": 30,
         "non-world-namespace": 42,
         "parented-or-contained": 1,
-        "repeated-observation": 463,
-        "same-entity-within-4m": 536,
+        "repeated-observation": 453,
+        "same-entity-within-4m": 509,
         "unsupported-or-contained-description": 8,
         "unsupported-or-unplaced-physics": 125,
         "unsupported-visual-description": 86
@@ -5184,13 +5329,14 @@
     {
       "file": "pkt_2017-1-13_1484337616_log.pcap",
       "sha256": "47f992ae9fd0ccb604b8c57cde59059c75624bfbe612f8e521ca850e717b17af",
-      "accepted": 1074,
+      "accepted": 829,
       "rejected": {
-        "missing-dat-asset-or-cell": 78,
+        "captured-corpse": 385,
+        "missing-dat-asset-or-cell": 64,
         "non-world-namespace": 66,
         "parented-or-contained": 1,
-        "repeated-observation": 1325,
-        "same-entity-within-4m": 1113,
+        "repeated-observation": 1254,
+        "same-entity-within-4m": 1058,
         "unsupported-or-contained-description": 15,
         "unsupported-or-unplaced-physics": 315,
         "unsupported-visual-description": 293
@@ -5219,13 +5365,14 @@
     {
       "file": "pkt_2017-1-14_1484436368_log.pcap",
       "sha256": "6d9bfd09527ee82a1f161c251ffd2097a245192a839cbd5e5e73aacdf24714bc",
-      "accepted": 74,
+      "accepted": 50,
       "rejected": {
+        "captured-corpse": 49,
         "missing-dat-asset-or-cell": 3,
         "non-world-namespace": 26,
         "parented-or-contained": 1,
-        "repeated-observation": 190,
-        "same-entity-within-4m": 307,
+        "repeated-observation": 177,
+        "same-entity-within-4m": 295,
         "unsupported-or-contained-description": 13,
         "unsupported-or-unplaced-physics": 40,
         "unsupported-visual-description": 27
@@ -5246,12 +5393,13 @@
     {
       "file": "pkt_2017-1-14_1484455493_log.pcap",
       "sha256": "28195b4cbdf180860216acc686e389efdc8964db47005b52be04141344dd0c7a",
-      "accepted": 126,
+      "accepted": 111,
       "rejected": {
+        "captured-corpse": 25,
         "missing-dat-asset-or-cell": 7,
         "non-world-namespace": 19,
-        "repeated-observation": 113,
-        "same-entity-within-4m": 202,
+        "repeated-observation": 111,
+        "same-entity-within-4m": 194,
         "unsupported-or-unplaced-physics": 62,
         "unsupported-visual-description": 19
       }
@@ -5261,9 +5409,10 @@
       "sha256": "3c614e8a227a68d27498130d84f9a155dbed61a7b80e03332cefd4f2755200a7",
       "accepted": 0,
       "rejected": {
+        "captured-corpse": 1,
         "non-world-namespace": 16,
         "repeated-observation": 7,
-        "same-entity-within-4m": 8,
+        "same-entity-within-4m": 7,
         "unsupported-or-contained-description": 3,
         "unsupported-or-unplaced-physics": 56,
         "unsupported-visual-description": 20
@@ -5294,9 +5443,10 @@
       "sha256": "e4c10bd9bfaa90ff89258c8c1030cfd4d5ef97166f67713519378413e0e6f60c",
       "accepted": 8,
       "rejected": {
+        "captured-corpse": 6,
         "non-world-namespace": 10,
-        "repeated-observation": 16,
-        "same-entity-within-4m": 53,
+        "repeated-observation": 15,
+        "same-entity-within-4m": 48,
         "unsupported-or-contained-description": 1,
         "unsupported-or-unplaced-physics": 16,
         "unsupported-visual-description": 6
@@ -5305,12 +5455,13 @@
     {
       "file": "pkt_2017-1-15_1484518720_log.pcap",
       "sha256": "728b5e8ae80e22bd38dbca24726d27dcb23de0dbbf6fe18ad74d4363f2cdc3e4",
-      "accepted": 241,
+      "accepted": 222,
       "rejected": {
-        "missing-dat-asset-or-cell": 26,
+        "captured-corpse": 75,
+        "missing-dat-asset-or-cell": 25,
         "non-world-namespace": 35,
-        "repeated-observation": 601,
-        "same-entity-within-4m": 501,
+        "repeated-observation": 556,
+        "same-entity-within-4m": 491,
         "unsupported-or-contained-description": 14,
         "unsupported-or-unplaced-physics": 351,
         "unsupported-visual-description": 34
@@ -5319,12 +5470,13 @@
     {
       "file": "pkt_2017-1-15_1484542955_log.pcap",
       "sha256": "f9bcc989f4a7e8c2b7aaee6aeb61e0347b9f85f5b3f6850a03c41468b71b9088",
-      "accepted": 188,
+      "accepted": 170,
       "rejected": {
-        "missing-dat-asset-or-cell": 21,
+        "captured-corpse": 25,
+        "missing-dat-asset-or-cell": 18,
         "non-world-namespace": 6,
         "repeated-observation": 66,
-        "same-entity-within-4m": 122,
+        "same-entity-within-4m": 118,
         "unsupported-or-contained-description": 2,
         "unsupported-or-unplaced-physics": 28,
         "unsupported-visual-description": 21
@@ -5346,9 +5498,10 @@
       "sha256": "e7d2f4793a2121c51869d9a1342f9d50ea3522c1c23c3356c86b0ae4aa0bab70",
       "accepted": 0,
       "rejected": {
+        "captured-corpse": 1,
         "non-world-namespace": 13,
         "repeated-observation": 33,
-        "same-entity-within-4m": 31,
+        "same-entity-within-4m": 30,
         "unsupported-or-contained-description": 5,
         "unsupported-or-unplaced-physics": 16,
         "unsupported-visual-description": 6
@@ -5357,12 +5510,13 @@
     {
       "file": "pkt_2017-1-17_1484698303_log.pcap",
       "sha256": "bfde8c5f3f0484d6705a2119be752949822590392993056a885e164cc6b909f4",
-      "accepted": 108,
+      "accepted": 98,
       "rejected": {
-        "missing-dat-asset-or-cell": 19,
+        "captured-corpse": 30,
+        "missing-dat-asset-or-cell": 18,
         "non-world-namespace": 25,
-        "repeated-observation": 170,
-        "same-entity-within-4m": 361,
+        "repeated-observation": 165,
+        "same-entity-within-4m": 347,
         "unsupported-or-contained-description": 3,
         "unsupported-or-unplaced-physics": 44,
         "unsupported-visual-description": 30
@@ -5371,11 +5525,12 @@
     {
       "file": "pkt_2017-1-18_1484732181_log.pcap",
       "sha256": "23fedc0171155fedf85cec297924c379854828afeffe7c29ad92f64b31658d72",
-      "accepted": 6,
+      "accepted": 3,
       "rejected": {
+        "captured-corpse": 5,
         "non-world-namespace": 37,
         "repeated-observation": 1,
-        "same-entity-within-4m": 18,
+        "same-entity-within-4m": 16,
         "unsupported-or-contained-description": 11,
         "unsupported-or-unplaced-physics": 57,
         "unsupported-visual-description": 7
@@ -5384,13 +5539,14 @@
     {
       "file": "pkt_2017-1-18_1484775789_log.pcap",
       "sha256": "82e739809db8768e7db04d8e01a86b223af59c0996de1eb191cc488c720be203",
-      "accepted": 116,
+      "accepted": 102,
       "rejected": {
-        "missing-dat-asset-or-cell": 91,
+        "captured-corpse": 112,
+        "missing-dat-asset-or-cell": 54,
         "non-world-namespace": 31,
         "parented-or-contained": 2,
-        "repeated-observation": 252,
-        "same-entity-within-4m": 316,
+        "repeated-observation": 221,
+        "same-entity-within-4m": 286,
         "unsupported-or-contained-description": 9,
         "unsupported-or-unplaced-physics": 125,
         "unsupported-visual-description": 93
@@ -5401,9 +5557,10 @@
       "sha256": "80833b60d4c906e1f38ebb387f022412cf46d1b43f59a7a8e69b1e18b7095b71",
       "accepted": 0,
       "rejected": {
+        "captured-corpse": 2,
         "non-world-namespace": 8,
-        "repeated-observation": 4,
-        "same-entity-within-4m": 29,
+        "repeated-observation": 3,
+        "same-entity-within-4m": 28,
         "unsupported-or-contained-description": 7,
         "unsupported-or-unplaced-physics": 14,
         "unsupported-visual-description": 5
@@ -5412,12 +5569,13 @@
     {
       "file": "pkt_2017-1-19_1484872775_log.pcap",
       "sha256": "529065201e8497e7056435bb196770fe3cd59bb98660e5cb49ca3ae829590870",
-      "accepted": 29,
+      "accepted": 24,
       "rejected": {
+        "captured-corpse": 118,
         "missing-dat-asset-or-cell": 7,
         "non-world-namespace": 59,
         "repeated-observation": 27,
-        "same-entity-within-4m": 364,
+        "same-entity-within-4m": 251,
         "unsupported-or-contained-description": 3,
         "unsupported-or-unplaced-physics": 64,
         "unsupported-visual-description": 60
@@ -5458,12 +5616,13 @@
     {
       "file": "pkt_2017-1-21_1485032001_log.pcap",
       "sha256": "3eef16efcac86a69fc4ffa94c79ef6c3a8c9bfc3485d4e6208d3fc30a1843ff7",
-      "accepted": 883,
+      "accepted": 696,
       "rejected": {
-        "missing-dat-asset-or-cell": 119,
+        "captured-corpse": 275,
+        "missing-dat-asset-or-cell": 85,
         "non-world-namespace": 65,
-        "repeated-observation": 398,
-        "same-entity-within-4m": 281,
+        "repeated-observation": 379,
+        "same-entity-within-4m": 246,
         "unsupported-or-contained-description": 23,
         "unsupported-or-unplaced-physics": 374,
         "unsupported-visual-description": 83
@@ -5485,13 +5644,14 @@
     {
       "file": "pkt_2017-1-23_1485207233_log.pcap",
       "sha256": "c060d5c88d77b7cf93d9bd5894e9058e281b0d7a67c0ef04094be7dcb9f0410e",
-      "accepted": 130,
+      "accepted": 128,
       "rejected": {
-        "missing-dat-asset-or-cell": 264,
+        "captured-corpse": 226,
+        "missing-dat-asset-or-cell": 192,
         "non-world-namespace": 58,
         "parented-or-contained": 2,
-        "repeated-observation": 429,
-        "same-entity-within-4m": 1027,
+        "repeated-observation": 422,
+        "same-entity-within-4m": 882,
         "unsupported-or-contained-description": 20,
         "unsupported-or-unplaced-physics": 326,
         "unsupported-visual-description": 109
@@ -5513,9 +5673,10 @@
       "sha256": "729df448b3b692c33620c7929a1dd05a65235148ee544eb9dffeab95e497eb91",
       "accepted": 10,
       "rejected": {
+        "captured-corpse": 1,
         "non-world-namespace": 26,
         "repeated-observation": 9,
-        "same-entity-within-4m": 62,
+        "same-entity-within-4m": 61,
         "unsupported-or-contained-description": 29,
         "unsupported-or-unplaced-physics": 19,
         "unsupported-visual-description": 21
@@ -5530,11 +5691,12 @@
     {
       "file": "pkt_2017-1-26_1485420790_log.pcap",
       "sha256": "e9c1062399408f225beb3e883de1ac0c728b56f372afbe57affdf84bc999ff71",
-      "accepted": 19,
+      "accepted": 18,
       "rejected": {
+        "captured-corpse": 111,
         "non-world-namespace": 15,
-        "repeated-observation": 149,
-        "same-entity-within-4m": 375,
+        "repeated-observation": 147,
+        "same-entity-within-4m": 267,
         "unsupported-or-contained-description": 3,
         "unsupported-or-unplaced-physics": 131,
         "unsupported-visual-description": 91
@@ -5543,12 +5705,13 @@
     {
       "file": "pkt_2017-1-26_1485478220_log.pcap",
       "sha256": "c8a87873c7d55e137aaed85c07068e5457c8b2ee33796061f3a702279913a836",
-      "accepted": 16,
+      "accepted": 15,
       "rejected": {
+        "captured-corpse": 70,
         "missing-dat-asset-or-cell": 10,
         "non-world-namespace": 39,
-        "repeated-observation": 80,
-        "same-entity-within-4m": 406,
+        "repeated-observation": 77,
+        "same-entity-within-4m": 340,
         "unsupported-or-contained-description": 8,
         "unsupported-or-unplaced-physics": 87,
         "unsupported-visual-description": 32
@@ -5557,12 +5720,13 @@
     {
       "file": "pkt_2017-1-27_1485525951_log.pcap",
       "sha256": "3557255104316c8fb922063c76521f708fe4b8cb24528c2dc02d8d6ab1c86d50",
-      "accepted": 109,
+      "accepted": 86,
       "rejected": {
-        "missing-dat-asset-or-cell": 122,
+        "captured-corpse": 324,
+        "missing-dat-asset-or-cell": 97,
         "non-world-namespace": 93,
-        "repeated-observation": 816,
-        "same-entity-within-4m": 1506,
+        "repeated-observation": 776,
+        "same-entity-within-4m": 1270,
         "unsupported-or-contained-description": 30,
         "unsupported-or-unplaced-physics": 383,
         "unsupported-visual-description": 250
@@ -5582,13 +5746,14 @@
     {
       "file": "pkt_2017-1-28_1485657679_log.pcap",
       "sha256": "b8e439f64cec13d84a75be84556d5b333d9c0564d5cf9d5fc986ebb9557e17f9",
-      "accepted": 374,
+      "accepted": 302,
       "rejected": {
-        "missing-dat-asset-or-cell": 53,
+        "captured-corpse": 235,
+        "missing-dat-asset-or-cell": 45,
         "non-world-namespace": 52,
         "parented-or-contained": 2,
-        "repeated-observation": 588,
-        "same-entity-within-4m": 751,
+        "repeated-observation": 535,
+        "same-entity-within-4m": 649,
         "unsupported-or-contained-description": 8,
         "unsupported-or-unplaced-physics": 202,
         "unsupported-visual-description": 56
@@ -5597,13 +5762,14 @@
     {
       "file": "pkt_2017-1-29_1485679330_log.pcap",
       "sha256": "05cd1867afbb74d45a4a285fc6b013da872ef61d331e89371cf175c6b4f78766",
-      "accepted": 42,
+      "accepted": 41,
       "rejected": {
+        "captured-corpse": 15,
         "missing-dat-asset-or-cell": 2,
         "non-world-namespace": 2,
         "parented-or-contained": 1,
-        "repeated-observation": 65,
-        "same-entity-within-4m": 141,
+        "repeated-observation": 57,
+        "same-entity-within-4m": 135,
         "unsupported-or-contained-description": 2,
         "unsupported-or-unplaced-physics": 24,
         "unsupported-visual-description": 6
@@ -5612,12 +5778,13 @@
     {
       "file": "pkt_2017-1-29_1485680694_log.pcap",
       "sha256": "1eba8b33c12a3a3e22ae664900f70121c6b0628bbd1626a15f67c98e2a173034",
-      "accepted": 265,
+      "accepted": 185,
       "rejected": {
-        "missing-dat-asset-or-cell": 156,
+        "captured-corpse": 135,
+        "missing-dat-asset-or-cell": 107,
         "non-world-namespace": 9,
-        "repeated-observation": 101,
-        "same-entity-within-4m": 112,
+        "repeated-observation": 100,
+        "same-entity-within-4m": 107,
         "unsupported-or-contained-description": 8,
         "unsupported-or-unplaced-physics": 264,
         "unsupported-visual-description": 110
@@ -5668,17 +5835,19 @@
       "sha256": "b4134eaf1e12c88b3e4247d071e6236079cb396291e9fbf23262dcbdd43ff397",
       "accepted": 0,
       "rejected": {
-        "same-entity-within-4m": 12,
+        "captured-corpse": 2,
+        "same-entity-within-4m": 10,
         "unsupported-or-contained-description": 4
       }
     },
     {
       "file": "pkt_2017-1-31_1485839353_log.pcap",
       "sha256": "b94dce60d21e8be571304ac00b3a902b896244c1d05a85661cddc85ce8a78b2c",
-      "accepted": 26,
+      "accepted": 25,
       "rejected": {
+        "captured-corpse": 3,
         "non-world-namespace": 45,
-        "same-entity-within-4m": 27,
+        "same-entity-within-4m": 25,
         "unsupported-or-unplaced-physics": 90,
         "unsupported-visual-description": 33
       }
@@ -5686,12 +5855,13 @@
     {
       "file": "pkt_2017-1-31_1485874876_log.pcap",
       "sha256": "4c6c3243b5b7a23c2ad5f9b1cc74b647df42a03d61fa5dd5b97b8ca0290234c8",
-      "accepted": 392,
+      "accepted": 304,
       "rejected": {
-        "missing-dat-asset-or-cell": 13,
+        "captured-corpse": 108,
+        "missing-dat-asset-or-cell": 10,
         "non-world-namespace": 680,
-        "repeated-observation": 431,
-        "same-entity-within-4m": 307,
+        "repeated-observation": 424,
+        "same-entity-within-4m": 297,
         "unsupported-or-contained-description": 216,
         "unsupported-or-unplaced-physics": 474,
         "unsupported-visual-description": 614
@@ -5702,8 +5872,9 @@
       "sha256": "645112a15ef97171a71035fb20ec218045f5f9fcf9c809cf9490706760ad37c1",
       "accepted": 0,
       "rejected": {
+        "captured-corpse": 1,
         "non-world-namespace": 2,
-        "same-entity-within-4m": 6,
+        "same-entity-within-4m": 5,
         "unsupported-or-unplaced-physics": 55,
         "unsupported-visual-description": 12
       }
@@ -5711,12 +5882,13 @@
     {
       "file": "pkt_2017-1-21_1485040337_log.pcap",
       "sha256": "8ba7f54dd173afd5f5678b9bcc5ffafc1753dc0b6d8a4f74ab54666d8113c607",
-      "accepted": 1084,
+      "accepted": 728,
       "rejected": {
-        "missing-dat-asset-or-cell": 207,
+        "captured-corpse": 581,
+        "missing-dat-asset-or-cell": 145,
         "non-world-namespace": 208,
-        "repeated-observation": 860,
-        "same-entity-within-4m": 380,
+        "repeated-observation": 786,
+        "same-entity-within-4m": 291,
         "unsupported-or-contained-description": 35,
         "unsupported-or-unplaced-physics": 996,
         "unsupported-visual-description": 432
@@ -5725,13 +5897,14 @@
     {
       "file": "pkt_2017-1-22_1485118510_log.pcap",
       "sha256": "a03480b5e825223763e7ef3d5d6c75d5079b45bcfbe31b83d063ee1bd96490cd",
-      "accepted": 327,
+      "accepted": 234,
       "rejected": {
-        "missing-dat-asset-or-cell": 821,
+        "captured-corpse": 499,
+        "missing-dat-asset-or-cell": 502,
         "non-world-namespace": 138,
         "parented-or-contained": 1,
-        "repeated-observation": 965,
-        "same-entity-within-4m": 189,
+        "repeated-observation": 948,
+        "same-entity-within-4m": 119,
         "unsupported-or-contained-description": 31,
         "unsupported-or-unplaced-physics": 330,
         "unsupported-visual-description": 509
@@ -5740,12 +5913,13 @@
     {
       "file": "pkt_2017-1-22_1485145275_log.pcap",
       "sha256": "2c51c2a8aef2ebd88c8bfd1a954f8351cde4fae8c1d61d54eef64655908c4ed0",
-      "accepted": 212,
+      "accepted": 144,
       "rejected": {
-        "missing-dat-asset-or-cell": 207,
+        "captured-corpse": 170,
+        "missing-dat-asset-or-cell": 118,
         "non-world-namespace": 5,
-        "repeated-observation": 66,
-        "same-entity-within-4m": 85,
+        "repeated-observation": 65,
+        "same-entity-within-4m": 73,
         "unsupported-or-contained-description": 1,
         "unsupported-or-unplaced-physics": 190,
         "unsupported-visual-description": 153
@@ -5765,12 +5939,13 @@
     {
       "file": "pkt_2017-1-23_1485156435_log.pcap",
       "sha256": "6a90b1b241e6c086d13656137f090ac7c7bb01c9b9f2a47aa5e367a27d1edced",
-      "accepted": 326,
+      "accepted": 312,
       "rejected": {
+        "captured-corpse": 47,
         "missing-dat-asset-or-cell": 27,
         "non-world-namespace": 22,
-        "repeated-observation": 459,
-        "same-entity-within-4m": 158,
+        "repeated-observation": 436,
+        "same-entity-within-4m": 148,
         "unsupported-or-contained-description": 1,
         "unsupported-or-unplaced-physics": 292,
         "unsupported-visual-description": 95
@@ -5779,12 +5954,13 @@
     {
       "file": "pkt_2017-1-23_1485161525_log.pcap",
       "sha256": "9cc3470384b13574d3f57c5c8998202669d185a8b918f5ba6c8c30a28c79a69e",
-      "accepted": 133,
+      "accepted": 101,
       "rejected": {
-        "missing-dat-asset-or-cell": 11,
+        "captured-corpse": 42,
+        "missing-dat-asset-or-cell": 8,
         "non-world-namespace": 5,
-        "repeated-observation": 47,
-        "same-entity-within-4m": 72,
+        "repeated-observation": 45,
+        "same-entity-within-4m": 67,
         "unsupported-or-contained-description": 2,
         "unsupported-or-unplaced-physics": 106,
         "unsupported-visual-description": 73
@@ -5793,12 +5969,13 @@
     {
       "file": "pkt_2017-1-23_1485164731_log.pcap",
       "sha256": "2976d9e9930b2b6d96481c1378b4ce30efc1cc8a418a9a32efec6a6ae80601a6",
-      "accepted": 145,
+      "accepted": 103,
       "rejected": {
+        "captured-corpse": 58,
         "missing-dat-asset-or-cell": 6,
         "non-world-namespace": 17,
-        "repeated-observation": 111,
-        "same-entity-within-4m": 71,
+        "repeated-observation": 102,
+        "same-entity-within-4m": 64,
         "unsupported-or-contained-description": 16,
         "unsupported-or-unplaced-physics": 309,
         "unsupported-visual-description": 113
@@ -5807,13 +5984,14 @@
     {
       "file": "pkt_2017-1-23_1485231840_log.pcap",
       "sha256": "344d09db2744c34c2f90f1ffc3734959be08028a2e758b044869286232cddc15",
-      "accepted": 469,
+      "accepted": 457,
       "rejected": {
-        "missing-dat-asset-or-cell": 14,
+        "captured-corpse": 31,
+        "missing-dat-asset-or-cell": 13,
         "non-world-namespace": 49,
         "parented-or-contained": 1,
-        "repeated-observation": 218,
-        "same-entity-within-4m": 233,
+        "repeated-observation": 206,
+        "same-entity-within-4m": 227,
         "unsupported-or-contained-description": 14,
         "unsupported-or-unplaced-physics": 278,
         "unsupported-visual-description": 84
@@ -5822,12 +6000,13 @@
     {
       "file": "pkt_2017-1-26_1485408144_log.pcap",
       "sha256": "42bd19de88d3923ad028032fbd6f5225e26a525c9cad2d72726904eab412a4d2",
-      "accepted": 490,
+      "accepted": 457,
       "rejected": {
-        "missing-dat-asset-or-cell": 12,
+        "captured-corpse": 55,
+        "missing-dat-asset-or-cell": 9,
         "non-world-namespace": 10,
         "repeated-observation": 37,
-        "same-entity-within-4m": 190,
+        "same-entity-within-4m": 171,
         "unsupported-or-contained-description": 3,
         "unsupported-or-unplaced-physics": 261,
         "unsupported-visual-description": 77
@@ -5836,12 +6015,13 @@
     {
       "file": "pkt_2017-1-26_1485481682_log.pcap",
       "sha256": "98df787074b57bbe04096ee5e4ed5f4489c11b1feca13fd27e11c074fa3808fb",
-      "accepted": 436,
+      "accepted": 295,
       "rejected": {
-        "missing-dat-asset-or-cell": 38,
+        "captured-corpse": 178,
+        "missing-dat-asset-or-cell": 25,
         "non-world-namespace": 31,
-        "repeated-observation": 125,
-        "same-entity-within-4m": 117,
+        "repeated-observation": 123,
+        "same-entity-within-4m": 95,
         "unsupported-or-contained-description": 21,
         "unsupported-or-unplaced-physics": 359,
         "unsupported-visual-description": 97
@@ -5850,13 +6030,14 @@
     {
       "file": "pkt_2017-1-27_1485500038_log.pcap",
       "sha256": "e14e5082b872065e9a5013eea5a10da335a85d8b0e33f7f55ac3a03ba5a08e70",
-      "accepted": 681,
+      "accepted": 576,
       "rejected": {
-        "missing-dat-asset-or-cell": 239,
+        "captured-corpse": 264,
+        "missing-dat-asset-or-cell": 180,
         "non-world-namespace": 25,
         "parented-or-contained": 2,
-        "repeated-observation": 300,
-        "same-entity-within-4m": 681,
+        "repeated-observation": 282,
+        "same-entity-within-4m": 599,
         "unsupported-or-contained-description": 23,
         "unsupported-or-unplaced-physics": 733,
         "unsupported-visual-description": 236
@@ -5865,12 +6046,13 @@
     {
       "file": "pkt_2017-1-27_1485514200_log.pcap",
       "sha256": "ff18829f25937268e942dfd753c472e849d4725af378ce4b341666702bdf24df",
-      "accepted": 293,
+      "accepted": 251,
       "rejected": {
-        "missing-dat-asset-or-cell": 20,
+        "captured-corpse": 119,
+        "missing-dat-asset-or-cell": 13,
         "non-world-namespace": 47,
-        "repeated-observation": 284,
-        "same-entity-within-4m": 374,
+        "repeated-observation": 276,
+        "same-entity-within-4m": 312,
         "unsupported-or-contained-description": 19,
         "unsupported-or-unplaced-physics": 619,
         "unsupported-visual-description": 172
@@ -5879,13 +6061,14 @@
     {
       "file": "pkt_2017-1-27_1485557660_log.pcap",
       "sha256": "40abf772f5591bd20fb80a2f6bc2f843e059d2871e195cdd8ad8a5a32b65b128",
-      "accepted": 919,
+      "accepted": 743,
       "rejected": {
-        "missing-dat-asset-or-cell": 402,
+        "captured-corpse": 428,
+        "missing-dat-asset-or-cell": 298,
         "non-world-namespace": 262,
         "parented-or-contained": 1,
-        "repeated-observation": 770,
-        "same-entity-within-4m": 782,
+        "repeated-observation": 716,
+        "same-entity-within-4m": 688,
         "unsupported-or-contained-description": 35,
         "unsupported-or-unplaced-physics": 1046,
         "unsupported-visual-description": 321
@@ -5896,9 +6079,10 @@
       "sha256": "5653e9b13ba3d5fc42a21aa6ede93ef2781965ddb00af2914d74787ad94b5202",
       "accepted": 1,
       "rejected": {
+        "captured-corpse": 1,
         "non-world-namespace": 1,
         "repeated-observation": 1,
-        "same-entity-within-4m": 10,
+        "same-entity-within-4m": 9,
         "unsupported-or-unplaced-physics": 64,
         "unsupported-visual-description": 15
       }
@@ -5906,13 +6090,14 @@
     {
       "file": "pkt_2017-1-29_1485705509_log.pcap",
       "sha256": "d15b49c66f7cc248338d2fcd150ea7469025957b659b5653b79ec39fb918599d",
-      "accepted": 987,
+      "accepted": 724,
       "rejected": {
-        "missing-dat-asset-or-cell": 351,
+        "captured-corpse": 784,
+        "missing-dat-asset-or-cell": 244,
         "non-world-namespace": 413,
         "parented-or-contained": 3,
-        "repeated-observation": 871,
-        "same-entity-within-4m": 910,
+        "repeated-observation": 623,
+        "same-entity-within-4m": 744,
         "unsupported-or-contained-description": 62,
         "unsupported-or-unplaced-physics": 943,
         "unsupported-visual-description": 411
@@ -5921,12 +6106,13 @@
     {
       "file": "pkt_2017-1-29_1485726704_log.pcap",
       "sha256": "a2bbda4dcce080b5dd6ee2f5e8124e5680cbccc2ec3c0add30017653fbdaef0a",
-      "accepted": 21,
+      "accepted": 12,
       "rejected": {
+        "captured-corpse": 17,
         "missing-dat-asset-or-cell": 1,
         "non-world-namespace": 55,
-        "repeated-observation": 37,
-        "same-entity-within-4m": 129,
+        "repeated-observation": 34,
+        "same-entity-within-4m": 124,
         "unsupported-or-contained-description": 41,
         "unsupported-or-unplaced-physics": 165,
         "unsupported-visual-description": 72
@@ -5969,10 +6155,11 @@
       "sha256": "a2123a9f588eec8318f8630990fa8857973352ea148cb973e07001d5050294e4",
       "accepted": 31,
       "rejected": {
+        "captured-corpse": 11,
         "missing-dat-asset-or-cell": 2,
         "non-world-namespace": 65,
-        "repeated-observation": 71,
-        "same-entity-within-4m": 123,
+        "repeated-observation": 64,
+        "same-entity-within-4m": 119,
         "unsupported-or-contained-description": 1,
         "unsupported-or-unplaced-physics": 356,
         "unsupported-visual-description": 131
@@ -5987,12 +6174,13 @@
     {
       "file": "pkt_2017-1-21_1485042774_log.pcap",
       "sha256": "137967623130c7beef4571c6a01bf7628ba2439f99e7f26a61d0b27b64b0676a",
-      "accepted": 46,
+      "accepted": 45,
       "rejected": {
-        "missing-dat-asset-or-cell": 152,
+        "captured-corpse": 374,
+        "missing-dat-asset-or-cell": 107,
         "non-world-namespace": 158,
-        "repeated-observation": 267,
-        "same-entity-within-4m": 722,
+        "repeated-observation": 220,
+        "same-entity-within-4m": 441,
         "unsupported-or-contained-description": 13,
         "unsupported-or-unplaced-physics": 385,
         "unsupported-visual-description": 224
@@ -6001,12 +6189,13 @@
     {
       "file": "pkt_2017-1-22_1485118876_log.pcap",
       "sha256": "eb63601ca29cd3f6253634e3a35b5cca62cd109c7385eee8c170272c77dafd75",
-      "accepted": 51,
+      "accepted": 50,
       "rejected": {
-        "missing-dat-asset-or-cell": 632,
+        "captured-corpse": 467,
+        "missing-dat-asset-or-cell": 343,
         "non-world-namespace": 117,
-        "repeated-observation": 948,
-        "same-entity-within-4m": 472,
+        "repeated-observation": 933,
+        "same-entity-within-4m": 310,
         "unsupported-or-contained-description": 30,
         "unsupported-or-unplaced-physics": 162,
         "unsupported-visual-description": 140
@@ -6026,13 +6215,14 @@
     {
       "file": "pkt_2017-1-24_1485238971_log.pcap",
       "sha256": "a6c78a296c16aa5fa2a3b4cfc44ad38527089a2228dd905bcbe7e1f30da39a92",
-      "accepted": 244,
+      "accepted": 194,
       "rejected": {
-        "missing-dat-asset-or-cell": 104,
+        "captured-corpse": 91,
+        "missing-dat-asset-or-cell": 80,
         "non-world-namespace": 4,
         "parented-or-contained": 1,
-        "repeated-observation": 88,
-        "same-entity-within-4m": 74,
+        "repeated-observation": 80,
+        "same-entity-within-4m": 65,
         "unsupported-or-unplaced-physics": 150,
         "unsupported-visual-description": 125
       }
@@ -6042,8 +6232,9 @@
       "sha256": "92d11d6e2bddf30d3b0db8a3f44c10b8d5ff618b423ed39790415e53aa7aef1a",
       "accepted": 0,
       "rejected": {
+        "captured-corpse": 2,
         "non-world-namespace": 1,
-        "same-entity-within-4m": 9,
+        "same-entity-within-4m": 7,
         "unsupported-or-unplaced-physics": 25,
         "unsupported-visual-description": 12
       }
@@ -6053,8 +6244,9 @@
       "sha256": "0ae8b90f55985101895ad729e009914362b7b56e9311faa48b8593d921e5279d",
       "accepted": 0,
       "rejected": {
+        "captured-corpse": 1,
         "non-world-namespace": 1,
-        "same-entity-within-4m": 7,
+        "same-entity-within-4m": 6,
         "unsupported-or-unplaced-physics": 25,
         "unsupported-visual-description": 12
       }
@@ -6062,12 +6254,13 @@
     {
       "file": "pkt_2017-1-26_1485489976_log.pcap",
       "sha256": "faf21ae585c704e8904a2bfa24c5217eaf4d1dbacd16f49a98384bb03c5317e6",
-      "accepted": 73,
+      "accepted": 58,
       "rejected": {
-        "missing-dat-asset-or-cell": 55,
+        "captured-corpse": 267,
+        "missing-dat-asset-or-cell": 43,
         "non-world-namespace": 56,
-        "repeated-observation": 249,
-        "same-entity-within-4m": 785,
+        "repeated-observation": 248,
+        "same-entity-within-4m": 546,
         "unsupported-or-contained-description": 24,
         "unsupported-or-unplaced-physics": 532,
         "unsupported-visual-description": 169
@@ -6078,9 +6271,10 @@
       "sha256": "f03497c978b718ab9fa24182629c0aa23c7380c4011412a9d85a5ea6ad36ef3d",
       "accepted": 7,
       "rejected": {
+        "captured-corpse": 27,
         "missing-dat-asset-or-cell": 1,
         "non-world-namespace": 20,
-        "same-entity-within-4m": 152,
+        "same-entity-within-4m": 125,
         "unsupported-or-contained-description": 1,
         "unsupported-or-unplaced-physics": 69,
         "unsupported-visual-description": 17
@@ -6091,10 +6285,11 @@
       "sha256": "32f5aabd8e3bc35da263536443f2718c7e48d81d12b8aed2e4c73496d4c38375",
       "accepted": 4,
       "rejected": {
-        "missing-dat-asset-or-cell": 26,
+        "captured-corpse": 39,
+        "missing-dat-asset-or-cell": 21,
         "non-world-namespace": 41,
-        "repeated-observation": 50,
-        "same-entity-within-4m": 179,
+        "repeated-observation": 47,
+        "same-entity-within-4m": 148,
         "unsupported-or-contained-description": 2,
         "unsupported-or-unplaced-physics": 134,
         "unsupported-visual-description": 50
@@ -6105,10 +6300,11 @@
       "sha256": "c98553f3d3224ab0184d8f6194f45ab5c2b12daf2906ca41b3361eac3c4082a2",
       "accepted": 24,
       "rejected": {
+        "captured-corpse": 14,
         "missing-dat-asset-or-cell": 29,
         "non-world-namespace": 151,
         "repeated-observation": 138,
-        "same-entity-within-4m": 289,
+        "same-entity-within-4m": 275,
         "unsupported-or-contained-description": 3,
         "unsupported-or-unplaced-physics": 189,
         "unsupported-visual-description": 98
@@ -6119,8 +6315,9 @@
       "sha256": "50afa03695137a266c1ab5262193fedb897c229e7ceeb200c2040d8d3b8528fc",
       "accepted": 0,
       "rejected": {
+        "captured-corpse": 1,
         "non-world-namespace": 7,
-        "same-entity-within-4m": 14,
+        "same-entity-within-4m": 13,
         "unsupported-or-unplaced-physics": 89,
         "unsupported-visual-description": 34
       }
@@ -6130,8 +6327,9 @@
       "sha256": "0e054554f3c1b1c0b252b965efbe322223c927b7b7a23efd5b2f435b18278fdf",
       "accepted": 2,
       "rejected": {
+        "captured-corpse": 1,
         "non-world-namespace": 33,
-        "same-entity-within-4m": 32,
+        "same-entity-within-4m": 31,
         "unsupported-or-unplaced-physics": 107,
         "unsupported-visual-description": 46
       }
@@ -6139,12 +6337,13 @@
     {
       "file": "pkt_2017-1-21_1485040629_log.pcap",
       "sha256": "a62b3535b523ae93dcbeb813cd60e3a4a7546195ebb4f30fa55e581d0333a849",
-      "accepted": 38,
+      "accepted": 36,
       "rejected": {
-        "missing-dat-asset-or-cell": 174,
+        "captured-corpse": 452,
+        "missing-dat-asset-or-cell": 126,
         "non-world-namespace": 189,
-        "repeated-observation": 539,
-        "same-entity-within-4m": 1130,
+        "repeated-observation": 482,
+        "same-entity-within-4m": 785,
         "unsupported-or-contained-description": 15,
         "unsupported-or-unplaced-physics": 475,
         "unsupported-visual-description": 310
@@ -6155,11 +6354,12 @@
       "sha256": "9f5c503c9ed348811c3edeed21cf517cecd1ed2edf46a9d70aa3228bd165cab7",
       "accepted": 5,
       "rejected": {
-        "missing-dat-asset-or-cell": 633,
+        "captured-corpse": 467,
+        "missing-dat-asset-or-cell": 344,
         "non-world-namespace": 113,
         "parented-or-contained": 2,
-        "repeated-observation": 954,
-        "same-entity-within-4m": 517,
+        "repeated-observation": 939,
+        "same-entity-within-4m": 354,
         "unsupported-or-contained-description": 25,
         "unsupported-or-unplaced-physics": 158,
         "unsupported-visual-description": 165
@@ -6181,11 +6381,12 @@
       "sha256": "2177d8a1e78d66e86389b635da09f057c8bab74c3f77a5ace7fe0c802af2286f",
       "accepted": 7,
       "rejected": {
+        "captured-corpse": 36,
         "missing-dat-asset-or-cell": 4,
         "non-world-namespace": 18,
         "parented-or-contained": 9,
-        "repeated-observation": 60,
-        "same-entity-within-4m": 160,
+        "repeated-observation": 59,
+        "same-entity-within-4m": 125,
         "unsupported-or-contained-description": 2,
         "unsupported-or-unplaced-physics": 69,
         "unsupported-visual-description": 107
@@ -6196,9 +6397,10 @@
       "sha256": "c6fae10a22bb33a3c3450d9965415fab2dc06aa507c9766df9ae80909cf17157",
       "accepted": 0,
       "rejected": {
+        "captured-corpse": 1,
         "non-world-namespace": 3,
         "parented-or-contained": 1,
-        "same-entity-within-4m": 6,
+        "same-entity-within-4m": 5,
         "unsupported-or-contained-description": 2,
         "unsupported-or-unplaced-physics": 17,
         "unsupported-visual-description": 16
@@ -6209,9 +6411,10 @@
       "sha256": "054b71467f2dfb03d304551da826cff9f4e8d86e0bf7512749b9061962202476",
       "accepted": 0,
       "rejected": {
+        "captured-corpse": 1,
         "missing-dat-asset-or-cell": 1,
         "non-world-namespace": 3,
-        "same-entity-within-4m": 30,
+        "same-entity-within-4m": 29,
         "unsupported-or-contained-description": 1,
         "unsupported-or-unplaced-physics": 45,
         "unsupported-visual-description": 28
@@ -6222,9 +6425,10 @@
       "sha256": "e88981ae1d61c23cc18b52aec23d957fba3775bd63fdd1b930b429343e3da2ba",
       "accepted": 9,
       "rejected": {
+        "captured-corpse": 15,
         "non-world-namespace": 4,
         "repeated-observation": 9,
-        "same-entity-within-4m": 100,
+        "same-entity-within-4m": 85,
         "unsupported-or-unplaced-physics": 21,
         "unsupported-visual-description": 50
       }
@@ -6240,9 +6444,10 @@
       "sha256": "bfffecf9336a8adf4cebb8884e56b7e2603882856c97e0d7a883d1776a2c0f32",
       "accepted": 10,
       "rejected": {
+        "captured-corpse": 57,
         "non-world-namespace": 15,
         "repeated-observation": 50,
-        "same-entity-within-4m": 191,
+        "same-entity-within-4m": 134,
         "unsupported-or-contained-description": 11,
         "unsupported-or-unplaced-physics": 93,
         "unsupported-visual-description": 46
@@ -6251,12 +6456,13 @@
     {
       "file": "pkt_2017-1-27_1485500185_log.pcap",
       "sha256": "d142a9e8c2f39bcec74e856361eb0815ad3c03bbc0a9f33517595b00bffdec4d",
-      "accepted": 41,
+      "accepted": 35,
       "rejected": {
-        "missing-dat-asset-or-cell": 54,
+        "captured-corpse": 215,
+        "missing-dat-asset-or-cell": 42,
         "non-world-namespace": 49,
-        "repeated-observation": 287,
-        "same-entity-within-4m": 871,
+        "repeated-observation": 276,
+        "same-entity-within-4m": 685,
         "unsupported-or-contained-description": 20,
         "unsupported-or-unplaced-physics": 680,
         "unsupported-visual-description": 279
@@ -6265,12 +6471,13 @@
     {
       "file": "pkt_2017-1-27_1485555779_log.pcap",
       "sha256": "a2eb43b68c4f622adb8b42b743cea2c6b3a55414fd73797f2e715bc5ff70521b",
-      "accepted": 159,
+      "accepted": 123,
       "rejected": {
-        "missing-dat-asset-or-cell": 380,
+        "captured-corpse": 342,
+        "missing-dat-asset-or-cell": 284,
         "non-world-namespace": 190,
-        "repeated-observation": 293,
-        "same-entity-within-4m": 731,
+        "repeated-observation": 258,
+        "same-entity-within-4m": 556,
         "unsupported-or-contained-description": 14,
         "unsupported-or-unplaced-physics": 679,
         "unsupported-visual-description": 281
@@ -6290,12 +6497,13 @@
     {
       "file": "pkt_2017-1-30_1485831459_log.pcap",
       "sha256": "89a75c38cb9bdf91e8f1abbe72cf2fa9fd8a142f19fe50f19ab952f6f0f0e30e",
-      "accepted": 90,
+      "accepted": 79,
       "rejected": {
-        "missing-dat-asset-or-cell": 80,
+        "captured-corpse": 58,
+        "missing-dat-asset-or-cell": 79,
         "non-world-namespace": 458,
-        "repeated-observation": 760,
-        "same-entity-within-4m": 580,
+        "repeated-observation": 738,
+        "same-entity-within-4m": 556,
         "unsupported-or-contained-description": 27,
         "unsupported-or-unplaced-physics": 527,
         "unsupported-visual-description": 386
@@ -6306,8 +6514,9 @@
       "sha256": "6dd5e9a0f42f84d41ea7feced41d4f0bc86d51ed1b3e16831bc5fa7b348f6aec",
       "accepted": 0,
       "rejected": {
+        "captured-corpse": 1,
         "non-world-namespace": 22,
-        "same-entity-within-4m": 8,
+        "same-entity-within-4m": 7,
         "unsupported-or-contained-description": 27,
         "unsupported-or-unplaced-physics": 46,
         "unsupported-visual-description": 27

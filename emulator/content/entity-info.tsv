@@ -88,7 +88,6 @@ pyrealium-entity-info-v1
 47000863	0	Altar of Turmoil
 47000866	0	Emerald Obelisk
 47000867	0	Teaching Stone
-4700086e	0	Refining Workshop
 47000878	0	Teaching Stone
 47000879	0	Teaching Stone
 4700088c	0	Edge Beetle
@@ -100,19 +99,14 @@ pyrealium-entity-info-v1
 47000897	0	Feyen Mimbu
 470008bf	0	Cutter Beetle
 47000efe	0	Drum
-47000f2c	0	Skull Cesta
 47000f2e	0	Spine Javelin
 47000f2f	0	Barbed Javelin
 47000f30	0	Harpoon
 47000f4b	0	Squall Tyrant Blood
-47000f4c	0	Tyrant's Tooth
-47000f4f	0	Thornling Sap
-47000f50	0	Thornling Eye
 47000f58	0	Reedshark Elder Tendon
 47000f59	0	Reedshark Fin
 47000f5a	0	Reedshark Skin
 47000f5b	0	Reedshark Plate
-47000f5d	0	Phyntos Wasp Stinger
 47000f5e	0	Phyntos Wasp Wings
 47000f61	0	Opor Niffis Ichor
 47000f63	0	Opor Nefane Ichor
@@ -126,15 +120,11 @@ pyrealium-entity-info-v1
 47000f98	0	Reedshark Runt
 47000f9c	0	Green Phyntos Wasp
 47000fa2	0	Red Soldier Wasp
-47000fb1	0	Sepsis Grutt
 47000fb9	0	Eli Sloucher
 47000fba	0	Eli Plodder
-47000fc1	0	Banderling Bouncer
 47000fc3	0	Banderling Slammer
 47000fc4	0	Banderling Raver
 47000fc5	0	Sandy Armoredillo
-47000fc7	0	Steppe Armoredillo
-47000fd3	0	Studded Gauntlets
 47000ff5	0	Steel Shield
 47000ff9	0	Hide Buckler
 47000ffd	0	Guardian Shield
@@ -180,7 +170,6 @@ pyrealium-entity-info-v1
 47001178	0	Vial of the Ancients
 47001179	0	Wrench of the Ancients
 4700117b	0	Living Tyrant Heart
-47001180	0	Darkstone
 47001194	0	Greatsword of the Sun's Blaze
 47001199	0	Opal Boots
 470011ab	0	Golden Age Vengeful Axe
@@ -255,7 +244,6 @@ pyrealium-entity-info-v1
 470016eb	0	Cruel Reaper
 470016ed	0	Fearfang, the Venomous
 47001737	0	Deep Darkenfowl
-4700174e	0	Aste Chambers Door
 470017b9	0	Enduring Flat Hammer
 470017db	0	Skeletal Remains
 470017e3	0	Teal Leather Hide

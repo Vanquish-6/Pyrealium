@@ -98,8 +98,9 @@ def object_description(data):
     if flags & ~supported or not flags & 0x8000:
         raise Unsupported("unsupported-or-unplaced-physics")
     r.take(4)  # Native instance and visual-ordering stamps, not reused.
+    mode = None
     if flags & 0x80:
-        r.take(4)
+        mode = r.word()
     if flags & 2:
         r.table(12)  # key + SliderData(value, velocity), 00640f40 / 0067cfb0.
     if flags & 0x20000:
@@ -141,6 +142,7 @@ def object_description(data):
     return {"source_iid":f"{identity:016x}","entity":f"{entity:08x}","visual":f"{visual:08x}","scale":scale,
             "cell":f"{cell:08x}","position":coordinates,"orientation":orientation,
             "physics_mask":f"{flags:08x}","description_mask":f"{mask:08x}","name":name,
+            "mode":None if mode is None else f"{mode:08x}",
             "message_sha256":hashlib.sha256(data).hexdigest()}
 
 
@@ -301,6 +303,9 @@ def convert(paths, base, game_data, skip_broken=False):
                     continue
                 try:
                     actor = object_description(data)
+                    # Captured corpses (mode 41000003) are transient kills, not spawns.
+                    if actor["mode"] == "41000003":
+                        raise Unsupported("captured-corpse")
                     if int(actor["source_iid"],16) in attached:
                         raise Unsupported("parented-or-contained")
                     if actor["source_iid"] in seen:

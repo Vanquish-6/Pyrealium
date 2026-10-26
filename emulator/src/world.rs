@@ -538,26 +538,13 @@ pub fn create_named_object(
         object.parent_visual_did,
         0x1f00031e | 0x1f0003d1 | 0x1f001941
     );
-    // This mentor's DAT behavior table 44000018 has initial mode 40000001
-    // (0067d000). PhysicsDesc's zero default would replace that initial mode.
-    let mentor_appearance = object.parent_visual_did == 0x1f000deb;
-    let player_appearance = object.entity_did == crate::bootstrap::PLAYER_ENTITY
-        && crate::appearance::is_player_visual(object.parent_visual_did);
-    bytes.extend(
-        if standing_appearance {
-            0x8082_u32
-        } else if mentor_appearance || player_appearance {
-            0x8080_u32
-        } else {
-            0x8000_u32
-        }
-        .to_le_bytes(),
-    );
+    // Every retail world-object CreateObject carries a mode: 27,808 surveyed
+    // capture actors, 22,729 of them standing 40000001. Without it the client
+    // applies mode zero and the object never takes its standing pose.
+    bytes.extend(if standing_appearance { 0x8082_u32 } else { 0x8080_u32 }.to_le_bytes());
     bytes.extend(object.instance_stamp.to_le_bytes());
     bytes.extend(object.visual_ordering_stamp.to_le_bytes());
-    if standing_appearance || mentor_appearance || player_appearance {
-        bytes.extend(0x40000001_u32.to_le_bytes()); // m_mode_id
-    }
+    bytes.extend(0x40000001_u32.to_le_bytes()); // m_mode_id
     if standing_appearance {
         bytes.extend(1_u32.to_le_bytes()); // m_sliders count
         bytes.extend(0x4000000a_u32.to_le_bytes());
@@ -849,16 +836,16 @@ mod tests {
             timestamps: [7, 8, 9, 10],
         };
         let bytes = create_stationary_object(&object).unwrap();
-        assert_eq!(bytes.len(), 76);
+        assert_eq!(bytes.len(), 80);
         assert_eq!(
-            &bytes[..32],
+            &bytes[..36],
             &[
-                0x58, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0x80, 0, 0, 5, 0,
-                6, 0, 4, 0, 0, 0
+                0x58, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0x80, 0x80, 0, 0, 5,
+                0, 6, 0, 1, 0, 0, 0x40, 4, 0, 0, 0
             ]
         );
         assert_eq!(
-            &bytes[60..],
+            &bytes[64..],
             &[7, 0, 8, 0, 9, 0, 10, 0, 0, 0, 0, 2, 3, 0, 0, 0]
         );
         assert_eq!(
