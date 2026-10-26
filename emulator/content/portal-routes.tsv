@@ -1,4 +1,7 @@
 pyrealium-portal-routes-v1
+# Authored one-way racial-start links to the established training room.
+8140000000030022	4700084d	03fd0113	-4.16552	-25.519	-24.2035	02990109	59.060577	240.199	-44.606205	191	1
+8140000000030025	4700084d	58740039	147.74	17.13	161.75	02990109	59.060577	240.199	-44.606205	191	1
 # Portal snapshot SHA256: 793762ab4fc2dfe05016de32a32b25e7ed8d52e3edc48cdc962f3867a2ee38bb
 # Telepad source SHA256: c1caa67d0cf0f9ccad017b80f688a5a974bd7adc06c74ee9b2bfd6473543adcd
 # IID entity sourceCell sourceXYZ destinationCell destinationXYZ heading minLevel (tabs)

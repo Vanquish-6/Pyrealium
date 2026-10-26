@@ -467,6 +467,13 @@ and operators must publish their complete corresponding version and can set
 
 ### Placement-independent training NPC services
 
+The training pack includes an authored mentor, quartermaster and portal near the
+supported Tumerok start (`03fd0113`) and Lugian fallback start (`58740039`).
+These two one-way development routes arrive at the established Human training
+room. The new placements use small offsets from the bootstrap anchor and its
+elevation. Native appearance, collision and interaction acceptance remain pending;
+these are not original spawns.
+
 The pinned training mentor (`47001699`) and quartermaster (`47003724`) now
 resolve from the active, visible scene rather than a list of three placement IDs.
 Placed copies of those NPC types receive the existing authored training services.
