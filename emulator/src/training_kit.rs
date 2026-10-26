@@ -83,6 +83,8 @@ pub fn validate(portal: &mut Dat) -> io::Result<Metadata> {
             primary: 1,
             secondary: 0x40000006,
         }),
+        // Integer quality 0xfa0 in the pinned 81000f1e record: Sword.
+        implement: Some(0x2),
     };
     portal.read(metadata.icon)?;
     let hand = metadata.equipment.ok_or_else(invalid)?;

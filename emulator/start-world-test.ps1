@@ -26,6 +26,8 @@ if ($LASTEXITCODE -eq 2) {
 } elseif ($LASTEXITCODE -ne 0) {
     throw 'Script compatibility check failed to read the test assets.'
 }
+& python (Join-Path $PSScriptRoot 'tools\repair_7148_skill_panels.py') $assets | Out-Null
+if ($LASTEXITCODE -ne 0) { throw 'The skill panel compatibility repair failed. Test launch canceled.' }
 Push-Location $PSScriptRoot
 try {
     & cargo build --release --target-dir target/compat-build

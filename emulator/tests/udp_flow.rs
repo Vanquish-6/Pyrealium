@@ -105,6 +105,7 @@ fn run_enter_rejection(game_data: Option<std::path::PathBuf>, expect_bootstrap: 
             initialize_ui: expect_bootstrap,
             training_kit: false,
             lifestones: false,
+            portals: false,
             bind: addr,
             account: "local".into(),
             data: server_dir,
@@ -207,6 +208,7 @@ fn run_enter_rejection(game_data: Option<std::path::PathBuf>, expect_bootstrap: 
                     name: "Explorer".into(),
                     seconds_greyed_out: 0,
                     parent_visual_did: 0x1f000023,
+                    appearance: None,
                 }],
             )
             .unwrap()

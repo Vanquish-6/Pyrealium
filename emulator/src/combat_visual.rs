@@ -8,6 +8,7 @@ pub const DO_MODE: u32 = 0x10082;
 pub const DO_BEHAVIOR: u32 = 0x1007f;
 /// PhysicsStory on the victim. StreamPack 006ae550; hook pack 006ad9f0.
 pub const DO_STORY: u32 = 0x100a8;
+pub const DO_FX: u32 = 0x100a0;
 pub const PEACE: u32 = 0x40000001;
 pub const ONE_HAND: u32 = 0x4100000a;
 pub const MELEE_AUTO: u32 = 0x41000089;
@@ -94,9 +95,28 @@ pub fn basic_attack(owner: u64, instance: u16, stamp: u16) -> Result<Vec<u8>, Wo
 }
 
 pub fn swing(owner: u64, instance: u16, stamp: u16) -> Result<Vec<u8>, WorldError> {
+    behavior(owner, instance, stamp, MELEE_AUTO)
+}
+
+/// DoBehavior with only mBehaviorID set; native defaults for all other fields.
+pub fn behavior(owner: u64, instance: u16, stamp: u16, id: u32) -> Result<Vec<u8>, WorldError> {
+    if id >> 24 != 0x41 {
+        return Err(WorldError::InvalidValue);
+    }
     let mut wire = prefix(DO_BEHAVIOR, owner, instance, stamp)?;
-    wire.extend(1u32.to_le_bytes()); // Only mBehaviorID; native defaults for all other fields.
-    wire.extend(MELEE_AUTO.to_le_bytes());
+    wire.extend(1u32.to_le_bytes());
+    wire.extend(id.to_le_bytes());
+    Ok(wire)
+}
+
+/// DoFX on an object: FX id and scale, as in retained captures (0x100a0).
+pub fn fx(owner: u64, instance: u16, stamp: u16, id: u32) -> Result<Vec<u8>, WorldError> {
+    if id >> 24 != 0x41 {
+        return Err(WorldError::InvalidValue);
+    }
+    let mut wire = prefix(DO_FX, owner, instance, stamp)?;
+    wire.extend(id.to_le_bytes());
+    wire.extend(1.0f32.to_le_bytes());
     Ok(wire)
 }
 

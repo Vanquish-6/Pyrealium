@@ -55,6 +55,8 @@ if (-not $game) {
     } elseif ($LASTEXITCODE -ne 0) {
         throw 'Could not read the prepared game data.'
     }
+    & python (Join-Path $root 'tools\repair_7148_skill_panels.py') $game | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'The skill panel compatibility repair failed.' }
 }
 
 $running = @(Get-CimInstance -ClassName Win32_Process -Filter "Name = 'pyrealium.exe'" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -match '\bserve(?:-training|-world)?\s' })

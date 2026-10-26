@@ -1,0 +1,33 @@
+pyrealium-skill-travel-v1
+# Recall destinations from the telepad table (SHA256 c1caa67d0cf0f9ccad017b80f688a5a974bd7adc06c74ee9b2bfd6473543adcd).
+# skill class destinations (cell:x:y:z:heading separated by ';', or lifestone/portal)
+343	139	lifestone
+366	44d	portal
+39d	c40	6ea70025:86.37:85.55:78.88:234
+39e	c41	d08c0017:47.9091:128.397:77.0022:244
+39f	c42	58740039:147.74:15.13:161.75:96
+3e7	134e	0cfd0107:-129.158:18.2042:20.5515:191;0cfc0107:-129.158:18.2042:20.5515:191;0cfb0107:-129.158:18.2042:20.5515:191;0cfa0107:-129.158:18.2042:20.5515:191;0cf90107:-129.158:18.2042:20.5515:191;0cf80107:-129.158:18.2042:20.5515:191;0cf70107:-129.158:18.2042:20.5515:191;0cf60107:-129.158:18.2042:20.5515:191
+415	1765	408e003f:155.614:125.453:88.8769:0
+52b	1fea	07f001ab:126:-671:93.1684:223;07f001a3:128:-631:93.1:159;07f001a9:85:-675:93.2:32;07f001a1:87:-633:93.1:96
+572	44d	portal
+628	44d	portal
+633	44d	portal
+63e	44d	portal
+649	44d	portal
+654	44d	portal
+65f	44d	portal
+66a	44d	portal
+675	44d	portal
+680	44d	portal
+68b	44d	portal
+696	44d	portal
+6a1	44d	portal
+6ac	44d	portal
+6b7	44d	portal
+6c2	44d	portal
+6cd	44d	portal
+6d8	44d	portal
+6e3	44d	portal
+6ee	44d	portal
+6f9	44d	portal
+87a	44d	portal

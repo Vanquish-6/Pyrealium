@@ -194,6 +194,24 @@ impl Content {
         object.visual_stamp = stamp;
         Ok(wire.into())
     }
+    pub fn fx(&mut self, id: u64, fx: u32) -> io::Result<Arc<[u8]>> {
+        let object = self
+            .objects
+            .get_mut(&id)
+            .filter(|object| object.active)
+            .ok_or_else(|| invalid("inactive object effect"))?;
+        let stamp = object
+            .visual_stamp
+            .checked_add(1)
+            .ok_or_else(|| invalid("object visual stamp exhausted"))?;
+        let wire = crate::combat_visual::fx(id, object.instance, stamp, fx)
+            .map_err(|error| invalid(format!("object effect: {error}")))?;
+        if object.spawn.len() >= 28 {
+            Arc::make_mut(&mut object.spawn)[26..28].copy_from_slice(&stamp.to_le_bytes());
+        }
+        object.visual_stamp = stamp;
+        Ok(wire.into())
+    }
     pub fn respawn(&mut self, id: u64) -> io::Result<()> {
         let object = self
             .objects

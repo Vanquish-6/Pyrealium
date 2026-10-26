@@ -635,6 +635,20 @@ fn inventory_map(
 mod tests {
     use super::*;
     #[test]
+    fn skill_entry_matches_the_retail_login_layout() {
+        // pkt_2017-1-31_1485862283: human login SkillData for skill 4.
+        let retail = "000100440000000000003102" .to_owned()
+            + "0f000000" + "00000000" + "0000f0bf" + "00000000" + "00000000" + "00000000"
+            + "24130000" + "00000000" + "03000000" + "00000000" + "0000f0bf" + "01000000"
+            + "00000000" + "01000000" + "00000000" + "04000000"
+            + "c3cd0283cd82cd02c3cd0202020202" + "00";
+        let entry = crate::skills::Trained { rank: 1, credits: 1, locked: false, xp: 4900 };
+        let mut bytes = Vec::new();
+        graph(&mut bytes, &[skill_object(4, &entry)]);
+        let hex: String = bytes[12..].iter().map(|b| format!("{b:02x}")).collect();
+        assert_eq!(hex, retail);
+    }
+    #[test]
     fn layout_gate_rejects_changed_sizes_truncation_and_unbounded_counts() {
         let mut section = Vec::new();
         for value in [1, 0, 1, 0, 0x24a8] {

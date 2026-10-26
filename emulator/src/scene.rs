@@ -519,6 +519,20 @@ impl Scene {
             })
             .collect())
     }
+    pub fn content_fx(&mut self, id: u64, fx: u32) -> std::io::Result<Vec<Delivery>> {
+        let cell = self
+            .content
+            .cell(id)
+            .ok_or_else(|| std::io::Error::other("object effect inactive"))?;
+        let data = self.content.fx(id, fx)?;
+        Ok(self
+            .neighbor_ids(cell, 0)
+            .map(|recipient| Delivery {
+                recipient,
+                data: data.clone(),
+            })
+            .collect())
+    }
     pub fn idol_presentation(
         &mut self,
         id: u64,

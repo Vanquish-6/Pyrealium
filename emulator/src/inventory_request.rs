@@ -200,6 +200,9 @@ pub struct Metadata {
     pub icon: u32,
     pub physical: u32,
     pub equipment: Option<Equipment>,
+    /// Implement type bit (enum 23000003, e.g. Sword 2, Stave 0x40000) from
+    /// integer quality 0xfa0; skill hand requirements are masks of these bits.
+    pub implement: Option<u32>,
 }
 #[derive(Clone, Copy, Debug)]
 pub struct Equipment {
@@ -411,6 +414,7 @@ impl Metadata {
             icon,
             physical,
             equipment,
+            implement: integers.get(&0xfa0).copied(),
         })
     }
 }

@@ -46,6 +46,8 @@ struct Peer {
     target: Option<u64>,
     combat: bool,
     pending_skill: Option<u32>,
+    /// Destination of the last portal used this session, for Portal Recall.
+    last_portal: Option<crate::movement::Placement>,
     emotes: crate::emotes::State,
     last_chat_ms: Option<u64>,
     last_inventory_ms: Option<u64>,
@@ -349,6 +351,48 @@ fn use_portal(
     }
     peer.validate_scene_batch(&events)?;
     store.relocate_training_portal(&peer.session.account, character, route.destination, target)?;
+    if let Some(runtime) = encounters {
+        runtime.stop(character);
+    }
+    let updates = scene
+        .update(character, prepared.motion.position_stamp, &prepared.update)
+        .map_err(other)?;
+    peer.motion = Some(prepared.motion);
+    peer.target = None;
+    peer.last_world_use_ms = Some(now_ms);
+    peer.last_portal = Some(route.destination);
+    peer.queue_ordered_batch(events)?;
+    Ok(updates)
+}
+/// Move a living, out-of-combat character to a recall destination.
+#[allow(clippy::too_many_arguments)]
+fn travel_character(
+    peer: &mut Peer,
+    character: u64,
+    destination: crate::movement::Placement,
+    store: &mut Store,
+    scene: &mut crate::scene::Scene,
+    encounters: &mut Option<crate::encounters::Encounters>,
+    bootstrap: &mut Option<crate::bootstrap::Bootstrap>,
+    now_ms: u64,
+) -> io::Result<Vec<crate::scene::Delivery>> {
+    let saved = &store.characters[&character];
+    if peer.combat || !saved.progression.alive() {
+        return Err(invalid("Recall while alive and out of combat."));
+    }
+    if peer
+        .last_world_use_ms
+        .is_some_and(|last| now_ms.saturating_sub(last) < 5000)
+    {
+        return Err(invalid("Wait a few seconds before recalling."));
+    }
+    let prepared = prepare_forced_move(peer, character, destination, scene, bootstrap)?;
+    let events = vec![
+        prepared.wire,
+        script::private_call(script::COMBAT_STATE, &script::integer(0)).map_err(other)?,
+    ];
+    peer.validate_scene_batch(&events)?;
+    store.relocate(&peer.session.account, character, destination)?;
     if let Some(runtime) = encounters {
         runtime.stop(character);
     }
@@ -715,6 +759,53 @@ fn publish_health_story(
             deliveries
         }
         Err(_) => Vec::new(),
+    }
+}
+
+/// Play a skill's story behavior on its caster. Unknown behaviors are ignored
+/// by the client; nothing here changes server state beyond the visual stamp.
+fn skill_visual(
+    peer: &mut Peer,
+    scene: &mut crate::scene::Scene,
+    owner: u64,
+    instance: u16,
+    behavior: u32,
+) -> Vec<crate::scene::Delivery> {
+    let Ok((next, stamp)) = peer.emotes.next_visual(instance) else {
+        return Vec::new();
+    };
+    let Ok(wire) = crate::combat_visual::behavior(owner, instance, stamp, behavior) else {
+        return Vec::new();
+    };
+    match scene.broadcast(owner, wire) {
+        Ok(deliveries) if scene.save_visual_stamp(owner, stamp).is_ok() => {
+            peer.emotes = next;
+            deliveries
+        }
+        _ => Vec::new(),
+    }
+}
+
+/// Play a skill FX on a player.
+fn player_fx(
+    peer: &mut Peer,
+    scene: &mut crate::scene::Scene,
+    owner: u64,
+    instance: u16,
+    fx: u32,
+) -> Vec<crate::scene::Delivery> {
+    let Ok((next, stamp)) = peer.emotes.next_visual(instance) else {
+        return Vec::new();
+    };
+    let Ok(wire) = crate::combat_visual::fx(owner, instance, stamp, fx) else {
+        return Vec::new();
+    };
+    match scene.broadcast(owner, wire) {
+        Ok(deliveries) if scene.save_visual_stamp(owner, stamp).is_ok() => {
+            peer.emotes = next;
+            deliveries
+        }
+        _ => Vec::new(),
     }
 }
 
@@ -1742,7 +1833,7 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
     );
     if bootstrap.is_some() {
         println!(
-            "Local human default-body world bootstrap enabled. Custom appearance and gameplay simulation are unfinished."
+            "Character creation enabled for Human, Lugian and Tumerok with custom appearance."
         );
     } else {
         println!(
@@ -1769,8 +1860,13 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
         && encounters
             .as_ref()
             .is_some_and(|runtime| runtime.includes_entity(crate::quests::TARGET_ENTITY));
-    let mut abilities = if config.initialize_ui && config.training_kit {
-        Some(crate::abilities::Runtime::development().map_err(io::Error::other)?)
+    let mut abilities = if config.initialize_ui {
+        let runtime = crate::abilities::Runtime::load().map_err(io::Error::other)?;
+        println!(
+            "Loaded {} usable skills from portal.dat skill records.",
+            runtime.supported()
+        );
+        Some(runtime)
     } else {
         None
     };
@@ -1991,6 +2087,7 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                 target: None,
                                 combat: false,
                                 pending_skill: None,
+                                last_portal: None,
                                 last_chat_ms: None,
                                 emotes: crate::emotes::State::default(),
                                 last_inventory_ms: None,
@@ -2513,22 +2610,196 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                             {
                                                 let result = (|| -> io::Result<()> {
                                                     let saved = &store.characters[&character];
+                                                    let aim = if [0, u64::MAX, character].contains(&target) {
+                                                        crate::abilities::Aim::Own
+                                                    } else if encounters
+                                                        .as_ref()
+                                                        .is_some_and(|runtime| runtime.is_creature(target))
+                                                    {
+                                                        crate::abilities::Aim::Creature(target)
+                                                    } else if store.characters.contains_key(&target)
+                                                        && scene.can_observe(character, target)
+                                                    {
+                                                        let distance = scene
+                                                            .player_placement(character)
+                                                            .zip(scene.player_placement(target))
+                                                            .filter(|(a, b)| a.cell == b.cell)
+                                                            .map_or(f32::MAX, |(a, b)| {
+                                                                a.coordinates
+                                                                    .iter()
+                                                                    .zip(b.coordinates)
+                                                                    .map(|(x, y)| (x - y) * (x - y))
+                                                                    .sum::<f32>()
+                                                                    .sqrt()
+                                                            });
+                                                        crate::abilities::Aim::Player(target, distance)
+                                                    } else {
+                                                        crate::abilities::Aim::Other
+                                                    };
+                                                    let hand = |slot| {
+                                                        saved
+                                                            .inventory
+                                                            .items()
+                                                            .find(|item| item.location == crate::inventory::Location::Equipped(slot))
+                                                            .map_or(crate::abilities::Hand::Empty, |item| {
+                                                                match inventory_metadata
+                                                                    .get(&item.definition)
+                                                                    .and_then(|entry| *entry)
+                                                                    .and_then(|metadata| metadata.implement)
+                                                                {
+                                                                    Some(bits) => crate::abilities::Hand::Implement(bits),
+                                                                    None => crate::abilities::Hand::Unknown,
+                                                                }
+                                                            })
+                                                    };
                                                     let cast = abilities
                                                         .as_mut()
                                                         .unwrap()
                                                         .prepare(
                                                             character,
                                                             skill,
-                                                            target,
-                                                            saved
-                                                                .creation
-                                                                .as_ref()
-                                                                .map_or(1, |request| request.race),
+                                                            aim,
+                                                            (hand(0x40), hand(0x80)),
                                                             &saved.skills,
                                                             &saved.progression,
                                                             now_ms,
                                                         )
                                                         .map_err(io::Error::other)?;
+                                                    let (story, fx) = cast.presentation();
+                                                    let instance = saved.instance;
+                                                    if let crate::abilities::Outcome::Travel(travel) = cast.outcome().clone() {
+                                                        let destination = match travel {
+                                                            crate::abilities::Travel::Lifestone => {
+                                                                if !config.lifestones {
+                                                                    return Err(invalid("Lifestones are not enabled on this server."));
+                                                                }
+                                                                None
+                                                            }
+                                                            crate::abilities::Travel::Portal => Some(peer.last_portal.ok_or_else(|| {
+                                                                invalid("Use a portal before casting Portal Recall.")
+                                                            })?),
+                                                            crate::abilities::Travel::Telepads(pads) => {
+                                                                Some(pads[(now_ms as usize) % pads.len()])
+                                                            }
+                                                        };
+                                                        let commands = cast.commands().to_vec();
+                                                        let updates = match destination {
+                                                            None => recall_character(
+                                                                peer, character, &mut store, &mut scene,
+                                                                &mut encounters, &mut bootstrap, now_ms,
+                                                            )?,
+                                                            Some(destination) => travel_character(
+                                                                peer, character, destination, &mut store,
+                                                                &mut scene, &mut encounters, &mut bootstrap, now_ms,
+                                                            )?,
+                                                        };
+                                                        if !commands.is_empty() {
+                                                            store.progression_batch(&peer.session.account, character, &commands)?;
+                                                        }
+                                                        cast.commit();
+                                                        deliveries.extend(updates);
+                                                        peer.queue_ordered_batch(vec![
+                                                            script::skill_finished(request_id).map_err(other)?,
+                                                        ])?;
+                                                        return Ok(());
+                                                    }
+                                                    if let crate::abilities::Outcome::Support {
+                                                        target,
+                                                        health,
+                                                        vigor,
+                                                        mend,
+                                                        regen,
+                                                    } = cast.outcome().clone()
+                                                    {
+                                                        let runtime = encounters
+                                                            .as_mut()
+                                                            .ok_or_else(|| invalid("Healing others requires combat rules on this server."))?;
+                                                        let next = cast.next().clone();
+                                                        let mut events = next.private_changes(cast.previous());
+                                                        events.push(
+                                                            crate::ui::skill_update(skill, saved.skills.get(skill).unwrap())
+                                                                .map_err(other)?,
+                                                        );
+                                                        events.push(script::chat("Your skill takes effect on your target.", 1).map_err(other)?);
+                                                        events.push(script::skill_finished(request_id).map_err(other)?);
+                                                        peer.validate_scene_batch(&events)?;
+                                                        if health > 0 || vigor > 0 {
+                                                            runtime.mend(
+                                                                character,
+                                                                target,
+                                                                crate::encounters::Over { health, vigor, period_ms: 1000, duration_ms: 0 },
+                                                                fx,
+                                                                now_ms,
+                                                            )?;
+                                                        }
+                                                        if let Some(over) = mend {
+                                                            runtime.mend(character, target, over, 0, now_ms)?;
+                                                        }
+                                                        if let Some(regen) = regen {
+                                                            runtime.boost_regen(target, regen, now_ms)?;
+                                                        }
+                                                        if !cast.commands().is_empty() {
+                                                            store.progression_batch(&peer.session.account, character, cast.commands())?;
+                                                        }
+                                                        cast.commit();
+                                                        if story != 0 {
+                                                            deliveries.extend(skill_visual(peer, &mut scene, character, instance, story));
+                                                        }
+                                                        deliveries.extend(scene.player_stats(character, &next));
+                                                        peer.queue_ordered_batch(events)?;
+                                                        return Ok(());
+                                                    }
+                                                    if let crate::abilities::Outcome::Strike {
+                                                        target,
+                                                        bonus,
+                                                        cost,
+                                                        range,
+                                                        burn,
+                                                    } = cast.outcome().clone()
+                                                    {
+                                                        let events = vec![
+                                                            crate::ui::skill_update(
+                                                                skill,
+                                                                saved.skills.get(skill).unwrap(),
+                                                            )
+                                                            .map_err(other)?,
+                                                            script::private_call(
+                                                                script::COMBAT_STATE,
+                                                                &script::integer(1),
+                                                            )
+                                                            .map_err(other)?,
+                                                        ];
+                                                        peer.validate_scene_batch(&events)?;
+                                                        encounters
+                                                            .as_mut()
+                                                            .ok_or_else(|| invalid("Combat rules are not enabled on this server."))?
+                                                            .strike(
+                                                                character,
+                                                                target,
+                                                                now_ms,
+                                                                &scene,
+                                                                &store,
+                                                                crate::encounters::Strike {
+                                                                    bonus,
+                                                                    cost,
+                                                                    range,
+                                                                    behavior: story,
+                                                                    fx,
+                                                                    burn,
+                                                                },
+                                                            )?;
+                                                        cast.commit();
+                                                        peer.queue_ordered_batch(events)?;
+                                                        peer.combat = true;
+                                                        peer.target = Some(target);
+                                                        // The strike's Swing or Stop finishes the skill.
+                                                        peer.pending_skill = Some(request_id);
+                                                        deliveries.extend(training_combat_visual(
+                                                            peer, character, &store, &mut scene, true,
+                                                            false,
+                                                        )?);
+                                                        return Ok(());
+                                                    }
                                                     let next = cast.next().clone();
                                                     let mut events =
                                                         next.private_changes(cast.previous());
@@ -2539,29 +2810,50 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                         )
                                                         .map_err(other)?,
                                                     );
-                                                    events.push(
-                                                        script::chat(
-                                                            &format!(
-                                                                "You recover {} health.",
-                                                                cast.healed()
-                                                            ),
-                                                            1,
-                                                        )
-                                                        .map_err(other)?,
-                                                    );
+                                                    let recovered_vigor = next
+                                                        .vigor
+                                                        .saturating_sub(cast.previous().vigor);
+                                                    let text = match (cast.healed(), recovered_vigor) {
+                                                        (0, vigor) => format!("You recover {vigor} vigor."),
+                                                        (health, 0) => format!("You recover {health} health."),
+                                                        (health, vigor) => format!("You recover {health} health and {vigor} vigor."),
+                                                    };
+                                                    events.push(script::chat(&text, 1).map_err(other)?);
                                                     events.push(
                                                         script::skill_finished(request_id)
                                                             .map_err(other)?,
                                                     );
                                                     peer.validate_scene_batch(&events)?;
-                                                    let instance = saved.instance;
                                                     let healed = cast.healed();
-                                                    store.progression_batch(
-                                                        &peer.session.account,
-                                                        character,
-                                                        cast.commands(),
-                                                    )?;
+                                                    let (mend, regen) = match cast.outcome() {
+                                                        crate::abilities::Outcome::Restore { mend, regen, .. } => (*mend, *regen),
+                                                        _ => (None, None),
+                                                    };
+                                                    if (mend.is_some() || regen.is_some()) && encounters.is_none() {
+                                                        return Err(invalid("Lasting skill effects require combat rules on this server."));
+                                                    }
+                                                    if !cast.commands().is_empty() {
+                                                        store.progression_batch(
+                                                            &peer.session.account,
+                                                            character,
+                                                            cast.commands(),
+                                                        )?;
+                                                    }
                                                     cast.commit();
+                                                    if let Some(runtime) = encounters.as_mut() {
+                                                        if let Some(over) = mend {
+                                                            runtime.mend(character, character, over, 0, now_ms)?;
+                                                        }
+                                                        if let Some(regen) = regen {
+                                                            runtime.boost_regen(character, regen, now_ms)?;
+                                                        }
+                                                    }
+                                                    if story != 0 {
+                                                        deliveries.extend(skill_visual(peer, &mut scene, character, instance, story));
+                                                    }
+                                                    if fx != 0 {
+                                                        deliveries.extend(player_fx(peer, &mut scene, character, instance, fx));
+                                                    }
                                                     if healed > 0 {
                                                         if let Ok(healed) = i32::try_from(healed) {
                                                             deliveries.extend(
@@ -2589,106 +2881,9 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                 }
                                                 return Ok(replies);
                                             }
-                                            if config.initialize_ui
-                                                && config.training_kit
-                                                && skill == crate::skills::TRAINING_ATTACK
-                                            {
-                                                let saved = &store.characters[&character];
-                                                let attack = (|| -> io::Result<()> {
-                                                    if saved.skills.get(skill).is_none() {
-                                                        return Err(invalid(
-                                                            "The development training attack is not learned.",
-                                                        ));
-                                                    }
-                                                    if !saved.inventory.items().any(|item| {
-                                                        matches!(
-                                                            item.location,
-                                                            crate::inventory::Location::Equipped(
-                                                                0x40
-                                                            )
-                                                        )
-                                                    }) {
-                                                        return Err(invalid(
-                                                            "Equip a main-hand item before using the training attack.",
-                                                        ));
-                                                    }
-                                                    let events = vec![
-                                                        crate::ui::skill_update(
-                                                            skill,
-                                                            saved.skills.get(skill).unwrap(),
-                                                        )
-                                                        .map_err(other)?,
-                                                        script::private_call(
-                                                            script::COMBAT_STATE,
-                                                            &script::integer(1),
-                                                        )
-                                                        .map_err(other)?,
-                                                    ];
-                                                    peer.validate_scene_batch(&events)?;
-                                                    encounters
-                                                        .as_mut()
-                                                        .ok_or_else(|| invalid("Combat rules are not enabled on this server."))?
-                                                        .once(character, target, now_ms, &scene, &store)?;
-                                                    peer.queue_ordered_batch(events)?;
-                                                    peer.combat = true;
-                                                    peer.target = Some(target);
-                                                    peer.pending_skill = Some(request_id);
-                                                    deliveries.extend(training_combat_visual(
-                                                        peer, character, &store, &mut scene, true,
-                                                        false,
-                                                    )?);
-                                                    Ok(())
-                                                })(
-                                                );
-                                                if let Err(error) = attack {
-                                                    // A queued strike owns its completion until
-                                                    // the tick accepts it or cancels it.
-                                                    peer.pending_skill = None;
-                                                    peer.queue_ordered_batch(vec![
-                                                        script::chat(&error.to_string(), 1)
-                                                            .map_err(other)?,
-                                                        script::skill_finished(request_id)
-                                                            .map_err(other)?,
-                                                    ])?;
-                                                }
-                                                return Ok(replies);
-                                            }
-                                            if !config.initialize_ui
-                                                || !config.lifestones
-                                                || skill != crate::skills::LIFESTONE_RECALL
-                                            {
-                                                peer.queue_ordered_batch(vec![script::chat("This active skill is not available in the current server profile.",1).map_err(other)?,script::skill_finished(request_id).map_err(other)?])?;
-                                                return Ok(replies);
-                                            }
-                                            if store.characters[&character]
-                                                .skills
-                                                .get(skill)
-                                                .is_none()
-                                            {
-                                                peer.queue_ordered_batch(vec![script::chat("Bind to a lifestone to unlock development Recall.",1).map_err(other)?,script::skill_finished(request_id).map_err(other)?])?;
-                                                return Ok(replies);
-                                            }
-                                            match recall_character(
-                                                peer,
-                                                character,
-                                                &mut store,
-                                                &mut scene,
-                                                &mut encounters,
-                                                &mut bootstrap,
-                                                now_ms,
-                                            ) {
-                                                Ok(updates) => deliveries.extend(updates),
-                                                Err(error) => replies.extend(
-                                                    peer.send_event(
-                                                        &script::chat(&error.to_string(), 1)
-                                                            .map_err(other)?,
-                                                        now,
-                                                    )?,
-                                                ),
-                                            }
                                             peer.queue_ordered_batch(vec![
-                                                script::skill_finished(request_id)
-                                                    .map_err(other)?,
+                                                script::chat("This skill is not available on this server yet.", 1).map_err(other)?,
+                                                script::skill_finished(request_id).map_err(other)?,
                                             ])?;
                                         }
                                         script::Request::Examine(target) => {
@@ -3954,7 +4149,7 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                             {
                                                 Ok(character) => {
                                                     eprintln!(
-                                                        "created character id={} with persisted native choices; racial appearance profile",
+                                                        "created character id={} with persisted native choices and custom appearance",
                                                         character.id
                                                     );
                                                     world::confirm_character_creation(
@@ -4080,6 +4275,16 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                         }
                                                     }
                                                 }
+                                                if store.characters[&character_id].skills.entries().count() + 3 <= 128
+                                                    && store.ensure_starter_skills(
+                                                        &peer.session.account,
+                                                        character_id,
+                                                    )?
+                                                {
+                                                    eprintln!(
+                                                        "Starter skills saved for character {character_id}"
+                                                    );
+                                                }
                                                 if config.lifestones {
                                                     let saved = &store.characters[&character_id];
                                                     if saved.binding.is_some()
@@ -4095,16 +4300,6 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                             character_id,
                                                         )?;
                                                     }
-                                                }
-                                                if store.characters[&character_id].skills.entries().count() + 3 <= 128
-                                                    && store.ensure_starter_skills(
-                                                        &peer.session.account,
-                                                        character_id,
-                                                    )?
-                                                {
-                                                    eprintln!(
-                                                        "Starter skills saved for character {character_id}"
-                                                    );
                                                 }
                                                 if training_quest_enabled
                                                     && store.characters[&character_id]
@@ -4242,9 +4437,7 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                             )
                                                         },
                                                     );
-                                                let hotbar = if config.training_kit
-                                                    && saved.hotbar.is_empty()
-                                                {
+                                                let hotbar = if saved.hotbar.is_empty() {
                                                     &training_bar
                                                 } else {
                                                     &saved.hotbar
@@ -4471,7 +4664,20 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                             }
                         }
                     }
-                    crate::encounters::Event::Swing(player) => {
+                    crate::encounters::Event::Fx { target, fx } => {
+                        if let Some(saved) = store.characters.get(&target) {
+                            let instance = saved.instance;
+                            if let Some(peer) = active_characters
+                                .get(&target)
+                                .and_then(|addr| peers.get_mut(addr))
+                            {
+                                updates.extend(player_fx(peer, &mut scene, target, instance, fx));
+                            }
+                        } else if let Ok(deliveries) = scene.content_fx(target, fx) {
+                            updates.extend(deliveries);
+                        }
+                    }
+                    crate::encounters::Event::Swing { player, behavior } => {
                         if let Some(addr) = active_characters.get(&player) {
                             if let Some(peer) = peers.get_mut(addr) {
                                 if let Some(request_id) = peer.pending_skill.take() {
@@ -4481,6 +4687,13 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                             .map_err(other)?
                                             .into(),
                                     });
+                                }
+                                if let Some(behavior) = behavior {
+                                    let instance = store.characters[&player].instance;
+                                    updates.extend(skill_visual(
+                                        peer, &mut scene, player, instance, behavior,
+                                    ));
+                                    continue;
                                 }
                                 match training_combat_visual(
                                     peer, player, &store, &mut scene, true, true,
@@ -4840,6 +5053,7 @@ mod tests {
             target: None,
             combat: false,
             pending_skill: None,
+            last_portal: None,
             last_chat_ms: None,
             emotes: crate::emotes::State::default(),
             last_inventory_ms: None,

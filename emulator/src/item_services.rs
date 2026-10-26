@@ -65,6 +65,7 @@ pub fn validate_potion(portal: &mut Dat) -> io::Result<Metadata> {
         icon: POTION_ICON,
         physical: POTION_PHYSICAL,
         equipment: None,
+        implement: None,
     };
     let physical = portal.read(POTION_PHYSICAL)?;
     let expected: Vec<u8> = [0x0bu32, POTION_PHYSICAL, 0x40000001, POTION_VISUAL]

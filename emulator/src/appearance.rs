@@ -306,3 +306,61 @@ fn bucket_order<T>(map: &std::collections::BTreeMap<u32, T>) -> Vec<(u32, &T)> {
     entries.sort_unstable_by_key(|(key, _)| (key % BUCKETS, *key));
     entries
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn f(value: f32) -> u32 {
+        value.to_bits()
+    }
+
+    #[test]
+    fn human_female_matches_the_retail_creation_capture() {
+        // pkt_2017-1-22_1485082723: CreateCharacter physique values.
+        let physical = [
+            (1, f(0.85)), (2, f(1.0)), (4, f(0.05)), (0x1000, f(0.0)), (8, f(0.0)),
+            (0x10, f(0.25)), (0x40, f(0.3)), (0x100, f(0.96)), (0x800, f(0.11)),
+            (0x20, f(0.0)), (0x80, f(0.0)), (0x400, f(0.2)), (0x200, f(0.75)),
+        ];
+        let desc = body(HUMAN, FEMALE).unwrap().visual_desc(&physical).unwrap();
+        // Same capture: the CharGenVerification VisualDesc.
+        let expected = concat!(
+            "220100002400001f9a99593f9a99593f0000803f2100000002000040060000020f000020",
+            "0100000201000000cdcc4c3d1000002002000002030000000000803e0b0000009a99993e",
+            "11000020010000021c000041ae47e13d1300002002000002020000000000403f10000000",
+            "0000803f1700002002000002020000008fc2753f100000000000803f1900002002000002",
+            "02000000cdcc4c3e100000000000803f",
+        );
+        let mut hex = String::new();
+        for byte in &desc {
+            hex.push_str(&format!("{byte:02x}"));
+        }
+        assert_eq!(hex, expected);
+    }
+
+    #[test]
+    fn unknown_keys_and_out_of_range_values_are_rejected() {
+        let human = body(HUMAN, MALE).unwrap();
+        assert!(human.visual_desc(&[(0x2000, f(0.5))]).is_err());
+        assert!(human.visual_desc(&[(SKIN_TONE, f(1.5))]).is_err());
+        assert!(human.visual_desc(&[(BUILD, f(3.0))]).is_err());
+        assert!(human.visual_desc(&[(SKIN_TONE, f32::NAN.to_bits())]).is_err());
+        assert!(human.visual_desc(&[]).is_ok());
+        assert!(body(0x10, MALE).is_none());
+    }
+
+    #[test]
+    fn every_body_can_receive_its_starter_attacks() {
+        let state = crate::progression::Progression::default();
+        for body in bodies() {
+            let book = crate::skills::Book::default()
+                .with_starter_skills(&state, body.race, body.sex)
+                .unwrap();
+            assert!(book.has_starter_skills(body.race, body.sex));
+            assert_eq!(book.with_starter_skills(&state, body.race, body.sex).unwrap(), book);
+        }
+        let lugian = crate::skills::Book::default();
+        assert!(lugian.with_training_attack(&state, LUGIAN).is_err());
+    }
+}

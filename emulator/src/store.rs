@@ -165,13 +165,14 @@ impl Store {
         if character.training_kit {
             return Ok(false);
         }
-        if !character.creation.as_ref().is_some_and(|request| {
-            request.race == 1 && request.entity_did == crate::bootstrap::PLAYER_ENTITY
-        }) {
-            return Err(invalid(
-                "training kit requires the human development profile",
-            ));
-        }
+        let Some(race) = character
+            .creation
+            .as_ref()
+            .filter(|request| crate::appearance::body(request.race, request.sex).is_some())
+            .map(|request| request.race)
+        else {
+            return Err(invalid("training kit requires a playable character profile"));
+        };
         let slot = character
             .inventory
             .free_slot()
@@ -183,16 +184,18 @@ impl Store {
                 crate::training_kit::item(item, slot),
             ))
             .map_err(|_| invalid("invalid training kit grant"))?;
-        let skills = character
-            .skills
-            .with_training_attack(
-                &character.progression,
-                character.creation.as_ref().unwrap().race,
-            )
-            .map_err(io::Error::other)?;
+        let human = race == crate::appearance::HUMAN;
+        let skills = if human {
+            character
+                .skills
+                .with_training_attack(&character.progression, race)
+                .map_err(io::Error::other)?
+        } else {
+            character.skills.clone()
+        };
         // One fsync publishes the item, basic attack and once-per-character marker.
-        // t1 retains its original item-only meaning when replaying older stores.
-        self.append_record(&format!("t2\t{id}\t{item}"))?;
+        // t1 is the item-only grant; other races get their attacks from k5.
+        self.append_record(&format!("{}\t{id}\t{item}", if human { "t2" } else { "t1" }))?;
         let character = self.characters.get_mut(&id).unwrap();
         character.inventory = next;
         character.skills = skills;
@@ -233,6 +236,10 @@ impl Store {
             .skills
             .get(crate::skills::TRAINING_ATTACK)
             .is_some()
+            || character
+                .creation
+                .as_ref()
+                .is_some_and(|request| request.race != crate::appearance::HUMAN)
         {
             return Ok(false);
         }
@@ -1331,6 +1338,24 @@ fn decode_journal_collect(
                 .map_err(|_| invalid("invalid training attack grant"))?;
             continue;
         }
+        if fields.len() == 2 && fields[0] == "k5" {
+            let id = fields[1]
+                .parse::<u64>()
+                .map_err(|_| invalid("invalid starter skill character"))?;
+            let character = records
+                .get_mut(&id)
+                .filter(|c| !c.deleted)
+                .ok_or_else(|| invalid("unavailable starter skill character"))?;
+            let request = character
+                .creation
+                .as_ref()
+                .ok_or_else(|| invalid("starter skills without a creation profile"))?;
+            character.skills = character
+                .skills
+                .with_starter_skills(&character.progression, request.race, request.sex)
+                .map_err(|_| invalid("invalid starter skill grant"))?;
+            continue;
+        }
         if fields.len() == 2 && fields[0] == "k3" {
             let id = fields[1]
                 .parse::<u64>()
@@ -1445,24 +1470,6 @@ fn decode_journal_collect(
             }
             continue;
         }
-        if fields.len() == 2 && fields[0] == "k5" {
-            let id = fields[1]
-                .parse::<u64>()
-                .map_err(|_| invalid("invalid starter skill character"))?;
-            let character = records
-                .get_mut(&id)
-                .filter(|c| !c.deleted)
-                .ok_or_else(|| invalid("unavailable starter skill character"))?;
-            let request = character
-                .creation
-                .as_ref()
-                .ok_or_else(|| invalid("starter skills without a creation profile"))?;
-            character.skills = character
-                .skills
-                .with_starter_skills(&character.progression, request.race, request.sex)
-                .map_err(|_| invalid("invalid starter skill grant"))?;
-            continue;
-        }
         if fields.len() == 3 && fields[0] == "t4" {
             let id = fields[1].parse::<u64>().map_err(|_| invalid("invalid starter owner"))?;
             let first = fields[2].parse::<u64>().map_err(|_| invalid("invalid starter identity"))?;
@@ -1525,7 +1532,8 @@ fn decode_journal_collect(
                 .filter(|character| !character.deleted && !character.training_kit)
                 .ok_or_else(|| invalid("invalid repeated training kit grant"))?;
             if !character.creation.as_ref().is_some_and(|request| {
-                request.race == 1 && request.entity_did == crate::bootstrap::PLAYER_ENTITY
+                crate::appearance::body(request.race, request.sex).is_some()
+                    && (fields[0] == "t1" || request.race == crate::appearance::HUMAN)
             }) {
                 return Err(invalid("unsupported training kit character profile"));
             }

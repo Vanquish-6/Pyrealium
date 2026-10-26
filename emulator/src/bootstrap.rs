@@ -254,3 +254,36 @@ impl Bootstrap {
         Ok([world::create_player(id, REGION), object, player])
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn request(race: u32, sex: u32, start_area: u32, physical: &[(u32, f32)]) -> CharacterCreationRequest {
+        CharacterCreationRequest {
+            name: "Tester".into(),
+            entity_did: PLAYER_ENTITY,
+            start_area,
+            race,
+            sex,
+            class: 2,
+            implement: 4,
+            physical_values: physical.iter().map(|&(key, value)| (key, value.to_bits())).collect(),
+        }
+    }
+
+    #[test]
+    fn lugian_and_tumerok_creation_choices_are_accepted() {
+        // Start areas from the 7148 creation screen and the top of each race's
+        // physique ranges in character-generation record 70000390.
+        let lugian = [(0x1, 1.2), (0x2, 1.15), (0x4, 0.84), (0x8, 1.0), (0x100, 0.7), (0x400, 0.04)];
+        let tumerok = [(0x1, 1.2), (0x2, 1.2), (0x8, 1.0), (0x40, 1.0), (0x100, 1.0), (0x200, 0.6)];
+        assert!(supported(&request(2, 0x2000, 0x40000006, &lugian)));
+        assert!(supported(&request(2, 0x1000, 0x40000006, &lugian)));
+        assert!(supported(&request(4, 0x1000, 0x40000005, &tumerok)));
+        assert!(supported(&request(4, 0x2000, 0x40000005, &[(0x80, 0.6)])));
+        assert!(supported(&request(1, 0x1000, 0x40000001, &[])));
+        assert!(!supported(&request(8, 0x1000, 0x40000001, &[])));
+        assert!(!supported(&request(2, 0x1000, 0x40001000, &lugian)));
+    }
+}

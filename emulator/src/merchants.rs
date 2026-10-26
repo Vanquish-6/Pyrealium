@@ -286,6 +286,7 @@ pub fn validate_mucor(portal: &mut Dat) -> io::Result<Metadata> {
         icon: MUCOR_ICON,
         physical: MUCOR_PHYSICAL,
         equipment: None,
+        implement: None,
     })
 }
 

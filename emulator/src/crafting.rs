@@ -293,6 +293,7 @@ pub fn metadata(portal: &mut Dat, definition: u32) -> io::Result<Metadata> {
         icon: profile.appearance,
         physical: profile.physical,
         equipment: None,
+        implement: None,
     })
 }
 

@@ -41,10 +41,66 @@ struct Attack {
     target: u64,
     next: u64,
     repeat: bool,
+    strike: Option<Strike>,
 }
+/// One skill hit: weapon damage plus `bonus`, spending up to `cost` vigor.
+/// `behavior` and `fx` are the skill record's story behavior and FX (0 = none).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Strike {
+    pub bonus: u32,
+    pub cost: u32,
+    pub range: f32,
+    pub behavior: u32,
+    pub fx: u32,
+    pub burn: Option<Over>,
+}
+/// A vital change applied every `period_ms` for `duration_ms`.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Over {
+    pub health: u32,
+    pub vigor: u32,
+    pub period_ms: u64,
+    pub duration_ms: u64,
+}
+/// Regeneration multipliers from a timed buff (1.0 = unchanged).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Regen {
+    pub health: f32,
+    pub vigor: f32,
+    pub duration_ms: u64,
+}
+struct Burn {
+    source: u64,
+    target: u64,
+    per_tick: u32,
+    period: u64,
+    next: u64,
+    until: u64,
+}
+struct Mend {
+    source: u64,
+    player: u64,
+    health: u32,
+    vigor: u32,
+    period: u64,
+    next: u64,
+    until: u64,
+    /// FX shown on the player when the first restoration lands (0 = none).
+    fx: u32,
+}
+const MAX_TIMED: usize = 512;
 pub enum Event {
     IdolVisual(u64, crate::combat_visual::IdolAction),
-    Swing(u64),
+    /// A landed attack. `behavior` is a skill's story behavior; None plays the swing.
+    Swing {
+        player: u64,
+        behavior: Option<u32>,
+    },
+    /// Skill FX on a creature or player.
+    Fx {
+        target: u64,
+        fx: u32,
+    },
     /// Signed health on the victim. Negative is damage. The vital update is separate.
     Hit {
         victim: u64,
@@ -94,6 +150,9 @@ pub struct Encounters {
     regen_interval: u64,
     next_regen: u64,
     training_loot: bool,
+    burns: Vec<Burn>,
+    mends: Vec<Mend>,
+    regen: BTreeMap<u64, (Regen, u64)>,
 }
 fn in_range(a: Option<Placement>, b: Option<Placement>, range: f32) -> bool {
     a.zip(b).is_some_and(|(a, b)| {
@@ -318,6 +377,9 @@ impl Encounters {
             regen_interval,
             next_regen: 0,
             training_loot: false,
+            burns: Vec::new(),
+            mends: Vec::new(),
+            regen: BTreeMap::new(),
         })
     }
     pub fn initial_health(&self) -> impl Iterator<Item = (u64, u32)> + '_ {
@@ -386,6 +448,62 @@ impl Encounters {
                 target,
                 next,
                 repeat: true,
+                strike: None,
+            },
+        );
+        Ok(())
+    }
+    /// Queue one skill hit that lands on the next tick. A running auto-attack on
+    /// the same target resumes afterwards; skill cooldowns are the caller's.
+    pub fn strike(
+        &mut self,
+        player: u64,
+        target: u64,
+        now: u64,
+        scene: &Scene,
+        store: &Store,
+        strike: Strike,
+    ) -> io::Result<()> {
+        if !strike.range.is_finite() || strike.range < 0.0 {
+            return Err(invalid("invalid skill range"));
+        }
+        if !self
+            .actors
+            .get(&target)
+            .is_some_and(|actor| actor.health > 0 && actor.respawn_at.is_none())
+        {
+            return Err(invalid("target is not an attackable creature"));
+        }
+        if !store
+            .characters
+            .get(&player)
+            .is_some_and(|c| !c.deleted && c.progression.alive())
+        {
+            return Err(invalid("dead or unavailable character cannot attack"));
+        }
+        if !scene.can_observe(player, target)
+            || !in_range(
+                scene.player_placement(player),
+                scene.content_placement(target),
+                strike.range.max(self.range),
+            )
+        {
+            return Err(invalid("target is out of skill range"));
+        }
+        let resume = self
+            .attacks
+            .get(&player)
+            .is_some_and(|attack| attack.repeat && attack.target == target);
+        if self.attacks.len() >= 64 && !self.attacks.contains_key(&player) {
+            return Err(invalid("encounter attack capacity"));
+        }
+        self.attacks.insert(
+            player,
+            Attack {
+                target,
+                next: now,
+                repeat: resume,
+                strike: Some(strike),
             },
         );
         Ok(())
@@ -437,12 +555,13 @@ impl Encounters {
                 .characters
                 .get(&player)
                 .is_some_and(|c| !c.deleted && c.progression.alive());
+            let range = attack.strike.map_or(self.range, |strike| strike.range.max(self.range));
             if !available
                 || !alive
                 || !in_range(
                     scene.player_placement(player),
                     scene.content_placement(attack.target),
-                    self.range,
+                    range,
                 )
             {
                 if alive {
@@ -459,37 +578,127 @@ impl Encounters {
                 continue;
             }
             let actor = &self.actors[&attack.target];
-            let dealt = self
-                .damage
+            let damage = attack
+                .strike
+                .map_or(self.damage, |strike| self.damage.saturating_add(strike.bonus));
+            let dealt = damage
                 .saturating_sub(actor.rule.armor)
                 .max(1)
                 .min(actor.health);
-            let killed = dealt == actor.health;
-            let mut commands = vec![Command::SpendVigor(self.cost)];
-            if killed && actor.rule.xp > 0 {
-                commands.push(Command::AwardXp(actor.rule.xp));
-            }
-            if killed && actor.rule.gold > 0 {
-                commands.push(Command::AwardGold(actor.rule.gold));
-            }
-            let character = &store.characters[&player];
-            let candidate = commands
-                .iter()
-                .try_fold(character.progression.clone(), |state, command| {
-                    state.apply(command)
-                });
-            if candidate.is_err() {
+            // A skill drains up to its cost; it only needs the retail minimum of 1.
+            let cost = match attack.strike {
+                Some(strike) => strike
+                    .cost
+                    .min(store.characters[&player].progression.vigor),
+                None => self.cost,
+            };
+            if attack.strike.is_some() && store.characters[&player].progression.vigor == 0 {
                 events.push(Event::Note {
                     player,
-                    text: "Attack stopped: insufficient vigor or reward capacity.".into(),
+                    text: "You do not have enough vigor for this skill.".into(),
                 });
                 self.stopped(player, &mut events);
                 continue;
             }
+            if !self.land(player, attack.target, dealt, cost, true, now, scene, store, &mut events)? {
+                self.stopped(player, &mut events);
+                continue;
+            }
+            let until = now.saturating_add(self.interval);
+            self.cooldowns.insert(player, until);
+            if let Some(queued) = self.attacks.get_mut(&player) {
+                queued.next = until;
+            }
+            events.push(Event::Swing {
+                player,
+                behavior: attack.strike.map(|strike| strike.behavior).filter(|&b| b != 0),
+            });
+            if let Some(strike) = attack.strike {
+                if strike.fx != 0 {
+                    events.push(Event::Fx {
+                        target: attack.target,
+                        fx: strike.fx,
+                    });
+                }
+                if let Some(burn) = strike.burn.filter(|_| self.actors[&attack.target].health > 0) {
+                    self.burns
+                        .retain(|b| !(b.source == player && b.target == attack.target));
+                    if self.burns.len() < MAX_TIMED && burn.health > 0 {
+                        let period = burn.period_ms.max(250);
+                        self.burns.push(Burn {
+                            source: player,
+                            target: attack.target,
+                            per_tick: burn.health,
+                            period,
+                            next: now.saturating_add(period),
+                            until: now.saturating_add(burn.duration_ms),
+                        });
+                    }
+                }
+            }
+            if !attack.repeat {
+                self.attacks.remove(&player);
+            } else if let Some(resumed) = self.attacks.get_mut(&player) {
+                resumed.strike = None;
+            }
+        }
+        self.tick_burns(now, scene, store, &mut events)?;
+        self.tick_mends(now, scene, store, &mut events)?;
+        self.tick_creatures(now, scene, store, &mut events)?;
+        self.tick_regen(now, scene, store, active, &mut events)?;
+        Ok(events)
+    }
+
+    /// Settle one hit by `player` on creature `target`: payment, rewards, quest
+    /// credit, training loot (direct hits only), events and death. Returns false
+    /// when the player cannot pay or accept the reward.
+    #[allow(clippy::too_many_arguments)]
+    fn land(
+        &mut self,
+        player: u64,
+        target: u64,
+        dealt: u32,
+        cost: u32,
+        direct: bool,
+        now: u64,
+        scene: &Scene,
+        store: &mut Store,
+        events: &mut Vec<Event>,
+    ) -> io::Result<bool> {
+        let Some(character) = store.characters.get(&player).filter(|c| !c.deleted) else {
+            return Ok(false);
+        };
+        let actor = &self.actors[&target];
+        let dealt = dealt.min(actor.health);
+        if dealt == 0 {
+            return Ok(true);
+        }
+        let killed = dealt == actor.health;
+        let mut commands = Vec::new();
+        if cost > 0 {
+            commands.push(Command::SpendVigor(cost));
+        }
+        if killed && actor.rule.xp > 0 {
+            commands.push(Command::AwardXp(actor.rule.xp));
+        }
+        if killed && actor.rule.gold > 0 {
+            commands.push(Command::AwardGold(actor.rule.gold));
+        }
+        let candidate = commands
+            .iter()
+            .try_fold(character.progression.clone(), |state, command| state.apply(command));
+        if candidate.is_err() {
+            events.push(Event::Note {
+                player,
+                text: "Attack stopped: insufficient vigor or reward capacity.".into(),
+            });
+            return Ok(false);
+        }
+        {
             let account = character.account.clone();
             let previous = character.progression.clone();
             let previous_quests = character.quests.clone();
-            let loot = if killed && self.training_loot {
+            let loot = if direct && killed && self.training_loot {
                 character
                     .inventory
                     .free_slot()
@@ -524,7 +733,7 @@ impl Encounters {
                 });
             } else if killed {
                 store.encounter_reward(&account, player, actor.entity, &commands)?;
-            } else {
+            } else if !commands.is_empty() {
                 store.progression_batch(&account, player, &commands)?;
             }
             if killed && self.training_loot && loot.is_none() {
@@ -536,21 +745,17 @@ impl Encounters {
                     book: store.characters[&player].quests.clone(),
                 });
             }
-            let until = now.saturating_add(self.interval);
-            self.cooldowns.insert(player, until);
-            self.attacks.get_mut(&player).unwrap().next = until;
-            let actor = self.actors.get_mut(&attack.target).unwrap();
+            let actor = self.actors.get_mut(&target).unwrap();
             actor.health -= dealt;
-            events.push(Event::Swing(player));
             if let Ok(dealt) = i32::try_from(dealt) {
                 events.push(Event::Hit {
-                    victim: attack.target,
+                    victim: target,
                     attacker: player,
                     health_change: -dealt,
                 });
             }
             events.push(Event::Health {
-                actor: attack.target,
+                actor: target,
                 health: actor.health,
             });
             events.push(Event::Owner {
@@ -560,7 +765,11 @@ impl Encounters {
             });
             events.push(Event::Note {
                 player,
-                text: format!("You hit for {dealt} damage."),
+                text: if direct {
+                    format!("You hit for {dealt} damage.")
+                } else {
+                    format!("Your lingering effect deals {dealt} damage.")
+                },
             });
             if killed {
                 actor.target = None;
@@ -574,36 +783,135 @@ impl Encounters {
                 });
                 if actor.entity == crate::quests::TARGET_ENTITY {
                     events.push(Event::IdolVisual(
-                        attack.target,
+                        target,
                         crate::combat_visual::IdolAction::Death,
                     ));
                     // Authored presentation grace; rewards and attack authority
                     // are already settled. This is not a lootable corpse.
                     actor.despawn_at = Some(now.saturating_add(1500.min(actor.rule.respawn)));
                 } else {
-                    events.push(Event::Despawn(attack.target));
+                    events.push(Event::Despawn(target));
                 }
+                self.burns.retain(|burn| burn.target != target);
                 let stopped = self
                     .attacks
                     .iter()
-                    .filter(|(_, queued)| queued.target == attack.target)
+                    .filter(|(_, queued)| queued.target == target)
                     .map(|(&player, _)| player)
                     .collect::<Vec<_>>();
                 for player in stopped {
-                    self.stopped(player, &mut events);
+                    self.stopped(player, events);
                 }
             } else if actor.target.is_none() {
                 actor.target = Some(player);
                 actor.next_attack = now.saturating_add(actor.rule.interval);
                 events.push(Event::IdolVisual(
-                    attack.target,
+                    target,
                     crate::combat_visual::IdolAction::Combat,
                 ));
             }
-            if !attack.repeat {
-                self.attacks.remove(&player);
+        }
+        Ok(true)
+    }
+
+    fn tick_burns(
+        &mut self,
+        now: u64,
+        scene: &Scene,
+        store: &mut Store,
+        events: &mut Vec<Event>,
+    ) -> io::Result<()> {
+        let due: Vec<usize> = (0..self.burns.len())
+            .filter(|&index| self.burns[index].next <= now)
+            .collect();
+        for index in due.into_iter().rev() {
+            let (source, target, per_tick) = {
+                let burn = &self.burns[index];
+                (burn.source, burn.target, burn.per_tick)
+            };
+            let alive = self.actors.get(&target).is_some_and(|actor| actor.health > 0);
+            if alive {
+                self.land(source, target, per_tick, 0, false, now, scene, store, events)?;
+            }
+            if let Some(burn) = self.burns.get_mut(index) {
+                burn.next = burn.next.saturating_add(burn.period);
             }
         }
+        self.burns.retain(|burn| burn.next <= burn.until && self.actors.get(&burn.target).is_some_and(|a| a.health > 0));
+        Ok(())
+    }
+
+    fn tick_mends(
+        &mut self,
+        now: u64,
+        scene: &Scene,
+        store: &mut Store,
+        events: &mut Vec<Event>,
+    ) -> io::Result<()> {
+        for mend in &mut self.mends {
+            if mend.next > now {
+                continue;
+            }
+            mend.next = mend.next.saturating_add(mend.period);
+            let Some(character) = store
+                .characters
+                .get(&mend.player)
+                .filter(|c| !c.deleted && c.progression.alive())
+            else {
+                mend.until = 0;
+                continue;
+            };
+            if scene.player_placement(mend.player).is_none() {
+                continue;
+            }
+            if mend.fx != 0 {
+                events.push(Event::Fx {
+                    target: mend.player,
+                    fx: std::mem::take(&mut mend.fx),
+                });
+            }
+            let level = character.progression.level();
+            let mut commands = Vec::new();
+            if mend.health > 0 && character.progression.health < level.health {
+                commands.push(Command::Heal(mend.health));
+            }
+            if mend.vigor > 0 && character.progression.vigor < level.vigor {
+                commands.push(Command::RecoverVigor(mend.vigor));
+            }
+            if commands.is_empty() {
+                continue;
+            }
+            let account = character.account.clone();
+            let previous = character.progression.clone();
+            store.progression_batch(&account, mend.player, &commands)?;
+            let state = store.characters[&mend.player].progression.clone();
+            let healed = state.health.saturating_sub(previous.health);
+            if healed > 0 {
+                if let Ok(healed) = i32::try_from(healed) {
+                    events.push(Event::Hit {
+                        victim: mend.player,
+                        attacker: mend.source,
+                        health_change: healed,
+                    });
+                }
+            }
+            events.push(Event::Owner {
+                player: mend.player,
+                previous,
+                state,
+            });
+        }
+        self.mends.retain(|mend| mend.next <= mend.until);
+        Ok(())
+    }
+
+    fn tick_creatures(
+        &mut self,
+        now: u64,
+        scene: &Scene,
+        store: &mut Store,
+        events: &mut Vec<Event>,
+    ) -> io::Result<()> {
         for (&id, actor) in &mut self.actors {
             if actor.health == 0 {
                 if actor.despawn_at.is_some_and(|until| now >= until) {
@@ -701,6 +1009,18 @@ impl Encounters {
                 state,
             });
         }
+        Ok(())
+    }
+
+    fn tick_regen(
+        &mut self,
+        now: u64,
+        scene: &Scene,
+        store: &mut Store,
+        active: impl Iterator<Item = u64>,
+        events: &mut Vec<Event>,
+    ) -> io::Result<()> {
+        self.regen.retain(|_, (_, until)| *until > now);
         if now >= self.next_regen {
             self.next_regen = now.saturating_add(self.regen_interval);
             let busy: BTreeSet<_> = self
@@ -722,12 +1042,19 @@ impl Encounters {
                 };
                 let state = &character.progression;
                 let level = state.level();
+                let (health_rate, vigor_rate) = self
+                    .regen
+                    .get(&player)
+                    .map_or((1.0, 1.0), |(regen, _)| (regen.health, regen.vigor));
+                let scaled = |base: u32, rate: f32| ((base as f32) * rate).round().max(0.0) as u32;
                 let mut commands = Vec::new();
-                if self.regen_health > 0 && state.health < level.health {
-                    commands.push(Command::Heal(self.regen_health));
+                let health = scaled(self.regen_health, health_rate);
+                if health > 0 && state.health < level.health {
+                    commands.push(Command::Heal(health));
                 }
-                if self.regen_vigor > 0 && state.vigor < level.vigor {
-                    commands.push(Command::RecoverVigor(self.regen_vigor));
+                let vigor = scaled(self.regen_vigor, vigor_rate);
+                if vigor > 0 && state.vigor < level.vigor {
+                    commands.push(Command::RecoverVigor(vigor));
                 }
                 if commands.is_empty() {
                     continue;
@@ -742,6 +1069,67 @@ impl Encounters {
                 });
             }
         }
-        Ok(events)
+        Ok(())
+    }
+
+    /// Restore a player's vitals: once on the next tick when `duration_ms` is 0,
+    /// otherwise every period until it expires. Recasting refreshes the effect.
+    pub fn mend(
+        &mut self,
+        source: u64,
+        player: u64,
+        over: Over,
+        fx: u32,
+        now: u64,
+    ) -> io::Result<()> {
+        if over.health == 0 && over.vigor == 0 {
+            return Err(invalid("empty restoration"));
+        }
+        let period = over.period_ms.max(250);
+        if over.duration_ms > 0 {
+            self.mends.retain(|m| !(m.source == source && m.player == player && m.until > m.next));
+        }
+        if self.mends.len() >= MAX_TIMED {
+            return Err(invalid("timed effect capacity"));
+        }
+        self.mends.push(Mend {
+            source,
+            player,
+            health: over.health,
+            vigor: over.vigor,
+            period,
+            next: now,
+            until: now.saturating_add(over.duration_ms),
+            fx,
+        });
+        Ok(())
+    }
+
+    /// Multiply a player's regeneration until the buff expires.
+    pub fn boost_regen(&mut self, player: u64, regen: Regen, now: u64) -> io::Result<()> {
+        if !(regen.health.is_finite() && regen.vigor.is_finite())
+            || regen.health < 0.0
+            || regen.vigor < 0.0
+            || regen.health > 100.0
+            || regen.vigor > 100.0
+        {
+            return Err(invalid("invalid regeneration buff"));
+        }
+        if self.regen.len() >= MAX_TIMED && !self.regen.contains_key(&player) {
+            return Err(invalid("timed effect capacity"));
+        }
+        let (current, _) = self
+            .regen
+            .get(&player)
+            .copied()
+            .unwrap_or((Regen { health: 1.0, vigor: 1.0, duration_ms: 0 }, 0));
+        let merged = Regen {
+            health: if regen.health == 1.0 { current.health } else { regen.health },
+            vigor: if regen.vigor == 1.0 { current.vigor } else { regen.vigor },
+            duration_ms: regen.duration_ms,
+        };
+        self.regen
+            .insert(player, (merged, now.saturating_add(regen.duration_ms)));
+        Ok(())
     }
 }
