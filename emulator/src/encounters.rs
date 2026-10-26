@@ -414,28 +414,8 @@ impl Encounters {
                 return Err(invalid("creature combat rule limit"));
             }
         }
-        let starter = Rule {
-            health: 60,
-            damage: 6,
-            armor: 0,
-            interval: 1500,
-            range: 3.0,
-            respawn: 30_000,
-            xp: 40,
-            gold: 2,
-            variance: AUTHORED_VARIANCE,
-            attack: AUTHORED_RATING,
-            defense: AUTHORED_RATING,
-            perception: 0.0,
-            homesick: AUTHORED_HOMESICK,
-        };
-        for line in include_str!("../content/creature-entities.txt").lines() {
-            if line.is_empty() || line.starts_with('#') || line.starts_with("pyrealium-") {
-                continue;
-            }
-            let entity = u32::from_str_radix(line, 16).map_err(|_| invalid("creature entity"))?;
-            rules.entry(entity).or_insert(starter);
-        }
+        // Only records with DAT health and natural damage are creatures; NPCs
+        // such as town vendors and quest givers carry neither.
         // The mentor's entity is a unique quest monster record (AI_UniqueMonster,
         // NPC_IsGroupMonster); placed as a service NPC it must never fight.
         let service = [crate::training_dialogue::MENTOR_ENTITY, crate::merchants::MERCHANT_ENTITY];
