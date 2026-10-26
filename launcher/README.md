@@ -20,7 +20,7 @@ From the repository root:
 powershell -File .\launcher\build.ps1
 ```
 
-This compiles the launcher, runs its validation checks, and creates:
+This compiles and packages the launcher. Validation checks are opt-in with `-RunChecks`. It creates:
 
 - `launcher/dist/PyrealiumLauncher.exe`
 - `launcher/PyrealiumLauncher-windows.zip` containing the executable and this guide
@@ -31,7 +31,7 @@ contains no game binaries or DATs. The ZIP is generated locally, not committed.
 ## Connect
 
 1. Start the emulator separately. The launcher does not start a server.
-2. Enter account `local`, host `127.0.0.1`, and your server's base port.
+2. For your existing characters, use `local` with a blank password. For a new identity, enter a new account name and a password of 12-128 characters, then click **Create Account**. Re-enter the password to sign in.
 3. Open **Settings** and choose the game-data folder and, separately, the recovered **7148** executable.
 4. Return to **Play** and click **Enter Dereth**. Review any Windows Run prompt yourself.
 
@@ -54,9 +54,19 @@ The launcher uses that folder as its working directory and passes
 converted directory because some large assets are hardlinked. It does not replace
 the installed client, patch game files, or alter firewall settings.
 
-Settings are saved in `%LOCALAPPDATA%\Pyrealium\launcher.xml`. No passwords are
-requested or stored. Current authentication is a local developer allowlist, and
-the emulator accepts loopback connections only. Remote hosting remains unfinished.
+Settings are saved in `%LOCALAPPDATA%\Pyrealium\launcher.xml`. Passwords and
+sign-in tickets are never saved there or passed on the client command line.
+The account-service URL is editable in **Settings**; HTTPS is required except
+for a service on this PC. The default is `http://127.0.0.1:19400/`.
+Passwords use the server's existing Argon2id account store. The native client
+receives a short-lived, single-use ticket through its Windows registry handoff.
+
+`emulator/Start-Server.ps1` starts the local game and account service together.
+The explicit `--local-accounts PATH` mode only permits an IPv4 loopback bind:
+the configured existing `local` profile retains its blank-password development
+login, while other identities require tickets. Public `--auth-data PATH` mode
+still rejects every no-ticket login. Registration reserves existing character-account
+names, including `local`; it does not change ownership of old saves.
 
 “Client started” means Windows launched a process. It does not certify that a
 world appeared, an account is secure, or we have finished inventing an MMO.

@@ -9,6 +9,7 @@ using System.Xml.Serialization;
 [Serializable]
 public sealed class Settings {
     public string Account = "local";
+    public string AccountsUrl = "http://127.0.0.1:19400/";
     public string Host = "127.0.0.1";
     public int Port = 19070;
     public string GameDirectory = "";

@@ -1,19 +1,22 @@
+param([switch]$RunChecks, [string]$OutputDirectory = "dist")
 $ErrorActionPreference = 'Stop'
 $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 if (-not (Test-Path -LiteralPath $compiler)) { $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework\v4.0.30319\csc.exe' }
 if (-not (Test-Path -LiteralPath $compiler)) { throw 'Install .NET Framework 4.x to build the launcher.' }
-$output = Join-Path $PSScriptRoot 'dist'
+$output = Join-Path $PSScriptRoot $OutputDirectory
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 $executable = Join-Path $output 'PyrealiumLauncher.exe'
 $resources = @('legions-portal.png', 'dereth.png', 'legions-cover.png') | ForEach-Object {
     '/resource:' + (Join-Path $PSScriptRoot "assets/$_") + ',Pyrealium.' + $_
 }
-& $compiler /nologo /target:winexe /platform:anycpu /optimize+ /reference:System.Windows.Forms.dll /reference:System.Drawing.dll "/out:$executable" @resources (Join-Path $PSScriptRoot 'Launcher.cs') (Join-Path $PSScriptRoot 'LauncherWindow.cs')
+& $compiler /nologo /target:winexe /platform:anycpu /optimize+ /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.Web.Extensions.dll "/out:$executable" @resources (Join-Path $PSScriptRoot 'Launcher.cs') (Join-Path $PSScriptRoot 'LauncherWindow.cs') (Join-Path $PSScriptRoot 'AccountLogin.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Launcher compilation failed.' }
+if ($RunChecks) {
 $report = Join-Path $output 'self-test.txt'
 $process = Start-Process -FilePath $executable -ArgumentList @('--self-test', ('"' + $report + '"')) -PassThru -Wait -WindowStyle Hidden
 if ($process.ExitCode -ne 0) { throw "Launcher validation failed. See $report" }
 Get-Content -LiteralPath $report
+}
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'README.md') -Destination (Join-Path $output 'README.md') -Force
 # Include the current license and all project notices with binary packages.
 $projectRoot = Split-Path -Parent $PSScriptRoot

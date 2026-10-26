@@ -26,7 +26,7 @@ $game = $null
 if (Test-Path -LiteralPath $settingsPath) {
     [xml]$settings = Get-Content -LiteralPath $settingsPath
     $node = $settings.Settings
-    if ($node.Account) { $account = [string]$node.Account }
+    # The existing no-ticket profile stays local; other names require password accounts.
     if ($node.Host) { $hostName = [string]$node.Host }
     if ($Port -eq 0 -and $node.Port) { $Port = [int]$node.Port }
     if ($node.GameDirectory -and (Test-Path -LiteralPath (Join-Path ([string]$node.GameDirectory) 'pyrealium-compatibility.json'))) {
@@ -57,7 +57,7 @@ if (-not $game) {
     }
 }
 
-$running = @(Get-CimInstance -ClassName Win32_Process -Filter "Name = 'pyrealium.exe'" -ErrorAction SilentlyContinue)
+$running = @(Get-CimInstance -ClassName Win32_Process -Filter "Name = 'pyrealium.exe'" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -match '\bserve(?:-training|-world)?\s' })
 if ($running.Count -gt 0) {
     Write-Host 'The server is already running. Leave it open and click Enter Dereth.'
     exit 0
@@ -83,4 +83,4 @@ Write-Host 'Leave this window open, then click Enter Dereth in the launcher.'
 Write-Host "Game data: $game"
 Write-Host ''
 
-& $server serve --bind "${hostName}:$Port" --account $account --data $data --game-data $game
+& (Join-Path $root 'Start-LocalAccounts.ps1') -Server $server -Data $data -GameData $game -Port $Port

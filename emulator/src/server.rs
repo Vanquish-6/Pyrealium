@@ -565,13 +565,22 @@ fn selection_list(
     profile: Option<&crate::bootstrap::Bootstrap>,
     visual: Option<u32>,
 ) -> io::Result<Vec<u8>> {
+    selection_list_excluding(store, account, profile, visual, None)
+}
+fn selection_list_excluding(
+    store: &Store,
+    account: &str,
+    profile: Option<&crate::bootstrap::Bootstrap>,
+    visual: Option<u32>,
+    excluded: Option<u64>,
+) -> io::Result<Vec<u8>> {
     if profile.is_none() && visual.is_none() {
         return world::empty_character_set(account.as_bytes(), 5).map_err(other);
     }
     let selection: Vec<_> = store
         .characters
         .values()
-        .filter(|c| c.account == account && !c.deleted)
+        .filter(|c| c.account == account && !c.deleted && Some(c.id) != excluded)
         .filter_map(|c| {
             if let Some(profile) = profile {
                 c.creation
@@ -1450,8 +1459,14 @@ pub fn run(config: Config) -> io::Result<()> {
     run_with_auth(config, None)
 }
 pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<()> {
+    run_auth_mode(config, auth_data, false)
+}
+pub fn run_local_accounts(config: Config, auth_data: PathBuf) -> io::Result<()> {
+    run_auth_mode(config, Some(auth_data), true)
+}
+fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: bool) -> io::Result<()> {
     println!("{}", crate::licensing::notice());
-    if !config.bind.is_ipv4() || (auth_data.is_none() && !config.bind.ip().is_loopback()) {
+    if !config.bind.is_ipv4() || ((auth_data.is_none() || local_accounts) && !config.bind.ip().is_loopback()) {
         return Err(invalid(
             "developer authentication requires an IPv4 loopback bind",
         ));
@@ -1462,9 +1477,11 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                 "Initialize account storage before enabling public ticket authentication.",
             ));
         }
-        println!(
-            "Public native-ticket authentication enabled; developer/no-ticket login is disabled."
-        );
+        if local_accounts {
+            println!("Loopback accounts enabled; only the configured existing developer profile may use no-ticket login.");
+        } else {
+            println!("Public native-ticket authentication enabled; developer/no-ticket login is disabled.");
+        }
     }
     if config.bind.port() == 0 || config.bind.port() == u16::MAX {
         return Err(invalid("choose a nonzero base port with a free port+1"));
@@ -1849,12 +1866,14 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                             return Err(invalid("session capacity"));
                         }
                         if let Some(root) = &auth_data {
+                            if !(local_accounts && login.supports_developer_auth(&config.account)) {
                             let token = zeroize::Zeroizing::new(
                                 login
                                     .native_ticket()
                                     .map_err(|_| invalid("Public login rejected."))?,
                             );
                             crate::auth::consume(root, &login.account, addr.ip(), &token)?;
+                            }
                             // A fresh authenticated login replaces this account's
                             // previous endpoint; it cannot occupy every player slot.
                             let previous: Vec<_> = peers
@@ -3737,8 +3756,35 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                             "deletion outside owned inactive selection",
                                         ));
                                     }
-                                    store.delete(&peer.session.account, character_id)?;
-                                    world::character_deleted(character_id)
+                                    let list = selection_list_excluding(
+                                        &store, &peer.session.account, bootstrap.as_ref(),
+                                        config.visual_did, Some(character_id),
+                                    )?;
+                                    let characters: Vec<_> = store.characters.values()
+                                        .filter(|c| c.account == peer.session.account && !c.deleted && c.id != character_id)
+                                        .map(|c| world::MinimalCharacter { id: c.id, name: c.name.clone() })
+                                        .collect();
+                                    let minimal = world::minimal_character_set(peer.session.account.as_bytes(), 5, &characters).map_err(other)?;
+                                    // Prepare all reliable output before persisting deletion. On failure,
+                                    // restore the transport's counters, cipher and pending packet window.
+                                    let saved_transport = peer.transport.clone();
+                                    let saved_blob = peer.blob;
+                                    let prepared = (|| -> io::Result<Vec<Vec<u8>>> {
+                                        let mut packets = peer.send_event(&world::character_deleted(character_id), now)?;
+                                        packets.extend(peer.send_event(&minimal, now)?);
+                                        packets.extend(peer.send_event(&list, now)?);
+                                        store.delete(&peer.session.account, character_id)?;
+                                        Ok(packets)
+                                    })();
+                                    match prepared {
+                                        Ok(packets) => replies.extend(packets),
+                                        Err(error) => {
+                                            peer.transport = saved_transport;
+                                            peer.blob = saved_blob;
+                                            return Err(error);
+                                        }
+                                    }
+                                    return Ok(replies);
                                 }
                                 world::ClientEvent::Position(update) => {
                                     if let Phase::InWorld { character }

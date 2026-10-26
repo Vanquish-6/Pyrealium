@@ -8,7 +8,7 @@ Most people write an MMO emulator because they miss their childhood. I started t
 
 Not a mockup. Not a loading screen with aspirations. An actual character, on actual grass, contemplating the alarming amount of server code still missing.
 
-Pyrealium contains a Rust emulator and a Windows player launcher. The server uses the standard library and **zero third-party Rust dependencies**. The dependency tree is a tasteful stump.
+Pyrealium contains a Rust emulator and a Windows player launcher. The server uses Rust with dependencies for password hashing, account HTTP requests, serialization and secure randomness.
 
 **Help keep the portals open:** [Support Pyrealium on Patreon](https://www.patreon.com/Vanquish90/). If rebuilding a game I never played sounds like a questionable financial decision, imagine being the person writing it. Support is optional and appreciated; it does not promise a release date or finished gameplay.
 
@@ -26,13 +26,13 @@ A compiled packet handler is not a verified player experience. Recent runtime ad
 | Feature | Current state |
 | --- | --- |
 | Login | Native build 7148 login and connection handshake verified locally |
-| Authentication | Local developer account allowlist; no passwords or public account service |
+| Authentication | Argon2id password accounts, registration service and native single-use login tickets; local startup also preserves the existing `local` developer profile |
 | Transport | Checksums, bounded reliable delivery, retries, fragmentation and session expiry |
 | Character selection | Real client displays the saved test character and selection scene |
 | Character storage | Durable character, inventory, progression, skills, quest and preference state; exclusive writer lock, atomic transactions and checked compaction |
 | Native character creation | Human request fields and appearance choices are retained; default human bodies supported; broader creation/appearance acceptance pending |
 | World entry | **Verified with 7148 and converted test assets:** player and terrain render; client reports scene completion |
-| Player launcher | Portal-themed Windows launcher with game artwork, Play and Settings views, saved connection details and a Patreon link |
+| Player launcher | Windows launcher with username/password sign-in, account creation, game settings and artwork; passwords are not saved |
 | Movement | Validated native reports drive saved placement and observer replication; authoritative collision remains unfinished |
 | Examination UI | Compatibility repair cleared a previously reported crash; server descriptions cover visible players, owned items and content; fresh data/UI acceptance pending |
 | Logout/re-entry | Session transition and message ordering fixed; repeated entry tested over UDP, native round trip still unverified |
@@ -106,7 +106,7 @@ Use `--bind 127.0.0.1:19070` for a different base port, `--data PATH` for a sepa
 .\target\release\pyrealium.exe stop --data data
 ```
 
-Local authentication is an account-name allowlist, not proof of identity. An impressive Connect button does not turn it into an Internet authentication service. We checked.
+Plain `serve` uses a local developer allowlist. Normal Windows startup now starts the loopback account service and uses `--local-accounts` so new identities require password-issued tickets while the existing `local` profile remains accessible. Public `--auth-data` mode rejects no-ticket logins and needs an HTTPS account endpoint.
 
 ## Put a character on the lawn
 
@@ -159,7 +159,7 @@ Build the launcher on Windows with .NET Framework 4.x, from the repository root:
 powershell -File .\launcher\build.ps1
 ```
 
-The script runs launcher validation and produces `launcher/dist/PyrealiumLauncher.exe` and `launcher/PyrealiumLauncher-windows.zip`. These generated files are not tracked.
+The script compiles and packages the launcher; validation is opt-in with `-RunChecks`. It produces `launcher/dist/PyrealiumLauncher.exe` and `launcher/PyrealiumLauncher-windows.zip`. These generated files are not tracked.
 
 For the world test, use account **local**, host **127.0.0.1**, port **19270**, the prepared **emulator/target/compat-7148** game folder, and your recovered **7148** executable. The server must already be running. See [the launcher guide](launcher/README.md).
 
@@ -203,3 +203,18 @@ versions must offer that source to their users as required by the AGPL. See
 [LICENSE](LICENSE), [NOTICE](NOTICE), and [licensing requirements](LICENSING.md).
 Third-party game/client assets retain their own rights. Previous MIT releases
 retain their existing grants.
+
+### Character deletion and account switching
+
+Character deletion now sends its acknowledgement and both refreshed selection
+rosters, matching the retained native deletion captures. The deleted row is removed
+immediately; the durable tombstone is retained. Deletion timers and character
+restoration are not implemented. The server prepares the complete reliable response
+before writing the deletion, retaining the owned, inactive-character checks.
+
+The Windows launcher provides **Password** and **Create Account** controls.
+Use `local` with a blank password for existing local characters. New identities
+use passwords of 12-128 characters and the local account service started by
+`emulator/Start-Server.ps1`. See [the launcher guide](launcher/README.md).
+These changes are compile-checked; fresh native deletion and password sign-in
+acceptance remain pending.

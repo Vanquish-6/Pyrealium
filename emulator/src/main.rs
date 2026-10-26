@@ -5,6 +5,7 @@ use pyrealium::{
 use std::{env, net::SocketAddr, path::PathBuf, process::ExitCode};
 
 fn usage() {
+    println!("  serve --local-accounts PATH --bind 127.0.0.1:19070 --account local\n    Loopback password accounts plus the existing configured developer profile. Mutually exclusive with --auth-data.");
     println!("  inventory-starter --account NAME --character-id N --data PATH --game-data PATH\n    Offline once-only racial starter gear; retains existing possessions and equipment.");
     println!(
         "  account-web --auth-data PATH --data GAME_STORE --web-bind 127.0.0.1:19400 --public-origin https://accounts.example.com --public-host game.example.com --public-port 19370\n    Account registration and HTTPS-proxied launcher login backend.\n  account-create --auth-data PATH --account NAME\n    Offline owner account provisioning with hidden password prompts. Stop the account backend first.\n  serve-training --auth-data PATH --bind 0.0.0.0:19370 --game-data PATH\n    Public native-ticket mode; rejects developer/no-ticket authentication."
@@ -69,6 +70,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut bind: SocketAddr = "127.0.0.1:9000".parse()?;
     let mut account = "local".to_string();
     let mut auth_data = None;
+    let mut local_accounts = None;
     let mut web_bind: SocketAddr = "127.0.0.1:19400".parse()?;
     let mut public_origin = None;
     let mut public_host = None;
@@ -103,6 +105,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             "--bind" => bind = value.parse()?,
             "--account" => account = value,
             "--auth-data" => auth_data = Some(PathBuf::from(value)),
+            "--local-accounts" => local_accounts = Some(PathBuf::from(value)),
             "--web-bind" => web_bind = value.parse()?,
             "--public-origin" => public_origin = Some(value),
             "--public-host" => public_host = Some(value),
@@ -387,8 +390,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             let training_kit = training_kit.unwrap_or(world);
             let lifestones = lifestones.unwrap_or(world);
             let portals = portals.unwrap_or(world);
-            server::run_with_auth(
-                Config {
+            if auth_data.is_some() && local_accounts.is_some() {
+                return Err("--auth-data and --local-accounts are mutually exclusive".into());
+            }
+            let config = Config {
                     bind,
                     account,
                     data,
@@ -401,9 +406,12 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                     portals,
                     content,
                     encounters,
-                },
-                auth_data,
-            )?;
+                };
+            if let Some(root) = local_accounts {
+                server::run_local_accounts(config, root)?;
+            } else {
+                server::run_with_auth(config, auth_data)?;
+            }
         }
         "stop" => {
             if !data.join("server.lock").is_file() {
