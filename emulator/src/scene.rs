@@ -440,6 +440,23 @@ impl Scene {
             .then(|| self.content.object(target))
             .flatten()
     }
+    /// Find an active, visible service of the pinned entity type within reach.
+    /// Coordinates are only comparable inside the same cell; this does not
+    /// infer reach through walls or between unrelated interior coordinate spaces.
+    pub fn nearby_service(&self, observer: u64, entity: u32, target: Option<u64>) -> Option<u64> {
+        let player = self.player_placement(observer)?;
+        self.content.at(player.cell)
+            .filter(|object| object.entity == entity
+                && target.is_none_or(|id| object.id == id)
+                && self.can_observe(observer, object.id))
+            .filter_map(|object| {
+                let distance: f32 = player.coordinates.iter().zip(object.placement.coordinates)
+                    .map(|(a, b)| (a - b).powi(2)).sum();
+                (distance.is_finite() && distance <= 16.0).then_some((distance, object.id))
+            })
+            .min_by(|a, b| a.0.total_cmp(&b.0).then_with(|| a.1.cmp(&b.1)))
+            .map(|(_, id)| id)
+    }
     pub fn visible_hand_definition(&self, observer: u64, target: u64) -> Option<u32> {
         for body in self.bodies.values() {
             if self.can_observe(observer, body.id) {

@@ -464,3 +464,16 @@ the source; `@source` / `@license` repeat the offer, and `license` / `--license`
 print the full license. Git builds link to their commit. Modified distributors
 and operators must publish their complete corresponding version and can set
 `PYREALIUM_SOURCE_URL` at build time to its public HTTP(S) location.
+
+### Placement-independent training NPC services
+
+The pinned training mentor (`47001699`) and quartermaster (`47003724`) now
+resolve from the active, visible scene rather than a list of three placement IDs.
+Placed copies of those NPC types receive the existing authored training services.
+A clicked merchant is used exactly; purchases, sales, refreshes and automatic shop
+closure revalidate that same merchant instead of switching to a different nearby
+shop. Chat-based opening chooses the nearest eligible quartermaster, with a stable
+ID tie-break. Services still require a living player out of combat, visibility,
+the same cell and a four-metre range. This is explicit development behavior; it
+does not recover original dialogue, merchant stock or quest scripts for other NPCs.
+Compile checks passed; fresh native interaction acceptance remains pending.

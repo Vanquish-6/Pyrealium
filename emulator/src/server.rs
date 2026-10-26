@@ -1205,10 +1205,9 @@ fn group_publish(
     Ok(())
 }
 
-const TRAINING_MERCHANT: u64 = 0x8140000000030003;
-const TRAINING_MERCHANT_OUTDOOR: u64 = 0x8140000000030006;
-const TRAINING_MERCHANT_CORRIDOR: u64 = 0x814000000003000d;
-const TRAINING_MENTORS: [u64; 3] = [0x8140000000030008, 0x8140000000030009, 0x814000000003000a];
+// Explicit development services assigned to these DAT-backed NPC types.
+// Placements are discovered from the live scene, not a fixed list of IIDs.
+const TRAINING_MENTOR_ENTITY: u32 = 0x47001699;
 
 fn npc_interaction_events(
     owner: u64,
@@ -1251,7 +1250,7 @@ fn use_training_mentor(
         .ok_or_else(|| invalid("Player is not ready."))?;
     let mentor = scene
         .examination_content(character, target)
-        .filter(|object| object.entity == 0x47001699)
+        .filter(|object| object.entity == TRAINING_MENTOR_ENTITY)
         .ok_or_else(|| invalid("That training mentor is not visible."))?;
     if player.cell != mentor.placement.cell
         || player
@@ -1280,33 +1279,9 @@ fn use_training_mentor(
     quest_action(peer, character, action, store, scene, Some(target))
 }
 
-fn merchant_ready(character: u64, scene: &crate::scene::Scene) -> io::Result<u64> {
-    let player = scene
-        .player_placement(character)
-        .ok_or_else(|| invalid("Player is not ready."))?;
-    let nearby = [
-        TRAINING_MERCHANT,
-        TRAINING_MERCHANT_OUTDOOR,
-        TRAINING_MERCHANT_CORRIDOR,
-    ]
-    .into_iter()
-    .find(|id| {
-        let Some(merchant) = scene
-            .examination_content(character, *id)
-            .filter(|object| object.entity == crate::merchants::MERCHANT_ENTITY)
-        else {
-            return false;
-        };
-        player.cell == merchant.placement.cell
-            && player
-                .coordinates
-                .iter()
-                .zip(merchant.placement.coordinates)
-                .map(|(a, b)| (a - b).powi(2))
-                .sum::<f32>()
-                <= 16.0
-    });
-    nearby.ok_or_else(|| invalid("Move within four metres of the training quartermaster."))
+fn merchant_ready(character: u64, scene: &crate::scene::Scene, target: Option<u64>) -> io::Result<u64> {
+    scene.nearby_service(character, crate::merchants::MERCHANT_ENTITY, target)
+        .ok_or_else(|| invalid("Move within four metres of the quartermaster whose shop you opened."))
 }
 
 fn merchant_action(
@@ -1319,9 +1294,13 @@ fn merchant_action(
     catalog: &crate::merchants::Catalog,
     next_offer: &mut u64,
     now: u64,
-    npc_use: bool,
+    npc_target: Option<u64>,
 ) -> io::Result<Vec<crate::scene::Delivery>> {
-    let merchant = merchant_ready(character, scene)?;
+    let preferred = npc_target.or_else(|| {
+        (action != crate::merchants::Action::List)
+            .then(|| peer.native_shop.as_ref().map(|shop| shop.merchant())).flatten()
+    });
+    let merchant = merchant_ready(character, scene, preferred)?;
     let saved = &store.characters[&character];
     if !saved.progression.alive() || peer.combat {
         return Err(invalid("Trading requires a living player out of combat."));
@@ -1339,7 +1318,7 @@ fn merchant_action(
             .ok_or_else(|| invalid("Shop offer identities exhausted; restart required."))?;
         let offers = std::array::from_fn(|index| *next_offer + 1 + index as u64);
         let shop = crate::merchants::Shop::new(merchant, offers).map_err(other)?;
-        let mut events = if npc_use {
+        let mut events = if npc_target.is_some() {
             npc_interaction_events(
                 character,
                 merchant,
@@ -2184,7 +2163,7 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                             "Open the nearby training quartermaster before selling.",
                                                         ));
                                                     }
-                                                    merchant_ready(character, &scene)?;
+                                                    merchant_ready(character, &scene, peer.native_shop.as_ref().map(|shop| shop.merchant()))?;
                                                     if peer.last_inventory_ms.is_some_and(|last| {
                                                         now_ms.saturating_sub(last) < 250
                                                     }) {
@@ -2248,7 +2227,7 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                         ));
                                                     }
                                                     let merchant =
-                                                        merchant_ready(character, &scene)?;
+                                                        merchant_ready(character, &scene, peer.native_shop.as_ref().map(|shop| shop.merchant()))?;
                                                     let shop = peer.native_shop.as_ref().filter(|shop| shop.merchant() == merchant)
                                                     .ok_or_else(|| invalid("The shop has changed; speak to the quartermaster again."))?;
                                                     if peer.last_inventory_ms.is_some_and(|last| {
@@ -2309,7 +2288,7 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                 if peer.combat
                                                     || !store.characters[&character].progression.alive()
                                                     || !peer.merchant_open_ms.is_some_and(|last| now_ms.saturating_sub(last) <= 30_000)
-                                                    || merchant_ready(character, &scene).ok() != Some(merchant)
+                                                    || merchant_ready(character, &scene, peer.native_shop.as_ref().map(|shop| shop.merchant())).ok() != Some(merchant)
                                                 {
                                                     return Err(invalid("Refresh requires a nearby active shop while alive and out of combat."));
                                                 }
@@ -2348,7 +2327,7 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                 .native_shop
                                                 .as_ref()
                                                 .is_some_and(|shop| shop.merchant() == merchant)
-                                                && merchant_ready(character, &scene).ok()
+                                                && merchant_ready(character, &scene, peer.native_shop.as_ref().map(|shop| shop.merchant())).ok()
                                                     == Some(merchant)
                                             {
                                                 "Consignment listings are not available at this training shop. Use the inventory Sell action for fixed buyback. No items or fees were taken."
@@ -2680,7 +2659,9 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                             }
                                         }
                                         script::Request::UseObject(request) => {
-                                            if TRAINING_MENTORS.contains(&request.item)
+                                            let service_entity = scene.examination_content(character, request.item)
+                                                .map(|object| object.entity);
+                                            if service_entity == Some(TRAINING_MENTOR_ENTITY)
                                                 && config.training_kit
                                                 && training_quest_enabled
                                             {
@@ -2707,12 +2688,8 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                 }
                                                 return Ok(replies);
                                             }
-                                            if matches!(
-                                                request.item,
-                                                TRAINING_MERCHANT
-                                                    | TRAINING_MERCHANT_OUTDOOR
-                                                    | TRAINING_MERCHANT_CORRIDOR
-                                            ) && config.training_kit
+                                            if service_entity == Some(crate::merchants::MERCHANT_ENTITY)
+                                                && config.training_kit
                                             {
                                                 if request.owner != character {
                                                     return Err(invalid(
@@ -2731,7 +2708,7 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                     })?,
                                                     &mut next_offer,
                                                     now_ms,
-                                                    true,
+                                                    Some(request.item),
                                                 ) {
                                                     Ok(updates) => deliveries.extend(updates),
                                                     Err(error) => replies.extend(
@@ -3443,7 +3420,7 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                         peer.last_chat_ms = Some(now_ms);
                                                         let result = action.map_err(io::Error::other).and_then(|action| {
                                                             if !config.training_kit { return Err(invalid("The training quartermaster is not enabled.")); }
-                                                            merchant_action(peer, character, action, &mut store, &mut scene, &inventory_metadata, merchant_catalog.as_ref().ok_or_else(|| invalid("Merchant catalog is not enabled."))?, &mut next_offer, now_ms, false)
+                                                            merchant_action(peer, character, action, &mut store, &mut scene, &inventory_metadata, merchant_catalog.as_ref().ok_or_else(|| invalid("Merchant catalog is not enabled."))?, &mut next_offer, now_ms, None)
                                                         });
                                                         match result {
                                                             Ok(updates) => {
@@ -4595,7 +4572,7 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                             && peer
                                 .merchant_open_ms
                                 .is_some_and(|last| now_ms.saturating_sub(last) <= 30_000)
-                            && merchant_ready(character, &scene).ok()
+                            && merchant_ready(character, &scene, peer.native_shop.as_ref().map(|shop| shop.merchant())).ok()
                                 == peer.native_shop.as_ref().map(|shop| shop.merchant())
                     }
                     _ => false,
