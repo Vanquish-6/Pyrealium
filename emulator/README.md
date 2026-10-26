@@ -484,3 +484,21 @@ ID tie-break. Services still require a living player out of combat, visibility,
 the same cell and a four-metre range. This is explicit development behavior; it
 does not recover original dialogue, merchant stock or quest scripts for other NPCs.
 Compile checks passed; fresh native interaction acceptance remains pending.
+
+### Authored training quest chain
+
+After claiming Training Grounds, use a mentor again to accept **Field Supplies**.
+Buy one Mucor Mushroom and one 100-unit Tallow bundle from the quartermaster
+(2 gold each), keep them in your bag, and use the mentor to deliver them.
+The once-only reward is one health potion, 80 XP and 6 gold. Bought ingredients
+qualify: this is a supply-delivery objective, not proof that a potion was crafted.
+
+Acceptance uses a new `q3` journal record. Delivery consumes both supplies, grants
+the potion, awards XP/gold and completes the objective in one validated `a2`
+transaction. Replay requires the same canonical exchange and a living owner;
+old `q1`/`q2`/`a1` meanings are unchanged. Both quests restore into the native
+journal, and level-derived skill credits refresh when rewards change them.
+This profile is authored development content, not an original AC2 quest.
+Source compilation passed; native journal, speech and turn-in acceptance remain
+pending. Old executables cannot read the new records; preserve the updated build
+when reopening a store that has accepted the follow-up quest.

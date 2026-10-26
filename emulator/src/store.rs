@@ -503,10 +503,8 @@ impl Store {
         id: u64,
         command: crate::quests::Command,
     ) -> io::Result<bool> {
-        if matches!(command, crate::quests::Command::Kill(_)) {
-            return Err(invalid(
-                "quest kills require an encounter reward transaction",
-            ));
+        if matches!(command, crate::quests::Command::Kill(_) | crate::quests::Command::ClaimSupplies) {
+            return Err(invalid("quest completion requires its authoritative reward transaction"));
         }
         let character = self
             .characters
@@ -521,7 +519,8 @@ impl Store {
         for reward in crate::quests::rewards(&command) {
             progression = progression.apply(&reward).map_err(io::Error::other)?;
         }
-        self.append_record(&format!("q1\t{id}\t{}", command.encode()))?;
+        let revision = if matches!(command, crate::quests::Command::AcceptSupplies) { "q3" } else { "q1" };
+        self.append_record(&format!("{revision}\t{id}\t{}", command.encode()))?;
         let character = self.characters.get_mut(&id).unwrap();
         character.quests = quests;
         character.progression = progression;
@@ -608,6 +607,13 @@ impl Store {
         items: &[crate::inventory::Command],
         changes: &[crate::progression::Command],
     ) -> io::Result<()> {
+        self.player_transaction_quest(account, id, items, changes, false)
+    }
+    pub fn player_transaction_quest(
+        &mut self, account: &str, id: u64,
+        items: &[crate::inventory::Command], changes: &[crate::progression::Command],
+        supplies: bool,
+    ) -> io::Result<()> {
         let character = self
             .characters
             .get(&id)
@@ -628,14 +634,20 @@ impl Store {
         if inventory == character.inventory && progression == character.progression {
             return Ok(());
         }
+        let quests = if supplies {
+            if !character.progression.alive() { return Err(invalid("Supply exchange requires a living player")); }
+            crate::quests::validate_supplies_exchange(&character.quests, &character.inventory, items, changes, first.ok_or_else(|| invalid("Missing supply output identity"))?)?
+        } else { character.quests.clone() };
+        let revision = if supplies { "a2" } else { "a1" };
         self.append_record(&format!(
-            "a1\t{id}\t{}\t{}",
+            "{revision}\t{id}\t{}\t{}",
             crate::player_transaction::encode_items(items),
             crate::player_transaction::encode_changes(changes)
         ))?;
         let character = self.characters.get_mut(&id).unwrap();
         character.inventory = inventory;
         character.progression = progression;
+        character.quests = quests;
         Ok(())
     }
     pub fn inventory_command(
@@ -1206,13 +1218,14 @@ fn decode_journal_collect(
                 output.push(line.to_owned());
             }
         }
-        if fields.len() == 3 && fields[0] == "q1" {
+        if fields.len() == 3 && matches!(fields[0], "q1" | "q3") {
             let id = fields[1]
                 .parse::<u64>()
                 .map_err(|_| invalid("invalid quest owner"))?;
             let command = crate::quests::Command::decode(fields[2]).map_err(io::Error::other)?;
-            if matches!(command, crate::quests::Command::Kill(_)) {
-                return Err(invalid("quest kill requires payout record"));
+            if !(fields[0] == "q1" && matches!(command, crate::quests::Command::Accept | crate::quests::Command::Claim)
+                || fields[0] == "q3" && matches!(command, crate::quests::Command::AcceptSupplies)) {
+                return Err(invalid("quest command does not match its journal revision"));
             }
             let character = records
                 .get_mut(&id)
@@ -1615,7 +1628,7 @@ fn decode_journal_collect(
             character.progression = progression;
             continue;
         }
-        if fields.len() == 4 && fields[0] == "a1" {
+        if fields.len() == 4 && matches!(fields[0], "a1" | "a2") {
             let id = fields[1]
                 .parse::<u64>()
                 .map_err(|_| invalid("invalid transaction owner"))?;
@@ -1645,6 +1658,10 @@ fn decode_journal_collect(
                 &changes,
                 first,
             )?;
+            if fields[0] == "a2" {
+                if !character.progression.alive() { return Err(invalid("Dead supply exchange owner")); }
+                character.quests = crate::quests::validate_supplies_exchange(&character.quests, &character.inventory, &items, &changes, first.ok_or_else(|| invalid("Missing supply output identity"))?)?;
+            }
             character.inventory = inventory;
             character.progression = progression;
             continue;

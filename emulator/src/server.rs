@@ -809,8 +809,9 @@ fn quest_action(
     let command = match action.trim().to_ascii_lowercase().as_str() {
         "" | "status" => None,
         "start" => Some(crate::quests::Command::Accept),
+        "supplies" => Some(crate::quests::Command::AcceptSupplies),
         "claim" => Some(crate::quests::Command::Claim),
-        _ => return Err(invalid("Use @quest, @quest start, or @quest claim.")),
+        _ => return Err(invalid("Use @quest, @quest start, @quest supplies, or @quest claim.")),
     };
     if command.is_some() && (!saved.progression.alive() || peer.combat) {
         return Err(invalid(
@@ -835,7 +836,7 @@ fn quest_action(
         None => vec![script::chat(&text, 1).map_err(other)?],
     };
     if quests.get().is_some() {
-        events.push(quests.update().map_err(other)?);
+        events.extend(quests.updates().map_err(other)?);
     }
     events.extend(state.private_changes(&saved.progression));
     if saved.skills.available_credits(&state) != saved.skills.available_credits(&saved.progression)
@@ -1037,10 +1038,18 @@ fn item_service_transaction(
     character: u64,
     items: &[crate::inventory::Command],
     changes: &[crate::progression::Command],
-    mut completion: Vec<Vec<u8>>,
+    completion: Vec<Vec<u8>>,
     store: &mut Store,
     scene: &mut crate::scene::Scene,
     metadata: &BTreeMap<u32, Option<crate::inventory_request::Metadata>>,
+) -> io::Result<Vec<crate::scene::Delivery>> {
+    item_service_transaction_quest(peer, character, items, changes, completion, store, scene, metadata, false)
+}
+fn item_service_transaction_quest(
+    peer: &mut Peer, character: u64,
+    items: &[crate::inventory::Command], changes: &[crate::progression::Command],
+    mut completion: Vec<Vec<u8>>, store: &mut Store, scene: &mut crate::scene::Scene,
+    metadata: &BTreeMap<u32, Option<crate::inventory_request::Metadata>>, supplies: bool,
 ) -> io::Result<Vec<crate::scene::Delivery>> {
     let saved = &store.characters[&character];
     if !scene.can_observe(character, character) || !saved.progression.alive() || peer.combat {
@@ -1109,9 +1118,16 @@ fn item_service_transaction(
         }
     }
     events.extend(state.private_changes(&saved.progression));
+    if saved.skills.available_credits(&state) != saved.skills.available_credits(&saved.progression) {
+        events.push(crate::ui::skill_credits(saved.skills.available_credits(&state)).map_err(other)?);
+    }
     events.append(&mut completion);
+    if supplies {
+        let next = crate::quests::validate_supplies_exchange(&saved.quests, &saved.inventory, items, changes, first.ok_or_else(|| invalid("Missing supply reward identity"))?)?;
+        events.extend(next.updates().map_err(other)?);
+    }
     peer.validate_scene_batch(&events)?;
-    store.player_transaction(&peer.session.account, character, items, changes)?;
+    store.player_transaction_quest(&peer.session.account, character, items, changes, supplies)?;
     for item in removed {
         scene.inventory_removed(character, item).map_err(other)?;
     }
@@ -1230,6 +1246,7 @@ fn use_training_mentor(
     target: u64,
     store: &mut Store,
     scene: &mut crate::scene::Scene,
+    metadata: &BTreeMap<u32, Option<crate::inventory_request::Metadata>>,
 ) -> io::Result<Vec<crate::scene::Delivery>> {
     let player = scene
         .player_placement(character)
@@ -1255,6 +1272,19 @@ fn use_training_mentor(
         ));
     }
     let book = &store.characters[&character].quests;
+    if book.get().is_some_and(|state| state.claimed) {
+        if book.supplies().is_none() {
+            return quest_action(peer, character, "supplies", store, scene, Some(target));
+        }
+        if book.supplies() == Some(false) {
+            if let Ok(items) = crate::quests::supplies_items(&store.characters[&character].inventory, store.next_item_id()?) {
+                let changes = crate::quests::rewards(&crate::quests::Command::ClaimSupplies);
+                let next = book.apply(&crate::quests::Command::ClaimSupplies).map_err(other)?;
+                let events = npc_interaction_events(character, target, scene, "Pectar, Training Master", &next.guidance())?;
+                return item_service_transaction_quest(peer, character, &items, &changes, events, store, scene, metadata, true);
+            }
+        }
+    }
     let action = if book.get().is_none() {
         "start"
     } else if book.ready() {
@@ -2662,6 +2692,7 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                     request.item,
                                                     &mut store,
                                                     &mut scene,
+                                                    &inventory_metadata,
                                                 ) {
                                                     Ok(updates) => deliveries.extend(updates),
                                                     Err(error) => replies.extend(
