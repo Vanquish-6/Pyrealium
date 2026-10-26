@@ -3181,6 +3181,9 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                                 .into(),
                                             });
                                         }
+                                        script::Request::GameplayOptions(options) => {
+                                            store.update_gameplay_options(&peer.session.account, character, options)?;
+                                        }
                                         script::Request::UiSettings(settings) => {
                                             store.update_ui(
                                                 &peer.session.account,
@@ -4121,13 +4124,14 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                                 } else {
                                                     &saved.hotbar
                                                 };
-                                                let restored = crate::ui::player_all_quests(
+                                                let restored = crate::ui::player_all_quests_options(
                                                     saved.ui.as_ref(),
                                                     Some(hotbar),
                                                     Some(&saved.inventory),
                                                     Some(&saved.progression),
                                                     Some(&saved.skills),
                                                     Some(&saved.quests),
+                                                    saved.gameplay_options.as_ref(),
                                                 )
                                                 .map_err(other)?;
                                                 let instance=peer.motion.as_ref().ok_or_else(||invalid("inventory bootstrap without avatar lifetime"))?.instance;

@@ -429,6 +429,17 @@ pub fn player_all_quests(
     skills: Option<&crate::skills::Book>,
     quests: Option<&crate::quests::Book>,
 ) -> Result<Vec<u8>, WorldError> {
+    player_all_quests_options(settings, hotbar, inventory, progression, skills, quests, None)
+}
+pub fn player_all_quests_options(
+    settings: Option<&crate::preferences::UiSettings>,
+    hotbar: Option<&crate::preferences::Hotbar>,
+    inventory: Option<&crate::inventory::Inventory>,
+    progression: Option<&crate::progression::Progression>,
+    skills: Option<&crate::skills::Book>,
+    quests: Option<&crate::quests::Book>,
+    gameplay: Option<&crate::preferences::GameplayOptions>,
+) -> Result<Vec<u8>, WorldError> {
     let mut args = script::integer(progression.map_or(0, |state| state.gold));
     graph(
         &mut args,
@@ -444,7 +455,7 @@ pub fn player_all_quests(
     }
     // GameplayOptionsProfile::StreamPack 006000b0 starts with a u64 mask.
     // A zero mask retains native Clear/default values; no captured settings.
-    let options = crate::preferences::options_words(settings, hotbar)?;
+    let options = crate::preferences::options_words_with_gameplay(settings, hotbar, gameplay)?;
     graph(&mut args, &[Object::native(0x9b, &options)]);
     let mut trained = skills
         .into_iter()

@@ -26,6 +26,7 @@ pub struct Character {
     pub instance: u16,
     pub ui: Option<crate::preferences::UiSettings>,
     pub hotbar: crate::preferences::Hotbar,
+    pub gameplay_options: Option<crate::preferences::GameplayOptions>,
     pub inventory: crate::inventory::Inventory,
     pub progression: crate::progression::Progression,
     pub skills: crate::skills::Book,
@@ -655,6 +656,21 @@ impl Store {
         self.characters.get_mut(&id).unwrap().ui = Some(settings);
         Ok(())
     }
+    pub fn update_gameplay_options(
+        &mut self,
+        account: &str,
+        id: u64,
+        options: crate::preferences::GameplayOptions,
+    ) -> io::Result<()> {
+        let character = self.characters.get(&id)
+            .filter(|character| character.account == account && !character.deleted)
+            .ok_or_else(|| invalid("gameplay settings character not owned"))?;
+        if character.gameplay_options.as_ref() == Some(&options) { return Ok(()); }
+        let hex = options.encode().iter().map(|byte| format!("{byte:02x}")).collect::<String>();
+        self.append_record(&format!("o1\t{id}\t{hex}"))?;
+        self.characters.get_mut(&id).unwrap().gameplay_options = Some(options);
+        Ok(())
+    }
     pub fn update_hotbar(
         &mut self,
         account: &str,
@@ -793,6 +809,7 @@ impl Store {
             deleted: false,
             instance: 0,
             ui: None,
+            gameplay_options: None,
             hotbar: crate::preferences::Hotbar::default(),
             inventory: crate::inventory::Inventory::default(),
             progression: crate::progression::Progression::default(),
@@ -1583,7 +1600,7 @@ fn decode_journal_collect(
                 .map_err(|_| invalid("invalid inventory transition"))?;
             continue;
         }
-        if fields.len() == 3 && matches!(fields[0], "u1" | "h1") {
+        if fields.len() == 3 && matches!(fields[0], "u1" | "h1" | "o1") {
             let id = fields[1]
                 .parse::<u64>()
                 .map_err(|_| invalid("invalid UI character ID"))?;
@@ -1609,6 +1626,11 @@ fn decode_journal_collect(
                 character.ui = Some(
                     crate::preferences::UiSettings::decode(&bytes)
                         .map_err(|_| invalid("invalid saved UI settings"))?,
+                );
+            } else if fields[0] == "o1" {
+                character.gameplay_options = Some(
+                    crate::preferences::GameplayOptions::decode(&bytes)
+                        .map_err(|_| invalid("invalid saved gameplay options"))?,
                 );
             } else {
                 let update = crate::preferences::HotbarUpdate::decode(&bytes)
@@ -1701,6 +1723,7 @@ fn decode_journal_collect(
                 deleted: false,
                 instance: 0,
                 ui: None,
+                gameplay_options: None,
                 hotbar: crate::preferences::Hotbar::default(),
                 inventory: crate::inventory::Inventory::default(),
                 progression: crate::progression::Progression::default(),

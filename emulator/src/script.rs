@@ -43,6 +43,7 @@ pub enum Request {
     Attack(Option<u64>),
     StopAttack(u64),
     UiSettings(crate::preferences::UiSettings),
+    GameplayOptions(crate::preferences::GameplayOptions),
     Hotbar(crate::preferences::HotbarUpdate),
     Skill {
         action: crate::skills::Action,
@@ -124,6 +125,11 @@ pub fn decode(function: u32, bytes: &[u8]) -> Result<Request, WorldError> {
             let request = crate::groups::decode(function, bytes)?;
             r.pos = bytes.len();
             Request::Group(request)
+        }
+        crate::preferences::GAMEPLAY_UPDATE => {
+            let options = crate::preferences::GameplayOptions::decode(bytes)?;
+            r.pos = bytes.len();
+            Request::GameplayOptions(options)
         }
         crate::merchants::SELL => {
             let request = crate::merchants::SellRequest::decode(bytes)?;

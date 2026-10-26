@@ -4,7 +4,48 @@ use std::collections::BTreeMap;
 
 pub const WINDOW_UPDATE: u32 = 0x82120031;
 pub const HOTBAR_UPDATE: u32 = 0x82120018;
+pub const GAMEPLAY_UPDATE: u32 = 0x8212000c;
 pub const MAX_BYTES: usize = 16384;
+
+/// The four native UploadGameOptions values. Bits remain client preferences,
+/// never combat, visibility or ownership authority. Store floats by bits so
+/// journal replay and duplicate suppression are exact.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GameplayOptions {
+    bitfield: u32,
+    radar: u32,
+    shortcut_height: u32,
+    damage_range: u32,
+}
+impl GameplayOptions {
+    pub fn decode(bytes: &[u8]) -> Result<Self, WorldError> {
+        if bytes.len() != 32 {
+            return Err(WorldError::InvalidValue);
+        }
+        let word = |offset| u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
+        if word(0) != 1 || word(8) != 1 || word(16) != 1 || word(24) != 3 {
+            return Err(WorldError::InvalidValue);
+        }
+        let value = Self {
+            bitfield: word(4),
+            radar: word(12),
+            shortcut_height: word(20),
+            damage_range: word(28),
+        };
+        let range = f32::from_bits(value.damage_range);
+        if !(1..=5).contains(&value.shortcut_height)
+            || !range.is_finite()
+            || (range < 0.0 && range != -1.0)
+        {
+            return Err(WorldError::InvalidValue);
+        }
+        Ok(value)
+    }
+    pub fn encode(&self) -> Vec<u8> {
+        [1, self.bitfield, 1, self.radar, 1, self.shortcut_height, 3, self.damage_range]
+            .into_iter().flat_map(u32::to_le_bytes).collect()
+    }
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct Window {
@@ -175,13 +216,6 @@ impl UiSettings {
         words.push(0);
         words.into_iter().flat_map(u32::to_le_bytes).collect()
     }
-    /// GameplayOptionsProfile mask: saved locations, bit field/version, opacity.
-    /// StreamPack 006000b0 orders these fields by explicit mask tests.
-    fn append_options(&self, words: &mut Vec<u32>) {
-        self.layout_words(words);
-        words.extend([0x80000000, 4]);
-        self.opacity_words(words);
-    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -300,15 +334,40 @@ pub fn options_words(
     settings: Option<&UiSettings>,
     hotbar: Option<&Hotbar>,
 ) -> Result<Vec<u32>, WorldError> {
+    options_words_with_gameplay(settings, hotbar, None)
+}
+pub fn options_words_with_gameplay(
+    settings: Option<&UiSettings>,
+    hotbar: Option<&Hotbar>,
+    gameplay: Option<&GameplayOptions>,
+) -> Result<Vec<u32>, WorldError> {
     let mut words = vec![
-        (if settings.is_some() { 0x890 } else { 0 }) | (if hotbar.is_some() { 2 } else { 0 }),
+        (if settings.is_some() { 0x890 } else { 0 })
+            | (if hotbar.is_some() { 2 } else { 0 })
+            | (if gameplay.is_some() { 0x10a8 } else { 0 }),
         0,
     ];
     if let Some(hotbar) = hotbar {
         words.extend(hotbar.words()?);
     }
+    if let Some(options) = gameplay {
+        words.extend([options.shortcut_height, options.damage_range]);
+    }
     if let Some(settings) = settings {
-        settings.append_options(&mut words);
+        settings.layout_words(&mut words);
+    }
+    if let Some(options) = gameplay {
+        words.push(options.radar);
+    }
+    if settings.is_some() || gameplay.is_some() {
+        // The high bit announces the version word needed for window opacity.
+        let bits = gameplay.map_or(0, |options| options.bitfield)
+            | if settings.is_some() { 0x80000000 } else { 0 };
+        words.push(bits);
+        if bits & 0x80000000 != 0 { words.push(4); }
+    }
+    if let Some(settings) = settings {
+        settings.opacity_words(&mut words);
     }
     Ok(words)
 }

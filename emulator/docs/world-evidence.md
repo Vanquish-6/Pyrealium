@@ -1248,3 +1248,32 @@ item or currency transaction occurs. It rechecks a matching unexpired shop,
 visibility/trade distance, living/out-of-combat state and a 100 ms action limit.
 Only successful queue admission extends the shop deadline. Compilation is
 separate from native UI acceptance; no gameplay tests were run.
+
+## Gameplay option persistence (2026-10-26)
+
+`8212000c` is `UploadGameOptions`, not a quest request. Native `00451ac0` and
+`00463b70` route to WLib `9aa4008f` (`437ac`) and `8212001d` (`102078`).
+The matching WLib is the same `56000005` SHA-256 recorded above. Arguments are
+exactly 32 bytes: tagged integer bitfield, tagged integer radar mask, tagged
+integer shortcut height and tagged float damage-text range. Float tag 3 is
+corroborated by `gPackBuffer::CallEFun_PackFloat` at `0053f690`. The cleaned
+`ac2_player_die.elog` capture (SHA-256
+`f14f793a2f75d5461f0f6561f21119fee8d3ada60cf731cfb414fc65479da6dc`)
+corroborates that shape; its client build identity remains unknown.
+
+Native `00437e50` clamps shortcut height to 1–5; this server rejects other
+values. `GameplayOptionsProfile::Clear` at `005ffc60` uses range -1.0 as its
+default. The bounded profile accepts that sentinel and finite nonnegative
+ranges; no unsupported original upper bound is inferred. Preference bitfields
+remain opaque and grant no server gameplay authority. Duplicate uploads do not
+append another record. Owner-checked `o1` journal records persist exact float
+bits and replay strictly, including through the existing checked compaction.
+Older binaries lacking `o1` cannot read a journal containing these records.
+
+On reconnect, `GameplayOptionsProfile::StreamPack` at `006000b0` establishes
+mask `10a8` for these four fields. The serializer combines this with saved
+window/hotbar masks and emits height, damage range, locations, radar, bitfield,
+version and opacity in native order. The version marker is retained when
+opacity needs it. No upload acknowledgement is invented. Compilation of the
+isolated staged source passed; persistence/UI runtime acceptance remains open
+because gameplay tests were not requested.
