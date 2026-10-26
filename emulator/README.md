@@ -48,7 +48,9 @@ are authored development policies; they do not establish original AC2 parity.
   equipment swaps, unequip and consumption, plus offline management commands.
   The opt-in HUD path now initializes owned item objects and inventory maps;
   native dense-bag sorting requests now persist and return move acknowledgments
-  for single items with supported DAT metadata. The captured object-use profile
+  for whole items and stacks with supported DAT metadata and matching owned
+  quantities. Partial-stack drag/split/merge remains unsupported on this path.
+  The captured object-use profile
   now toggles supported hand equipment, persists bag/equipment state, and creates
   attached hand objects for the owner and nearby players. Armor composition,
   equipment bonuses, general item use and native acceptance remain unfinished.
@@ -333,7 +335,7 @@ visual records in `--game-data`, with operator-supplied stack/equipment rules.
 `inventory-reorder --character-id N --request PATH` imports one reassembled
 296-byte native sorting request while offline. It requires matching owner/item
 identities and a dense bag list. Live sorting is separately handled by the
-initialized HUD for the supported single-item profile described above.
+initialized HUD for the supported whole-item/whole-stack profile described above.
 Existence of a DAT definition does not establish starter entitlement or balance.
 See [inventory storage boundaries](docs/world-evidence.md#transactional-inventory-storage-2026-10-24).
 

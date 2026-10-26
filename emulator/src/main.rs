@@ -231,7 +231,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                     std::fs::File::open(path)?
                         .take((MESSAGE_BYTES + 1) as u64)
                         .read_to_end(&mut bytes)?;
-                    MoveRequest::decode(&bytes)?.command(character)?
+                    MoveRequest::decode(&bytes)?.checked_command(character, &owned.inventory)?
                 }
                 "inventory-grant" => {
                     let directory =

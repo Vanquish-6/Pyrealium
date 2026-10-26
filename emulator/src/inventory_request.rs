@@ -19,6 +19,8 @@ pub struct MoveRequest {
     pub item: u64,
     pub source: u16,
     pub destination: u16,
+    /// Complete quantity requested by the native drag; never a split amount.
+    pub quantity: u16,
 }
 impl MoveRequest {
     pub fn arguments(bytes: &[u8]) -> Result<Self, WorldError> {
@@ -49,12 +51,22 @@ impl MoveRequest {
             || word(28) != 0
             || word(32) != 0x01f80000
             || word(36) != 51
-            || message[244..295] != TAGS
             || message[295] != 0
         {
             return Err(WorldError::InvalidValue);
         }
         let fields: [u32; 51] = std::array::from_fn(|i| word(40 + i * 4));
+        let mut expected_tags = TAGS;
+        // Captured drag requests use a uint source ordinal when nonzero and
+        // a uint whole-stack count instead of the single-item constant.
+        if !matches!(message[245], 2 | 4) {
+            return Err(WorldError::InvalidValue);
+        }
+        expected_tags[1] = message[245];
+        if fields[25] > 1 { expected_tags[25] = 4; }
+        if message[244..295] != expected_tags {
+            return Err(WorldError::InvalidValue);
+        }
         let owner = u64::from(fields[2]) | (u64::from(fields[3]) << 32);
         let item = u64::from(fields[28]) | (u64::from(fields[29]) << 32);
         if [0, u64::MAX].contains(&owner)
@@ -62,6 +74,9 @@ impl MoveRequest {
             || owner == item
             || fields[1] >= u32::from(BAG_SLOTS)
             || fields[11] > u32::from(BAG_SLOTS)
+            || fields[25] == 0
+            || fields[25] > u32::from(u16::MAX)
+            || fields[25] != fields[26]
         {
             return Err(WorldError::InvalidValue);
         }
@@ -85,6 +100,8 @@ impl MoveRequest {
             expected[index] = fields[11];
         }
         expected[30] = u32::MAX;
+        expected[25] = fields[25];
+        expected[26] = fields[26];
         if fields != expected {
             return Err(WorldError::InvalidValue);
         }
@@ -93,6 +110,7 @@ impl MoveRequest {
             item,
             source: fields[1] as u16,
             destination: fields[11] as u16,
+            quantity: fields[25] as u16,
         })
     }
     pub fn command(&self, owner: u64) -> Result<Command, WorldError> {
@@ -105,15 +123,30 @@ impl MoveRequest {
             destination: self.destination,
         })
     }
+    pub fn checked_command(
+        &self,
+        owner: u64,
+        inventory: &crate::inventory::Inventory,
+    ) -> Result<Command, WorldError> {
+        if !inventory.items().any(|item| {
+            item.id == self.item
+                && item.quantity == self.quantity
+                && item.quantity > 0
+                && item.location == crate::inventory::Location::Bag(self.source)
+        }) {
+            return Err(WorldError::InvalidValue);
+        }
+        self.command(owner)
+    }
 
-    /// Captured single-object move acknowledgment. Optional per-item property
-    /// graphs and stacked items need separate profiles; no client metadata is echoed.
+    /// Same-IID whole-item move acknowledgment, including a complete stack.
+    /// Optional per-item graphs and partial-stack movement remain unsupported.
     pub fn acknowledgment(
         &self,
         item: &crate::inventory::Item,
         metadata: Metadata,
     ) -> Result<Vec<u8>, WorldError> {
-        if item.id != self.item || item.quantity != 1 {
+        if item.id != self.item || item.quantity != self.quantity || item.quantity == 0 {
             return Err(WorldError::InvalidValue);
         }
         let crate::inventory::Location::Bag(final_slot) = item.location else {
@@ -140,6 +173,10 @@ impl MoveRequest {
         fields[22] = item.definition;
         fields[30] = u32::MAX;
         fields[38] = metadata.physical;
+        fields[26] = u32::from(item.quantity);
+        if item.quantity > 1 {
+            fields[48] = u32::from(item.quantity);
+        }
         let mut arguments = Vec::with_capacity(MESSAGE_BYTES - 12);
         for word in [5, 1, 1, 0x44000100, 0, 0x01f80000, 51] {
             arguments.extend(u32::to_le_bytes(word));
@@ -148,6 +185,7 @@ impl MoveRequest {
             arguments.extend(word.to_le_bytes());
         }
         let mut tags = TAGS;
+        if item.quantity > 1 { tags[48] = 4; }
         tags[50] = if self.source < self.destination { 2 } else { 4 };
         arguments.extend(tags);
         arguments.push(0);

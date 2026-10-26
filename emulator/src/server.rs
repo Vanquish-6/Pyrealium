@@ -3014,7 +3014,7 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                                 if !config.initialize_ui { return Err(invalid("Inventory is not initialized.")); }
                                                 let saved = &store.characters[&character];
                                                 if !saved.progression.alive() { return Err(invalid("You cannot move items while dead.")); }
-                                                let command = request.command(character).map_err(other)?;
+                                                let command = request.checked_command(character, &saved.inventory).map_err(other)?;
                                                 let candidate = saved.inventory.apply(&command).map_err(other)?;
                                                 let item = candidate.items().find(|item| item.id == request.item).ok_or_else(||invalid("Item is not owned."))?;
                                                 let metadata = inventory_metadata.get(&item.definition).and_then(|entry| *entry).ok_or_else(||invalid("Bag sorting is unavailable for this item definition."))?;

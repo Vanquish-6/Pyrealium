@@ -1277,3 +1277,27 @@ version and opacity in native order. The version marker is retained when
 opacity needs it. No upload acknowledgement is invented. Compilation of the
 isolated staged source passed; persistence/UI runtime acceptance remains open
 because gameplay tests were not requested.
+
+## Whole-stack native bag reordering (2026-10-26)
+
+Cleaned `Inventar/ac2_items_sotieren.elog`, reassembled ordinals 26/27, contains
+request `820e0049` and reply `820e0055` for the same three-unit stack. Both
+are 296-byte messages with a 51-field `1f8` graph. Request fields 25/26 contain
+the complete quantity with uint tags; the reply retains the same IID and carries
+quantity in fields 26/48, with uint tag on field 48. Source ordinal field 1
+uses uint tag 4 in the request and integer tag 2 in the reply. The bounded
+request profile accepts both numeric source tags while retaining ordinal bounds.
+The former fixed tag/count profile rejected both stacks and some nonzero-source
+drags before inventory authorization.
+
+Both live reordering and offline native-request import now compare the requested
+quantity with the entire authoritative owned stack and verify its source slot.
+The existing dense `Reorder` command retains identity, quantity and total item
+count. Partial quantities, splitting and merging are not accepted by this path.
+Live reply admission still precedes the durable reorder commit.
+
+Evidence is narrow: the captured forward boundary 14→15 resolves to final index
+14, a dense-list no-op. No backward stack-move capture was found in the 492-file
+cleaned set; five malformed captures were skipped. Following property updates
+remain outside this profile, as for the existing single-item path. Compilation
+is verified separately from native client acceptance; no gameplay tests ran.
