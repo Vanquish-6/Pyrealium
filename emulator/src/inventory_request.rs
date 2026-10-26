@@ -219,8 +219,8 @@ impl Equipment {
         if !matches!(slot, 0x40 | 0x80)
             || self.valid & slot == 0
             || u32::from(item.equipment_mask) & slot == 0
-            || !matches!(self.primary, 1 | 2)
-            || (slot == 0x40 && self.primary != 1)
+            || !matches!(self.primary, 1..=4)
+            || (self.primary >= 3 && !crate::starter_gear::is_weapon(item.definition))
             || (slot == 0x80 && self.primary != 2)
             || item.quantity != 1
         {

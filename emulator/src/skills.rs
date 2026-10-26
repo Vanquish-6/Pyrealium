@@ -9,6 +9,13 @@ pub const RAISE: u32 = 0x8214000c;
 pub const USE: u32 = 0x8204000b;
 pub const LIFESTONE_RECALL: u32 = 0x343;
 pub const TRAINING_ATTACK: u32 = 0xb0;
+/// Races with a supported body and skill tree (Human 1, Lugian 2, Tumerok 4).
+fn playable(race: u32) -> bool {
+    matches!(
+        race,
+        crate::appearance::HUMAN | crate::appearance::LUGIAN | crate::appearance::TUMEROK
+    )
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Action {
     Train,
@@ -212,7 +219,26 @@ impl Book {
     }
     /// Authored training entitlement, not a recovered original starter rule.
     pub fn with_training_attack(&self, state: &Progression, race: u32) -> Result<Self, SkillError> {
+        if race != crate::appearance::HUMAN {
+            return Err(SkillError::UnsupportedProfile);
+        }
         self.with_development_skill(TRAINING_ATTACK, 1, state, race)
+    }
+    /// The race's three basic attacks (level 1, no credits, never untrained),
+    /// as the 2012 server granted at creation. Idempotent.
+    pub fn with_starter_skills(&self, state: &Progression, race: u32, sex: u32) -> Result<Self, SkillError> {
+        let body = crate::appearance::body(race, sex).ok_or(SkillError::UnsupportedProfile)?;
+        let mut next = self.clone();
+        for skill in body.starters {
+            if !next.entries.contains_key(&skill) {
+                next = next.with_development_skill(skill, race, state, race)?;
+            }
+        }
+        Ok(next)
+    }
+    pub fn has_starter_skills(&self, race: u32, sex: u32) -> bool {
+        crate::appearance::body(race, sex)
+            .is_some_and(|body| body.starters.iter().all(|skill| self.entries.contains_key(skill)))
     }
     fn with_development_skill(
         &self,
@@ -228,7 +254,7 @@ impl Book {
             .definitions
             .get(&skill)
             .ok_or(SkillError::Unknown)?;
-        if race != 1
+        if !playable(race)
             || definition.race != species
             || definition.level != 1
             || definition.cap != 1
@@ -271,8 +297,8 @@ impl Book {
         }
         let known = self.entries.get(&id).ok_or(SkillError::NotTrained)?;
         let definition = catalog()?.definitions.get(&id).ok_or(SkillError::Unknown)?;
-        if race != 1
-            || definition.race != 1
+        if !playable(race)
+            || definition.race != race
             || definition.level > 50
             || matches!(definition.kind, 4 | 0x44 | 0x45 | 0x51 | 0x71)
         {
@@ -327,10 +353,10 @@ impl Book {
             Command::Train(id) | Command::Grant(id) => {
                 let definition = catalog.definitions.get(&id).ok_or(SkillError::Unknown)?;
                 let granting = matches!(command, Command::Grant(_));
-                // Current native character profile supports human training only.
+                // Playable races train their own race's skills.
                 // Faction/hero/recall/mob grants require additional state/services.
-                if race != 1
-                    || definition.race != 1
+                if !playable(race)
+                    || definition.race != race
                     || definition.level > 50
                     || matches!(definition.kind, 4 | 0x44 | 0x45 | 0x51 | 0x71)
                     || granting && definition.credits != 0

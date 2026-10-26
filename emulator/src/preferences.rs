@@ -310,6 +310,19 @@ impl Hotbar {
         slots.insert(0, Shortcut::Skill(crate::skills::TRAINING_ATTACK));
         Self { slots }
     }
+    /// The race's three basic attacks in the first slots of an empty bar.
+    pub fn starter(race: u32, sex: u32) -> Self {
+        let Some(body) = crate::appearance::body(race, sex) else {
+            return Self::training_attack();
+        };
+        let slots = body
+            .starters
+            .iter()
+            .enumerate()
+            .map(|(slot, &skill)| (slot as u32, Shortcut::Skill(skill)))
+            .collect();
+        Self { slots }
+    }
     pub fn apply(&self, update: &HotbarUpdate) -> Result<Self, WorldError> {
         let mut next = self.clone();
         if update.shortcut == Shortcut::Empty {

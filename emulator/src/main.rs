@@ -5,6 +5,7 @@ use pyrealium::{
 use std::{env, net::SocketAddr, path::PathBuf, process::ExitCode};
 
 fn usage() {
+    println!("  inventory-starter --account NAME --character-id N --data PATH --game-data PATH\n    Offline once-only racial starter gear; retains existing possessions and equipment.");
     println!(
         "  account-web --auth-data PATH --data GAME_STORE --web-bind 127.0.0.1:19400 --public-origin https://accounts.example.com --public-host game.example.com --public-port 19370\n    Account registration and HTTPS-proxied launcher login backend.\n  account-create --auth-data PATH --account NAME\n    Offline owner account provisioning with hidden password prompts. Stop the account backend first.\n  serve-training --auth-data PATH --bind 0.0.0.0:19370 --game-data PATH\n    Public native-ticket mode; rejects developer/no-ticket authentication."
     );
@@ -204,7 +205,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             );
         }
         "inventory-list" | "inventory-grant" | "inventory-move" | "inventory-equip"
-        | "inventory-unequip" | "inventory-split" | "inventory-consume" | "inventory-reorder" => {
+        | "inventory-unequip" | "inventory-split" | "inventory-consume" | "inventory-reorder"
+        | "inventory-starter" => {
             use pyrealium::inventory::{Command, Item, Location};
             let mut store = Store::open(&data)?;
             let character = character_id.ok_or("--character-id is required")?;
@@ -213,6 +215,14 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 .get(&character)
                 .filter(|c| c.account == account && !c.deleted)
                 .ok_or("active character not owned")?;
+            if command == "inventory-starter" {
+                let directory = game_data.ok_or("--game-data is required to validate starter assets")?;
+                let mut portal = pyrealium::dat::Dat::open(directory.join("portal.dat"))?;
+                pyrealium::starter_gear::validate(&mut portal)?;
+                let granted = store.grant_starter_gear(&account, character)?;
+                println!("Starter gear for character {character}: {}", if granted { "saved" } else { "already granted" });
+                return Ok(());
+            }
             if command == "inventory-list" {
                 for item in owned.inventory.items() {
                     println!(

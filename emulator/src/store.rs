@@ -33,6 +33,7 @@ pub struct Character {
     pub quests: crate::quests::Book,
     pub training_kit: bool,
     pub training_supplies: bool,
+    pub starter_gear: bool,
     pub binding: Option<Placement>,
 }
 
@@ -140,6 +141,22 @@ impl Store {
             .filter(|id| id >> 48 == crate::inventory::ITEM_NAMESPACE >> 48)
             .ok_or_else(|| invalid("item identity exhausted"))
     }
+    pub fn grant_starter_gear(&mut self, account: &str, id: u64) -> io::Result<bool> {
+        let character = self.characters.get(&id)
+            .filter(|character| character.account == account && !character.deleted)
+            .ok_or_else(|| invalid("starter gear character not owned"))?;
+        if character.starter_gear { return Ok(false); }
+        if !character.progression.alive() { return Err(invalid("Starter gear requires a living character.")); }
+        let request = character.creation.as_ref().ok_or_else(|| invalid("Starter gear needs a saved creation profile."))?;
+        let first = self.next_item_id()?;
+        let next = crate::starter_gear::candidate(request, &character.inventory, first)?;
+        self.append_record(&format!("t4\t{id}\t{first}"))?;
+        let character = self.characters.get_mut(&id).unwrap();
+        character.inventory = next;
+        character.starter_gear = true;
+        character.training_kit = true;
+        Ok(true)
+    }
     pub fn grant_training_kit(&mut self, account: &str, id: u64) -> io::Result<bool> {
         let character = self
             .characters
@@ -231,6 +248,31 @@ impl Store {
             )
             .map_err(io::Error::other)?;
         self.append_record(&format!("k4\t{id}"))?;
+        self.characters.get_mut(&id).unwrap().skills = skills;
+        Ok(true)
+    }
+    pub fn ensure_starter_skills(&mut self, account: &str, id: u64) -> io::Result<bool> {
+        let character = self
+            .characters
+            .get(&id)
+            .filter(|c| c.account == account && !c.deleted)
+            .ok_or_else(|| invalid("starter skills require an owned character"))?;
+        let Some((race, sex)) = character
+            .creation
+            .as_ref()
+            .map(|request| (request.race, request.sex))
+            .filter(|&(race, sex)| crate::appearance::body(race, sex).is_some())
+        else {
+            return Ok(false);
+        };
+        if character.skills.has_starter_skills(race, sex) || !character.progression.alive() {
+            return Ok(false);
+        }
+        let skills = character
+            .skills
+            .with_starter_skills(&character.progression, race, sex)
+            .map_err(io::Error::other)?;
+        self.append_record(&format!("k5\t{id}"))?;
         self.characters.get_mut(&id).unwrap().skills = skills;
         Ok(true)
     }
@@ -817,6 +859,7 @@ impl Store {
             quests: crate::quests::Book::default(),
             training_kit: false,
             training_supplies: false,
+            starter_gear: false,
             binding: None,
         };
         let line = match creation {
@@ -1353,6 +1396,39 @@ fn decode_journal_collect(
             }
             continue;
         }
+        if fields.len() == 2 && fields[0] == "k5" {
+            let id = fields[1]
+                .parse::<u64>()
+                .map_err(|_| invalid("invalid starter skill character"))?;
+            let character = records
+                .get_mut(&id)
+                .filter(|c| !c.deleted)
+                .ok_or_else(|| invalid("unavailable starter skill character"))?;
+            let request = character
+                .creation
+                .as_ref()
+                .ok_or_else(|| invalid("starter skills without a creation profile"))?;
+            character.skills = character
+                .skills
+                .with_starter_skills(&character.progression, request.race, request.sex)
+                .map_err(|_| invalid("invalid starter skill grant"))?;
+            continue;
+        }
+        if fields.len() == 3 && fields[0] == "t4" {
+            let id = fields[1].parse::<u64>().map_err(|_| invalid("invalid starter owner"))?;
+            let first = fields[2].parse::<u64>().map_err(|_| invalid("invalid starter identity"))?;
+            let high = records.values().map(|character| character.inventory.high_water()).max()
+                .unwrap_or(crate::inventory::ITEM_NAMESPACE);
+            if high.checked_add(1) != Some(first) { return Err(invalid("nonsequential starter identity")); }
+            let character = records.get_mut(&id)
+                .filter(|character| !character.deleted && !character.starter_gear && character.progression.alive())
+                .ok_or_else(|| invalid("invalid repeated starter grant"))?;
+            let request = character.creation.as_ref().ok_or_else(|| invalid("starter grant without creation"))?;
+            character.inventory = crate::starter_gear::candidate(request, &character.inventory, first)?;
+            character.starter_gear = true;
+            character.training_kit = true;
+            continue;
+        }
         if fields.len() == 3 && fields[0] == "t3" {
             let id = fields[1]
                 .parse::<u64>()
@@ -1731,6 +1807,7 @@ fn decode_journal_collect(
                 quests: crate::quests::Book::default(),
                 training_kit: false,
                 training_supplies: false,
+                starter_gear: false,
                 binding: None,
             },
         );

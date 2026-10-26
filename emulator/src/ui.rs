@@ -361,28 +361,33 @@ pub fn skill_credits(credits: u16) -> Result<Vec<u8>, WorldError> {
     );
     script::private_call(0x82140011, &args)
 }
+/// Retail 2017 login SkillData: state flags 1 known / 2 bought with credits /
+/// 0x20 last-use stamp set, rank at field 10 and credits spent at field 12.
 fn skill_object(id: u32, entry: &crate::skills::Trained) -> Object {
+    let flags = if entry.locked && entry.credits == 0 { 1 } else { 3 };
     Object::interpreted(
         0x231,
         &[
             (0, 0xc3),
             (0xbff00000, 0xcd),
-            (u32::from(entry.rank), INT),
+            (0, INT),
             (0, 0x83),
             (0, 0xcd),
             (entry.xp as u32, 0x82),
             ((entry.xp >> 32) as u32, 0xcd),
-            (3, INT),
+            (flags, INT),
             (0, 0xc3),
             (0xbff00000, 0xcd),
+            (u32::from(entry.rank), INT),
             (0, INT),
+            (u32::from(entry.credits), INT),
             (0, INT),
-            (1, INT),
-            (0, INT),
-            (id, 4),
+            (id, INT),
         ],
     )
 }
+/// Retail skill hashes are sent at bucket index 2 (47 buckets) in bucket order.
+const SKILL_BUCKETS: u32 = 47;
 pub fn skill_update(id: u32, entry: &crate::skills::Trained) -> Result<Vec<u8>, WorldError> {
     let mut args = Vec::new();
     graph(&mut args, &[skill_object(id, entry)]);
@@ -461,8 +466,8 @@ pub fn player_all_quests_options(
         .into_iter()
         .flat_map(|book| book.entries())
         .collect::<Vec<_>>();
-    trained.sort_unstable_by_key(|(id, _)| (id % 11, *id));
-    let mut skill_map = vec![trained.len() as u32];
+    trained.sort_unstable_by_key(|(id, _)| (id % SKILL_BUCKETS, *id));
+    let mut skill_map = vec![0x02000000 | trained.len() as u32];
     for (index, (id, _)) in trained.iter().enumerate() {
         skill_map.extend([*id, 5 + index as u32]);
     }
@@ -704,7 +709,7 @@ mod tests {
                         assert_eq!(&words[p..p + 2], &[0, 0]);
                         p += 2;
                     } else {
-                        let n = words[p];
+                        let n = words[p] & 0x00ff_ffff;
                         p += 1;
                         let stride = if kind & 0xffff == 0x65 {
                             1

@@ -626,11 +626,11 @@ fn training_combat_visual(
     swing: bool,
 ) -> io::Result<Vec<crate::scene::Delivery>> {
     let saved = &store.characters[&character];
-    // This combo is validated for the authored main-hand training weapon.
+    // The pinned starter swords share the one-handed mode/implement selectors.
     // Do not assign sword animations to arbitrary assets or unarmed attacks.
     if fighting
         && !saved.inventory.items().any(|item| {
-            item.definition == crate::training_kit::DEFINITION
+            (item.definition == crate::training_kit::DEFINITION || crate::starter_gear::is_sword(item.definition))
                 && item.location == crate::inventory::Location::Equipped(0x40)
         })
     {
@@ -901,6 +901,9 @@ fn change_hand_item(
     let slot = hand
         .hand_slot(item)
         .ok_or_else(|| invalid("Only supported hand-held items can be changed here."))?;
+    if hand.primary == 3 && !saved.creation.as_ref().is_some_and(|request| request.race == 4) {
+        return Err(invalid("This instrument requires a Tumerok holding location."));
+    }
     let equipped = !matches!(action, HandChange::Unequip { .. })
         && matches!(item.location, crate::inventory::Location::Bag(_));
     if let HandChange::Equip {
@@ -1528,6 +1531,9 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                 locale.read(0x25000014)?;
             }
             if config.training_kit {
+                for (definition, metadata) in crate::starter_gear::validate(&mut portal)? {
+                    inventory_metadata.insert(definition, Some(metadata));
+                }
                 let catalog = crate::merchants::Catalog::validate(&mut portal)?;
                 for (definition, metadata) in catalog.entries() {
                     inventory_metadata.insert(definition, Some(metadata));
@@ -3921,36 +3927,13 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                                     ));
                                                 }
                                                 if config.training_kit {
-                                                    let saved = &store.characters[&character_id];
-                                                    let can_grant = saved.progression.alive()
-                                                        && (saved.skills.entries().count() < 128
-                                                            || saved
-                                                                .skills
-                                                                .get(crate::skills::TRAINING_ATTACK)
-                                                                .is_some());
-                                                    if can_grant
-                                                        && (saved.training_kit
-                                                            || saved
-                                                                .inventory
-                                                                .free_slot()
-                                                                .is_some())
-                                                    {
-                                                        if store.grant_training_kit(
-                                                            &peer.session.account,
-                                                            character_id,
-                                                        )? {
-                                                            eprintln!(
-                                                                "Development training kit saved for character {character_id}"
-                                                            );
-                                                        }
-                                                        store.ensure_training_attack(
-                                                            &peer.session.account,
-                                                            character_id,
-                                                        )?;
-                                                    } else {
-                                                        eprintln!(
-                                                            "Development training kit deferred for character {character_id}: dead, bag full or skill capacity"
-                                                        );
+                                                    match store.grant_starter_gear(&peer.session.account, character_id) {
+                                                        Ok(true) => eprintln!("Racial starter gear saved for character {character_id}"),
+                                                        Ok(false) => {},
+                                                        Err(error) => eprintln!("Starter gear deferred for character {character_id}: {error}"),
+                                                    }
+                                                    if request.race == 1 && store.characters[&character_id].training_kit {
+                                                        store.ensure_training_attack(&peer.session.account, character_id)?;
                                                     }
                                                 }
                                                 if config.training_kit {
@@ -3999,6 +3982,16 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                                             character_id,
                                                         )?;
                                                     }
+                                                }
+                                                if store.characters[&character_id].skills.entries().count() + 3 <= 128
+                                                    && store.ensure_starter_skills(
+                                                        &peer.session.account,
+                                                        character_id,
+                                                    )?
+                                                {
+                                                    eprintln!(
+                                                        "Starter skills saved for character {character_id}"
+                                                    );
                                                 }
                                                 if training_quest_enabled
                                                     && store.characters[&character_id]
@@ -4124,8 +4117,18 @@ pub fn run_with_auth(config: Config, auth_data: Option<PathBuf>) -> io::Result<(
                                                 _ => None,
                                             };
                                             if let Some(saved) = saved {
-                                                let training_bar =
-                                                    crate::preferences::Hotbar::training_attack();
+                                                let training_bar = saved
+                                                    .creation
+                                                    .as_ref()
+                                                    .map_or_else(
+                                                        crate::preferences::Hotbar::training_attack,
+                                                        |request| {
+                                                            crate::preferences::Hotbar::starter(
+                                                                request.race,
+                                                                request.sex,
+                                                            )
+                                                        },
+                                                    );
                                                 let hotbar = if config.training_kit
                                                     && saved.hotbar.is_empty()
                                                 {

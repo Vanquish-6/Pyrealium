@@ -33,6 +33,7 @@ pub mod scene;
 pub mod script;
 pub mod server;
 pub mod skills;
+pub mod starter_gear;
 pub mod state;
 pub mod store;
 pub mod training_kit;

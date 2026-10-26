@@ -603,13 +603,21 @@ pub fn create_inventory_item(
     bytes.extend(instance.to_le_bytes());
     bytes.extend(0u16.to_le_bytes());
     bytes.extend([0; 8]); // Four mandatory PhysicsDesc timestamp ushorts.
+    let starter_apparel = crate::starter_gear::is_apparel(item.definition)
+        && matches!(item.location, crate::inventory::Location::Equipped(_));
     let owner_flag = match item.location {
         crate::inventory::Location::Bag(_) => 0x20,
+        crate::inventory::Location::Equipped(_) if starter_apparel => 0x60,
         crate::inventory::Location::Equipped(_) => 0x40,
     };
     bytes.extend((0x02000800u32 | owner_flag).to_le_bytes());
     bytes.extend(item.definition.to_le_bytes());
     bytes.extend(owner.to_le_bytes());
+    if starter_apparel {
+        // Fresh creation captures keep worn clothing both contained and wielded
+        // by the avatar; weapons in a bag have only the container field.
+        bytes.extend(owner.to_le_bytes());
+    }
     bytes.extend(u32::from(item.quantity).to_le_bytes());
     Ok(bytes)
 }
@@ -626,7 +634,7 @@ pub fn create_hand_item(
     if !matches!(
         item.location,
         crate::inventory::Location::Equipped(0x40 | 0x80)
-    ) || !matches!(location, 1 | 2)
+    ) || !matches!(location, 1..=4)
         || parent_instance == 0
     {
         return Err(WorldError::InvalidValue);

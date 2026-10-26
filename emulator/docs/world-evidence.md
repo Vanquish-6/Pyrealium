@@ -1301,3 +1301,53 @@ Evidence is narrow: the captured forward boundary 14→15 resolves to final inde
 cleaned set; five malformed captures were skipped. Following property updates
 remain outside this profile, as for the existing single-item path. Compilation
 is verified separately from native client acceptance; no gameplay tests ran.
+
+## Racial starter equipment, immutable t4 (2026-10-26)
+
+Fresh Human male/female captures `AC2_Char_Create_human_and_login_to_noobe.zone.elog`
+and `AC2_CahrCreateBtnClick_bis_LoginNoobZone_human_female.elog`, under retained
+`Packets/player/Char create(char overview)`, grant all three weapons even though
+creation specifies class 2 / implement 4. They are bag items, quantity one:
+`470007ed/1f000063`, `470007ee/1f0004f8`, `470007e0/1f0002a6`. Worn clothes
+are `47000ef8/1f00058e` slot 2, `47000efa/1f00058c` slot 10 hex (pants),
+`47000ef9/1f00058d` slot 8 (boots). The old item notes swap pants and boots.
+
+`AC2_Char_Create_Lugi_and_login_to_noobe.zone.elog` is a fresh female Lugian,
+class 1 / implement 2. All three weapons are bag items:
+`47000809/1f000057`, `47000807/1f000321`, `47000808/1f000618`. Worn sash/kilt/
+sandals are `47001396/1f000d04` slot 2, `47001395/1f000d03` slot 8, and
+`47001131/1f000589` slot 10 hex. Male Lugian uses these sex-neutral definitions
+with its own body aspects; a fresh male inventory was not independently observed.
+
+The existing-character Tumerok capture `login.logout/login.from.char.overview.screen.elog`
+restores weapons `470007f5/1f0002b9`, `470007f6/1f0002ae`, `470007f7/1f00005d`,
+jerkin `47000efd/1f000587` and leggings `47001135/1f000588`. DATs place the
+clothes in slots 2 and 8. No footwear grant is inferred. This is a reconstructed
+fresh Tumerok loadout from restored starter definitions, not a captured fresh
+grant. No class-specific omission rule is inferred from item names.
+
+All seventeen profiles pin full qualities and physics-record FNV64 identities
+in `starter_gear_data.rs`, checked before world entry or offline grants. Clothes
+are both contained and wielded by the avatar, as captured flags 021f8861 show;
+weapons begin in the bag. The existing owner inventory map and slot map restore
+them. Racial creation appearance is composed separately; general armor changes
+and equipment bonuses are not completed by this work.
+
+`t4` durably commits the entire candidate inventory and once-only marker, with
+sequential global identities. It does not edit the meanings of t1/t2/t3. Existing
+possessions, matching starter definitions and occupied equipment slots are kept.
+A full bag defers the atomic candidate. Historical k5 racial basic-skill records
+remain readable; the native skill-state layout and empty-bar defaults expose
+those basic attacks without claiming all active effects or ranged combat work.
+
+Starter weapon attachment selectors come from checked DAT qualities, not the
+client request. Main-hand bows use selector 2, Tumerok drums 3 and thrown
+starters 4. Native PhysicsDesc::StreamPack 00641530 serializes the selector;
+CPhysicsObj::set_parent 004e0c00 validates the model's holding map. Human
+setups 04000029/2b, Lugian 0400002d/fa and Tumerok 04000031 contain location 4;
+the Tumerok setup also contains 3. A captured held starter drum in ac2_tell.elog
+uses 3 (message SHA256 7b99fb07fdc75b4284a18dc7ecd1b510e2b2ee6423cd4903e001734243440b11).
+Selector 4 has static native/DAT proof, without a retained location-4 capture.
+The new selector-3 path is limited to the Tumerok body and checked starter
+definition. Per-weapon combat animations and native runtime acceptance remain
+separate; no gameplay tests or automated client launches were performed.

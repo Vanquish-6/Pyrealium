@@ -54,11 +54,13 @@ are authored development policies; they do not establish original AC2 parity.
   now toggles supported hand equipment, persists bag/equipment state, and creates
   attached hand objects for the owner and nearby players. Armor composition,
   equipment bonuses, general item use and native acceptance remain unfinished.
-  An explicit development training-kit option supplies one hand item and the
-  basic attack skill `b0` once per human character. Native skill-list/hotbar use
-  queues one development strike against an eligible nearby creature, requiring
-  a main-hand item and sharing encounter cooldown, vigor and reward rules.
-  Normal serving does not infer original starter grants or combat balance.
+  World entry now supplies a once-only racial starter loadout: three bag weapons
+  and worn starter clothing, with per-race equipment slots. Human and Lugian
+  creation captures establish their loadouts; the Tumerok profile uses restored
+  starter definitions and matching DATs. Existing possessions and occupied slots
+  are retained. The old single-sword journal grants remain readable.
+  Basic racial attacks restore to an empty hotbar; full per-weapon combat
+  mechanics and native acceptance remain incomplete.
 - Native object examination for visible players, owned inventory, visible hand
   equipment and active same-cell content. Names use supported DAT localization
   references; live health and the owner's private progression come from server
@@ -350,6 +352,27 @@ HUD initialization itself grants no items, skills, gold or progress. Separate
 training, encounter and binding profiles enable their authored grants and
 gameplay actions. The initializer is not enabled by default: native UI acceptance
 and backing gameplay systems remain unfinished.
+
+## Racial starter equipment
+
+New characters receive all three racial weapons in their bag; no weapon is
+forced into the hand. Starter clothing uses its actual equipment slots:
+
+- Human: bow, sword, staff; shirt, pants and boots.
+- Lugian: short sword, chuck, scepter; sash, kilt and sandals.
+- Tumerok: hook sword, javelin, drum; jerkin and leggings.
+
+The immutable `t4` grant also upgrades older characters once. It skips starter
+items already owned, keeps the old training sword and other possessions, and
+leaves a new clothing piece in the bag if its equipment slot is occupied. A full
+bag defers the entire grant instead of saving only part of it. Reconnecting does
+not replenish consumed, sold or moved starter gear after the grant is recorded.
+The extra potion/mushroom/Tallow pack remains separate custom training content.
+
+`inventory-starter --account NAME --character-id N --data PATH --game-data PATH`
+uses the same grant while the server is stopped. Back up the store before an
+upgrade; older binaries do not understand the new `t4` record. The source/asset
+and capture limits are recorded in [world evidence](docs/world-evidence.md).
 
 ## Training merchants, crafting and groups
 
