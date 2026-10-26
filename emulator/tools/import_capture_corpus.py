@@ -89,15 +89,16 @@ def main():
         counts[cell] += 1
         fresh.append(actor)
     lines = [
-        "pyrealium-world-v3",
-        "# Stationary objects parsed from retained captures and not already placed.",
-        "# Not an authored spawn schedule. Modes, AI, loot and quest state are omitted.",
+        "pyrealium-world-v4",
+        "# Objects parsed from retained captures and not already placed. name is the",
+        "# captured description name resolved to English, or -. Not a spawn schedule.",
     ]
     for actor in sorted(fresh, key=lambda item: item["id"]):
         lines.append("\t".join([
             actor["id"], actor["entity"], actor["visual"], actor["cell"],
             *(format(v, ".9g") for v in actor["position"] + actor["orientation"]),
             "-" if actor["scale"] is None else format(actor["scale"], ".9g"),
+            actor.get("name_text") or "-",
         ]))
     OUTPUT.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     summary = {

@@ -457,6 +457,21 @@ impl Scene {
             .min_by(|a, b| a.0.total_cmp(&b.0).then_with(|| a.1.cmp(&b.1)))
             .map(|(_, id)| id)
     }
+    /// Nearest visible vendor NPC within four metres in the observer's cell.
+    pub fn nearby_vendor(&self, observer: u64, target: Option<u64>) -> Option<u64> {
+        let player = self.player_placement(observer)?;
+        self.content.at(player.cell)
+            .filter(|object| crate::entity_info::is_vendor(object.entity)
+                && target.is_none_or(|id| object.id == id)
+                && self.can_observe(observer, object.id))
+            .filter_map(|object| {
+                let distance: f32 = player.coordinates.iter().zip(object.placement.coordinates)
+                    .map(|(a, b)| (a - b).powi(2)).sum();
+                (distance.is_finite() && distance <= 16.0).then_some((distance, object.id))
+            })
+            .min_by(|a, b| a.0.total_cmp(&b.0).then_with(|| a.1.cmp(&b.1)))
+            .map(|(_, id)| id)
+    }
     pub fn visible_hand_definition(&self, observer: u64, target: u64) -> Option<u32> {
         for body in self.bodies.values() {
             if self.can_observe(observer, body.id) {

@@ -14,7 +14,7 @@ use std::{
 
 pub const NAMESPACE: u64 = 0x8140000000000000;
 const MAX_BYTES: u64 = 4 * 1024 * 1024;
-const MAX_OBJECTS: usize = 16384;
+const MAX_OBJECTS: usize = 65536;
 const MAX_CELL_OBJECTS: usize = 64;
 fn invalid(message: impl Into<String>) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, message.into())
@@ -32,6 +32,8 @@ pub struct Object {
     home: (Placement, [f32; 4]),
     position_stamp: u16,
     dynamic: bool,
+    /// Placement-specific display name sent in the CreateObject, if any.
+    pub name: Option<String>,
 }
 /// Start of Position in a generated stationary CreateObject, by physics flags.
 fn position_offset(spawn: &[u8]) -> Option<usize> {
@@ -60,6 +62,10 @@ impl Object {
     }
     pub fn home(&self) -> Placement {
         self.home.0
+    }
+    /// Placement name, else the entity's English default name.
+    pub fn display_name(&self) -> Option<&str> {
+        self.name.as_deref().or_else(|| crate::entity_info::name(self.entity))
     }
     pub fn stat(&self, key: u32) -> Option<u32> {
         self.stats.get(&key).map(|(value, _)| *value)
@@ -298,6 +304,7 @@ impl Content {
             home: (placement, orientation),
             position_stamp: 0,
             dynamic: true,
+            name: Some("Creature Corpse".into()),
         });
         Ok(())
     }
@@ -385,8 +392,10 @@ impl Content {
             Some("pyrealium-world-v1") => 1,
             Some("pyrealium-world-v2") => 2,
             Some("pyrealium-world-v3") => 3,
+            Some("pyrealium-world-v4") => 4,
             _ => return Err(invalid("unsupported world content header")),
         };
+        let overrides: BTreeMap<u64, &str> = crate::entity_info::object_names().collect();
         let mut content = Self::default();
         let mut portal = Dat::open(game_data.join("portal.dat"))?;
         let mut cells = Dat::open(game_data.join("cell_1.dat"))?;
@@ -396,18 +405,18 @@ impl Content {
             if text.is_empty() || text.starts_with('#') {
                 continue;
             }
-            let parse = || -> io::Result<(u64, u32, u32, Placement, [f32; 4], Option<f32>)> {
+            let parse = || -> io::Result<(u64, u32, u32, Placement, [f32; 4], Option<f32>, Option<String>)> {
                 if text.len() > 512 {
                     return Err(invalid("placement exceeds 512 bytes"));
                 }
                 let fields: Vec<_> = text.split('\t').collect();
-                if fields.len()
-                    != match version {
-                        1 => 8,
-                        2 => 11,
-                        _ => 12,
-                    }
-                {
+                // v3 and v4 rows may carry an optional trailing name column.
+                let expected = match version {
+                    1 => 8..=8,
+                    2 => 11..=11,
+                    _ => 12..=13,
+                };
+                if !expected.contains(&fields.len()) {
                     return Err(invalid(
                         "placement field count does not match manifest version",
                     ));
@@ -462,7 +471,16 @@ impl Content {
                         "invalid placement identity, asset type or position",
                     ));
                 }
-                let scale = if version == 3 && fields[11] != "-" {
+                let name = fields
+                    .get(12)
+                    .filter(|name| **name != "-")
+                    .map(|name| name.to_string())
+                    .filter(|name| {
+                        !name.is_empty()
+                            && name.encode_utf16().count() <= 64
+                            && !name.chars().any(char::is_control)
+                    });
+                let scale = if version >= 3 && fields[11] != "-" {
                     let scale: f32 = fields[11]
                         .parse()
                         .map_err(|_| invalid("invalid content scale"))?;
@@ -473,10 +491,11 @@ impl Content {
                 } else {
                     None
                 };
-                Ok((id, entity, visual, placement, orientation, scale))
+                Ok((id, entity, visual, placement, orientation, scale, name))
             };
-            let (id, entity, visual, placement, orientation, scale) = parse()
+            let (id, entity, visual, placement, orientation, scale, name) = parse()
                 .map_err(|error| invalid(format!("world content line {}: {error}", line + 2)))?;
+            let name = overrides.get(&id).map(|name| name.to_string()).or(name);
             if content.objects.len() >= MAX_OBJECTS || content.objects.contains_key(&id) {
                 return Err(invalid("world content object limit or duplicate IID"));
             }
@@ -484,12 +503,12 @@ impl Content {
             if cell_ids.len() >= MAX_CELL_OBJECTS {
                 return Err(invalid("world content exceeds 64 objects in one cell"));
             }
-            for did in [entity, visual] {
-                if assets.insert(did) {
-                    portal
-                        .read(did)
-                        .map_err(|error| invalid(format!("content asset {did:#010x}: {error}")))?;
-                }
+            // Retail server-only weenies are absent from the client DAT; the
+            // client draws those objects from their visual alone.
+            if assets.insert(visual) {
+                portal
+                    .read(visual)
+                    .map_err(|error| invalid(format!("content asset {visual:#010x}: {error}")))?;
             }
             let cell_record = crate::dat::world_cell_record(placement.cell)?;
             if checked_cells.insert(cell_record) {
@@ -497,7 +516,7 @@ impl Content {
                     invalid(format!("content cell {:#010x}: {error}", placement.cell))
                 })?;
             }
-            let spawn = world::create_stationary_object_with_scale(
+            let spawn = world::create_named_object(
                 &StationaryObject {
                     character_id: id,
                     parent_visual_did: visual,
@@ -510,6 +529,7 @@ impl Content {
                     timestamps: [0; 4],
                 },
                 scale,
+                name.as_deref(),
             )
             .map_err(|error| invalid(format!("content object: {error}")))?;
             let mut destroy = 0x100c2u32.to_le_bytes().to_vec();
@@ -531,6 +551,7 @@ impl Content {
                     home: (placement, orientation),
                     position_stamp: 0,
                     dynamic: false,
+                    name,
                 },
             );
             cell_ids.push(id);

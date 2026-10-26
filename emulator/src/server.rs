@@ -620,15 +620,17 @@ fn examine_target(
         if object.entity == TRAINING_MENTOR_ENTITY {
             lines.push("Use to accept training lessons, check progress or deliver supplies.".into());
             lines.push("Nearby conversation topics: @mentor help, gear, combat, healing, supplies, crafting, travel.".into());
-        } else if object.entity == crate::merchants::MERCHANT_ENTITY {
-            lines.push("Use to trade. Mucor Mushrooms and Tallow bundles each cost 2 gold.".into());
+        } else if crate::entity_info::is_vendor(object.entity) {
+            lines.push("Use to trade.".into());
         }
         if let Some(name) = crate::training_dialogue::portal_name(target) {
             lines.push("Use while alive and out of combat, within four metres.".into());
             return examination::response(target, Name::Literal(name.into()), &lines).map_err(other);
         }
-        return examination::response(target, names.get(object.entity, "Object"), &lines)
-            .map_err(other);
+        let name = object
+            .display_name()
+            .map_or_else(|| names.get(object.entity, "Object"), |name| Name::Literal(name.into()));
+        return examination::response(target, name, &lines).map_err(other);
     }
     Err(invalid("That object is not available to examine."))
 }
@@ -1554,8 +1556,8 @@ fn use_training_mentor(
 }
 
 fn merchant_ready(character: u64, scene: &crate::scene::Scene, target: Option<u64>) -> io::Result<u64> {
-    scene.nearby_service(character, crate::merchants::MERCHANT_ENTITY, target)
-        .ok_or_else(|| invalid("Move within four metres of the quartermaster whose shop you opened."))
+    scene.nearby_vendor(character, target)
+        .ok_or_else(|| invalid("Move within four metres of the merchant whose shop you opened."))
 }
 
 fn merchant_action(
@@ -3105,7 +3107,7 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                 }
                                                 return Ok(replies);
                                             }
-                                            if service_entity == Some(crate::merchants::MERCHANT_ENTITY)
+                                            if service_entity.is_some_and(crate::entity_info::is_vendor)
                                                 && config.training_kit
                                             {
                                                 if request.owner != character {
@@ -3297,6 +3299,36 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                     Ok(events) => {
                                                         peer.queue_ordered_batch(events)?
                                                     }
+                                                    Err(error) => replies.extend(
+                                                        peer.send_event(
+                                                            &script::chat(&error.to_string(), 1)
+                                                                .map_err(other)?,
+                                                            now,
+                                                        )?,
+                                                    ),
+                                                }
+                                                return Ok(replies);
+                                            }
+                                            if let Some(object) = scene.examination_content(character, request.item) {
+                                                // A world NPC or object without a dedicated service.
+                                                let creature = encounters
+                                                    .as_ref()
+                                                    .is_some_and(|runtime| runtime.is_creature(request.item));
+                                                let name = object.display_name().unwrap_or("Townsperson");
+                                                let speaker: String = name.chars().take(32).collect();
+                                                let result = if creature {
+                                                    Err(invalid("Select this creature and attack to fight it."))
+                                                } else {
+                                                    npc_interaction_events(
+                                                        character,
+                                                        request.item,
+                                                        &scene,
+                                                        speaker.trim(),
+                                                        "Greetings, traveler. I have nothing more for you right now.",
+                                                    )
+                                                };
+                                                match result {
+                                                    Ok(events) => peer.queue_ordered_batch(events)?,
                                                     Err(error) => replies.extend(
                                                         peer.send_event(
                                                             &script::chat(&error.to_string(), 1)

@@ -464,8 +464,8 @@ impl Encounters {
                 })
             })
             .collect::<BTreeMap<_, _>>();
-        if actors.is_empty() || actors.len() > 4096 {
-            return Err(invalid("encounters require 1..4096 matching placed actors"));
+        if actors.is_empty() || actors.len() > 32768 {
+            return Err(invalid("encounters require 1..32768 matching placed actors"));
         }
         Ok(Self {
             actors,

@@ -1,0 +1,1028 @@
+pyrealium-entity-info-v1
+# entity vendor name: English default name from local_English.dat and
+# StoreGroup (410002ec) presence from portal.dat, for placed entities.
+4700053f	0	Drudge Robber
+470007a4	0	Banderling Thrasher
+470007a5	0	Celestial Tyrant
+470007a6	0	Astral Tyrant
+470007a7	0	Void Tyrant
+470007a9	0	Hoary Gurog
+470007b0	0	Gurog Captain
+470007b2	0	Dread Gurog
+470007b3	0	Gurog Druid
+470007b4	0	Dire Gurog
+470007b5	0	Gurog Grunt
+470007b9	0	Gurog Lackey
+470007bb	0	Banderling Berserker
+470007bc	0	Banderling Raver
+470007bd	0	Banderling Sentry
+470007c1	0	Burun Patriarch
+470007c5	0	Kreekun Burun
+470007c6	0	Keerik Burun
+470007c7	0	Kiree Burun
+470007c8	0	Chosen One
+470007c9	0	Ulu Sclavus
+470007ca	0	Faisi Sclavus
+470007cb	0	Drudge Potentate
+470007cc	0	Murk Drudge
+470007cd	0	Drudge Cabalist
+470007ce	0	Drudge Keeper
+470007d0	0	Bonded Spawn
+470007d1	0	Idol Spawn
+470007d2	0	Mimbu Alshan
+470007d4	0	Tolen Mimbu
+470007d5	0	Drudge Dictator
+470007d6	0	Scowl Drudge
+470007d8	0	Drudge Watchman
+470007d9	0	Drudge Warlord
+470007dc	0	Drudge Warlord
+4700080c	0	Drudge Prowler
+4700080d	0	Drudge Mystic
+4700080e	0	Scowl Drudge
+47000810	0	Progenitor Reedshark
+47000811	0	Drudge Cabalist
+47000812	0	Murk Drudge
+47000817	0	Beldam Crone
+47000819	0	Pain Crone
+4700081a	0	Grief Crone
+4700081b	0	Torment Crone
+4700081e	0	Rank Moarsman
+47000823	0	Awaro-bal
+47000826	0	Kachem Mimbu
+47000827	0	Tolen Mimbu
+47000828	0	Darkenfowl Hen
+47000829	0	Darkenfowl Chick
+4700082a	0	Revenant Prefect
+4700082b	0	White Rabbit
+4700082d	0	Refining Workshop
+47000830	0	Teaching Stone
+4700083c	0	Teaching Stone
+4700083d	0	Teaching Stone
+4700083e	0	Red Phyntos Wasp
+4700083f	0	Teaching Stone
+47000840	0	Teaching Stone
+47000844	0	Teaching Stone
+47000846	0	Celestial Matter Mine
+47000847	0	Guardian
+47000849	0	Crag Tyrant
+4700084a	0	Spindrift Tyrant
+4700084b	0	Storm Tyrant
+4700084c	0	Cloud Tyrant
+4700084f	0	Guardian
+47000850	0	Gurog Gladiator
+47000851	0	Gurog Warlock
+47000852	0	Dark Metal Mine
+47000853	0	Guardian
+47000854	0	To Icefire Gorge
+47000855	0	Frostbound One
+47000857	0	Guardian
+47000858	0	Dominion Kingdom Shrine
+47000859	0	Shadow Kingdom Shrine
+4700085a	0	Lodrog the Forsaken
+4700085c	0	Order Kingdom Shrine
+4700085d	0	Energy Lattice Mine
+4700085e	0	Guardian
+47000860	0	Guardian
+47000861	0	Altar of Justice
+47000862	0	Altar of Order
+47000863	0	Altar of Turmoil
+47000866	0	Emerald Obelisk
+47000867	0	Teaching Stone
+4700086e	0	Refining Workshop
+47000878	0	Teaching Stone
+47000879	0	Teaching Stone
+4700088c	0	Edge Beetle
+4700088e	0	Cobalt Cabalist
+4700088f	0	Cobalt Gloom Drudge
+47000890	0	Cobalt Scowl Drudge
+47000891	0	Cobalt Murk Drudge
+47000896	0	Akeha Mimbu
+47000897	0	Feyen Mimbu
+470008bf	0	Cutter Beetle
+47000efe	0	Drum
+47000f2c	0	Skull Cesta
+47000f2e	0	Spine Javelin
+47000f2f	0	Barbed Javelin
+47000f30	0	Harpoon
+47000f4b	0	Squall Tyrant Blood
+47000f4c	0	Tyrant's Tooth
+47000f4f	0	Thornling Sap
+47000f50	0	Thornling Eye
+47000f58	0	Reedshark Elder Tendon
+47000f59	0	Reedshark Fin
+47000f5a	0	Reedshark Skin
+47000f5b	0	Reedshark Plate
+47000f5d	0	Phyntos Wasp Stinger
+47000f5e	0	Phyntos Wasp Wings
+47000f61	0	Opor Niffis Ichor
+47000f63	0	Opor Nefane Ichor
+47000f6a	0	Mimbu Scarab
+47000f7e	0	Brave Crawlspace Vermin
+47000f80	0	Dank Vermin
+47000f82	0	Tanglefoot Vermin
+47000f93	0	Aste Sclavus
+47000f94	0	Essa Sclavus
+47000f95	0	Sata Sclavus
+47000f98	0	Reedshark Runt
+47000f9c	0	Green Phyntos Wasp
+47000fa2	0	Red Soldier Wasp
+47000fb1	0	Sepsis Grutt
+47000fb9	0	Eli Sloucher
+47000fba	0	Eli Plodder
+47000fc1	0	Banderling Bouncer
+47000fc3	0	Banderling Slammer
+47000fc4	0	Banderling Raver
+47000fc5	0	Sandy Armoredillo
+47000fc7	0	Steppe Armoredillo
+47000fd3	0	Studded Gauntlets
+47000ff5	0	Steel Shield
+47000ff9	0	Hide Buckler
+47000ffd	0	Guardian Shield
+47001001	0	Guardian Sandals
+47001003	0	Bandolier Kilt
+47001005	0	Bandolier Sandals
+4700100a	0	Reed Breastplate
+4700100c	0	Reed Bracers
+4700100d	0	Reed Moccasins
+4700100e	0	Spirit Breastplate
+4700100f	0	Spirit Leggings
+47001010	0	Spirit Bracers
+47001011	0	Spirit Moccasins
+47001013	0	Surrogate Spawn
+47001016	0	Ulu Sclavus
+4700101d	0	Puppet Spawn
+4700101e	0	Blood Shreth
+47001022	0	Parfal Niffis
+47001024	0	Foul Moarsman
+4700102e	0	Opor Nefane
+47001032	0	Tolen Mimbu
+4700104a	0	Carnage Shreth
+47001050	0	Mountain Armoredillo
+47001052	0	Revenant Praetor
+47001053	0	Revenant Lictor
+47001055	0	Gurog Shaman
+4700105b	0	Revenant Conscript
+4700105c	0	Revenant Legionary
+47001064	0	Storm Flayer
+47001065	0	Tempest Flayer
+47001071	0	Dank Vermin
+47001072	0	Bold Vermin Pilferer
+4700107f	0	Vengeful Lasher
+470010cd	0	Gold Ring
+470010d1	0	Emerald Ring
+470010d3	0	Blessed Talisman
+47001120	0	Lesser Crucible
+47001124	0	Lesser Mattock
+47001146	0	Iron Ring
+4700114d	0	Bronze Ring
+4700116c	0	Cesta of the Ancients
+47001176	0	Greatsword of the Ancients
+47001178	0	Vial of the Ancients
+47001179	0	Wrench of the Ancients
+4700117b	0	Living Tyrant Heart
+47001180	0	Darkstone
+47001194	0	Greatsword of the Sun's Blaze
+47001199	0	Opal Boots
+470011ab	0	Golden Age Vengeful Axe
+470011bd	0	Arwic
+470011bf	0	Cavendo
+470011c0	0	Cavendo
+470011c1	0	Cragstone
+470011c2	0	Cragstone
+470011c3	0	Kehan
+470011c4	0	Kehan
+470011c5	0	Millstone
+470011c6	0	Millstone
+470011d3	0	Linvak Tukal
+470011d4	0	Linvak Tukal
+470011d5	0	Ondekodo
+470011d6	0	Ondekodo
+470011d7	0	Palisade
+470011df	0	Ikeras
+470011e0	0	Ikeras
+470011e2	0	Mayoi
+470011f0	0	Mimbu Armor
+47001276	0	Fierce Sandy Armoredillo
+4700127d	0	Kreekun Burun
+4700128a	0	Cobalt Drudge Prowler
+4700128c	0	Drudge Keeper
+470012b5	0	Olthoi Worker
+470012b7	0	Brown Rabbit
+470012c0	0	Surrogate Spawn
+470012c9	0	Revenant Magister
+470012ca	0	Revenant Rhetor
+470012dd	0	Teaching Stone
+470012de	0	Teaching Stone
+470012fc	0	Kingdom Stone
+47001302	0	Sand Fiend
+47001304	0	Sand Warrior
+47001305	0	Volcanic Rift
+47001314	0	Shreth
+47001317	0	Phyntos Wasp
+4700131e	0	Redeemer
+47001324	0	Gust Tyrant
+47001325	0	Lasher
+4700137f	0	Ariaki Gateway Sign
+47001380	0	Arwic Gateway Sign
+47001381	0	Cobalt Gateway Sign
+47001382	0	Cragstone Gateway Sign
+470013ab	0	Millstone Northeastern Outpost
+470013ae	0	Banderling Thrasher
+470013af	0	Straw Drudge
+470013b0	0	Gurog Sorcerer
+4700143c	0	Barrel
+47001573	0	Movement
+47001574	0	Quest Panel
+47001575	0	Chat
+47001576	0	Inventory
+47001577	0	Attacking
+47001578	0	Compass and Targetting
+4700157c	0	Training and Raising Skills
+4700157d	0	Shelter Guard
+4700157e	0	Shelter Lieutenant
+4700157f	0	Advance Shelter Scout
+47001586	0	Warning Skull
+470015a0	0	Esper Explorer
+470015a1	0	Lost Wish Explorer
+470015af	0	Exit Warning
+470015b4	0	Drudge Cadre Slayer Drum
+470015c0	0	Warder of Cragstone
+470015d2	0	Secret Drudge Militia
+47001632	0	Carrion Devourer
+47001699	0	Pectar, Training Master
+470016e9	0	Rogue Parfal Niffis
+470016ea	0	Wretched Parfal Niffis
+470016eb	0	Cruel Reaper
+470016ed	0	Fearfang, the Venomous
+47001737	0	Deep Darkenfowl
+4700174e	0	Aste Chambers Door
+470017b9	0	Enduring Flat Hammer
+470017db	0	Skeletal Remains
+470017e3	0	Teal Leather Hide
+47001860	0	Linvak Sword Emblem
+47001866	0	Linvak Bow Scroll
+47001867	0	Linvak Cesta Scroll
+4700186c	0	Linvak Spear Scroll
+4700186e	0	Linvak Sword Scroll
+47001871	0	Linvak Wrench Scroll
+47001873	0	Turquoise Activation Crystal
+470018db	0	Cragstone Nexus
+470018ed	0	Crumpled Note
+470018ee	0	Forging Gloves
+470018ef	0	Golden Thread
+470018f0	0	Shaping Hammer
+470018f1	0	Tattered Note
+470018f2	0	Unblemished Tyrant Scale
+470018f4	0	Ahria, Queen of Night
+470018f7	0	Dirlok, Master of the Arcane
+470018fa	0	Tyrant Hatchling
+47001a3d	0	Festering Skeleton
+47001a3e	0	Undead Lord
+47001a3f	0	Ralirea
+47001a43	0	Mephitic Skeleton
+47001a57	0	Hauberk of the Abyss
+47001b5e	0	Drudge Mystic
+47001b60	0	Drudge Outcast
+47001b62	0	Drudge Outcast
+47001b6a	0	Gurog Captain
+47001b6c	0	Revenant Lictor
+47001b6e	0	Drudge Prowler
+47001b87	0	Gurog Mage Template
+47001bb2	0	Knight of the Golden Flame
+47001bb4	0	Master Aurutis
+47001bb5	0	Aun Tikauri
+47001bb7	0	Aun Tikauri
+47001bb8	0	Master Auritus
+47001bb9	0	Shoyanen Kenchu
+47001bc0	0	Olthoi Grub Meat
+47001bc8	0	Ikeras Quest Scroll
+47001bc9	0	Kehan Quest Scroll
+47001bca	0	Keidelur Quest Scroll
+47001bcf	0	Ondekodo Quest Scroll
+47001bd2	0	Rithwic Quest Scroll
+47001bd5	0	Whitebay Quest Scroll
+47001bd6	0	Zu Quest Scroll
+47001bd7	0	Mimbu Cookpot
+47001bd8	0	Mimbu Shaman
+47001bef	0	Irotek, Warder Surveyor
+47001bf0	0	Kyrbe, Warder Tracker
+47001bf1	0	Orina, Warder Surveyor
+47001bf2	0	Adaro, Warder Pioneer
+47001bf3	0	Morihasa, Warder Pioneer
+47001bf4	0	Yara, Warder Pioneer
+47001bf5	0	Ngama, Warder Tracker
+47001bf6	0	Onara, Warder Tracker
+47001bf7	0	Otokori, Warder Tracker
+47001bf8	0	Omeir, Warder Pioneer
+47001bf9	0	Kitad, Warder Surveyor
+47001bfa	0	Ihuar, Warder Surveyor
+47001bfb	0	Atika, Warder Tracker
+47001bfc	0	Ulrin, Warder Pioneer
+47001bff	0	Kunara, Warder Surveyor
+47001c24	0	Melas
+47001c27	0	Orven
+47001c62	0	Doomshark
+47001c6b	0	Invincible Warath
+47001cb0	0	Silver Talisman of the Heart
+47001ce2	0	Drudge Cudgel
+47001ce8	0	Uk Shredder
+47001daa	0	Binding Stone
+47001dab	0	Binding Stone
+47001dac	0	Binding Stone
+47001dc4	0	Allegiance Sign
+47001dc5	0	Allegiance Sign
+47001dc6	0	Allegiance Sign
+47001f47	0	Danskel's Chest
+47001fb9	0	Vorgas
+47001fc3	0	Tattered Scroll
+47001fd8	0	Control Matrix
+4700209b	0	Voice of the Singularity
+470020ad	0	Star Beacon
+470020d6	0	Crystalline Tyrant Egg
+470020d7	0	Crystalline Tyrant Egg
+470020e5	0	Master Hive
+470020e7	0	Guardian of the Sacred Waters
+470021b5	0	1000 Focus Egg
+470021b8	0	Gallus
+470021b9	0	Arwic Portal
+470021ba	0	Cavendo Portal
+470021bb	0	Kehan Portal
+470021be	0	Molwirth Portal
+470021bf	0	Rithwic Portal
+470021c1	0	Scarred Shreth Hunter
+470021c2	0	Brom's Grave
+470021c3	0	Ikkabod
+470021c4	0	Archon Invincible Warath
+470021c7	0	Imbued Pyreal
+470021cd	0	Archon Undead Legate
+470021d0	0	Loyalist Dread Ancient Mu-miyah
+470021d1	0	Loyalist Dread Dark Mu-miyah
+470021d8	0	Lupe's Manuscript
+470021dc	0	Gurokora Portal Shard
+470021de	0	Palisade Portal Shard
+470021ed	0	Ciandra's Tomb
+470021ee	0	Garaena
+470021ef	0	Faladha
+470021f3	0	Gurog Henchman Summoner
+470021f5	0	Gurog Shaman Summoner
+470021f7	0	Drudge Mystic Summoner
+470021f8	0	Drudge Scowl Summoner
+470021fd	0	Browerk Burun Summoner
+470021fe	0	Myrmidon Burun Summoner
+47002200	0	Ankoro Portal
+47002201	0	Arhovas Portal
+47002203	0	Hakata Portal
+47002205	0	Ondekodo Portal
+47002218	0	Ruruk Burun Recruit
+47002219	0	Ruruk Burun Recruit
+4700221b	0	Myrmidon Burun Recruit
+4700221c	0	Browerk Burun Recruit
+4700221d	0	Myrmidon Burun Recruit
+4700221e	0	Myrmidon Burun Recruit
+47002221	0	Gurog Shaman Recruit
+47002224	0	Gurog Gladiator Recruit
+47002225	0	Gurog Shaman Recruit
+47002227	0	Captive Browerk Burun
+47002229	0	Captive Reeshan Burun
+4700222a	0	Captive Ruruk Burun
+4700222b	0	Captive Gloom Drudge
+4700222e	0	Captive Scowl Drudge
+47002230	0	Captive Gurog Henchman
+47002240	0	Archon Uncharneled Skeleton
+47002245	0	Loyalist Dread Dark Mu-miyah
+47002249	0	Loyalist Dread Dark Mu-miyah
+4700224c	0	Loyalist Bone Golem
+4700224e	0	Loyalist Bone Golem
+4700224f	0	Loyalist Ice Golem
+47002251	0	Loyalist Ice Golem
+47002253	0	Archon Revenant Magister
+47002258	0	Loyalist Mephitic Skeleton
+47002262	0	Hahnain
+47002267	0	Archon Undead Monouga
+47002275	0	Gurog Portal Beacon
+47002276	0	Burun Portal Beacon
+47002277	0	Gurog Portal Beacon
+47002278	0	Drudge Portal Beacon
+47002281	0	Gurog Portal Beacon
+470022ac	0	Wrathbent Bow
+470022ad	0	Rawboned Cesta
+470022af	0	Steelband Flail
+470022b1	0	The Vindicator
+470022b4	0	Koreana Scythe
+470022ca	0	Rapax Badge
+470022cc	0	Pumpkin Head
+470022cd	0	Pumpkin Head
+470022db	0	Blaze of Fire
+470022e5	0	Revenant Sword
+470022ed	0	Anthracite Necklace
+470022ef	0	Chaos Pearl
+470022f0	0	Pearl Choker
+470022f1	0	Redberries
+470022f7	0	Discarded Cocoon
+470022fb	0	Spirit Butterfly Token
+47002305	0	Grutt Gourmand
+47002309	0	Outcast Wasp Queen
+4700230b	0	Shrine to Black Mother Earth
+4700230c	0	Shrine to Blue Mother Heaven
+4700230e	0	Shrine to Great Sister Rain
+4700230f	0	Shrine to Great Sister Wind
+47002310	0	Shrine to Hazahtu, the Blind Eye
+47002311	0	Shrine to Palenqual
+47002315	0	Purified Spirit Spawn
+47002322	0	Rabbit Head
+47002324	0	Human Long Sword
+47002329	0	Spotted Rabbit
+4700232c	0	Grey Rabbit Death Nibbler
+4700232d	0	Rabbit Infiltrator
+47002335	0	Tempered Clawblade Fragments
+47002337	0	Tiny Wooden Talisman
+47002338	0	Blessed Wooden Talisman
+4700233b	0	Enhanced Farali Glyph
+4700233c	0	Enhanced Vesayen Glyph
+4700234b	0	Letter to Kiral
+4700234c	0	Lynnestra
+4700234d	0	Dereth's House of Jazz
+4700234f	0	Sly Peppa
+47002355	0	Garland of Flowers
+47002358	0	Brown Rabbit
+47002363	0	Reinallt the Town Crier
+47002367	0	Tvik the Town Crier
+47002381	0	Preacher's Axe
+47002382	0	Oort Boulder
+47002383	0	Venge War Bow
+47002385	0	Drum of Echoes
+47002387	0	Stone Maul of Pebbles
+47002389	0	Floating Moon Bladestaff
+4700238a	0	Scythe of the Teratonym
+4700238b	0	Wither Spear
+4700238c	0	Cherished Birch Staff
+4700238d	0	Dramastic Sword
+4700238e	0	Blotched Nest of Shades
+47002393	0	Revenant Sword
+47002397	0	Alabaster Mirra
+47002398	0	Alabaster Mirra
+47002399	0	Charged Alabaster Mirra
+4700239b	0	Beryl Mirra
+4700239c	0	Beryl Mirra
+4700239e	0	Cleansed Beryl Mirra
+4700239f	0	Jet Mirra
+470023a0	0	Jet Mirra
+470023a6	0	Cleansed Rouge Mirra
+470023a7	0	Revenant Sword
+470023ad	0	Soulslayer Aura Stone
+470023b3	0	Soulslayer Claw
+470023b6	0	Soulslayer Drum
+470023b8	0	Soulslayer Flail
+470023ba	0	Soulslayer Hammer
+470023c6	0	Soulslayer Wasp Nest
+470023cf	0	Mu-miyah Staff
+470023d9	0	Gurog Wraith
+470023dc	0	Forgotten Mu-miyah
+470023de	0	Forsaken Mu-miyah
+470023e1	0	Tormented Revenant
+470023e2	0	Wretched Revenant
+470023e4	0	Saelar's Heart
+470023e5	0	Chaos Eidolon
+470023e7	0	Eater of Souls
+470023e8	0	Hand Flare
+470023f6	0	Pulsar Wisp
+47002404	0	Debased Skeleton
+47002408	0	Profane Skeleton
+4700240a	0	Cursed Skeleton
+4700241e	0	Diving Board
+47002439	0	Greedy Little Thornling
+4700243b	0	Fireworks
+4700243e	0	Crystallized Vitae of Osteth
+4700243f	0	Revenant Sword
+47002441	0	Warped Saelar's Aspect
+47002444	0	Guiding Mechanism
+4700244c	0	Amplification Crystal
+4700244f	0	Cyan Repair Serum
+47002450	0	Murky Repair Serum
+47002451	0	Glittering Repair Serum
+47002454	0	Revenant Sword
+47002461	0	Mu-miyah Staff
+4700246e	0	Rytheran
+47002473	0	Contorted Portal Glimmer
+4700247b	0	Flawed Master Omishan Gem
+4700247c	0	Flawed Master Linvak Gem
+4700247f	0	Master Linvak Portal
+47002485	0	Tapping Crystal
+47002495	0	Soulslayer Cesta
+470024a0	0	Soulslayer Wrench
+470024a4	0	Soulslayer Claw
+470024ba	0	Attuned Chaos Crystal
+470024bd	0	collapsing roof
+470024c4	0	Debris Pile
+470024c9	0	Satchel
+470024cc	0	Gurog Axe
+470024cf	0	Gurog Elder
+470024da	0	Teltawa
+470024dc	0	Tuuran Sangog
+470024dd	0	Tuunan Sangog
+470024e0	0	Crystalabra
+470024e1	0	Destrucflux
+470024e4	0	Small Agate
+470024e6	0	Large Agate
+470024e8	0	Huge Amethyst
+470024ea	0	Amethyst
+470024ec	0	Huge Aquamarine
+470024ee	0	Aquamarine
+470024ef	0	Small Aquamarine
+470024f1	0	Large Beryl
+470024fa	0	Carnelian
+470024fb	0	Small Carnelian
+470024ff	0	Small Chalcedony Stone
+47002501	0	Large Chrysoberyl
+47002503	0	Small Chrysoberyl
+47002504	0	Huge Citrine
+4700250e	0	Emerald
+47002517	0	Small Jade Stone
+47002518	0	Huge Jasper Stone
+47002520	0	Huge Malachite Stone
+47002521	0	Large Malachite Stone
+47002526	0	Moonstone
+4700252f	0	Small Opal
+47002530	0	Huge Black Pearl
+47002538	0	Huge Peridot
+47002547	0	Small Ruby
+47002550	0	Huge Serpentine Stone
+47002554	0	Huge Spinel
+47002557	0	Small Spinel
+47002582	0	Steaming Urn
+4700259c	0	Olthoi Gardener
+4700259f	0	Green Key
+470025da	0	Morbific Boar Tusk Sword
+470025dd	0	Chaos Berserker
+470025e2	0	Trupo the Chaos Juggernaut
+470025ed	0	Rustwater Bandit
+470025ef	0	Carrion Beetle
+470025f4	0	Shade of Koske
+47002616	0	Dig Point
+47002618	0	Dig Point
+47002619	0	Dig Point
+47002621	0	Northwest Marae Lassel Reckoning Gem
+47002622	0	Burial Grounds Reckoning Gem
+47002623	0	Cragstone Reckoning Gem
+47002624	0	Lugian Excavations Reckoning Gem
+47002626	0	Kara Reckoning Gem
+47002629	0	Northeast Marae Lassel Reckoning Gem
+4700262a	0	Eastham Fortress Reckoning Gem
+4700262b	0	Prosper Observatory Reckoning Gem
+4700262c	0	Shoyanen's Tower Reckoning Gem
+4700262e	0	Lich Archmage's Temple Reckoning Gem
+47002633	0	Shoushi Reckoning Gem
+47002634	0	North Nanto Outpost Reckoning Gem
+47002635	0	Plains of Ithaenc Reckoning Gem
+47002636	0	Colossus' Shadow Reckoning Gem
+47002639	0	Neydisa Reckoning Gem
+4700263c	0	Baishi Reckoning Gem
+4700263f	0	Tukal Aqueduct Reckoning Gem
+47002643	0	Adherent Sanctuary Reckoning Gem
+4700264e	0	North Nanto Outpost Reckoning Gem
+4700264f	0	Plains of Ithaenc Reckoning Gem
+4700265f	0	Ort of Lasting Wounds
+47002660	0	Ort of Maiming
+47002665	0	Thisola Tesara
+47002667	0	Lasa Tesara
+4700266a	0	The Tesara Sisters
+4700266d	0	Coin
+4700266e	0	Coin
+47002674	0	Limestone Minion
+47002677	0	Gold Minion
+47002678	0	Titanium Minion
+47002679	0	Obsidian Minion
+47002685	0	Weapon Chest
+47002686	0	Trophy Chest
+4700268b	0	Ryvenna Orxon
+4700269d	0	Inflictor
+470026c2	0	Augmented Singularity Gloves
+470026c4	0	Augmented Celestial Order Boots
+470026e4	0	Augmented Celestial Order Kilt
+470026e6	0	Augmented Celestial Order Gauntlets
+470026ee	0	Tier 3 Cache
+47002708	0	Supreme Chaos Golem
+47002711	0	Drudge Guardian
+4700271e	0	Brittle Key
+47002726	0	Guiding Mechanism Support Kit
+4700272e	0	Governing Aegis Ruby
+47002731	0	Governing Imbuement Citrine
+47002732	0	Governing Assault Emerald
+47002733	0	Vigor Charge
+47002735	0	Acceleration Pad
+47002737	0	Shattered Mechanism
+47002745	0	Order Acceleration Pad Kit
+47002747	0	Shadow Mending Construct Kit
+47002749	0	Shadow Mending Construct Kit
+4700274b	0	Order Mending Construct Kit
+4700274d	0	Vigor Charge
+4700274f	0	Revenant Sword
+47002751	0	Ashen Bone Golem
+47002759	0	Barrier
+47002768	0	Tortured Revenant
+4700276a	0	Tortured Revenant
+4700276f	0	Tortured Revenant
+4700277b	0	Ort of the Nemesis
+47002781	0	Imbue Warder Golem
+47002783	0	The Chronokrator
+47002785	0	Burun Immortal Journal
+47002787	0	Amber Orb
+47002788	0	Burun Grubkeeper
+4700279e	0	New Drudge Republic Representative
+4700279f	0	Drudge Shrine of Transcendence
+470027a2	0	Gathered Deruwood
+470027a3	0	Hide
+470027a6	0	Steel
+470027a7	0	Tallow
+470027a8	0	Tukalite
+470027b5	0	Gurog Staff
+470027ba	0	Burun Club
+470027c1	0	Frothing Mosswart
+470027c2	0	Rabid Mosswart
+470027c7	0	Envoy Robe
+470027cc	0	Stubby
+470027e0	0	Drudge Chirurgeon
+470027e1	0	Drudge Guardian
+470027e2	0	Drudge Javeliner
+470027e3	0	Drudge Deathdealer
+47002816	0	Nexus to Hero Shrine
+4700281a	0	Onyx Wasp Wing
+47002823	0	Crib Note
+47002825	0	Aun Tanua
+47002827	0	Lock Pillar
+4700282a	0	Lock Pillar
+4700282b	0	Lock Pillar
+4700282f	0	Stone of Binding
+47002831	0	Ancient Shadow Torturer
+47002832	0	Ancient Shadow Tormenter
+47002833	0	Dejected Monitor Spawn
+47002837	0	Base Camp Chest Key
+47002838	0	Renseloi Seal
+47002839	0	Stelseloi Seal
+4700283f	0	Exothen's Journal
+47002840	0	Geomantic Theodolite
+47002841	0	Scholar's Corpse
+47002845	0	Guardian's Power Insight Jewel
+47002848	0	Guardian's Deftness
+4700284a	0	Silia Olvidan
+4700284c	0	Carrots
+47002853	0	Guardian of Dereth Robe
+4700286d	0	(DNT) Cacophos Dungeon Controller
+4700286f	0	Stelalur Stone
+47002874	0	Theoter
+4700288b	0	Olvidan Well
+4700288c	0	Repaired Pump Mechanism
+4700288d	0	Order Intelligencer
+47002890	0	Thromer Olvidan
+47002893	0	Ulafa Olvidan
+4700289a	0	Dark Syrup
+4700289b	0	Mucor Slime
+4700289c	0	Land Claim
+470028a1	0	Fireball Trap
+470028a2	0	Fireball Trap
+470028a4	0	Fireball Trap
+470028a5	0	Fireball Trap
+470028a9	0	Yiradon
+470028b7	0	Theoter's Chest
+470028c2	0	Soulslayer Cesta
+47002903	0	High Security Key
+47002907	0	unstable cavern roof
+4700292b	0	Dueling Sword
+4700292d	0	Hunting Bow
+47002935	0	Archaic Flail
+47002936	0	Gothic Flail
+4700293b	0	Infectious Vial
+4700293c	0	Mephitic Vial
+4700293d	0	Hermetic Vial
+47002945	0	Striking Staff
+47002947	0	Channeling Staff
+47002954	0	Flaying Dagger
+47002957	0	Sinister Axe
+47002958	0	Totemic Axe
+4700295c	0	Ancestral Spear
+47002961	0	Throwing Spear
+47002962	0	Barbed Spear
+47002963	0	Ancestral Cesta
+47002964	0	Swift Cesta
+47002965	0	Sinister Cesta
+47002966	0	Totemic Cesta
+4700296b	0	Sharp Handblade
+4700296c	0	Sinister Handblade
+4700296d	0	Totemic Handblade
+4700296f	0	Light Handblade
+47002971	0	Ancestral Drum
+47002973	0	Slayer's Drum
+47002980	0	Fighter's Axe
+47002984	0	Scout's Axe
+47002987	0	Fighter's Falchion
+4700298f	0	Scout's Hammer
+47002990	0	Commander's Hammer
+47002991	0	Shieldbearer's Hammer
+47002992	0	Mystic's Hammer
+470029e8	0	Iron-Shod Swordstaff
+470029ec	0	Slashing Swordstaff
+470029ee	0	Crushing Swordstaff
+470029f0	0	Deflecting Swordstaff
+470029f2	0	Impaling Swordstaff
+470029f4	0	Whirling Swordstaff
+470029fc	0	Massive Wrench
+47002a00	0	Prismatic Boulder
+47002a08	0	Smooth Stone
+47002a0c	0	Prismatic Scepter
+47002a15	0	Rustic Scepter
+47002ada	0	Target Shield
+47002adf	0	Savage Shield
+47002ae0	0	Tribal Shield
+47002ae1	0	Ritual Shield
+47002af0	0	Soft Leather Helm
+47002af2	0	Augmented Hauberk
+47002af4	0	Cuirboulli Hauberk
+47002af6	0	Brigandine Boots
+47002af7	0	Cuirboulli Boots
+47002af9	0	Brigandine Gloves
+47002afa	0	Cuirboulli Gloves
+47002afc	0	Brigandine Helm
+47002afd	0	Cuirboulli Helm
+47002afe	0	Augmented Greaves
+47002aff	0	Brigandine Greaves
+47002b03	0	Vine Bracers
+47002b05	0	Savage Breastplate
+47002b09	0	Tribal Moccasins
+47002b0c	0	Tribal Bracers
+47002b17	0	Scout Heaume
+47002b1b	0	Skirmisher Pauldron
+47002b3b	0	Spontoon Blade Staff
+47002b49	0	Celestial Matter Granule
+47002b56	0	Omishan Dark Metal Beacon
+47002b57	0	Omishan Energy Lattice Beacon
+47002b59	0	Rogol
+47002b5d	0	Starting Obelisk
+47002b6b	0	Diamond Golem
+47002b78	0	Void Knight
+47002b7a	0	Unstable Rift
+47002b80	0	Sandstone Golem
+47002b82	0	Limestone Golem
+47002b84	0	Shard Golem
+47002b87	0	Invictus
+47002b89	0	Shadow
+47002b8b	0	Panumbris Shadow
+47002bb1	0	(DNT) Order Mech Reset Controller
+47002bbb	0	Overseer Suthanna
+47002bbc	0	Sir Akreg
+47002bbd	0	Shi Horinua
+47002be1	0	Dark Throne Spawn
+47002be3	0	Dark Shadow Armiger
+47002be4	0	Dark Shadow Knight
+47002be5	0	Shadow of Black Ferah
+47002ced	0	Shadow of Black Ferah
+47002cf3	0	Crystalline Golem Commander
+47002ddd	0	Dropped Abyss Key
+47002ddf	0	Forgotten Abyss Key
+47002de0	0	Lost Abyss Key
+47002de3	0	Athame
+47002de6	0	Flat Hammer
+47002df2	0	Linvak Massif Celestial Matter Beacon
+47002dfd	0	Omishan Celestial Matter Beacon
+47002dff	0	Portal Bore
+47002e01	0	Portal Bore
+47002e03	0	Portal Bore
+47002e05	0	Portal Bore
+47002e07	0	Portal Bore
+47002e09	0	Portal Bore
+47002e4d	0	Gear Knight Coil Map
+47002e4e	0	Basic Gear Knight Gear
+47002e4f	0	Excellent Gear Knight Gear
+47002e8b	0	Chaos Spawn
+47002e8c	0	Greater Chaos Spawn
+47002e94	0	Iron Surveyor's Map of Linvak
+47002e95	0	Iron Surveyor's Map of Linvak
+47002e97	0	Iron Surveyor's Map of Linvak
+47002ea0	0	Stone Surveyor's Map of Linvak
+47002ea2	0	Stone Surveyor's Map of Linvak
+47002ebd	0	Silver Surveyor's Map of Omishan
+47002ebe	0	Stone Surveyor's Map of Omishan
+47002ebf	0	Stone Surveyor's Map of Omishan
+47002ec0	0	Stone Surveyor's Map of Omishan
+47002ed3	0	Iron Surveyor's Map of Osteth
+47002ed5	0	Iron Surveyor's Map of Osteth
+47002ed7	0	Silver Surveyor's Map of Osteth
+47002ed9	0	Silver Surveyor's Map of Osteth
+47002edb	0	Silver Surveyor's Map of Osteth
+47002edd	0	Stone Surveyor's Map of Osteth
+47002edf	0	Stone Surveyor's Map of Osteth
+47002ee1	0	Stone Surveyor's Map of Osteth
+47002ee3	0	Wood Surveyor's Map of Osteth
+47002ee5	0	Wood Surveyor's Map of Osteth
+47002ee7	0	Wood Surveyor's Map of Osteth
+47002eed	0	Slithis Tendril Sapling
+47002eef	0	Vein of Iron
+47002ef7	0	Logging Camp
+47002ef8	0	Dillobell
+47002ef9	0	Dillobell
+47002efa	0	Peasant's Sword
+47002efb	0	Sahs
+47002efd	0	Golas
+47002efe	0	SHRETH Flunky
+47002f0a	0	SHRETH Secret Underground Base Door Guard
+47002f0e	0	SHRETH Bursar
+47002f10	0	1000 Craft XP Egg
+47002f12	0	10K CraftXP Egg
+47002f16	0	Fireball Trap
+47002f19	0	Gurog Soldier Template
+47002f1d	0	Gurog Shield
+47002f20	0	Renate the Cartomancer
+47002f2f	0	Totem
+47002f31	0	Totem
+47002f35	0	Virindi Adumbrator
+47002f37	0	Joachim the Cartomancer
+47002f42	0	Justiciar Maronak
+47002f4a	0	Spirit of Volkama
+47002f4c	0	Remember! It's A Secret!
+47002f55	0	It's Not An Acronym!
+47002f71	0	Crude Chisel
+47002f73	0	Crude Hunting Knife
+47002f75	0	Crude Pickaxe
+47002f77	0	Virindi Monitor
+47002f82	0	Burun Swarm Warden
+47002f90	0	Harald the Trader
+47002f98	0	Craft Goodies
+47002f99	0	Craft Trophies
+47002f9c	0	Corruptor's Key
+47002fa3	0	Virindi Monitor Welcomer
+47002fb5	0	Candlestick Holder
+47002fb6	0	Dillo-Scrubbing Brush
+47002fb7	0	Undead Figurine
+47002fb8	0	Lugian Army Knife
+47002fb9	0	Ataur Shoes
+47002fba	0	True Love Charm
+47002fbb	0	Good Luck Charm
+47002fbc	0	Bad Luck Charm
+47002fcd	0	Inferno
+47002fd0	0	Foul Moarsman
+47002fd2	0	Serene Moarsman
+47002fd4	0	Opor Nefane
+47002fd7	0	Lumna Niffis
+47002fd9	0	Olthoi Harvester Grub
+47002fda	0	Olthoi Grub Spitter
+47002fdc	0	Skeletal Gladiator Apprentice
+47002fdf	0	Veteran Skeletal Gladiator
+47002fe1	0	Mature Slithis Tendril
+47003261	0	Elegant Recondite Machine
+47003263	0	Fine Recondite Machine
+47003264	0	Masterful Recondite Machine
+47003266	0	Superior Recondite Machine
+47003267	0	Surpassing Recondite Machine
+47003269	0	Mythical Recondite Machine
+4700326a	0	Master of the Gauntlet
+4700326b	0	Gauntlet Portal
+4700326f	0	Frenzy Potion
+47003275	0	Leken - Master at Arms
+47003279	0	Soul Defractor
+4700327c	0	Clone
+4700327e	0	Tae Kuk
+47003280	0	Elemental Light Lattice
+47003282	0	Dark Lattice
+47003286	0	Crumbling Obsidian Golem
+47003293	0	Serpentine Ridged Sword
+47003294	0	Alpine Staff
+4700329a	0	Supreme Bow
+470032a4	0	Combination Wrench
+470032b6	0	Purified Spirit Egg
+470032b8	0	Tormented Rea Bal
+470032bc	0	Deuce of Drums
+470032bd	0	Princess of Drums
+470032be	0	Knight of Drums
+470032bf	0	Queen of Drums
+470032c0	0	King of Drums
+470032c1	0	Trey of Drums
+470032c2	0	Four of Drums
+470032c3	0	Five of Drums
+470032c5	0	Seven of Drums
+470032c6	0	Eight of Drums
+470032c7	0	Nine of Drums
+470032c8	0	Ten of Drums
+470032c9	0	Ace of Scepters
+470032cb	0	Princess of Scepters
+470032cd	0	Queen of Scepters
+470032ce	0	King of Scepters
+470032d0	0	Four of Scepters
+470032d2	0	Six of Scepters
+470032d3	0	Seven of Scepters
+470032d7	0	Ace of Skulls
+470032d8	0	Deuce of Skulls
+470032d9	0	Princess of Skulls
+470032da	0	Knight of Skulls
+470032db	0	Queen of Skulls
+470032e4	0	Ten of Skulls
+47003317	0	Significator: The Warrior
+47003319	0	Significator: Those Who Are Called
+47003323	0	Furs Turfna
+4700332d	0	Facet of Waste
+47003331	0	Decaying Aspect
+47003334	0	Pestilent Aspect
+47003336	0	Corrupting Aspect
+4700333c	0	Sun Glasses
+47003341	0	Swimwear
+4700334c	0	Central Pillar
+47003351	0	Door
+4700335b	0	Twin Moons
+47003371	0	Gateway: Seeker in Light
+47003375	0	Gateway: Grandmaster
+470033b6	0	The Fortune Teller
+470033ca	0	Vial of Bloodcurdling
+470033cc	0	Dropa Stone
+470033ce	0	Sternum Cesta
+470033d0	0	Quartz-Faced Hammer
+470033d2	0	Scorper
+470033d4	0	Chine Scythe
+470033d6	0	Rosewood Staff
+470033d8	0	Slumgum Nest
+470033de	0	Morbific Boar Tusk Sword
+470033e0	0	Virindi Sickle
+470033e2	0	Scriptorium Guard
+470033e4	0	Scriptorium Guardian
+470033e6	0	Shadow Protector
+470033e8	0	Shadow Protector
+470033ea	0	Virindi Caretaker
+470033ec	0	Virindi Curator
+4700341c	0	Lesser Fate Card: Penetration
+4700341d	0	Lesser Fate Card: Protection
+4700341f	0	Lesser Fate Card: Speed
+47003420	0	Fate Card: Spirit Guard
+47003422	0	Lesser Fate Card: Vigor
+47003424	0	Greater Fate Card: Warding
+4700342a	0	Wild Pair
+47003440	0	Greater Fate Card: Health
+47003441	0	Greater Fate Card: Lightness
+47003442	0	Greater Fate Card: Penetration
+47003443	0	Greater Fate Card: Protection
+47003444	0	Greater Fate Card: Smiting
+47003449	0	Ort of Mineralize
+4700347a	0	Putrefying Aspect
+4700347d	0	???
+47003577	0	Fanatic Zealot
+47003579	0	Fanatic Clawbearer
+4700357b	0	Fanatic Ranger
+4700357d	0	Fanatic Mage
+47003581	0	Fanatic Juggernaut
+47003680	1	Shi Ishura
+47003681	1	Shi Mahura
+47003682	1	Shi Nashura
+47003683	1	Shi Tatura
+4700368c	0	Shi Dengori
+4700368e	0	Shaper Instructor
+47003692	0	Merchant Guild Treasurer
+47003693	0	Merchant Guild Treasurer
+47003694	0	Merchant Guild Treasurer
+47003695	0	Merchant Guild Treasurer
+47003696	0	Door
+47003698	0	Door
+4700369a	0	Door
+4700371c	1	Ardry Stuvis
+4700371d	1	Tugor
+4700371e	1	Shi Verura
+47003723	1	Shi Garura
+47003724	1	Tebor the Armorer
+47003725	1	Tutsu
+47003731	1	Shi Famura
+47003732	1	Shi Ishura
+4700373b	1	Shi Wenura
+4700373c	1	Shi Xeura
+4700373d	1	Shi Zayura
+47003746	1	Shi Atura
+47003747	1	Shi Umura
+47003756	1	Shi Chisura
+47003757	1	Shi Dukura
+47003758	1	Shi Mavura
+4700375c	1	Aschoth
+4700375d	1	Hydmuzan
+4700375e	1	Sykim
+47003763	1	Shalathal
+47003765	1	Shi Chonura
+4700376a	0	Merchant Guild Officer
+470037fa	0	Empyrean Robe
+470038bd	0	Tumerok Weapon Vendor
+470038bf	0	Empyrean Weapon Vendor
+470038ea	0	Money Purse
+47003ade	0	One Queen
+47003ae6	0	Swarm Noble
+47003c77	0	Sentry
+47003e2a	0	Mk II Strike Legionary
+47003fcf	1	Yedai
+47003fd3	1	Sosoma
+470042fe	0	Laurikhe
+47004300	0	Karin Dirae
+47004302	0	Sumalar
+47004304	0	Pim Donar
+47004306	0	Baliga
+4700430a	0	Baltor Vultu
+47004472	0	Jade Gromnie Nestling
+47004481	0	Building
+47004488	0	Silver Carenzi
+4700448a	0	Silver Carenzi Pouchling
+4700449d	0	Berimphur Plant
+470045ea	0	Agent of Punitheus
+47004718	0	Menaluc
+47004741	0	Pumpkin Frenzy
+4700474c	1	Gloop
+47004751	1	Merich

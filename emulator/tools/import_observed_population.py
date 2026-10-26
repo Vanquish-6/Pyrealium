@@ -10,6 +10,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import re
 import struct
 
 from ac2_dat import Dat
@@ -42,6 +43,33 @@ class Reader:
         if count > 128:
             raise Unsupported("physics-table-limit")
         self.take(count*width)
+
+    def string_info(self, depth=0):
+        """StringInfo: token, table, variable count, literal flag, optional
+        literal text, then (hash, type, value) variables. Only nested
+        StringInfo variables (type 9, as in the retail corpse name) are read."""
+        token, table = self.word(), self.word()
+        count, literal = struct.unpack("<HH", self.take(4))
+        text = None
+        if literal:
+            units = struct.unpack("<H", self.take(2))[0]
+            if units > 512:
+                raise Unsupported("name-length")
+            raw = self.take(units*2)
+            self.take((-self.pos) % 4)
+            from ac2_strings import decrypt
+            text = decrypt(raw).decode("utf-16-le", "replace")
+        if count > 8 or depth > 2:
+            raise Unsupported("name-variable-limit")
+        variables = []
+        for _ in range(count):
+            self.word()
+            kind = struct.unpack("<H", self.take(2))[0]
+            self.take(2)
+            if kind != 9:
+                raise Unsupported(f"name-variable-type-{kind}")
+            variables.append(self.string_info(depth+1))
+        return {"token": token, "table": table, "text": text, "variables": variables}
 
     def position(self):
         cell, *values = struct.unpack("<I7f", self.take(32))
@@ -92,13 +120,16 @@ def object_description(data):
               (0x800,4),(0x1000,4),(0x2000,4),(0x200000,4),(0x400000,4),
               (0x8000,4),(0x10000,4),(0x20000,4),(0x40000,4),(0x80000,4),
               (0x100000,4),(0x8000000,4),(0x10000000,4)]
-    allowed = sum(bit for bit, _ in fields)
+    allowed = sum(bit for bit, _ in fields) | 4
     if mask & ~allowed or not mask & 0x2000000 or mask & (0x20|0x40):
         raise Unsupported("unsupported-or-contained-description")
-    values = {}
+    values, name = {}, None
     for bit, size in fields:
         if mask & bit:
             values[bit] = r.take(size)
+        # gmWeenieDesc::StreamPack places the name after fields 1, 0x2000000 and 2.
+        if bit == 2 and mask & 4:
+            name = r.string_info()
     if r.pos != len(data):
         raise Unsupported("trailing-description-data")
     entity = struct.unpack("<I", values[0x2000000])[0]
@@ -109,7 +140,7 @@ def object_description(data):
         raise Unsupported("invalid-scale")
     return {"source_iid":f"{identity:016x}","entity":f"{entity:08x}","visual":f"{visual:08x}","scale":scale,
             "cell":f"{cell:08x}","position":coordinates,"orientation":orientation,
-            "physics_mask":f"{flags:08x}","description_mask":f"{mask:08x}",
+            "physics_mask":f"{flags:08x}","description_mask":f"{mask:08x}","name":name,
             "message_sha256":hashlib.sha256(data).hexdigest()}
 
 
@@ -188,6 +219,33 @@ def messages(raw):
                 yield b"".join(parts[i] for i in range(count))
 
 
+def resolve_name(strings, info):
+    """English text for a captured StringInfo; None when it cannot be resolved."""
+    if not info:
+        return None
+    if info["text"]:
+        text = info["text"]
+    else:
+        text = strings.get(info["table"], info["token"])
+        if text is None:
+            return None
+    for variable in info["variables"]:
+        value = resolve_name(strings, variable)
+        if value is None:
+            return None
+        text = re.sub(r"%[0-9A-F]{4}%", lambda _: value, text, count=1)
+    text = clean_name(text)
+    return text or None
+
+
+def clean_name(text):
+    """Drop grammar tags such as [n], [mn] and unresolved placeholders."""
+    text = re.sub(r"\[[A-Za-z]{1,3}\]", "", text)
+    text = re.sub(r"%[0-9A-F]{4}%", "", text)
+    text = " ".join(text.replace("\t", " ").split())
+    return text if 0 < len(text) <= 64 else ""
+
+
 def convert(paths, base, game_data, skip_broken=False):
     with base.open("rb") as file:
         base_bytes = file.read(4*1024*1024+1)
@@ -210,11 +268,15 @@ def convert(paths, base, game_data, skip_broken=False):
         occupied.add(identity)
         counts[int(fields[3],16)] += 1
         positions.add((fields[1],fields[3],*(round(float(v),2) for v in fields[4:7])))
-    if len(occupied)>16384 or any(count>64 for count in counts.values()):
+    if len(occupied)>65536 or any(count>64 for count in counts.values()):
         raise ValueError("base manifest exceeds runtime content capacity")
-    accepted, sources, claimed_cells = [], [], set()
-    with Dat(game_data/'portal.dat') as portal, Dat(game_data/'cell_1.dat') as cells:
+    accepted, sources, claimed_cells, nearby = [], [], set(), {}
+    from ac2_strings import Strings
+    with Dat(game_data/'portal.dat') as portal, Dat(game_data/'cell_1.dat') as cells, \
+            Dat(game_data/'local_English.dat') as local:
         assets, cell_index = portal.index(), cells.index()
+        local.index()
+        strings = Strings(local)
         for path in paths:
             try:
                 with path.open("rb") as file:
@@ -245,26 +307,35 @@ def convert(paths, base, game_data, skip_broken=False):
                         raise Unsupported("repeated-observation")
                     seen.add(actor["source_iid"])
                     entity,visual,cell = (int(actor[key],16) for key in ["entity","visual","cell"])
-                    if cell in claimed_cells:
-                        raise Unsupported("cell-covered-by-earlier-capture")
+                    # The same NPC or spawn point reappears across captures; keep
+                    # one per entity within 4 m instead of claiming whole cells.
+                    near = nearby.setdefault((entity, cell), [])
+                    if any(sum((a-b)**2 for a,b in zip(point, actor["position"])) <= 16 for point in near):
+                        raise Unsupported("same-entity-within-4m")
                     low = cell&65535
                     if not (1<=low<=64 or 256<=low<=65531):
                         raise Unsupported("invalid-world-cell")
                     record = cell|65535 if low<=64 else cell
-                    if entity not in assets or visual not in assets or record not in cell_index:
+                    # Many retail weenies are server-only: even the final 2017
+                    # portal.dat lacks them and the client draws them from the visual.
+                    if visual not in assets or record not in cell_index:
                         raise Unsupported("missing-dat-asset-or-cell")
                     position = (actor["entity"],actor["cell"],*(round(v,2) for v in actor["position"]))
                     if position in positions:
                         raise Unsupported("duplicate-placement")
-                    if counts[cell]>=64 or len(occupied)>=16384:
+                    if counts[cell]>=64 or len(occupied)>=65536:
                         raise Unsupported("world-or-cell-capacity")
                     digest = hashlib.sha256(bytes.fromhex(source_hash)+bytes.fromhex(actor["source_iid"])).digest()
                     identity = 0x8140800000000000 | (int.from_bytes(digest[:6],"big")&0x7fffffffffff)
                     if identity in occupied:
                         raise ValueError("observed object identity collision")
                     # Read backing records, not just directory entries.
-                    portal.read(entity); portal.read(visual); cells.read(record)
+                    if entity in assets:
+                        portal.read(entity)
+                    portal.read(visual); cells.read(record)
                     occupied.add(identity); positions.add(position); counts[cell] += 1
+                    near.append(actor["position"])
+                    actor["name_text"] = resolve_name(strings, actor["name"])
                     actor.update({"id":f"{identity:016x}","source_sha256":source_hash})
                     accepted.append(actor)
                     source_cells.add(cell)
@@ -274,14 +345,15 @@ def convert(paths, base, game_data, skip_broken=False):
             source["rejected"] = dict(sorted(source["rejected"].items()))
             sources.append(source)
             claimed_cells.update(source_cells)
-    lines[0] = "pyrealium-world-v3"
-    lines = [line+"\t-" if line and not line.startswith("#") and index>0 else line for index,line in enumerate(lines)]
-    lines = [line+"\tscale" if line.startswith("# IID") else line for line in lines]
-    lines.append("# Capture-observed stationary actors; not authored spawn schedules or AI.")
+    lines[0] = "pyrealium-world-v4"
+    lines = [line+"\t-\t-" if line and not line.startswith("#") and index>0 else line for index,line in enumerate(lines)]
+    lines = [line+"\tscale\tname" if line.startswith("# IID") else line for line in lines]
+    lines.append("# Capture-observed actors. name is the captured description name resolved to English, or -.")
     for actor in sorted(accepted,key=lambda actor:actor["id"]):
         lines.append("\t".join([actor["id"],actor["entity"],actor["visual"],actor["cell"],
                                 *(format(v,'.9g') for v in actor["position"]+actor["orientation"]),
-                                "-" if actor["scale"] is None else format(actor["scale"],'.9g')]))
+                                "-" if actor["scale"] is None else format(actor["scale"],'.9g'),
+                                actor.get("name_text") or "-"]))
     report = {"capture_build_verified":False,"checksums_verified":False,"stationary_only":True,
               "overlap_policy":"first accepted capture per cell, in command-line input order",
               "omitted_state":["mode","sliders","effects","velocity","look/targets","description overrides except scale","native lifetime stamps"],

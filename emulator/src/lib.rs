@@ -14,6 +14,7 @@ pub mod crypto;
 pub mod dat;
 pub mod emotes;
 pub mod encounters;
+pub mod entity_info;
 pub mod equipment;
 pub mod examination;
 pub mod groups;
