@@ -51,6 +51,7 @@ struct Peer {
     last_inventory_ms: Option<u64>,
     last_examine_ms: Option<u64>,
     last_world_use_ms: Option<u64>,
+    last_npc_dialogue_ms: Option<u64>,
     merchant_open_ms: Option<u64>,
     last_shop_refresh_ms: Option<u64>,
     native_shop: Option<crate::merchants::Shop>,
@@ -75,6 +76,14 @@ fn other(e: impl std::fmt::Debug) -> io::Error {
 }
 
 impl Peer {
+    fn admit_npc_dialogue(&mut self, now: u64) -> io::Result<()> {
+        if self.last_npc_dialogue_ms.is_some_and(|last| now.saturating_sub(last) < 1000) {
+            return Err(invalid("Wait briefly before speaking to the mentor again."));
+        }
+        self.last_npc_dialogue_ms = Some(now);
+        Ok(())
+    }
+
     fn clear_scene_outbox(&mut self) {
         self.scene_outbox.clear();
         self.scene_bytes = 0;
@@ -842,7 +851,7 @@ fn quest_action(
     let mut events = match speaker {
         Some(speaker) => {
             let race = saved.creation.as_ref().map_or(1, |request| request.race);
-            npc_interaction_events(character, speaker, scene, "Pectar, Training Master", &crate::training_dialogue::greeting(race, &quests))?
+            mentor_interaction_events(character, speaker, scene, &crate::training_dialogue::greeting(race, &quests))?
         }
         None => vec![script::chat(&text, 1).map_err(other)?],
     };
@@ -1251,6 +1260,12 @@ fn npc_interaction_events(
     ])
 }
 
+fn mentor_interaction_events(owner: u64, target: u64, scene: &crate::scene::Scene, text: &str) -> io::Result<Vec<Vec<u8>>> {
+    let mut events = npc_interaction_events(owner, target, scene, "Pectar, Training Master", text)?;
+    events.push(crate::interaction::dialogue("Pectar, Training Master", text).map_err(other)?);
+    Ok(events)
+}
+
 fn use_training_mentor(
     peer: &mut Peer,
     character: u64,
@@ -1258,6 +1273,7 @@ fn use_training_mentor(
     store: &mut Store,
     scene: &mut crate::scene::Scene,
     metadata: &BTreeMap<u32, Option<crate::inventory_request::Metadata>>,
+    now: u64,
 ) -> io::Result<Vec<crate::scene::Delivery>> {
     let player = scene
         .player_placement(character)
@@ -1282,6 +1298,7 @@ fn use_training_mentor(
             "Speak to the training mentor while alive and out of combat.",
         ));
     }
+    peer.admit_npc_dialogue(now)?;
     let book = &store.characters[&character].quests;
     if book.get().is_some_and(|state| state.claimed) {
         if book.supplies().is_none() {
@@ -1291,7 +1308,7 @@ fn use_training_mentor(
             if let Ok(items) = crate::quests::supplies_items(&store.characters[&character].inventory, store.next_item_id()?) {
                 let changes = crate::quests::rewards(&crate::quests::Command::ClaimSupplies);
                 let next = book.apply(&crate::quests::Command::ClaimSupplies).map_err(other)?;
-                let events = npc_interaction_events(character, target, scene, "Pectar, Training Master", &next.guidance())?;
+                let events = mentor_interaction_events(character, target, scene, &next.guidance())?;
                 return item_service_transaction_quest(peer, character, &items, &changes, events, store, scene, metadata, true);
             }
         }
@@ -1955,6 +1972,7 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                 last_inventory_ms: None,
                                 last_examine_ms: None,
                                 last_world_use_ms: None,
+                                last_npc_dialogue_ms: None,
                                 merchant_open_ms: None,
                                 last_shop_refresh_ms: None,
                                 native_shop: None,
@@ -2704,6 +2722,7 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                     &mut store,
                                                     &mut scene,
                                                     &inventory_metadata,
+                                                    now_ms,
                                                 ) {
                                                     Ok(updates) => deliveries.extend(updates),
                                                     Err(error) => replies.extend(
@@ -3606,7 +3625,8 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                             let mentor = scene.nearby_service(character, TRAINING_MENTOR_ENTITY, None).ok_or_else(|| invalid("Move within four metres of a training mentor."))?;
                                                             let race = saved.creation.as_ref().map_or(1, |request| request.race);
                                                             let text = crate::training_dialogue::topic(&words[1..].join(" "), race, &saved.quests).ok_or_else(|| invalid("Ask @mentor help, gear, combat, healing, supplies, crafting, travel or quests."))?;
-                                                            let events = npc_interaction_events(character, mentor, &scene, "Pectar, Training Master", &text)?;
+                                                            peer.admit_npc_dialogue(now_ms)?;
+                                                            let events = mentor_interaction_events(character, mentor, &scene, &text)?;
                                                             peer.queue_ordered_batch(events)?;
                                                             Ok(())
                                                         })();
@@ -4798,6 +4818,7 @@ mod tests {
             last_inventory_ms: None,
             last_examine_ms: None,
             last_world_use_ms: None,
+                                last_npc_dialogue_ms: None,
             merchant_open_ms: None,
             last_shop_refresh_ms: None,
             native_shop: None,

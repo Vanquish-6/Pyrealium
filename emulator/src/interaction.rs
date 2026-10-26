@@ -103,3 +103,20 @@ pub fn speech(speaker: u64, name: &str, text: &str) -> Result<Vec<u8>, WorldErro
     args.extend(script::identity(speaker));
     script::private_call(NPC_SPEECH, &args)
 }
+
+/// Native 7148 MessageDialog (OK closes locally, no fabricated response opcode).
+/// 82120024 -> WLib 10139c / 1aa400a9 -> EFun 85000c -> 00469c10
+/// -> CM_Character::SendNotice_DisplayMessage 00724be0 -> 00408080.
+/// Capture: händler_gilden_schatzmeister_quitungs_kauf.elog, message SHA256
+/// 747db0458f7f42ced721512246d8aa14344dfbbb382ff11b31916e02b6d6ac3a.
+pub fn dialogue(speaker: &str, text: &str) -> Result<Vec<u8>, WorldError> {
+    if speaker.is_empty() || speaker.encode_utf16().count() > 32
+        || text.is_empty() || text.encode_utf16().count() > 1024
+        || speaker.chars().chain(text.chars()).any(char::is_control) {
+        return Err(WorldError::InvalidValue);
+    }
+    // The captured argument order is priority integer first, then StringInfo.
+    let mut args = script::integer(0);
+    args.extend(script::literal(&format!("{speaker}: {text}"))?);
+    script::private_call(0x82120024, &args)
+}

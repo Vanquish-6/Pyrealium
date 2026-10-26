@@ -520,3 +520,17 @@ and Lugian starts as well as the existing Human return. Examine these portals
 for destination-specific names. The added placements share the known start
 anchor elevation; collision, attack reach and native presentation need player
 acceptance before the full area can be called verified playable.
+
+### Native mentor dialogue window
+
+Mentor interactions and nearby conversation topics now also open build 7148's
+native MessageDialog using private event `82120024`: priority integer zero,
+then a literal StringInfo. Native EFun `85000c` reaches
+`CM_Character::SendNotice_DisplayMessage` (`00724be0`) and
+`gmGamePlayUI::RecvNotice_DisplayMessage` (`00408080`). The native layout is
+`41000009` with its own OK button. OK closes locally; no server reply or reward
+is inferred from dismissing the window. Priority zero preserves existing modals,
+and mentor dialogue openings are limited to one per second per session. Shop
+interactions keep their dedicated shop panel. The retained quest captures and
+7148 code do not establish a generic branching-choice response protocol.
+Native window rendering and mouse-look restoration require player acceptance.
