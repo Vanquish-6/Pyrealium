@@ -90,6 +90,8 @@ impl Object {
 pub struct Content {
     objects: BTreeMap<u64, Object>,
     cells: BTreeMap<u32, Vec<u64>>,
+    /// Combat stance, swing and death read from each visual's own behavior table.
+    poses: BTreeMap<u32, crate::combat_visual::Pose>,
 }
 impl Content {
     /// The shipped snapshot works independently of the current directory.
@@ -182,18 +184,28 @@ impl Content {
             .get_mut(&id)
             .filter(|object| object.active)
             .ok_or_else(|| invalid("inactive creature presentation"))?;
-        // Do not apply this behavior table to unrelated observed creatures.
-        if object.entity != crate::quests::TARGET_ENTITY
-            || object.spawn.get(16..20) != Some(0x1f0003d1u32.to_le_bytes().as_slice())
-        {
+        let visual = object
+            .spawn
+            .get(16..20)
+            .map(|bytes| u32::from_le_bytes(bytes.try_into().unwrap()));
+        let flags = object
+            .spawn
+            .get(20..24)
+            .map(|bytes| u32::from_le_bytes(bytes.try_into().unwrap()));
+        let pose = visual.and_then(|visual| self.poses.get(&visual).copied());
+        // A missing pose means this visual has no combat mode of its own.
+        // Sending another creature's stance faults PhysicsObjRep.
+        if pose.is_none() || !matches!(flags, Some(0x8080 | 0x8082)) {
             return Ok(Vec::new());
         }
-        if object.spawn.get(20..24) != Some(0x8082u32.to_le_bytes().as_slice()) {
-            return Err(invalid("unsupported Idol physics presentation"));
-        }
-        let (stamp, mode, events) =
-            crate::combat_visual::idol(id, object.instance, object.visual_stamp, action)
-                .map_err(|error| invalid(format!("creature presentation: {error}")))?;
+        let (stamp, mode, events) = crate::combat_visual::present(
+            id,
+            object.instance,
+            object.visual_stamp,
+            action,
+            pose.unwrap(),
+        )
+        .map_err(|error| invalid(format!("creature presentation: {error}")))?;
         let spawn = Arc::make_mut(&mut object.spawn);
         spawn[26..28].copy_from_slice(&stamp.to_le_bytes());
         spawn[28..32].copy_from_slice(&mode.to_le_bytes());
@@ -248,17 +260,35 @@ impl Content {
         object.visual_stamp = stamp;
         Ok(wire.into())
     }
-    /// Same-cell server movement. Updates the cached CreateObject for late
-    /// observers and returns the native server position update (0x10086).
+    /// Server movement. Outdoor steps may cross the 20 m cell grid. Interior
+    /// movement stays in its cell. Returns the native server position (0x10086).
     pub fn move_object(&mut self, id: u64, placement: Placement, motion: u32, time: f64) -> io::Result<Arc<[u8]>> {
-        let object = self
-            .objects
-            .get_mut(&id)
-            .filter(|object| object.active && !object.dynamic)
-            .ok_or_else(|| invalid("content object not movable"))?;
-        if placement.cell != object.placement.cell || !placement.valid() {
-            return Err(invalid("content movement must stay inside its cell"));
-        }
+        let old_cell = {
+            let object = self
+                .objects
+                .get(&id)
+                .filter(|object| object.active && !object.dynamic)
+                .ok_or_else(|| invalid("content object not movable"))?;
+            if !placement.valid() {
+                return Err(invalid("content movement is not a valid position"));
+            }
+            if placement.cell != object.placement.cell
+                && !(crate::movement::outdoor_cell(placement.cell)
+                    && crate::movement::outdoor_cell(object.placement.cell))
+            {
+                return Err(invalid("content movement must stay inside its cell"));
+            }
+            if placement.cell != object.placement.cell
+                && self
+                    .cells
+                    .get(&placement.cell)
+                    .is_some_and(|ids| ids.len() >= MAX_CELL_OBJECTS)
+            {
+                return Err(invalid("this area cannot hold more objects"));
+            }
+            object.placement.cell
+        };
+        let object = self.objects.get_mut(&id).unwrap();
         let offset = position_offset(&object.spawn).ok_or_else(|| invalid("unsupported content physics layout"))?;
         let update = crate::movement::ClientPosition {
             time,
@@ -271,10 +301,28 @@ impl Content {
         let stamp = object.position_stamp.wrapping_add(1);
         let wire = crate::movement::server_position(id, object.instance, stamp, &update)
             .map_err(|error| invalid(format!("content movement: {error}")))?;
-        write_position(Arc::make_mut(&mut object.spawn), offset, placement, placement.orientation());
+        let spawn = Arc::make_mut(&mut object.spawn);
+        spawn[offset..offset + 4].copy_from_slice(&placement.cell.to_le_bytes());
+        write_position(spawn, offset, placement, placement.orientation());
         object.placement = placement;
         object.position_stamp = stamp;
+        if old_cell != placement.cell {
+            self.reindex(id, old_cell, placement.cell);
+        }
         Ok(wire.into())
+    }
+    fn reindex(&mut self, id: u64, from: u32, to: u32) {
+        if let Some(ids) = self.cells.get_mut(&from) {
+            ids.retain(|&other| other != id);
+            if ids.is_empty() {
+                self.cells.remove(&from);
+            }
+        }
+        let ids = self.cells.entry(to).or_default();
+        let at = ids.partition_point(|&other| other < id);
+        if ids.get(at) != Some(&id) {
+            ids.insert(at, id);
+        }
     }
     /// Add a runtime corpse to its cell. The caller has built a valid spawn.
     pub fn insert_corpse(&mut self, id: u64, placement: Placement, orientation: [f32; 4], spawn: Vec<u8>) -> io::Result<()> {
@@ -342,11 +390,11 @@ impl Content {
         Arc::make_mut(&mut object.spawn)[24..26].copy_from_slice(&object.instance.to_le_bytes());
         object.visual_stamp = 0;
         Arc::make_mut(&mut object.spawn)[26..28].copy_from_slice(&0u16.to_le_bytes());
-        if object.entity == crate::quests::TARGET_ENTITY
-            && object.spawn.get(20..24) == Some(0x8082u32.to_le_bytes().as_slice())
-        {
-            Arc::make_mut(&mut object.spawn)[28..32]
-                .copy_from_slice(&crate::combat_visual::PEACE.to_le_bytes());
+        let visual = u32::from_le_bytes(object.spawn.get(16..20).unwrap_or(&[0; 4]).try_into().unwrap());
+        let flags = u32::from_le_bytes(object.spawn.get(20..24).unwrap_or(&[0; 4]).try_into().unwrap());
+        if let Some(pose) = self.poses.get(&visual).filter(|_| matches!(flags, 0x8080 | 0x8082)) {
+            let peace = pose.peace;
+            Arc::make_mut(&mut object.spawn)[28..32].copy_from_slice(&peace.to_le_bytes());
         }
         Arc::make_mut(&mut object.destroy)[12..14].copy_from_slice(&object.instance.to_le_bytes());
         let keys = object
@@ -398,8 +446,19 @@ impl Content {
         let overrides: BTreeMap<u64, &str> = crate::entity_info::object_names().collect();
         let mut content = Self::default();
         let mut portal = Dat::open(game_data.join("portal.dat"))?;
+        let visual_only_state = 0x71000000 | (world::VISUAL_ONLY_ENTITY & 0x00FFFFFF);
+        if portal.find(world::VISUAL_ONLY_ENTITY)?.is_some()
+            || portal.find(visual_only_state)?.is_some()
+        {
+            return Err(invalid(
+                "visual-only content entity unexpectedly present in portal.dat",
+            ));
+        }
         let mut cells = Dat::open(game_data.join("cell_1.dat"))?;
         let mut assets = BTreeSet::new();
+        let mut visual_motion: BTreeMap<u32, Option<u32>> = BTreeMap::new();
+        let mut behavior_motion: BTreeMap<u32, Option<u32>> = BTreeMap::new();
+        let mut behavior_pose: BTreeMap<u32, Option<crate::combat_visual::Pose>> = BTreeMap::new();
         let mut checked_cells = BTreeSet::new();
         for (line, text) in lines.enumerate() {
             if text.is_empty() || text.starts_with('#') {
@@ -495,7 +554,15 @@ impl Content {
             };
             let (id, entity, visual, placement, orientation, scale, name) = parse()
                 .map_err(|error| invalid(format!("world content line {}: {error}", line + 2)))?;
-            let name = overrides.get(&id).map(|name| name.to_string()).or(name);
+            let name = overrides
+                .get(&id)
+                .map(|name| (*name).to_string())
+                .or(name)
+                .or_else(|| {
+                    crate::entity_info::name(entity)
+                        .filter(|name| presentation_name(name))
+                        .map(str::to_string)
+                });
             if content.objects.len() >= MAX_OBJECTS || content.objects.contains_key(&id) {
                 return Err(invalid("world content object limit or duplicate IID"));
             }
@@ -506,9 +573,26 @@ impl Content {
             // Retail server-only weenies are absent from the client DAT; the
             // client draws those objects from their visual alone.
             if assets.insert(visual) {
-                portal
+                let record = portal
                     .read(visual)
                     .map_err(|error| invalid(format!("content asset {visual:#010x}: {error}")))?;
+                let mode = table_motion(&mut portal, &record, &mut behavior_motion).map_err(
+                    |error| invalid(format!("content visual {visual:#010x}: {error}")),
+                )?;
+                visual_motion.insert(visual, mode);
+                if let Some(table) = behavior_table(&record) {
+                    let pose = if let Some(pose) = behavior_pose.get(&table) {
+                        *pose
+                    } else {
+                        let bytes = portal.read(table).unwrap_or_default();
+                        let pose = pose_from_table(table, &bytes);
+                        behavior_pose.insert(table, pose);
+                        pose
+                    };
+                    if let Some(pose) = pose {
+                        content.poses.insert(visual, pose);
+                    }
+                }
             }
             let cell_record = crate::dat::world_cell_record(placement.cell)?;
             if checked_cells.insert(cell_record) {
@@ -516,11 +600,16 @@ impl Content {
                     invalid(format!("content cell {:#010x}: {error}", placement.cell))
                 })?;
             }
+            let in_dat = portal.find(entity)?.is_some();
+            // Standing comes from the visual's own behavior table, not from
+            // the entity being a creature. A mode on a static mesh faults
+            // PhysicsObjRep; a missing mode on an animated visual does too.
+            let mode = visual_motion.get(&visual).copied().flatten();
             let spawn = world::create_named_object(
                 &StationaryObject {
                     character_id: id,
                     parent_visual_did: visual,
-                    entity_did: entity,
+                    entity_did: world::world_content_entity(entity, in_dat),
                     cell_id: placement.cell,
                     position: placement.coordinates,
                     orientation,
@@ -530,6 +619,7 @@ impl Content {
                 },
                 scale,
                 name.as_deref(),
+                mode,
             )
             .map_err(|error| invalid(format!("content object: {error}")))?;
             let mut destroy = 0x100c2u32.to_le_bytes().to_vec();
@@ -561,4 +651,177 @@ impl Content {
         }
         Ok(content)
     }
+}
+
+/// BehaviorTable::StreamPack (0067d000). Combat stance and swing come from
+/// this table only: the monster table keeps its monster stance, and every
+/// other table uses one-hand when that mode is actually present.
+fn pose_from_table(table: u32, bytes: &[u8]) -> Option<crate::combat_visual::Pose> {
+    if bytes.len() < 8 || u32::from_le_bytes(bytes[..4].try_into().ok()?) != table {
+        return None;
+    }
+    let mut walk = Walk { bytes, at: 4 };
+    walk.skip_entries(20)?;
+    let mut modes = BTreeSet::new();
+    let combos = walk.count()?;
+    if combos > 100_000 {
+        return None;
+    }
+    for _ in 0..combos {
+        let _element = walk.u32()?;
+        modes.insert(walk.u32()?);
+        walk.skip(12)?;
+    }
+    walk.skip_entries(28)?;
+    walk.skip_words()?;
+    walk.skip_words()?;
+    let transitions = walk.count()?;
+    if transitions > 100_000 {
+        return None;
+    }
+    for _ in 0..transitions {
+        walk.skip(8)?;
+        let listed = walk.count()?;
+        if listed > 10_000 {
+            return None;
+        }
+        walk.skip(listed.checked_mul(8)?)?;
+    }
+    let listed = walk.count()?;
+    if listed > 100_000 {
+        return None;
+    }
+    for _ in 0..listed {
+        walk.u32()?;
+        modes.insert(walk.u32()?);
+        walk.u32()?;
+    }
+    let mut behaviors = BTreeSet::new();
+    let behavior_count = walk.count()?;
+    if behavior_count > 100_000 {
+        return None;
+    }
+    for _ in 0..behavior_count {
+        behaviors.insert(walk.u32()?);
+        walk.skip(8)?;
+    }
+    walk.skip_words()?;
+    let peace = walk.u32()?;
+    if walk.at != bytes.len() {
+        return None;
+    }
+    let combat = if table == crate::combat_visual::MONSTER_TABLE
+        && modes.contains(&crate::combat_visual::MONSTER_STANCE)
+    {
+        crate::combat_visual::MONSTER_STANCE
+    } else if modes.contains(&crate::combat_visual::ONE_HAND_STANCE) {
+        crate::combat_visual::ONE_HAND_STANCE
+    } else if modes.contains(&crate::combat_visual::MONSTER_STANCE) {
+        crate::combat_visual::MONSTER_STANCE
+    } else {
+        return None;
+    };
+    if combat == peace {
+        return None;
+    }
+    let swing = [
+        crate::combat_visual::MELEE_AUTO_1,
+        crate::combat_visual::MELEE_AUTO_2,
+        crate::combat_visual::MELEE_WEAK,
+    ]
+    .into_iter()
+    .find(|id| behaviors.contains(id))
+    .unwrap_or(0);
+    Some(crate::combat_visual::Pose {
+        peace,
+        combat,
+        swing,
+        death_mode: u32::from(modes.contains(&crate::combat_visual::DEATH_MODE))
+            * crate::combat_visual::DEATH_MODE,
+        death_behavior: u32::from(behaviors.contains(&crate::combat_visual::DEATH_BEHAVIOR))
+            * crate::combat_visual::DEATH_BEHAVIOR,
+    })
+}
+
+struct Walk<'a> {
+    bytes: &'a [u8],
+    at: usize,
+}
+impl Walk<'_> {
+    fn u32(&mut self) -> Option<u32> {
+        let next = self.at.checked_add(4)?;
+        let word = u32::from_le_bytes(self.bytes.get(self.at..next)?.try_into().ok()?);
+        self.at = next;
+        Some(word)
+    }
+    fn count(&mut self) -> Option<usize> {
+        usize::try_from(self.u32()? & 0x00ff_ffff).ok()
+    }
+    fn skip(&mut self, bytes: usize) -> Option<()> {
+        self.at = self.at.checked_add(bytes)?;
+        (self.at <= self.bytes.len()).then_some(())
+    }
+    fn skip_entries(&mut self, entry: usize) -> Option<()> {
+        let count = self.count()?;
+        self.skip(count.checked_mul(entry)?)
+    }
+    fn skip_words(&mut self) -> Option<()> {
+        let count = self.count()?;
+        if count > 100_000 {
+            return None;
+        }
+        self.skip(count.checked_mul(4)?)
+    }
+}
+
+fn presentation_name(name: &str) -> bool {
+    !name.is_empty()
+        && name.encode_utf16().count() <= 64
+        && !name.chars().any(char::is_control)
+}
+
+/// VisualDesc::StreamPack (0063d7f0). Bit 3 is the behavior table, packed
+/// after the identity and the optional parent and motion-info words.
+fn behavior_table(visual: &[u8]) -> Option<u32> {
+    if visual.len() < 8 {
+        return None;
+    }
+    let flags = u32::from_le_bytes(visual[..4].try_into().ok()?);
+    if flags & 8 == 0 {
+        return None;
+    }
+    let mut offset = 4usize;
+    for bit in [1u32, 2, 4] {
+        if flags & bit != 0 {
+            offset = offset.checked_add(4)?;
+        }
+    }
+    let behavior = u32::from_le_bytes(visual.get(offset..offset + 4)?.try_into().ok()?);
+    (behavior >> 24 == 0x44).then_some(behavior)
+}
+
+/// mInitMode is the last word of BehaviorTable::StreamPack (0067d000).
+fn table_motion(
+    portal: &mut Dat,
+    visual: &[u8],
+    cache: &mut BTreeMap<u32, Option<u32>>,
+) -> io::Result<Option<u32>> {
+    let Some(behavior) = behavior_table(visual) else {
+        return Ok(None);
+    };
+    if let Some(mode) = cache.get(&behavior) {
+        return Ok(*mode);
+    }
+    let record = portal.read(behavior).map_err(|error| {
+        invalid(format!("behavior table {behavior:#010x}: {error}"))
+    })?;
+    if record.len() < 8 || u32::from_le_bytes(record[..4].try_into().unwrap()) != behavior {
+        return Err(invalid(format!(
+            "behavior table {behavior:#010x} is not a 7148 BehaviorTable"
+        )));
+    }
+    let mode = u32::from_le_bytes(record[record.len() - 4..].try_into().unwrap());
+    let mode = matches!(mode, 0x40000001 | 0x41000003 | 0x41000010).then_some(mode);
+    cache.insert(behavior, mode);
+    Ok(mode)
 }

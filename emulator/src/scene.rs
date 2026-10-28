@@ -575,14 +575,50 @@ impl Scene {
         motion: u32,
         time: f64,
     ) -> std::io::Result<Vec<Delivery>> {
+        let old = self
+            .content
+            .cell(id)
+            .ok_or_else(|| std::io::Error::other("content object is not active"))?;
         let data = self.content.move_object(id, placement, motion, time)?;
-        Ok(self
-            .neighbor_ids(placement.cell, 0)
-            .map(|recipient| Delivery {
-                recipient,
+        let new = self.content.cell(id).unwrap_or(old);
+        if old == new {
+            return Ok(self
+                .neighbor_ids(new, 0)
+                .map(|recipient| Delivery {
+                    recipient,
+                    data: data.clone(),
+                })
+                .collect());
+        }
+        let previous = self.neighbor_ids(old, 0).collect::<BTreeSet<_>>();
+        let current = self.neighbor_ids(new, 0).collect::<BTreeSet<_>>();
+        let object = self.content.object(id).unwrap();
+        let mut deliveries = Vec::new();
+        for recipient in previous.difference(&current) {
+            deliveries.push(Delivery {
+                recipient: *recipient,
+                data: object.destroy.clone(),
+            });
+        }
+        for recipient in current.difference(&previous) {
+            deliveries.push(Delivery {
+                recipient: *recipient,
+                data: object.spawn.clone(),
+            });
+            for update in object.updates() {
+                deliveries.push(Delivery {
+                    recipient: *recipient,
+                    data: update.clone(),
+                });
+            }
+        }
+        for recipient in current.intersection(&previous) {
+            deliveries.push(Delivery {
+                recipient: *recipient,
                 data: data.clone(),
-            })
-            .collect())
+            });
+        }
+        Ok(deliveries)
     }
     /// Create a corpse where creature `of` currently stands.
     pub fn spawn_corpse(&mut self, id: u64, of: u64, name: &str) -> std::io::Result<Vec<Delivery>> {

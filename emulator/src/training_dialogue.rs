@@ -10,13 +10,13 @@ pub fn race_name(race: u32) -> &'static str {
     match race { appearance::LUGIAN => "Lugian", appearance::TUMEROK => "Tumerok", _ => "Human" }
 }
 pub fn greeting(race: u32, book: &Book) -> String {
-    format!("Welcome, {} adventurer. {} Ask @mentor help while nearby for lessons on gear, combat, healing, crafting, travel and skills.", race_name(race), book.guidance())
+    format!("Welcome, {} adventurer. {} Ask @mentor help while nearby, or type /help, for gear, combat, healing, crafting, travel, skills and the open hunt.", race_name(race), book.guidance())
 }
 pub fn topic(value: &str, race: u32, book: &Book) -> Option<String> {
     Some(match value.trim().to_ascii_lowercase().as_str() {
-        "" | "help" => "I can help with gear, combat, healing, supplies, crafting, travel and skills. Ask @mentor followed by one of those topics. Use me normally to accept the next lesson or deliver a completed objective. Your journal keeps all five lessons across logins.".into(),
+        "" | "help" => "I can help with gear, combat, healing, supplies, crafting, travel, skills and hunting. Ask @mentor followed by one of those topics. Use me normally to accept the next lesson or deliver a completed objective. Your journal keeps every lesson across logins. /all reaches every player online.".into(),
         "skill" | "skills" => "Each level grants skill credits. Open the skill panel, train an active skill your race can learn, then drag it to your hotbar. Healing skills can target yourself; attack skills need a selected creature in range and the right weapon in hand. Spend experience in the skill panel to raise trained skills.".into(),
-        "quest" | "quests" => book.guidance(),
+        "quest" | "quests" | "hunt" | "hunting" => book.guidance(),
         "gear" => format!("Your {} starter weapons are in your bag and your starter clothing is already worn. Drag a weapon to its equipment slot, or use it from your bag. Drag it back into your bag to unequip. Keep your racial starter gear; the quartermaster also sells a development training weapon.", race_name(race)),
         "combat" => "Equip a starter weapon, select an Idol Spawn, and use your attack or a trained starter attack skill. Stay in range and watch your health and vigor. Defeat three Idol Spawn for Training Grounds, leave combat, then use me to claim the reward.".into(),
         "healing" => "Leave combat before using a health or vigor potion from your bag. Health potions restore health; vigor potions restore vigor. Use a nearby lifestone while alive and out of combat to bind a recall point. If defeated, use the resurrection control before continuing your lessons.".into(),

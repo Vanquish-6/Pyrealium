@@ -11,9 +11,12 @@
 //!
 //! Applied effects: instant and over-time health (0x21, 0x11) and vigor (0x22,
 //! 0x12), health and vigor regeneration multipliers (stats 0x30106, 0x30107),
-//! attack damage added to weapon damage, weapon-only attacks, and travel to the
-//! lifestone, the last portal, or a recall telepad. Other buff stats, projectile
-//! flight, area attacks, combos and summoned portals are not applied.
+//! attack damage added to weapon damage, weapon-only attacks, travel to the
+//! lifestone, the last portal, or a recall telepad, and timed armor, attack and
+//! defense ratings. Armor uses NaturalArmor 0x40125 and ArmorLevel 0x40262.
+//! Attack ratings are 0x800001/7/c and defense ratings 0x800002/8/d (magic,
+//! melee, missile). Other buff stats, projectile flight, area attacks, combos
+//! and summoned portals are not applied.
 //!
 //! A prepared cast borrows the runtime exclusively. Admit its UI batch, persist
 //! `commands()` atomically, then call `commit()`. Dropping it on any earlier
@@ -40,6 +43,11 @@ const HEALTH_OVER_TIME: u32 = 0x11;
 const VIGOR_OVER_TIME: u32 = 0x12;
 const HEALTH_REGEN: u32 = 0x30106;
 const VIGOR_REGEN: u32 = 0x30107;
+const NATURAL_ARMOR: u32 = 0x40125;
+const ARMOR_LEVEL: u32 = 0x40262;
+/// Magic, melee, missile. Matches SkillList attack 1/7/c and defense 2/8/d.
+const ATTACK_RATING: [u32; 3] = [0x800001, 0x800007, 0x80000c];
+const DEFENSE_RATING: [u32; 3] = [0x800002, 0x800008, 0x80000d];
 /// Weapon-attack effect type carried by the racial basic attacks.
 const WEAPON_ATTACK: u32 = 0x6;
 const BASIC_ATTACK_KIND: u32 = 0x44;
@@ -192,6 +200,32 @@ struct Buff {
     vigor: Table,
     duration: Table,
 }
+#[derive(Clone, Debug)]
+struct RatingSpec {
+    side: Side,
+    duration: Table,
+    armor: Vec<Table>,
+    attack: [Vec<Table>; 3],
+    defense: [Vec<Table>; 3],
+}
+impl RatingSpec {
+    fn useful(&self) -> bool {
+        !self.armor.is_empty()
+            || self.attack.iter().any(|tables| !tables.is_empty())
+            || self.defense.iter().any(|tables| !tables.is_empty())
+    }
+    fn resolve(&self, rank: u16) -> (crate::combat::Ratings, u64) {
+        let sum = |tables: &[Table]| -> i32 { tables.iter().map(|table| table.at(rank).round() as i32).sum() };
+        let ratings = crate::combat::Ratings {
+            armor: sum(&self.armor),
+            attack: std::array::from_fn(|index| sum(&self.attack[index])),
+            defense: std::array::from_fn(|index| sum(&self.defense[index])),
+        };
+        let seconds = self.duration.at(rank).max(0.0);
+        let duration_ms = if seconds <= 0.0 { 180_000 } else { (seconds * 1000.0) as u64 };
+        (ratings, duration_ms)
+    }
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Travel {
@@ -216,6 +250,7 @@ struct Definition {
     vigor_effect: Table,
     timed: Vec<Timed>,
     buff: Option<Buff>,
+    ratings: Vec<RatingSpec>,
     weapon: bool,
     travel: Option<Travel>,
 }
@@ -237,6 +272,22 @@ impl Definition {
             || !self.vigor_effect.is_empty()
             || !self.timed.is_empty()
             || self.buff.is_some()
+            || self.ratings.iter().any(RatingSpec::useful)
+    }
+    fn ratings_for(&self, side: Side, rank: u16) -> Option<(crate::combat::Ratings, u64)> {
+        let mut total = crate::combat::Ratings::default();
+        let mut duration = 0u64;
+        let mut found = false;
+        for spec in &self.ratings {
+            if spec.side != side || !spec.useful() {
+                continue;
+            }
+            let (part, ms) = spec.resolve(rank);
+            total.add(part);
+            duration = duration.max(ms);
+            found = true;
+        }
+        (found && !total.is_empty()).then_some((total, duration))
     }
 }
 
@@ -373,6 +424,7 @@ impl Runtime {
                 vigor_effect: Table::default(),
                 timed: Vec::new(),
                 buff: None,
+                ratings: Vec::new(),
                 weapon: false,
                 travel: routes.remove(&skill),
             };
@@ -404,19 +456,40 @@ impl Runtime {
                         WEAPON_ATTACK if definition.kind == BASIC_ATTACK_KIND => definition.weapon = true,
                         _ => {}
                     }
-                    if p[8] != "-" && definition.buff.is_none() && !duration.is_empty() {
+                    if p[8] != "-" && !duration.is_empty() || p[8].contains("40125") || p[8].contains("40262") || p[8].contains("80000") {
                         let mut health = Table::default();
                         let mut vigor = Table::default();
-                        for stat in p[8].split('|') {
-                            let (id, table) = stat.split_once('=').ok_or(AbilityError::Catalog)?;
-                            match hex(id)? {
-                                HEALTH_REGEN => health = Table::parse(table)?,
-                                VIGOR_REGEN => vigor = Table::parse(table)?,
-                                _ => {}
+                        let mut rating = RatingSpec {
+                            side,
+                            duration: duration.clone(),
+                            armor: Vec::new(),
+                            attack: [Vec::new(), Vec::new(), Vec::new()],
+                            defense: [Vec::new(), Vec::new(), Vec::new()],
+                        };
+                        if p[8] != "-" {
+                            for stat in p[8].split('|') {
+                                let (id, table) = stat.split_once('=').ok_or(AbilityError::Catalog)?;
+                                let id = hex(id)?;
+                                let parsed = Table::parse(table)?;
+                                match id {
+                                    HEALTH_REGEN if definition.buff.is_none() => health = parsed,
+                                    VIGOR_REGEN if definition.buff.is_none() => vigor = parsed,
+                                    NATURAL_ARMOR | ARMOR_LEVEL => rating.armor.push(parsed),
+                                    _ => {
+                                        if let Some(index) = ATTACK_RATING.iter().position(|stat| *stat == id) {
+                                            rating.attack[index].push(parsed);
+                                        } else if let Some(index) = DEFENSE_RATING.iter().position(|stat| *stat == id) {
+                                            rating.defense[index].push(parsed);
+                                        }
+                                    }
+                                }
                             }
                         }
-                        if !health.is_empty() || !vigor.is_empty() {
+                        if definition.buff.is_none() && (!health.is_empty() || !vigor.is_empty()) && !duration.is_empty() {
                             definition.buff = Some(Buff { side, health, vigor, duration });
+                        }
+                        if rating.useful() {
+                            definition.ratings.push(rating);
                         }
                     }
                 }
@@ -531,6 +604,28 @@ impl Runtime {
                 definition.vigor_effect.at(rank).max(0.0).round() as u32,
             )
         };
+        let caster_ratings = {
+            let mut total = definition.ratings_for(Side::Own, rank);
+            if matches!(aim, Aim::Own) {
+                if let Some(targeted) = definition.ratings_for(Side::Target, rank) {
+                    total = Some(match total {
+                        Some((mut ratings, duration)) => {
+                            ratings.add(targeted.0);
+                            (ratings, duration.max(targeted.1))
+                        }
+                        None => targeted,
+                    });
+                }
+            }
+            total.filter(|(ratings, _)| !ratings.is_empty())
+        };
+        let other_ratings = match aim {
+            Aim::Player(target, _) | Aim::Creature(target) => definition
+                .ratings_for(Side::Target, rank)
+                .filter(|(ratings, _)| !ratings.is_empty())
+                .map(|(ratings, duration)| (target, ratings, duration)),
+            _ => None,
+        };
         let outcome = if let Some(travel) = definition.travel.clone() {
             Outcome::Travel(travel)
         } else {
@@ -582,7 +677,9 @@ impl Runtime {
             }
         };
         if let Outcome::Support { health: 0, vigor: 0, mend: None, regen: None, .. } = outcome {
-            return Err(AbilityError::Unsupported);
+            if caster_ratings.is_none() && other_ratings.is_none() {
+                return Err(AbilityError::Unsupported);
+            }
         }
         self.expire(now)?;
         if let Some(&until) = self.skills.get(&(player, skill)) {
@@ -614,7 +711,7 @@ impl Runtime {
             value.apply(command).map_err(|_| AbilityError::InvalidProgression)
         })?;
         if let Outcome::Restore { mend: None, regen: None, .. } = outcome {
-            if next.health == state.health && next.vigor + cost <= state.vigor {
+            if next.health == state.health && next.vigor + cost <= state.vigor && caster_ratings.is_none() {
                 return Err(AbilityError::NothingToRestore);
             }
         }
@@ -631,6 +728,8 @@ impl Runtime {
             commands,
             previous: state.clone(),
             next,
+            caster_ratings,
+            other_ratings,
         })
     }
 }
@@ -650,6 +749,8 @@ pub struct PreparedCast<'a> {
     commands: Vec<Command>,
     previous: Progression,
     next: Progression,
+    caster_ratings: Option<(crate::combat::Ratings, u64)>,
+    other_ratings: Option<(u64, crate::combat::Ratings, u64)>,
 }
 impl PreparedCast<'_> {
     pub fn player(&self) -> u64 {
@@ -673,6 +774,12 @@ impl PreparedCast<'_> {
     }
     pub fn next(&self) -> &Progression {
         &self.next
+    }
+    pub fn caster_ratings(&self) -> Option<(crate::combat::Ratings, u64)> {
+        self.caster_ratings
+    }
+    pub fn other_ratings(&self) -> Option<(u64, crate::combat::Ratings, u64)> {
+        self.other_ratings
     }
     pub fn healed(&self) -> u32 {
         self.next.health - self.previous.health
@@ -704,6 +811,11 @@ mod tests {
         assert_eq!((burn.values.at(1), burn.values.at(50), burn.period_ms), (-1.0, -4.0, 1000));
         assert_eq!(burn.duration.at(1), 30.0);
         assert!(bolt.harmful() && !ease.harmful());
+        let defense = runtime.definitions[&0x6b].ratings_for(Side::Own, 1).unwrap();
+        assert_eq!(defense.0.attack(crate::combat::School::Melee), 7);
+        assert_eq!(defense.1, 180_000);
+        let aura = runtime.definitions[&0xa1].ratings_for(Side::Target, 50).unwrap();
+        assert_eq!(aura.0.defense(crate::combat::School::Magic), 100);
         let calm = &runtime.definitions[&0x67];
         assert_eq!(calm.buff.as_ref().map(|b| (b.vigor.at(1), b.vigor.at(50))), Some((1.1, 2.0)));
         assert!(runtime.definitions[&0xb0].weapon);

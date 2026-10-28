@@ -36,6 +36,21 @@ pub fn name(entity: u32) -> Option<&'static str> {
     get(entity).and_then(|info| info.name.as_deref())
 }
 
+/// Captured physics mode by object ID (`content/object-modes.tsv`).
+/// Spawn packing does not apply these; later-client modes on static visuals
+/// fault PhysicsObjRep. Actor visuals get standing from their DAT tables.
+pub fn object_modes() -> impl Iterator<Item = (u64, u32)> {
+    include_str!("../content/object-modes.tsv")
+        .lines()
+        .filter(|line| !line.is_empty() && !line.starts_with('#') && !line.starts_with("pyrealium-"))
+        .filter_map(|line| {
+            let (id, mode) = line.split_once('\t')?;
+            Some((u64::from_str_radix(id, 16).ok()?, u32::from_str_radix(mode, 16).ok()?))
+        })
+        // Death/corpse mode is never a spawn state.
+        .filter(|&(_, mode)| mode != 0x41000003)
+}
+
 /// Placement name overrides by object ID.
 pub fn object_names() -> impl Iterator<Item = (u64, &'static str)> {
     include_str!("../content/object-names.tsv")

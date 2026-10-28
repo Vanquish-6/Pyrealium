@@ -25,6 +25,22 @@ use std::{
 fn invalid(text: &str) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, text)
 }
+
+/// Town services, portals and lifestones are not creatures, even when their
+/// weenie still carries health from a shared parent record.
+fn peaceful_world_entity(entity: u32) -> bool {
+    crate::entity_info::is_vendor(entity)
+        || matches!(
+            entity,
+            crate::training_dialogue::MENTOR_ENTITY
+                | crate::merchants::MERCHANT_ENTITY
+                | 0x470007de
+                | 0x4700084d
+                | 0x47001451
+                | 0x47001454
+                | 0x4700369a
+        )
+}
 #[derive(Clone, Copy)]
 struct Rule {
     health: u32,
@@ -212,20 +228,17 @@ pub struct Encounters {
     burns: Vec<Burn>,
     mends: Vec<Mend>,
     regen: BTreeMap<u64, (Regen, u64)>,
+    /// Timed armor and attack/defense ratings, keyed by affected entity and skill.
+    ratings: Vec<(u64, u32, crate::combat::Ratings, u64)>,
+    /// Worn armor and shield, refreshed by the server before each tick.
+    gear: BTreeMap<u64, (u32, u32)>,
     dice: Dice,
     corpses: BTreeMap<u64, Corpse>,
     next_corpse: u64,
 }
 fn in_range(a: Option<Placement>, b: Option<Placement>, range: f32) -> bool {
-    a.zip(b).is_some_and(|(a, b)| {
-        a.cell == b.cell
-            && a.coordinates
-                .iter()
-                .zip(b.coordinates)
-                .map(|(a, b)| (a - b) * (a - b))
-                .sum::<f32>()
-                <= range * range
-    })
+    a.zip(b)
+        .is_some_and(|(a, b)| crate::movement::separation(a, b) <= range)
 }
 impl Encounters {
     pub fn load(path: &Path, content: &Content) -> io::Result<Self> {
@@ -418,10 +431,9 @@ impl Encounters {
         // such as town vendors and quest givers carry neither.
         // The mentor's entity is a unique quest monster record (AI_UniqueMonster,
         // NPC_IsGroupMonster); placed as a service NPC it must never fight.
-        let service = [crate::training_dialogue::MENTOR_ENTITY, crate::merchants::MERCHANT_ENTITY];
         let actors = content
             .objects()
-            .filter(|object| !service.contains(&object.entity))
+            .filter(|object| !peaceful_world_entity(object.entity))
             .filter_map(|object| {
                 rules.get(&object.entity).map(|&rule| {
                     (
@@ -464,6 +476,8 @@ impl Encounters {
             burns: Vec::new(),
             mends: Vec::new(),
             regen: BTreeMap::new(),
+            ratings: Vec::new(),
+            gear: BTreeMap::new(),
             dice: Dice::seeded(),
             corpses: BTreeMap::new(),
             next_corpse: CORPSE_NAMESPACE | 1,
@@ -679,6 +693,7 @@ impl Encounters {
             return Ok(Vec::new());
         }
         self.next_tick = now.saturating_add(100);
+        self.ratings.retain(|(_, _, _, until)| *until > now);
         let mut events = Vec::new();
         let due = self
             .attacks
@@ -726,15 +741,19 @@ impl Encounters {
             };
             let character = &store.characters[&player];
             let level = character.progression.level().number;
+            let ratings = self.ratings_for(player);
+            let creature_ratings = self.ratings_for(attack.target);
             let rating = if attack.strike.is_some() {
                 [School::Melee, School::Missile, School::Magic]
                     .into_iter()
-                    .map(|school| combat::player_attack(level, &character.skills, school))
+                    .map(|school| combat::adjusted(combat::player_attack(level, &character.skills, school), ratings.attack(school)))
                     .max()
                     .unwrap_or(0)
             } else {
-                combat::player_attack(level, &character.skills, School::Melee)
+                combat::adjusted(combat::player_attack(level, &character.skills, School::Melee), ratings.attack(School::Melee))
             };
+            let defense = combat::adjusted(defense, creature_ratings.creature_defense());
+            let armor = combat::adjusted(armor, creature_ratings.armor);
             let hit = self.dice.roll(combat::hit_chance(rating, defense));
             let damage = attack
                 .strike
@@ -939,16 +958,12 @@ impl Encounters {
                         format!("Creature defeated. Earned {} XP and {} gold.", actor.rule.xp, actor.rule.gold)
                     },
                 });
-                if actor.entity == crate::quests::TARGET_ENTITY {
-                    events.push(Event::IdolVisual(
-                        target,
-                        crate::combat_visual::IdolAction::Death,
-                    ));
-                    // Death presentation grace; the corpse replaces it afterwards.
-                    actor.despawn_at = Some(now.saturating_add(1500.min(actor.rule.respawn)));
-                } else {
-                    self.bury(target, now, events);
-                }
+                events.push(Event::IdolVisual(
+                    target,
+                    crate::combat_visual::IdolAction::Death,
+                ));
+                // Keep the body long enough for the death pose, then the corpse.
+                actor.despawn_at = Some(now.saturating_add(1500.min(actor.rule.respawn)));
                 self.burns.retain(|burn| burn.target != target);
                 let stopped = self
                     .attacks
@@ -1104,8 +1119,7 @@ impl Encounters {
                     .get(&player)
                     .is_some_and(|c| !c.deleted && c.progression.alive())
                     && scene.player_placement(player).is_some_and(|p| {
-                        p.cell == position.cell
-                            && distance(p.coordinates, home.coordinates) <= rule.homesick
+                        crate::movement::separation(p, home) <= rule.homesick
                     })
             };
             if let Some(target) = actor.target.filter(|&target| !pursuable(target)) {
@@ -1134,7 +1148,7 @@ impl Encounters {
                     .filter(|&player| pursuable(player))
                     .filter_map(|player| {
                         let at = scene.player_placement(player)?;
-                        let gap = distance(at.coordinates, position.coordinates);
+                        let gap = crate::movement::separation(at, position);
                         (gap <= rule.perception).then_some((gap, player))
                     })
                     .min_by(|a, b| a.0.total_cmp(&b.0))
@@ -1150,21 +1164,32 @@ impl Encounters {
             let goal = chase.or_else(|| actor.returning.then_some(home));
             if let Some(goal) = goal.filter(|_| now >= actor.next_move) {
                 let stop = if chase.is_some() { (rule.range * 0.8).max(0.5) } else { 0.0 };
-                let gap = distance(position.coordinates, goal.coordinates);
-                let heading = combat::heading(position.coordinates, goal.coordinates).unwrap_or(position.heading);
-                if gap > stop + 0.05 {
+                let outdoor = crate::movement::world_point(position).zip(crate::movement::world_point(goal));
+                let (from, to) = outdoor.unwrap_or((position.coordinates, goal.coordinates));
+                let gap = distance(from, to);
+                let heading = combat::heading(from, to).unwrap_or(position.heading);
+                if gap > stop + 0.05 && (outdoor.is_some() || position.cell == goal.cell) {
                     let step = (CHASE_SPEED * MOVE_MS as f32 / 1000.0).min(gap - stop);
                     let fraction = step / gap;
-                    let coordinates = std::array::from_fn(|i| {
-                        position.coordinates[i] + (goal.coordinates[i] - position.coordinates[i]) * fraction
-                    });
-                    actor.moving = true;
-                    actor.next_move = now.saturating_add(MOVE_MS);
-                    events.push(Event::Move {
-                        actor: id,
-                        placement: Placement { cell: position.cell, coordinates, heading },
-                        motion: RUN_MOTION,
-                    });
+                    let coordinates = std::array::from_fn(|i| from[i] + (to[i] - from[i]) * fraction);
+                    let placement = if outdoor.is_some() {
+                        crate::movement::placement_at(coordinates, heading)
+                    } else {
+                        Some(Placement {
+                            cell: position.cell,
+                            coordinates,
+                            heading,
+                        })
+                    };
+                    if let Some(placement) = placement {
+                        actor.moving = true;
+                        actor.next_move = now.saturating_add(MOVE_MS);
+                        events.push(Event::Move {
+                            actor: id,
+                            placement,
+                            motion: RUN_MOTION,
+                        });
+                    }
                 } else {
                     if actor.moving {
                         actor.moving = false;
@@ -1191,16 +1216,29 @@ impl Encounters {
             events.push(Event::IdolVisual(id, crate::combat_visual::IdolAction::Swing));
             let character = &store.characters[&target];
             let level = character.progression.level();
-            let defense = combat::player_defense(level.number, &character.skills, School::Melee);
-            if !self.dice.roll(combat::hit_chance(rule.attack, defense)) {
+            let ratings = self.ratings_for(target);
+            let creature_ratings = self.ratings_for(id);
+            let (worn, shield) = self.gear.get(&target).copied().unwrap_or((0, 0));
+            let defense = combat::adjusted(
+                combat::player_defense(level.number, &character.skills, School::Melee),
+                ratings.defense(School::Melee),
+            );
+            let attack = combat::adjusted(rule.attack, creature_ratings.creature_attack());
+            if !self.dice.roll(combat::hit_chance(attack, defense)) {
                 events.push(Event::Note { player: target, text: "The creature misses you.".into() });
                 continue;
             }
             let account = character.account.clone();
             let previous = character.progression.clone();
-            // Level-table ArmorRating, as Player.ArmorRating caps it in the 2012 server.
+            // Level armor, plus worn pieces and spell ratings. The 2012 server
+            // caps gear at the level table; spells and clothes add on top so
+            // they change the hit. A result below zero stays at zero.
             let raw = combat::natural_damage(rule.damage, rule.variance, &mut self.dice);
-            let dealt = combat::mitigate(raw, level.armor, &mut self.dice);
+            let armor = combat::adjusted(
+                level.armor.saturating_add(worn).saturating_add(shield),
+                ratings.armor,
+            );
+            let dealt = combat::mitigate(raw, armor, &mut self.dice);
             store.progression_command(&account, target, Command::Damage(dealt))?;
             if let Ok(damage) = i32::try_from(dealt) {
                 events.push(Event::Hit {
@@ -1324,6 +1362,33 @@ impl Encounters {
         Ok(())
     }
 
+    pub fn set_gear(&mut self, player: u64, armor: u32, shield: u32) {
+        if armor == 0 && shield == 0 {
+            self.gear.remove(&player);
+        } else {
+            self.gear.insert(player, (armor, shield));
+        }
+    }
+    pub fn add_ratings(&mut self, entity: u64, skill: u32, ratings: crate::combat::Ratings, duration_ms: u64, now: u64) -> io::Result<()> {
+        if ratings.is_empty() || entity == 0 {
+            return Ok(());
+        }
+        self.ratings.retain(|(who, id, _, until)| !(*who == entity && *id == skill) && *until > now);
+        if self.ratings.len() >= MAX_TIMED {
+            return Err(invalid("timed effect capacity"));
+        }
+        self.ratings.push((entity, skill, ratings, now.saturating_add(duration_ms.max(1000))));
+        Ok(())
+    }
+    fn ratings_for(&self, entity: u64) -> crate::combat::Ratings {
+        let mut total = crate::combat::Ratings::default();
+        for (who, _, ratings, _) in &self.ratings {
+            if *who == entity {
+                total.add(*ratings);
+            }
+        }
+        total
+    }
     /// Multiply a player's regeneration until the buff expires.
     pub fn boost_regen(&mut self, player: u64, regen: Regen, now: u64) -> io::Result<()> {
         if !(regen.health.is_finite() && regen.vigor.is_finite())

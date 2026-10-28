@@ -23,41 +23,75 @@ pub enum IdolAction {
     Death,
 }
 
-/// Exact Idol Spawn profile: BehaviorTable 44000018 and retained fight capture.
-/// Return the final shared visual stamp, snapshot mode and fresh wire messages.
-pub fn idol(
+/// Combat presentation taken from one visual's own behavior table.
+#[derive(Clone, Copy, Debug)]
+pub struct Pose {
+    pub peace: u32,
+    pub combat: u32,
+    pub swing: u32,
+    pub death_mode: u32,
+    pub death_behavior: u32,
+}
+
+/// The recovered monster table's own stance. Human tables use one-hand instead.
+pub const MONSTER_TABLE: u32 = 0x44000018;
+pub const MONSTER_STANCE: u32 = 0x41000012;
+pub const ONE_HAND_STANCE: u32 = ONE_HAND;
+pub const MELEE_AUTO_1: u32 = MELEE_AUTO;
+pub const MELEE_AUTO_2: u32 = 0x4100008a;
+pub const MELEE_WEAK: u32 = 0x41000076;
+pub const DEATH_BEHAVIOR: u32 = 0x4100001f;
+pub const DEATH_MODE: u32 = 0x41000005;
+
+/// Play `pose`, which must already be limited to modes and behaviors present
+/// in that visual's behavior table. Returns the final stamp and snapshot mode.
+pub fn present(
     owner: u64,
     instance: u16,
     current_stamp: u16,
     action: IdolAction,
+    pose: Pose,
 ) -> Result<(u16, u32, Vec<Vec<u8>>), WorldError> {
+    let swinging = matches!(action, IdolAction::Swing) && pose.swing != 0;
     let final_stamp = current_stamp
-        .checked_add(if matches!(action, IdolAction::Swing) {
-            2
-        } else {
-            1
-        })
+        .checked_add(if swinging { 2 } else { 1 })
         .ok_or(WorldError::LimitExceeded)?;
-    let mode = match action {
-        IdolAction::Combat | IdolAction::Swing => 0x41000012,
-        IdolAction::Peace => PEACE,
-        IdolAction::Death => 0x41000005,
-    };
     let mut events = Vec::new();
-    if matches!(action, IdolAction::Death) {
-        let mut wire = prefix(DO_BEHAVIOR, owner, instance, final_stamp)?;
-        wire.extend(3u32.to_le_bytes()); // behavior and explicit mode, no captured context.
-        wire.extend(0x4100001fu32.to_le_bytes());
-        wire.extend(mode.to_le_bytes());
-        events.push(wire);
-    } else {
-        let mut wire = prefix(DO_MODE, owner, instance, current_stamp + 1)?;
-        wire.extend(mode.to_le_bytes());
-        events.push(wire);
-        if matches!(action, IdolAction::Swing) {
-            events.push(swing(owner, instance, final_stamp)?);
+    let mode = match action {
+        IdolAction::Death if pose.death_behavior != 0 && pose.death_mode != 0 => {
+            let mut wire = prefix(DO_BEHAVIOR, owner, instance, final_stamp)?;
+            wire.extend(3u32.to_le_bytes());
+            wire.extend(pose.death_behavior.to_le_bytes());
+            wire.extend(pose.death_mode.to_le_bytes());
+            events.push(wire);
+            pose.death_mode
         }
-    }
+        IdolAction::Death if pose.death_behavior != 0 => {
+            events.push(behavior(owner, instance, final_stamp, pose.death_behavior)?);
+            pose.death_mode.max(pose.peace)
+        }
+        IdolAction::Death if pose.death_mode != 0 => {
+            let mut wire = prefix(DO_MODE, owner, instance, final_stamp)?;
+            wire.extend(pose.death_mode.to_le_bytes());
+            events.push(wire);
+            pose.death_mode
+        }
+        IdolAction::Peace => {
+            let mut wire = prefix(DO_MODE, owner, instance, final_stamp)?;
+            wire.extend(pose.peace.to_le_bytes());
+            events.push(wire);
+            pose.peace
+        }
+        IdolAction::Combat | IdolAction::Swing | IdolAction::Death => {
+            let mut wire = prefix(DO_MODE, owner, instance, current_stamp + 1)?;
+            wire.extend(pose.combat.to_le_bytes());
+            events.push(wire);
+            if swinging {
+                events.push(behavior(owner, instance, final_stamp, pose.swing)?);
+            }
+            pose.combat
+        }
+    };
     Ok((final_stamp, mode, events))
 }
 

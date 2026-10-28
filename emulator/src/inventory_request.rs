@@ -203,6 +203,8 @@ pub struct Metadata {
     /// Implement type bit (enum 23000003, e.g. Sword 2, Stave 0x40000) from
     /// integer quality 0xfa0; skill hand requirements are masks of these bits.
     pub implement: Option<u32>,
+    /// IntStats ArmorLevel 0x262. Zero means the record does not list one.
+    pub armor: u32,
 }
 #[derive(Clone, Copy, Debug)]
 pub struct Equipment {
@@ -415,6 +417,7 @@ impl Metadata {
             physical,
             equipment,
             implement: integers.get(&0xfa0).copied(),
+            armor: integers.get(&0x262).copied().unwrap_or(0),
         })
     }
 }

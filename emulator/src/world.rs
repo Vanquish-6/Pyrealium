@@ -490,13 +490,28 @@ pub fn create_stationary_object(object: &StationaryObject) -> Result<Vec<u8>, Wo
     create_stationary_object_with_scale(object, None)
 }
 
+/// Server-only weenie used for captured scenery. It is absent from portal.dat,
+/// so the 7148 client draws the visual and does not preload a WState.
+pub const VISUAL_ONLY_ENTITY: u32 = 0x47F00D01;
+
+/// Use the real weenie when it exists in the matching 7148 portal.dat.
+/// Missing (server-only) weenies stay visual-only so the client does not
+/// preload a WState that 7148 cannot instantiate.
+pub fn world_content_entity(entity: u32, in_client_dat: bool) -> u32 {
+    if in_client_dat {
+        entity
+    } else {
+        VISUAL_ONLY_ENTITY
+    }
+}
+
 /// Optional native gmWeenieDesc scale (bit 0x80, StreamPack 006037c0).
 /// The positive scale bound is local content policy, not a recovered game limit.
 pub fn create_stationary_object_with_scale(
     object: &StationaryObject,
     scale: Option<f32>,
 ) -> Result<Vec<u8>, WorldError> {
-    create_named_object(object, scale, None)
+    create_named_object(object, scale, None, None)
 }
 
 /// As above, with an optional literal display name. gmWeenieDesc::StreamPack
@@ -505,6 +520,7 @@ pub fn create_named_object(
     object: &StationaryObject,
     scale: Option<f32>,
     name: Option<&str>,
+    mode: Option<u32>,
 ) -> Result<Vec<u8>, WorldError> {
     if scale.is_some_and(|scale| !scale.is_finite() || scale <= 0.0 || scale > 100.0) {
         return Err(WorldError::InvalidValue);
@@ -528,23 +544,41 @@ pub fn create_named_object(
     bytes.extend(object.character_id.to_le_bytes());
     bytes.extend(2_u32.to_le_bytes());
     bytes.extend(object.parent_visual_did.to_le_bytes());
-    // This portal's retained CreateObjects carry a mode and scalar slider;
-    // its DAT visual supplies the mesh and startup effects. Exact native order:
-    // PhysicsDesc::StreamPack 00641530; ac2_omishan_allyhall.elog offsets 20..48.
-    // Retained standing profiles for the portal, Idol Spawn and quartermaster
-    // supply both the native mode and scale slider. Do not copy combat/death
-    // modes or assume every visual supports the same profile.
+    // PhysicsDesc::StreamPack 00641530. Only these captured standing profiles
+    // are known to resolve on 7148. Any other mode, including DAT motion-table
+    // guesses, has faulted PhysicsObjRep (DID 0 or a later wild pointer).
     let standing_appearance = matches!(
         object.parent_visual_did,
         0x1f00031e | 0x1f0003d1 | 0x1f001941
     );
-    // Every retail world-object CreateObject carries a mode: 27,808 surveyed
-    // capture actors, 22,729 of them standing 40000001. Without it the client
-    // applies mode zero and the object never takes its standing pose.
-    bytes.extend(if standing_appearance { 0x8082_u32 } else { 0x8080_u32 }.to_le_bytes());
+    // This mentor's DAT behavior table 44000018 has initial mode 40000001
+    // (0067d000). PhysicsDesc's zero default would replace that initial mode.
+    let mentor_appearance = object.parent_visual_did == 0x1f000deb;
+    let player_appearance = object.entity_did == crate::bootstrap::PLAYER_ENTITY
+        && crate::appearance::is_player_visual(object.parent_visual_did);
+    // BehaviorTable::StreamPack (0067d000) ends with mInitMode. PhysicsDesc's
+    // zero default replaces that mode, and PhysicsObjRep then resolves DID 0.
+    // Only modes read from the matching 7148 table are accepted here.
+    let mode = if standing_appearance || mentor_appearance || player_appearance {
+        Some(0x40000001)
+    } else {
+        mode.filter(|&mode| matches!(mode, 0x40000001 | 0x41000003 | 0x41000010))
+    };
+    bytes.extend(
+        if standing_appearance {
+            0x8082_u32
+        } else if mode.is_some() {
+            0x8080_u32
+        } else {
+            0x8000_u32
+        }
+        .to_le_bytes(),
+    );
     bytes.extend(object.instance_stamp.to_le_bytes());
     bytes.extend(object.visual_ordering_stamp.to_le_bytes());
-    bytes.extend(0x40000001_u32.to_le_bytes()); // m_mode_id
+    if let Some(mode) = mode {
+        bytes.extend(mode.to_le_bytes()); // m_mode_id
+    }
     if standing_appearance {
         bytes.extend(1_u32.to_le_bytes()); // m_sliders count
         bytes.extend(0x4000000a_u32.to_le_bytes());
@@ -823,6 +857,14 @@ mod tests {
         );
     }
     #[test]
+    fn captured_scenery_uses_visual_only_entity() {
+        assert_eq!(world_content_entity(0x470007d1, true), 0x470007d1);
+        assert_eq!(world_content_entity(0x47003724, true), 0x47003724);
+        assert_eq!(world_content_entity(0x4700abcd, false), VISUAL_ONLY_ENTITY);
+        assert_eq!(VISUAL_ONLY_ENTITY >> 24, 0x47);
+    }
+
+    #[test]
     fn stationary_object_offsets_and_validation() {
         let mut object = StationaryObject {
             character_id: 1,
@@ -836,16 +878,21 @@ mod tests {
             timestamps: [7, 8, 9, 10],
         };
         let bytes = create_stationary_object(&object).unwrap();
-        assert_eq!(bytes.len(), 80);
+        assert_eq!(bytes.len(), 76);
+        let standing = create_named_object(&object, None, Some("Idol"), Some(0x40000001)).unwrap();
+        assert_eq!(&standing[20..24], &0x8080u32.to_le_bytes());
+        assert_eq!(&standing[28..32], &0x40000001u32.to_le_bytes());
+        let static_mesh = create_named_object(&object, None, None, Some(0x41000012)).unwrap();
+        assert_eq!(&static_mesh[20..24], &0x8000u32.to_le_bytes());
         assert_eq!(
-            &bytes[..36],
+            &bytes[..32],
             &[
-                0x58, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0x80, 0x80, 0, 0, 5,
-                0, 6, 0, 1, 0, 0, 0x40, 4, 0, 0, 0
+                0x58, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0x80, 0, 0, 5, 0,
+                6, 0, 4, 0, 0, 0
             ]
         );
         assert_eq!(
-            &bytes[64..],
+            &bytes[60..],
             &[7, 0, 8, 0, 9, 0, 10, 0, 0, 0, 0, 2, 3, 0, 0, 0]
         );
         assert_eq!(

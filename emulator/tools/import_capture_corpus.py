@@ -109,6 +109,26 @@ def main():
         "sources": report["sources"],
     }
     REPORT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8", newline="\n")
+    # Physics mode each object was captured with, for placements that match a
+    # capture observation. Uncaptured placements keep their authored profile.
+    observed = {}
+    for actor in report["actors"]:
+        if actor["mode"]:
+            observed.setdefault((actor["entity"], actor["cell"], *(round(v, 2) for v in actor["position"])), actor["mode"])
+    modes = {actor["id"]: actor["mode"] for actor in fresh if actor["mode"]}
+    for path in (ROOT / "content" / "world.tsv", ROOT / "content" / "world-observed-expanded.tsv"):
+        for line in path.read_text(encoding="utf-8").splitlines()[1:]:
+            if not line or line.startswith("#"):
+                continue
+            fields = line.split("\t")
+            mode = observed.get((fields[1], fields[3], *(round(float(v), 2) for v in fields[4:7])))
+            if mode:
+                modes.setdefault(fields[0], mode)
+    rows = ["pyrealium-object-modes-v1",
+            "# object mode: native physics mode from the matching retail CreateObject."]
+    rows += [f"{key}\t{value}" for key, value in sorted(modes.items())]
+    (ROOT / "content" / "object-modes.tsv").write_text("\n".join(rows) + "\n", encoding="utf-8", newline="\n")
+    print(f"captured modes for {len(modes)} placements")
     print(f"Added {len(fresh)} new stationary objects from {report['placed_actors']} accepted observations.")
     print("skipped", dict(skipped))
 

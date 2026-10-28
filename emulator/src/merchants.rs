@@ -244,7 +244,7 @@ pub fn parse_command(text: &str) -> Option<Result<Action, MerchantError>> {
 }
 
 pub fn listing() -> String {
-    "Training quartermaster: potion costs 5 gold (sell 1); weapon costs 12 gold (sell 3); mushroom costs 2 gold (sell 1); tallow bundle (100) costs 2 gold (sell 1). Use @buy potion|weapon|mushroom|tallow, or @sell SLOT (bag slots 1..78). Prices are authored development rules.".into()
+    "I sell a health potion for 5 gold, a training weapon for 12, a Mucor Mushroom for 2, and a 100-unit Tallow bundle for 2. I buy them back for less. Use the shop window, or @buy potion, weapon, mushroom or tallow, and @sell SLOT.".into()
 }
 
 pub fn mucor(id: u64, slot: u16) -> Item {
@@ -287,6 +287,7 @@ pub fn validate_mucor(portal: &mut Dat) -> io::Result<Metadata> {
         physical: MUCOR_PHYSICAL,
         equipment: None,
         implement: None,
+        armor: 0,
     })
 }
 

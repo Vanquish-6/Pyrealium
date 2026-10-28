@@ -547,6 +547,7 @@ impl Store {
             crate::quests::Command::AcceptSupplies => "q3",
             crate::quests::Command::AcceptPotion | crate::quests::Command::ClaimPotion | crate::quests::Command::AcceptJourney | crate::quests::Command::ClaimJourney => "q4",
             crate::quests::Command::AcceptSkill | crate::quests::Command::UsedSkill | crate::quests::Command::ClaimSkill => "q5",
+            crate::quests::Command::AcceptHunt | crate::quests::Command::ClaimHunt => "q6",
             _ => "q1",
         };
         self.append_record(&format!("{revision}\t{id}\t{}", command.encode()))?;
@@ -1251,7 +1252,7 @@ fn decode_journal_collect(
                 output.push(line.to_owned());
             }
         }
-        if fields.len() == 3 && matches!(fields[0], "q1" | "q3" | "q4" | "q5") {
+        if fields.len() == 3 && matches!(fields[0], "q1" | "q3" | "q4" | "q5" | "q6") {
             let id = fields[1]
                 .parse::<u64>()
                 .map_err(|_| invalid("invalid quest owner"))?;
@@ -1259,7 +1260,8 @@ fn decode_journal_collect(
             if !(fields[0] == "q1" && matches!(command, crate::quests::Command::Accept | crate::quests::Command::Claim)
                 || fields[0] == "q3" && matches!(command, crate::quests::Command::AcceptSupplies)
                 || fields[0] == "q4" && matches!(command, crate::quests::Command::AcceptPotion | crate::quests::Command::ClaimPotion | crate::quests::Command::AcceptJourney | crate::quests::Command::ClaimJourney)
-                || fields[0] == "q5" && matches!(command, crate::quests::Command::AcceptSkill | crate::quests::Command::UsedSkill | crate::quests::Command::ClaimSkill)) {
+                || fields[0] == "q5" && matches!(command, crate::quests::Command::AcceptSkill | crate::quests::Command::UsedSkill | crate::quests::Command::ClaimSkill)
+                || fields[0] == "q6" && matches!(command, crate::quests::Command::AcceptHunt | crate::quests::Command::ClaimHunt)) {
                 return Err(invalid("quest command does not match its journal revision"));
             }
             let character = records

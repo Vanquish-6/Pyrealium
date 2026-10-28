@@ -339,12 +339,17 @@ fn use_portal(
     if player.cell != portal.placement.cell || distance > 16.0 {
         return Err(invalid("Move within four meters of the portal."));
     }
+    let portal_label = crate::training_dialogue::portal_name(target)
+        .map(str::to_owned)
+        .or_else(|| portal.display_name().map(str::to_owned))
+        .unwrap_or_else(|| "the portal".into());
     let prepared = prepare_forced_move(peer, character, route.destination, scene, bootstrap)?;
     let mut events = vec![
         crate::ui::portal_used(character, target, route.destination, distance.sqrt() as f32)
             .map_err(other)?,
         prepared.wire,
         script::private_call(script::COMBAT_STATE, &script::integer(0)).map_err(other)?,
+        script::chat(&format!("You step through {portal_label}."), 1).map_err(other)?,
     ];
     if saved.quests.journey_phase() == 2 && crate::quests::is_training_portal(target) {
         events.extend(saved.quests.apply(&crate::quests::Command::Travelled).map_err(other)?.updates().map_err(other)?);
@@ -434,6 +439,7 @@ fn recall_character(
             .push(crate::ui::skill_update(crate::skills::LIFESTONE_RECALL, entry).map_err(other)?);
     }
     events.push(script::private_call(script::COMBAT_STATE, &script::integer(0)).map_err(other)?);
+    events.push(script::chat("You recall to your bound lifestone.", 1).map_err(other)?);
     peer.validate_scene_batch(&events)?;
     store.return_to_binding(&peer.session.account, character, false)?;
     if let Some(runtime) = encounters {
@@ -917,6 +923,130 @@ fn use_training_potion(
     Ok(updates)
 }
 
+const PLAY_HELP: &str = "Speech reaches people near you. /all MESSAGE reaches everyone online. /tell NAME MESSAGE whispers, including a name with spaces. /who lists who is in the world. @g MESSAGE is your group. @quest shows your lesson; use a training mentor for the next one, then Open Hunt for creatures anywhere. Train skills in the skill panel, drag them to the hotbar and use them. Craft a health or vigor potion from one Mucor Mushroom and 100 Tallow, sold by a quartermaster.";
+
+struct ChatHandled {
+    replies: Vec<Vec<u8>>,
+    deliveries: Vec<crate::scene::Delivery>,
+}
+
+/// Commands typed into local speech. `Ok(None)` leaves the line as nearby speech.
+#[allow(clippy::too_many_arguments)]
+fn player_chat_command(
+    peer: &mut Peer,
+    character: u64,
+    speaker: &str,
+    text: &str,
+    online: &BTreeMap<u64, std::net::SocketAddr>,
+    store: &Store,
+    scene: &crate::scene::Scene,
+    now: Instant,
+    now_ms: u64,
+) -> io::Result<Option<ChatHandled>> {
+    let mut words = text.trim().splitn(2, char::is_whitespace);
+    let head = words.next().unwrap_or("");
+    let rest = words.next().unwrap_or("").trim();
+    let command = head.to_ascii_lowercase();
+    if !matches!(command.as_str(), "/help" | "@help" | "/all" | "/general" | "@all" | "/who" | "@who" | "/tell" | "/w") {
+        return Ok(None);
+    }
+    peer.last_chat_ms = Some(now_ms);
+    let note = |peer: &mut Peer, message: &str| -> io::Result<ChatHandled> {
+        Ok(ChatHandled {
+            replies: peer.send_event(&script::chat(message, 1).map_err(other)?, now)?,
+            deliveries: Vec::new(),
+        })
+    };
+    let handled = match command.as_str() {
+        "/help" | "@help" => note(peer, PLAY_HELP)?,
+        "/who" | "@who" => {
+            let names: Vec<_> = online
+                .keys()
+                .filter(|id| scene.can_observe(**id, **id))
+                .filter_map(|id| store.characters.get(id).map(|c| c.name.as_str()))
+                .take(24)
+                .collect();
+            let message = if names.is_empty() {
+                "You are the only one ready in the world.".into()
+            } else {
+                format!("In the world: {}.", names.join(", "))
+            };
+            note(peer, &message)?
+        }
+        "/all" | "/general" | "@all" => {
+            if rest.is_empty() {
+                note(peer, "Use /all MESSAGE to speak to everyone online.")?
+            } else {
+                let packet: Arc<[u8]> = script::chat(&format!("[All] {speaker}: {rest}"), 0x10)
+                    .map_err(other)?
+                    .into();
+                let mut recipients: Vec<u64> = online
+                    .keys()
+                    .copied()
+                    .filter(|id| scene.can_observe(*id, *id))
+                    .collect();
+                if !recipients.contains(&character) {
+                    recipients.push(character);
+                }
+                ChatHandled {
+                    replies: Vec::new(),
+                    deliveries: recipients
+                        .into_iter()
+                        .map(|recipient| crate::scene::Delivery {
+                            recipient,
+                            data: packet.clone(),
+                        })
+                        .collect(),
+                }
+            }
+        }
+        "/tell" | "/w" => {
+            let lower = rest.to_ascii_lowercase();
+            let mut best: Option<(usize, u64, String)> = None;
+            for id in online.keys() {
+                let Some(name) = store.characters.get(id).map(|c| c.name.clone()) else {
+                    continue;
+                };
+                if !scene.can_observe(*id, *id) {
+                    continue;
+                }
+                let folded = name.to_ascii_lowercase();
+                let boundary = lower.len() == folded.len()
+                    || lower.as_bytes().get(folded.len()).copied() == Some(b' ');
+                if lower.starts_with(&folded)
+                    && boundary
+                    && best.as_ref().is_none_or(|(len, _, _)| folded.len() > *len)
+                {
+                    best = Some((folded.len(), *id, name));
+                }
+            }
+            if let Some((len, recipient, name)) = best {
+                let message = rest.get(len..).unwrap_or("").trim();
+                if message.is_empty() {
+                    note(peer, "Use /tell NAME MESSAGE.")?
+                } else {
+                    let incoming = script::chat(&format!("{speaker} tells you: {message}"), 0x20).map_err(other)?;
+                    let echo = peer.send_event(
+                        &script::chat(&format!("You tell {name}: {message}"), 0x20).map_err(other)?,
+                        now,
+                    )?;
+                    ChatHandled {
+                        replies: echo,
+                        deliveries: vec![crate::scene::Delivery {
+                            recipient,
+                            data: incoming.into(),
+                        }],
+                    }
+                }
+            } else {
+                note(peer, "That player is not online. /who lists who is in the world.")?
+            }
+        }
+        _ => unreachable!(),
+    };
+    Ok(Some(handled))
+}
+
 fn quest_action(
     peer: &mut Peer,
     character: u64,
@@ -939,8 +1069,10 @@ fn quest_action(
         "journey claim" => Some(crate::quests::Command::ClaimJourney),
         "skill" => Some(crate::quests::Command::AcceptSkill),
         "skill claim" => Some(crate::quests::Command::ClaimSkill),
+        "hunt" => Some(crate::quests::Command::AcceptHunt),
+        "hunt claim" => Some(crate::quests::Command::ClaimHunt),
         "claim" => Some(crate::quests::Command::Claim),
-        _ => return Err(invalid("Use @quest for status; start, claim, supplies, potion, potion claim, journey, journey claim, skill or skill claim for lessons.")),
+        _ => return Err(invalid("Use @quest for status; start, claim, supplies, potion, potion claim, journey, journey claim, skill, skill claim, hunt or hunt claim.")),
     };
     if command.is_some() && (!saved.progression.alive() || peer.combat) {
         return Err(invalid(
@@ -958,12 +1090,13 @@ fn quest_action(
         }
     }
     let text = quests.guidance();
-    let mut events = match speaker {
+    let (mut events, nearby) = match speaker {
         Some(speaker) => {
             let race = saved.creation.as_ref().map_or(1, |request| request.race);
-            mentor_interaction_events(character, speaker, scene, &crate::training_dialogue::greeting(race, &quests))?
+            let spoken = mentor_interaction_events(character, speaker, scene, &crate::training_dialogue::greeting(race, &quests))?;
+            (spoken.events, spoken.nearby)
         }
-        None => vec![script::chat(&text, 1).map_err(other)?],
+        None => (vec![script::chat(&text, 1).map_err(other)?], Vec::new()),
     };
     if quests.get().is_some() {
         events.extend(quests.updates().map_err(other)?);
@@ -978,11 +1111,41 @@ fn quest_action(
     if let Some(command) = command {
         store.quest_command(&peer.session.account, character, command)?;
     }
-    let updates = scene.player_stats(character, &state);
+    let mut updates = scene.player_stats(character, &state);
+    updates.extend(nearby);
     peer.queue_ordered_batch(events)?;
     Ok(updates)
 }
 
+fn rating_sentence(cast: &crate::abilities::PreparedCast<'_>) -> String {
+    let mut lines = Vec::new();
+    if let Some((ratings, duration)) = cast.caster_ratings() {
+        lines.push(crate::combat::describe(&ratings, duration));
+    }
+    if let Some((who, ratings, duration)) = cast.other_ratings() {
+        if who != cast.player() {
+            lines.push(format!("On your target, {}", crate::combat::describe(&ratings, duration)));
+        }
+    }
+    lines.join(" ")
+}
+fn store_ratings(
+    runtime: &mut Option<crate::encounters::Encounters>,
+    cast: &crate::abilities::PreparedCast<'_>,
+    now: u64,
+) -> io::Result<()> {
+    if cast.caster_ratings().is_none() && cast.other_ratings().is_none() {
+        return Ok(());
+    }
+    let runtime = runtime.as_mut().ok_or_else(|| invalid("Lasting skill effects require combat rules on this server."))?;
+    if let Some((ratings, duration)) = cast.caster_ratings() {
+        runtime.add_ratings(cast.player(), cast.skill(), ratings, duration, now)?;
+    }
+    if let Some((who, ratings, duration)) = cast.other_ratings() {
+        runtime.add_ratings(who, cast.skill(), ratings, duration, now)?;
+    }
+    Ok(())
+}
 /// The objective carries no reward, so it is persisted after the cast's own record.
 fn credit_skill_practice(peer: &mut Peer, character: u64, store: &mut Store) -> io::Result<()> {
     let saved = &store.characters[&character];
@@ -1360,13 +1523,19 @@ fn group_publish(
 // Placements are discovered from the live scene, not a fixed list of IIDs.
 const TRAINING_MENTOR_ENTITY: u32 = crate::training_dialogue::MENTOR_ENTITY;
 
+struct Spoken {
+    events: Vec<Vec<u8>>,
+    /// Same line for other ready players near the speaker. The speaker already has it in `events`.
+    nearby: Vec<crate::scene::Delivery>,
+}
+
 fn npc_interaction_events(
     owner: u64,
     target: u64,
     scene: &crate::scene::Scene,
     name: &str,
     text: &str,
-) -> io::Result<Vec<Vec<u8>>> {
+) -> io::Result<Spoken> {
     let player = scene
         .player_placement(owner)
         .ok_or_else(|| invalid("Player is not ready."))?;
@@ -1383,10 +1552,26 @@ fn npc_interaction_events(
     if player.cell != npc.placement.cell || distance > 4.0 {
         return Err(invalid("Move within four metres of the NPC."));
     }
-    Ok(vec![
-        crate::interaction::success(owner, target, player, distance).map_err(other)?,
-        crate::interaction::speech(target, name, text).map_err(other)?,
-    ])
+    // The bubble and dialog are momentary. The same line stays in the chat box,
+    // for the speaker and for anyone else standing nearby.
+    let chat = script::chat(&format!("{name}: {text}"), 1).map_err(other)?;
+    let nearby = scene
+        .broadcast(owner, chat.clone())
+        .map(|deliveries| {
+            deliveries
+                .into_iter()
+                .filter(|delivery| delivery.recipient != owner)
+                .collect()
+        })
+        .unwrap_or_default();
+    Ok(Spoken {
+        events: vec![
+            crate::interaction::success(owner, target, player, distance).map_err(other)?,
+            crate::interaction::speech(target, name, text).map_err(other)?,
+            chat,
+        ],
+        nearby,
+    })
 }
 
 fn loot_text(loot: &crate::encounters::Loot) -> String {
@@ -1474,10 +1659,10 @@ fn loot_corpse(
     Ok(updates)
 }
 
-fn mentor_interaction_events(owner: u64, target: u64, scene: &crate::scene::Scene, text: &str) -> io::Result<Vec<Vec<u8>>> {
-    let mut events = npc_interaction_events(owner, target, scene, "Pectar, Training Master", text)?;
-    events.push(crate::interaction::dialogue("Pectar, Training Master", text).map_err(other)?);
-    Ok(events)
+fn mentor_interaction_events(owner: u64, target: u64, scene: &crate::scene::Scene, text: &str) -> io::Result<Spoken> {
+    let mut spoken = npc_interaction_events(owner, target, scene, "Pectar, Training Master", text)?;
+    spoken.events.push(crate::interaction::dialogue("Pectar, Training Master", text).map_err(other)?);
+    Ok(spoken)
 }
 
 fn use_training_mentor(
@@ -1514,6 +1699,18 @@ fn use_training_mentor(
     }
     peer.admit_npc_dialogue(now)?;
     let book = &store.characters[&character].quests;
+    if book.hunt_phase() == 3 {
+        return quest_action(peer, character, "status", store, scene, Some(target));
+    }
+    if book.hunt_phase() == 2 {
+        return quest_action(peer, character, "hunt claim", store, scene, Some(target));
+    }
+    if book.hunt_phase() == 1 {
+        return quest_action(peer, character, "status", store, scene, Some(target));
+    }
+    if book.skill_phase() == 3 {
+        return quest_action(peer, character, "hunt", store, scene, Some(target));
+    }
     if book.skill_phase() != 0 {
         return quest_action(peer, character, if book.skill_phase() == 2 { "skill claim" } else { "status" }, store, scene, Some(target));
     }
@@ -1540,8 +1737,10 @@ fn use_training_mentor(
             if let Ok(items) = crate::quests::supplies_items(&store.characters[&character].inventory, store.next_item_id()?) {
                 let changes = crate::quests::rewards(&crate::quests::Command::ClaimSupplies);
                 let next = book.apply(&crate::quests::Command::ClaimSupplies).map_err(other)?;
-                let events = mentor_interaction_events(character, target, scene, &next.guidance())?;
-                return item_service_transaction_quest(peer, character, &items, &changes, events, store, scene, metadata, true, false);
+                let spoken = mentor_interaction_events(character, target, scene, &next.guidance())?;
+                let mut updates = item_service_transaction_quest(peer, character, &items, &changes, spoken.events, store, scene, metadata, true, false)?;
+                updates.extend(spoken.nearby);
+                return Ok(updates);
             }
         }
     }
@@ -1594,16 +1793,26 @@ fn merchant_action(
             .ok_or_else(|| invalid("Shop offer identities exhausted; restart required."))?;
         let offers = std::array::from_fn(|index| *next_offer + 1 + index as u64);
         let shop = crate::merchants::Shop::new(merchant, offers).map_err(other)?;
-        let mut events = if npc_target.is_some() {
-            npc_interaction_events(
-                character,
-                merchant,
-                scene,
-                "Tebor the Armorer",
-                &crate::merchants::listing(),
-            )?
+        let speaker = {
+            let raw = scene
+                .examination_content(character, merchant)
+                .and_then(|object| object.display_name())
+                .unwrap_or("Quartermaster");
+            let owned: String = raw.chars().take(32).collect();
+            let trimmed = owned.trim();
+            if trimmed.is_empty() { "Quartermaster".to_owned() } else { trimmed.to_owned() }
+        };
+        let listing = crate::merchants::listing();
+        let (mut events, nearby) = if npc_target.is_some() {
+            let spoken = npc_interaction_events(character, merchant, scene, &speaker, &listing)?;
+            (spoken.events, spoken.nearby)
         } else {
-            vec![script::chat(&crate::merchants::listing(), 1).map_err(other)?]
+            let chat = script::chat(&format!("{speaker}: {listing}"), 1).map_err(other)?;
+            let nearby = scene
+                .broadcast(character, chat.clone())
+                .map(|deliveries| deliveries.into_iter().filter(|delivery| delivery.recipient != character).collect())
+                .unwrap_or_default();
+            (vec![chat], nearby)
         };
         events.push(shop.open(catalog).map_err(other)?);
         peer.queue_ordered_batch(events)?;
@@ -1611,7 +1820,7 @@ fn merchant_action(
         peer.native_shop = Some(shop);
         peer.merchant_open_ms = Some(now);
         peer.last_inventory_ms = Some(now);
-        return Ok(Vec::new());
+        return Ok(nearby);
     }
     let plan = match action {
         crate::merchants::Action::Buy(stock) => crate::merchants::plan_buy(
@@ -2750,14 +2959,8 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                         let distance = scene
                                                             .player_placement(character)
                                                             .zip(scene.player_placement(target))
-                                                            .filter(|(a, b)| a.cell == b.cell)
                                                             .map_or(f32::MAX, |(a, b)| {
-                                                                a.coordinates
-                                                                    .iter()
-                                                                    .zip(b.coordinates)
-                                                                    .map(|(x, y)| (x - y) * (x - y))
-                                                                    .sum::<f32>()
-                                                                    .sqrt()
+                                                                crate::movement::separation(a, b)
                                                             });
                                                         crate::abilities::Aim::Player(target, distance)
                                                     } else {
@@ -2795,6 +2998,11 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                     let (story, fx) = cast.presentation();
                                                     let instance = saved.instance;
                                                     if let crate::abilities::Outcome::Travel(travel) = cast.outcome().clone() {
+                                                        let arrival = match &travel {
+                                                            crate::abilities::Travel::Lifestone => None,
+                                                            crate::abilities::Travel::Portal => Some("You recall to the last portal you used."),
+                                                            crate::abilities::Travel::Telepads(_) => Some("You travel to a recall point."),
+                                                        };
                                                         let destination = match travel {
                                                             crate::abilities::Travel::Lifestone => {
                                                                 if !config.lifestones {
@@ -2823,11 +3031,19 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                         if !commands.is_empty() {
                                                             store.progression_batch(&peer.session.account, character, &commands)?;
                                                         }
+                                                        let ratings = rating_sentence(&cast);
+                                                        store_ratings(&mut encounters, &cast, now_ms)?;
                                                         cast.commit();
                                                         deliveries.extend(updates);
-                                                        peer.queue_ordered_batch(vec![
-                                                            script::skill_finished(request_id).map_err(other)?,
-                                                        ])?;
+                                                        let mut finished = Vec::new();
+                                                        if let Some(line) = arrival {
+                                                            finished.push(script::chat(line, 1).map_err(other)?);
+                                                        }
+                                                        if !ratings.is_empty() {
+                                                            finished.push(script::chat(&ratings, 1).map_err(other)?);
+                                                        }
+                                                        finished.push(script::skill_finished(request_id).map_err(other)?);
+                                                        peer.queue_ordered_batch(finished)?;
                                                         return Ok(());
                                                     }
                                                     if let crate::abilities::Outcome::Support {
@@ -2847,7 +3063,27 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                             crate::ui::skill_update(skill, saved.skills.get(skill).unwrap())
                                                                 .map_err(other)?,
                                                         );
-                                                        events.push(script::chat("Your skill takes effect on your target.", 1).map_err(other)?);
+                                                        let mut restored = Vec::new();
+                                                        if health > 0 {
+                                                            restored.push(format!("{health} health"));
+                                                        }
+                                                        if vigor > 0 {
+                                                            restored.push(format!("{vigor} vigor"));
+                                                        }
+                                                        let mut line = if restored.is_empty() {
+                                                            "The effect continues on your target.".to_owned()
+                                                        } else {
+                                                            format!("You restore {} on your target.", restored.join(" and "))
+                                                        };
+                                                        if mend.is_some() || regen.is_some() {
+                                                            line.push_str(" It keeps working for a while.");
+                                                        }
+                                                        let ratings = rating_sentence(&cast);
+                                                        if !ratings.is_empty() {
+                                                            line.push(' ');
+                                                            line.push_str(&ratings);
+                                                        }
+                                                        events.push(script::chat(&line, 1).map_err(other)?);
                                                         events.push(script::skill_finished(request_id).map_err(other)?);
                                                         peer.validate_scene_batch(&events)?;
                                                         if health > 0 || vigor > 0 {
@@ -2868,6 +3104,7 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                         if !cast.commands().is_empty() {
                                                             store.progression_batch(&peer.session.account, character, cast.commands())?;
                                                         }
+                                                        store_ratings(&mut encounters, &cast, now_ms)?;
                                                         cast.commit();
                                                         if story != 0 {
                                                             deliveries.extend(skill_visual(peer, &mut scene, character, instance, story));
@@ -2884,7 +3121,8 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                         burn,
                                                     } = cast.outcome().clone()
                                                     {
-                                                        let events = vec![
+                                                        let ratings = rating_sentence(&cast);
+                                                        let mut events = vec![
                                                             crate::ui::skill_update(
                                                                 skill,
                                                                 saved.skills.get(skill).unwrap(),
@@ -2896,6 +3134,9 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                             )
                                                             .map_err(other)?,
                                                         ];
+                                                        if !ratings.is_empty() {
+                                                            events.push(script::chat(&ratings, 1).map_err(other)?);
+                                                        }
                                                         peer.validate_scene_batch(&events)?;
                                                         encounters
                                                             .as_mut()
@@ -2915,6 +3156,7 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                                     burn,
                                                                 },
                                                             )?;
+                                                        store_ratings(&mut encounters, &cast, now_ms)?;
                                                         cast.commit();
                                                         peer.queue_ordered_batch(events)?;
                                                         peer.combat = true;
@@ -2940,11 +3182,20 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                     let recovered_vigor = next
                                                         .vigor
                                                         .saturating_sub(cast.previous().vigor);
-                                                    let text = match (cast.healed(), recovered_vigor) {
+                                                    let ratings = rating_sentence(&cast);
+                                                    let mut text = match (cast.healed(), recovered_vigor) {
+                                                        (0, 0) => String::new(),
                                                         (0, vigor) => format!("You recover {vigor} vigor."),
                                                         (health, 0) => format!("You recover {health} health."),
                                                         (health, vigor) => format!("You recover {health} health and {vigor} vigor."),
                                                     };
+                                                    if !ratings.is_empty() {
+                                                        if !text.is_empty() { text.push(' '); }
+                                                        text.push_str(&ratings);
+                                                    }
+                                                    if text.is_empty() {
+                                                        text = "The skill takes effect.".into();
+                                                    }
                                                     events.push(script::chat(&text, 1).map_err(other)?);
                                                     events.push(
                                                         script::skill_finished(request_id)
@@ -2956,7 +3207,7 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                         crate::abilities::Outcome::Restore { mend, regen, .. } => (*mend, *regen),
                                                         _ => (None, None),
                                                     };
-                                                    if (mend.is_some() || regen.is_some()) && encounters.is_none() {
+                                                    if (mend.is_some() || regen.is_some() || cast.caster_ratings().is_some() || cast.other_ratings().is_some()) && encounters.is_none() {
                                                         return Err(invalid("Lasting skill effects require combat rules on this server."));
                                                     }
                                                     if !cast.commands().is_empty() {
@@ -2966,6 +3217,7 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                             cast.commands(),
                                                         )?;
                                                     }
+                                                    store_ratings(&mut encounters, &cast, now_ms)?;
                                                     cast.commit();
                                                     if let Some(runtime) = encounters.as_mut() {
                                                         if let Some(over) = mend {
@@ -3324,11 +3576,14 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                         request.item,
                                                         &scene,
                                                         speaker.trim(),
-                                                        "Greetings, traveler. I have nothing more for you right now.",
+                                                        "Greetings, traveler. Type /help for quests, skills, crafting and chat. A training mentor can give you the next lesson.",
                                                     )
                                                 };
                                                 match result {
-                                                    Ok(events) => peer.queue_ordered_batch(events)?,
+                                                    Ok(spoken) => {
+                                                        peer.queue_ordered_batch(spoken.events)?;
+                                                        deliveries.extend(spoken.nearby);
+                                                    }
                                                     Err(error) => replies.extend(
                                                         peer.send_event(
                                                             &script::chat(&error.to_string(), 1)
@@ -3853,6 +4108,21 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                             let name = &store.characters[&character].name;
                                             match request {
                                                 script::Request::Say(text) => {
+                                                    if let Some(handled) = player_chat_command(
+                                                        peer,
+                                                        character,
+                                                        name,
+                                                        &text,
+                                                        &active_characters,
+                                                        &store,
+                                                        &scene,
+                                                        now,
+                                                        now_ms,
+                                                    )? {
+                                                        replies.extend(handled.replies);
+                                                        deliveries.extend(handled.deliveries);
+                                                        return Ok(replies);
+                                                    }
                                                     if matches!(
                                                         text.trim().to_ascii_lowercase().as_str(),
                                                         "@source" | "@license"
@@ -4024,18 +4294,21 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                     }
                                                     if words.first().is_some_and(|word| word.eq_ignore_ascii_case("@mentor")) && config.initialize_ui && config.training_kit {
                                                         peer.last_chat_ms = Some(now_ms);
-                                                        let result = (|| -> io::Result<()> {
+                                                        let result = (|| -> io::Result<Vec<crate::scene::Delivery>> {
                                                             let saved = &store.characters[&character];
                                                             if peer.combat || !saved.progression.alive() { return Err(invalid("Speak to a mentor while alive and out of combat.")); }
                                                             let mentor = scene.nearby_service(character, TRAINING_MENTOR_ENTITY, None).ok_or_else(|| invalid("Move within four metres of a training mentor."))?;
                                                             let race = saved.creation.as_ref().map_or(1, |request| request.race);
                                                             let text = crate::training_dialogue::topic(&words[1..].join(" "), race, &saved.quests).ok_or_else(|| invalid("Ask @mentor help, gear, combat, healing, supplies, crafting, travel or quests."))?;
                                                             peer.admit_npc_dialogue(now_ms)?;
-                                                            let events = mentor_interaction_events(character, mentor, &scene, &text)?;
-                                                            peer.queue_ordered_batch(events)?;
-                                                            Ok(())
+                                                            let spoken = mentor_interaction_events(character, mentor, &scene, &text)?;
+                                                            peer.queue_ordered_batch(spoken.events)?;
+                                                            Ok(spoken.nearby)
                                                         })();
-                                                        if let Err(error) = result { replies.extend(peer.send_event(&script::chat(&error.to_string(), 1).map_err(other)?, now)?); }
+                                                        match result {
+                                                            Ok(extra) => deliveries.extend(extra),
+                                                            Err(error) => replies.extend(peer.send_event(&script::chat(&error.to_string(), 1).map_err(other)?, now)?),
+                                                        }
                                                         return Ok(replies);
                                                     }
                                                     if words.first().is_some_and(|word| {
@@ -4545,6 +4818,66 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                         .map_err(other)?,
                                                     )
                                                     .map_err(other)?;
+                                                // Inventory and HUD must precede nearby CreateObjects,
+                                                // and all of that must go out before the client finishes
+                                                // the first scene. Sending them after SRC left the
+                                                // world empty and the bag uninitialized.
+                                                if initial_ui.is_some() {
+                                                    let saved = &store.characters[&character_id];
+                                                    let training_bar = saved
+                                                        .creation
+                                                        .as_ref()
+                                                        .map_or_else(
+                                                            crate::preferences::Hotbar::training_attack,
+                                                            |request| {
+                                                                crate::preferences::Hotbar::starter(
+                                                                    request.race,
+                                                                    request.sex,
+                                                                )
+                                                            },
+                                                        );
+                                                    let hotbar = if saved.hotbar.is_empty() {
+                                                        &training_bar
+                                                    } else {
+                                                        &saved.hotbar
+                                                    };
+                                                    let mut queued = saved
+                                                        .inventory
+                                                        .items()
+                                                        .map(|item| {
+                                                            inventory_spawn(
+                                                                item,
+                                                                saved.id,
+                                                                instance,
+                                                                instance,
+                                                                &inventory_metadata,
+                                                            )
+                                                        })
+                                                        .collect::<io::Result<Vec<_>>>()?;
+                                                    queued.push(
+                                                        crate::ui::player_all_quests_options(
+                                                            saved.ui.as_ref(),
+                                                            Some(hotbar),
+                                                            Some(&saved.inventory),
+                                                            Some(&saved.progression),
+                                                            Some(&saved.skills),
+                                                            Some(&saved.quests),
+                                                            saved.gameplay_options.as_ref(),
+                                                        )
+                                                        .map_err(other)?,
+                                                    );
+                                                    queued.push(
+                                                        script::chat(
+                                                            "Type /help for quests, skills, crafting, and how to talk to other players.",
+                                                            1,
+                                                        )
+                                                        .map_err(other)?,
+                                                    );
+                                                    peer.queue_event_batch(queued)?;
+                                                }
+                                                deliveries.extend(
+                                                    scene.activate(character_id).map_err(other)?,
+                                                );
                                                 for (index, event) in events.iter().enumerate() {
                                                     replies.extend(peer.send_world_event(
                                                         event,
@@ -4590,99 +4923,11 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                     return Ok(replies);
                                 }
                                 world::ClientEvent::SceneRenderingComplete => {
-                                    let first =
-                                        matches!(peer.session.phase, Phase::Entering { .. });
-                                    if first {
-                                        if let Some(packet) = initial_ui.as_deref() {
-                                            let saved = match peer.session.phase {
-                                                Phase::Entering { character } => {
-                                                    store.characters.get(&character).filter(|c| {
-                                                        c.ui.is_some()
-                                                            || !c.hotbar.is_empty()
-                                                            || c.inventory.items().next().is_some()
-                                                            || c.progression != crate::progression::Progression::default()
-                                                            || !c.skills.is_empty()
-                                                            || c.quests.get().is_some()
-                                                    })
-                                                }
-                                                _ => None,
-                                            };
-                                            if let Some(saved) = saved {
-                                                let training_bar = saved
-                                                    .creation
-                                                    .as_ref()
-                                                    .map_or_else(
-                                                        crate::preferences::Hotbar::training_attack,
-                                                        |request| {
-                                                            crate::preferences::Hotbar::starter(
-                                                                request.race,
-                                                                request.sex,
-                                                            )
-                                                        },
-                                                    );
-                                                let hotbar = if saved.hotbar.is_empty() {
-                                                    &training_bar
-                                                } else {
-                                                    &saved.hotbar
-                                                };
-                                                let restored = crate::ui::player_all_quests_options(
-                                                    saved.ui.as_ref(),
-                                                    Some(hotbar),
-                                                    Some(&saved.inventory),
-                                                    Some(&saved.progression),
-                                                    Some(&saved.skills),
-                                                    Some(&saved.quests),
-                                                    saved.gameplay_options.as_ref(),
-                                                )
-                                                .map_err(other)?;
-                                                let instance=peer.motion.as_ref().ok_or_else(||invalid("inventory bootstrap without avatar lifetime"))?.instance;
-                                                let mut events = saved
-                                                    .inventory
-                                                    .items()
-                                                    .map(|item| {
-                                                        inventory_spawn(
-                                                            item,
-                                                            saved.id,
-                                                            instance,
-                                                            instance,
-                                                            &inventory_metadata,
-                                                        )
-                                                    })
-                                                    .collect::<io::Result<Vec<_>>>()?;
-                                                events.push(restored);
-                                                peer.queue_event_batch(events)?;
-                                            } else {
-                                                peer.queue_scene(Arc::from(packet))?;
-                                            }
-                                        }
-                                    }
                                     peer.session.scene_complete().map_err(other)?;
                                     if let Phase::InWorld { character } = peer.session.phase {
+                                        // Nearby objects and HUD already went out at enter.
                                         deliveries
                                             .extend(scene.activate(character).map_err(other)?);
-                                        if first {
-                                            deliveries.push(crate::scene::Delivery {
-                                                recipient: character,
-                                                data: script::chat(&crate::licensing::notice(), 1)
-                                                    .map_err(other)?
-                                                    .into(),
-                                            });
-                                        }
-                                        if first && config.initialize_ui {
-                                            for packet in
-                                                crate::crafting::initialization(config.training_kit)
-                                                    .map_err(other)?
-                                            {
-                                                deliveries.push(crate::scene::Delivery {
-                                                    recipient: character,
-                                                    data: packet.into(),
-                                                });
-                                            }
-                                        }
-                                        if first && config.training_kit {
-                                            deliveries.push(crate::scene::Delivery { recipient: character, data: script::chat(
-                                                "Training: equip the sword in your bag. Click an Idol Spawn, stand within three metres, and enter combat. Your attacks repeat until you leave combat. The first hotbar button swings once with the training attack skill. Speak to Pectar for the three-kill reward. Tebor opens the shop. A once-only supply pack provides two health potions, one vigor potion, 1 Mucor Mushroom and 100 Tallow. Use Crafting to make another potion. Lifestones bind your return; portals lead outside and back.", 1).map_err(other)?.into() });
-                                        }
                                         eprintln!(
                                             "Scene ready for character {character}: cell={:08x}, visible content={}",
                                             scene
@@ -4690,20 +4935,6 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
                                                 .map_or(0, |point| point.cell),
                                             scene.visible_content_count(character).unwrap_or(0)
                                         );
-                                        if first
-                                            && !store.characters[&character].progression.alive()
-                                        {
-                                            for wire in [
-                                                crate::ui::death_notice("You have fallen.")
-                                                    .map_err(other)?,
-                                                crate::ui::lock_player(true).map_err(other)?,
-                                            ] {
-                                                deliveries.push(crate::scene::Delivery {
-                                                    recipient: character,
-                                                    data: wire.into(),
-                                                });
-                                            }
-                                        }
                                     }
                                     eprintln!("client reported SceneRenderingComplete");
                                     return Ok(replies);
@@ -4792,6 +5023,24 @@ fn run_auth_mode(config: Config, auth_data: Option<PathBuf>, local_accounts: boo
             }
         }
         if let Some(runtime) = &mut encounters {
+            for id in active_characters.keys() {
+                if let Some(character) = store.characters.get(id) {
+                    let (armor, shield) = crate::combat::worn_protection(
+                        character.inventory.items().filter_map(|item| match item.location {
+                            crate::inventory::Location::Equipped(slot) => Some((slot, item.definition)),
+                            _ => None,
+                        }),
+                        |definition| {
+                            inventory_metadata
+                                .get(&definition)
+                                .and_then(|entry| *entry)
+                                .map(|entry| entry.armor)
+                                .unwrap_or(0)
+                        },
+                    );
+                    runtime.set_gear(*id, armor, shield);
+                }
+            }
             let events = runtime.tick(
                 now_ms,
                 &scene,

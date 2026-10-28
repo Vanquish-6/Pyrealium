@@ -116,6 +116,84 @@ impl ClientPosition {
         Ok(bytes)
     }
 }
+/// LandscapeDefs `36000000`: outdoor cells are 20 m, eight along each side of a
+/// 160 m landblock. Local coordinates are landblock-relative, so a creature can
+/// cross those cell edges without a new origin.
+pub const OUTDOOR_CELL_SIDE: f32 = 20.0;
+pub const OUTDOOR_BLOCK_SIDE: f32 = 160.0;
+const OUTDOOR_GRID: i32 = 8;
+
+pub fn outdoor_cell(cell: u32) -> bool {
+    (1..=64).contains(&(cell & 0xffff))
+}
+
+fn block_local(coordinates: [f32; 3]) -> bool {
+    (0.0..OUTDOOR_BLOCK_SIDE).contains(&coordinates[0])
+        && (0.0..OUTDOOR_BLOCK_SIDE).contains(&coordinates[1])
+        && coordinates[2].is_finite()
+}
+
+/// Landblock-local outdoor position in a continuous frame. Interior cells and
+/// coordinates outside the block stay local to their cell.
+pub fn world_point(placement: Placement) -> Option<[f32; 3]> {
+    if !outdoor_cell(placement.cell) || !block_local(placement.coordinates) {
+        return None;
+    }
+    let block_x = (placement.cell >> 24) as f32;
+    let block_y = ((placement.cell >> 16) & 255) as f32;
+    Some([
+        block_x * OUTDOOR_BLOCK_SIDE + placement.coordinates[0],
+        block_y * OUTDOOR_BLOCK_SIDE + placement.coordinates[1],
+        placement.coordinates[2],
+    ])
+}
+
+/// Inverse of `world_point`. The cell index follows `placement_from_point`.
+pub fn placement_at(world: [f32; 3], heading: u8) -> Option<Placement> {
+    if world.iter().any(|value| !value.is_finite()) {
+        return None;
+    }
+    let block_x = (world[0] / OUTDOOR_BLOCK_SIDE).floor();
+    let block_y = (world[1] / OUTDOOR_BLOCK_SIDE).floor();
+    if !(0.0..255.0).contains(&block_x) || !(0.0..255.0).contains(&block_y) {
+        return None;
+    }
+    let x = world[0] - block_x * OUTDOOR_BLOCK_SIDE;
+    let y = world[1] - block_y * OUTDOOR_BLOCK_SIDE;
+    if !(0.0..OUTDOOR_BLOCK_SIDE).contains(&x) || !(0.0..OUTDOOR_BLOCK_SIDE).contains(&y) {
+        return None;
+    }
+    let column = ((x / OUTDOOR_CELL_SIDE) as i32).clamp(0, OUTDOOR_GRID - 1);
+    let row = ((y / OUTDOOR_CELL_SIDE) as i32).clamp(0, OUTDOOR_GRID - 1);
+    let low = 1 + column * OUTDOOR_GRID + row;
+    let placement = Placement {
+        cell: (block_x as u32) << 24 | (block_y as u32) << 16 | low as u32,
+        coordinates: [x, y, world[2]],
+        heading,
+    };
+    placement.valid().then_some(placement)
+}
+
+/// Same-cell distance, or outdoor distance across the 20 m cell grid.
+pub fn separation(a: Placement, b: Placement) -> f32 {
+    match (world_point(a), world_point(b)) {
+        (Some(a), Some(b)) => a
+            .iter()
+            .zip(b)
+            .map(|(a, b)| (a - b) * (a - b))
+            .sum::<f32>()
+            .sqrt(),
+        _ if a.cell == b.cell => a
+            .coordinates
+            .iter()
+            .zip(b.coordinates)
+            .map(|(a, b)| (a - b) * (a - b))
+            .sum::<f32>()
+            .sqrt(),
+        _ => f32::MAX,
+    }
+}
+
 fn pack_placement(bytes: &mut Vec<u8>, placement: Placement) {
     bytes.extend(placement.cell.to_le_bytes());
     for value in placement.coordinates {
@@ -225,6 +303,25 @@ impl Motion {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn outdoor_grid_crosses_cell_and_block_edges() {
+        let origin = Placement {
+            cell: 0x0100_0001,
+            coordinates: [1.0, 1.0, 5.0],
+            heading: 0,
+        };
+        let world = world_point(origin).unwrap();
+        assert_eq!(world, [161.0, 1.0, 5.0]);
+        assert_eq!(placement_at(world, 0).unwrap().cell, 0x0100_0001);
+        assert_eq!(
+            placement_at([181.0, 1.0, 5.0], 0).unwrap().cell,
+            0x0100_0009
+        );
+        assert_eq!(
+            placement_at([320.0, 1.0, 5.0], 0).unwrap().cell,
+            0x0200_0001
+        );
+    }
     #[test]
     fn heading_matches_original_x86_rotation_axes() {
         // tools/movement_binary_vectors.py executes Frame::cache_matrix 00619f70.

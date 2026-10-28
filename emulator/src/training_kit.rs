@@ -85,6 +85,7 @@ pub fn validate(portal: &mut Dat) -> io::Result<Metadata> {
         }),
         // Integer quality 0xfa0 in the pinned 81000f1e record: Sword.
         implement: Some(0x2),
+        armor: 0,
     };
     portal.read(metadata.icon)?;
     let hand = metadata.equipment.ok_or_else(invalid)?;

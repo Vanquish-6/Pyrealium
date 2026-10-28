@@ -23,8 +23,15 @@ pub const JOURNEY_QUEST: u32 = 0x4000ff04;
 pub const SKILL_QUEST: u32 = 0x4000ff05;
 pub const SKILL_XP: u64 = 150;
 pub const SKILL_GOLD: u32 = 15;
+/// Creatures defeated anywhere after the training lessons. Authored profile.
+pub const HUNT_QUEST: u32 = 0x4000ff06;
+pub const HUNT_GOAL: u8 = 8;
+pub const HUNT_XP: u64 = 200;
+pub const HUNT_GOLD: u32 = 25;
 pub fn rewards(command: &Command) -> Vec<crate::progression::Command> {
-    if matches!(command, Command::ClaimSkill) {
+    if matches!(command, Command::ClaimHunt) {
+        vec![crate::progression::Command::AwardXp(HUNT_XP), crate::progression::Command::AwardGold(HUNT_GOLD)]
+    } else if matches!(command, Command::ClaimSkill) {
         vec![crate::progression::Command::AwardXp(SKILL_XP), crate::progression::Command::AwardGold(SKILL_GOLD)]
     } else if matches!(command, Command::Claim) {
         vec![
@@ -56,6 +63,8 @@ pub struct Book {
     potion: u8, // 0 absent, 1 accepted, 2 crafted, 3 rewarded
     journey: u8, // 0 absent, 1 accepted, 2 bound, 3 travelled, 4 rewarded
     skill: u8, // 0 absent, 1 accepted, 2 used, 3 rewarded
+    hunt: u8, // 0 absent, 1 accepted, 2 rewarded
+    hunt_kills: u8,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -75,6 +84,8 @@ pub enum Command {
     AcceptSkill,
     UsedSkill,
     ClaimSkill,
+    AcceptHunt,
+    ClaimHunt,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -114,6 +125,7 @@ impl Command {
             Self::AcceptPotion => "p.a".into(), Self::CraftedPotion => "p.f".into(), Self::ClaimPotion => "p.c".into(),
             Self::AcceptJourney => "j.a".into(), Self::BoundLifestone => "j.b".into(), Self::Travelled => "j.t".into(), Self::ClaimJourney => "j.c".into(),
             Self::AcceptSkill => "u.a".into(), Self::UsedSkill => "u.f".into(), Self::ClaimSkill => "u.c".into(),
+            Self::AcceptHunt => "h.a".into(), Self::ClaimHunt => "h.c".into(),
         }
     }
     pub fn decode(text: &str) -> Result<Self, QuestError> {
@@ -125,6 +137,7 @@ impl Command {
             "p.a" => Ok(Self::AcceptPotion), "p.f" => Ok(Self::CraftedPotion), "p.c" => Ok(Self::ClaimPotion),
             "j.a" => Ok(Self::AcceptJourney), "j.b" => Ok(Self::BoundLifestone), "j.t" => Ok(Self::Travelled), "j.c" => Ok(Self::ClaimJourney),
             "u.a" => Ok(Self::AcceptSkill), "u.f" => Ok(Self::UsedSkill), "u.c" => Ok(Self::ClaimSkill),
+            "h.a" => Ok(Self::AcceptHunt), "h.c" => Ok(Self::ClaimHunt),
             _ => {
                 let hex = text.strip_prefix("k,").ok_or(QuestError::InvalidRecord)?;
                 if hex.len() != 8 || !hex.bytes().all(|value| value.is_ascii_hexdigit()) {
@@ -147,6 +160,7 @@ impl Book {
     /// Shared player guidance for mentor speech, quest commands and the journal.
     /// The quest state and immutable rewards remain the persisted authored profile.
     pub fn guidance(&self) -> String {
+        if self.hunt != 0 { return self.hunt_guidance(); }
         if self.skill != 0 { return self.skill_guidance(); }
         if self.journey != 0 { return self.journey_guidance(); }
         if self.potion != 0 { return self.potion_guidance(); }
@@ -172,6 +186,10 @@ impl Book {
         if self
             .training
             .is_some_and(|state| state.killed > GOAL || state.claimed && state.killed != GOAL)
+            || self.hunt > 2
+            || self.hunt_kills > HUNT_GOAL
+            || (self.hunt == 0 && self.hunt_kills != 0)
+            || (self.hunt == 2 && self.hunt_kills != HUNT_GOAL)
         {
             return Err(QuestError::InvalidRecord);
         }
@@ -210,6 +228,19 @@ impl Book {
             }
             Command::ClaimSkill => {
                 if self.skill != 2 { return Err(if self.skill == 3 { QuestError::AlreadyCompleted } else { QuestError::NotReady }); } next.skill = 3;
+            }
+            Command::AcceptHunt => {
+                if self.skill != 3 { return Err(QuestError::NotReady); }
+                if self.hunt != 0 {
+                    return Err(if self.hunt == 2 { QuestError::AlreadyCompleted } else { QuestError::AlreadyAccepted });
+                }
+                next.hunt = 1;
+            }
+            Command::ClaimHunt => {
+                if self.hunt != 1 || self.hunt_kills != HUNT_GOAL {
+                    return Err(if self.hunt == 2 { QuestError::AlreadyCompleted } else { QuestError::NotReady });
+                }
+                next.hunt = 2;
             }
             Command::AcceptSupplies => {
                 if !self.training.is_some_and(|state| state.claimed) { return Err(QuestError::NotReady); }
@@ -263,7 +294,20 @@ impl Book {
                 }
             }
         }
+        // Any creature counts, including the training idol, once the hunt is open.
+        if next.hunt == 1 && next.hunt_kills < HUNT_GOAL && entity >> 24 == 0x47 {
+            next.hunt_kills += 1;
+        }
         next
+    }
+    /// 0 hidden, 1 underway, 2 ready to claim, 3 rewarded.
+    pub fn hunt_phase(&self) -> u8 {
+        match self.hunt {
+            0 => 0,
+            2 => 3,
+            1 if self.hunt_kills >= HUNT_GOAL => 2,
+            _ => 1,
+        }
     }
     /// One live journal change. Never call for an unaccepted quest.
     pub fn update(&self) -> Result<Vec<u8>, WorldError> {
@@ -276,7 +320,7 @@ impl Book {
     /// The gmQuestInfoList argument used by UI_Load for saved journal restoration.
     pub fn list_graph(&self) -> Result<Vec<u8>, WorldError> {
         let mut payload = Vec::new();
-        word(&mut payload, u32::from(self.training.is_some()) + u32::from(self.supplies.is_some()) + u32::from(self.potion != 0) + u32::from(self.journey != 0) + u32::from(self.skill != 0));
+        word(&mut payload, u32::from(self.training.is_some()) + u32::from(self.supplies.is_some()) + u32::from(self.potion != 0) + u32::from(self.journey != 0) + u32::from(self.skill != 0) + u32::from(self.hunt != 0));
         if let Some(state) = self.training {
             payload.extend(info_payload(state, false)?);
         }
@@ -284,6 +328,7 @@ impl Book {
         if self.potion != 0 { payload.extend(self.lesson_payload(false, false)?); }
         if self.journey != 0 { payload.extend(self.lesson_payload(true, false)?); }
         if self.skill != 0 { payload.extend(self.skill_payload(false)?); }
+        if self.hunt != 0 { payload.extend(self.hunt_payload(false)?); }
         Ok(native_graph(0xa1, &payload))
     }
 }
@@ -371,6 +416,12 @@ impl Book {
             args.extend(script::integer(if self.skill == 3 { COMPLETED } else { UNDERWAY }));
             events.push(script::private_call(UPDATE, &args)?);
         }
+        if self.hunt != 0 {
+            let mut args = script::integer(0);
+            args.extend(native_graph(0xa0, &self.hunt_payload(true)?));
+            args.extend(script::integer(if self.hunt == 2 { COMPLETED } else { UNDERWAY }));
+            events.push(script::private_call(UPDATE, &args)?);
+        }
         Ok(events)
     }
 }
@@ -429,7 +480,7 @@ impl Book {
         match self.journey {
             2 => "A Safe Journey: your lifestone is bound. Leave combat and use a training portal, then speak to a training mentor at your destination.".into(),
             3 => "A Safe Journey: you bound a lifestone and used a training portal. Speak to a training mentor for 80 experience and 10 gold.".into(),
-            4 => "A Safe Journey complete. You received 80 experience and 10 gold. Speak to a mentor again to begin Skill Practice, the final lesson.".into(),
+            4 => "A Safe Journey complete. You received 80 experience and 10 gold. Speak to a mentor again to begin Skill Practice.".into(),
             _ => "A Safe Journey: use a lifestone to bind it, then use a training portal. Leave combat before both actions. Speak to a mentor at your destination for 80 experience and 10 gold. Rebind now even if you bound a lifestone before accepting this lesson.".into(),
         }
     }
@@ -451,7 +502,7 @@ impl Book {
     pub fn skill_guidance(&self) -> String {
         match self.skill {
             2 => format!("Skill Practice: you used an active skill. Leave combat and speak to a training mentor for {SKILL_XP} experience and {SKILL_GOLD} gold."),
-            3 => format!("Training complete! You finished combat, supplies, potion crafting, safe travel and skill use, and received the final {SKILL_XP} experience and {SKILL_GOLD} gold. The outdoor hub connects all three racial starts; its mentors and quartermasters remain available. Spend your experience in the skill panel and explore beyond the training grounds."),
+            3 => format!("Skill Practice complete. You received {SKILL_XP} experience and {SKILL_GOLD} gold. Speak to a training mentor, or use @quest hunt, to begin Open Hunt: defeat {HUNT_GOAL} creatures anywhere."),
             _ => format!("Skill Practice: open the skill panel, train an active skill with your skill credits, drag it to your hotbar and use it. A healing skill on yourself, an attack skill on an Idol Spawn, or the Recall skill you gained by binding a lifestone all count. Then speak to a training mentor for {SKILL_XP} experience and {SKILL_GOLD} gold."),
         }
     }
@@ -464,6 +515,34 @@ impl Book {
         word(&mut bytes, u32::from(!claimed)); bytes.extend(world::literal_name(&text)?); word(&mut bytes, 1);
         bytes.extend((-1.0f64).to_le_bytes()); bytes.extend((-1.0f64).to_le_bytes()); word(&mut bytes, 0);
         bytes.extend(0f64.to_le_bytes()); bytes.extend(0f64.to_le_bytes()); word(&mut bytes, u32::from(play_fx));
+        Ok(bytes)
+    }
+    pub fn hunt_guidance(&self) -> String {
+        match self.hunt {
+            2 => format!("Open Hunt complete. You defeated {HUNT_GOAL} creatures and received {HUNT_XP} experience and {HUNT_GOLD} gold. Keep training skills, crafting potions, and use /all to talk to everyone online."),
+            1 if self.hunt_kills >= HUNT_GOAL => format!("Open Hunt: {HUNT_GOAL}/{HUNT_GOAL} creatures defeated. Leave combat and speak to a training mentor, or use @quest hunt claim, for {HUNT_XP} experience and {HUNT_GOLD} gold."),
+            1 => format!("Open Hunt: {}/{HUNT_GOAL} creatures defeated. Any creature counts, inside or outside the training yard. Return to a mentor when you finish.", self.hunt_kills),
+            _ => "Speak to a training mentor after Skill Practice to begin Open Hunt.".into(),
+        }
+    }
+    fn hunt_payload(&self, play_fx: bool) -> Result<Vec<u8>, WorldError> {
+        let text = self.hunt_guidance();
+        let claimed = self.hunt == 2;
+        let mut bytes = Vec::new();
+        word(&mut bytes, HUNT_QUEST);
+        bytes.extend(world::literal_name("Open Hunt")?);
+        bytes.extend(world::literal_name(&text)?);
+        word(&mut bytes, ICON);
+        word(&mut bytes, if claimed { COMPLETED } else { UNDERWAY });
+        word(&mut bytes, u32::from(!claimed));
+        bytes.extend(world::literal_name(&text)?);
+        word(&mut bytes, 2);
+        bytes.extend((-1.0f64).to_le_bytes());
+        bytes.extend((-1.0f64).to_le_bytes());
+        word(&mut bytes, 0);
+        bytes.extend(0f64.to_le_bytes());
+        bytes.extend(0f64.to_le_bytes());
+        word(&mut bytes, u32::from(play_fx));
         Ok(bytes)
     }
 }
@@ -484,4 +563,68 @@ pub fn validate_practice_craft(book: &Book, bag: &crate::inventory::Inventory, i
     let expected = crate::crafting::output(recipe, first, candidate.free_slot().ok_or_else(bad)?).ok_or_else(bad)?;
     if output != &expected { return Err(bad()); }
     book.apply(&Command::CraftedPotion).map_err(io::Error::other)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn trained() -> Book {
+        let mut book = Book::default();
+        for command in [
+            Command::Accept,
+            Command::Kill(TARGET_ENTITY),
+            Command::Kill(TARGET_ENTITY),
+            Command::Kill(TARGET_ENTITY),
+            Command::Claim,
+            Command::AcceptSupplies,
+            Command::ClaimSupplies,
+            Command::AcceptPotion,
+            Command::CraftedPotion,
+            Command::ClaimPotion,
+            Command::AcceptJourney,
+            Command::BoundLifestone,
+            Command::Travelled,
+            Command::ClaimJourney,
+            Command::AcceptSkill,
+            Command::UsedSkill,
+            Command::ClaimSkill,
+        ] {
+            book = book.apply(&command).unwrap();
+        }
+        book
+    }
+
+    #[test]
+    fn open_hunt_counts_any_creature_and_ignores_kills_before_it_starts() {
+        let mut book = Book::default();
+        book = book.apply(&Command::Accept).unwrap();
+        let untouched = book.apply(&Command::Kill(0x47000011)).unwrap();
+        assert_eq!(untouched, book);
+        assert!(book.apply(&Command::AcceptHunt).is_err());
+
+        let mut book = trained();
+        assert!(book.guidance().contains("Open Hunt"));
+        book = book.apply(&Command::AcceptHunt).unwrap();
+        assert!(book.apply(&Command::AcceptHunt).is_err());
+        assert!(book.apply(&Command::ClaimHunt).is_err());
+        // Training idols already claimed do not move the old lesson, but they do count here.
+        book = book.apply(&Command::Kill(TARGET_ENTITY)).unwrap();
+        book = book.apply(&Command::Kill(0x47001234)).unwrap();
+        assert_eq!(book.hunt_phase(), 1);
+        assert!(book.guidance().contains("2/8"));
+        for _ in 0..6 {
+            book = book.apply(&Command::Kill(0x47000099)).unwrap();
+        }
+        assert_eq!(book.hunt_phase(), 2);
+        let full = book.apply(&Command::Kill(0x47000099)).unwrap();
+        assert_eq!(full, book);
+        book = book.apply(&Command::ClaimHunt).unwrap();
+        assert_eq!(book.hunt_phase(), 3);
+        assert!(book.apply(&Command::ClaimHunt).is_err());
+        assert!(book.list_graph().is_ok());
+        assert!(book.updates().unwrap().len() >= 6);
+        assert_eq!(Command::decode("h.a").unwrap(), Command::AcceptHunt);
+        assert_eq!(Command::decode("h.c").unwrap(), Command::ClaimHunt);
+    }
 }

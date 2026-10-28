@@ -294,6 +294,7 @@ pub fn metadata(portal: &mut Dat, definition: u32) -> io::Result<Metadata> {
         physical: profile.physical,
         equipment: None,
         implement: None,
+        armor: 0,
     })
 }
 
